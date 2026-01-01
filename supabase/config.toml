@@ -1,7 +1,7 @@
 project_id = "ybdjbfirpnuprtuyfxfx"
 
 [functions.generate-business-plan]
-verify_jwt = true
+verify_jwt = false
 
 [functions.run-workflow]
-verify_jwt = true
+verify_jwt = false
