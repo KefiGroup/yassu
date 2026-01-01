@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { User, Save, Plus, X, CheckCircle, AlertCircle, Camera, Loader2 } from 'lucide-react';
+import { ImageCropper } from '@/components/ImageCropper';
 
 interface University {
   id: string;
@@ -33,7 +34,8 @@ export default function Profile() {
   const [newSkill, setNewSkill] = useState('');
   const [newInterest, setNewInterest] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     full_name: '',
     bio: '',
@@ -116,9 +118,9 @@ export default function Profile() {
     }
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -140,28 +142,44 @@ export default function Profile() {
       return;
     }
 
+    // Create a URL for the selected image and open cropper
+    const imageUrl = URL.createObjectURL(file);
+    setSelectedImage(imageUrl);
+    setCropperOpen(true);
+    
+    // Reset input so the same file can be selected again
+    event.target.value = '';
+  };
+
+  const handleCroppedImage = useCallback(async (croppedBlob: Blob) => {
+    if (!user) return;
+
     setUploadingAvatar(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
+      const filePath = `${user.id}/avatar.jpg`;
 
-      // Upload to Supabase Storage
+      // Upload cropped image to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, croppedBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg'
+        });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get public URL with cache-busting timestamp
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+
       // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: urlWithTimestamp })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
@@ -180,8 +198,13 @@ export default function Profile() {
       });
     } finally {
       setUploadingAvatar(false);
+      if (selectedImage) {
+        URL.revokeObjectURL(selectedImage);
+        setSelectedImage(null);
+      }
     }
-  };
+  }, [user, refreshProfile, toast, selectedImage]);
+
 
   const addSkill = () => {
     if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
@@ -291,7 +314,7 @@ export default function Profile() {
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={handleAvatarUpload}
+                  onChange={handleFileSelect}
                   disabled={uploadingAvatar}
                 />
               </div>
@@ -491,6 +514,23 @@ export default function Profile() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Image Cropper Dialog */}
+      {selectedImage && (
+        <ImageCropper
+          open={cropperOpen}
+          onClose={() => {
+            setCropperOpen(false);
+            if (selectedImage) {
+              URL.revokeObjectURL(selectedImage);
+              setSelectedImage(null);
+            }
+          }}
+          imageSrc={selectedImage}
+          onCropComplete={handleCroppedImage}
+          aspectRatio={1}
+        />
+      )}
     </div>
   );
 }
