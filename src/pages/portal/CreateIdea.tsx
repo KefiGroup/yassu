@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,22 +17,14 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Lightbulb, Plus, X, Save } from 'lucide-react';
-
-interface University {
-  id: string;
-  name: string;
-  short_name: string | null;
-}
+import { ArrowLeft, Lightbulb, X, Save } from 'lucide-react';
 
 export default function CreateIdea() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  const [universities, setUniversities] = useState<University[]>([]);
   const [saving, setSaving] = useState(false);
-  const [newTag, setNewTag] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -44,28 +36,9 @@ export default function CreateIdea() {
     desired_teammates: '',
     expected_timeline: '',
     stage: 'concept',
-    university_id: profile?.university_id || '',
     is_public: true,
     tags: [] as string[],
   });
-
-  useEffect(() => {
-    async function fetchUniversities() {
-      const { data } = await supabase
-        .from('universities')
-        .select('id, name, short_name')
-        .order('name');
-      if (data) setUniversities(data);
-    }
-    fetchUniversities();
-  }, []);
-
-  const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
-      setNewTag('');
-    }
-  };
 
   const removeTag = (tag: string) => {
     setFormData({ ...formData, tags: formData.tags.filter((t) => t !== tag) });
@@ -98,7 +71,6 @@ export default function CreateIdea() {
         desired_teammates: formData.desired_teammates || null,
         expected_timeline: formData.expected_timeline || null,
         stage: formData.stage as 'concept' | 'validating' | 'building' | 'launched',
-        university_id: formData.university_id || null,
         is_public: formData.is_public,
       })
       .select()
@@ -265,43 +237,23 @@ export default function CreateIdea() {
                 />
               </div>
 
-              {/* Stage and University */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Stage</Label>
-                  <Select
-                    value={formData.stage}
-                    onValueChange={(value) => setFormData({ ...formData, stage: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="concept">Concept</SelectItem>
-                      <SelectItem value="validating">Validating</SelectItem>
-                      <SelectItem value="building">Building</SelectItem>
-                      <SelectItem value="launched">Launched</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>University</Label>
-                  <Select
-                    value={formData.university_id}
-                    onValueChange={(value) => setFormData({ ...formData, university_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select university" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {universities.map((uni) => (
-                        <SelectItem key={uni.id} value={uni.id}>
-                          {uni.short_name || uni.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Stage */}
+              <div className="space-y-2">
+                <Label>Stage</Label>
+                <Select
+                  value={formData.stage}
+                  onValueChange={(value) => setFormData({ ...formData, stage: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="concept">Concept</SelectItem>
+                    <SelectItem value="validating">Validating</SelectItem>
+                    <SelectItem value="building">Building</SelectItem>
+                    <SelectItem value="launched">Launched</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Tags */}
@@ -318,15 +270,38 @@ export default function CreateIdea() {
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Input
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Add a tag (e.g., fintech, AI, B2B)"
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                  />
-                  <Button type="button" variant="outline" size="icon" onClick={addTag}>
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      if (value === 'other') {
+                        const customTag = prompt('Enter custom tag:');
+                        if (customTag?.trim() && !formData.tags.includes(customTag.trim())) {
+                          setFormData({ ...formData, tags: [...formData.tags, customTag.trim()] });
+                        }
+                      } else if (value && !formData.tags.includes(value)) {
+                        setFormData({ ...formData, tags: [...formData.tags, value] });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AI/ML">AI/ML</SelectItem>
+                      <SelectItem value="Fintech">Fintech</SelectItem>
+                      <SelectItem value="HealthTech">HealthTech</SelectItem>
+                      <SelectItem value="EdTech">EdTech</SelectItem>
+                      <SelectItem value="B2B">B2B</SelectItem>
+                      <SelectItem value="B2C">B2C</SelectItem>
+                      <SelectItem value="SaaS">SaaS</SelectItem>
+                      <SelectItem value="Marketplace">Marketplace</SelectItem>
+                      <SelectItem value="Social">Social</SelectItem>
+                      <SelectItem value="Climate">Climate</SelectItem>
+                      <SelectItem value="Hardware">Hardware</SelectItem>
+                      <SelectItem value="Web3">Web3</SelectItem>
+                      <SelectItem value="other">Other...</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
