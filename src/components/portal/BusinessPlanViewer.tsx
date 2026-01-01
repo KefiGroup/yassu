@@ -333,14 +333,136 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
 
                 <TabsContent value="full" className="mt-0">
                   <div className="prose prose-sm dark:prose-invert max-w-none max-h-[600px] overflow-y-auto p-4 bg-muted/30 rounded-lg">
-                    <ReactMarkdown>{artifact.content}</ReactMarkdown>
+                    <ReactMarkdown
+                      components={{
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto my-4">
+                            <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        thead: ({ children }) => (
+                          <thead className="bg-muted/50">{children}</thead>
+                        ),
+                        th: ({ children }) => (
+                          <th className="border border-border px-4 py-2 text-left font-semibold text-foreground">
+                            {children}
+                          </th>
+                        ),
+                        td: ({ children }) => (
+                          <td className="border border-border px-4 py-2 text-muted-foreground">
+                            {children}
+                          </td>
+                        ),
+                        tr: ({ children }) => (
+                          <tr className="even:bg-muted/20">{children}</tr>
+                        ),
+                        h1: ({ children }) => (
+                          <h1 className="text-2xl font-bold text-foreground mt-6 mb-4 pb-2 border-b border-border">
+                            {children}
+                          </h1>
+                        ),
+                        h2: ({ children }) => (
+                          <h2 className="text-xl font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">
+                            {children}
+                          </h2>
+                        ),
+                        h3: ({ children }) => (
+                          <h3 className="text-lg font-medium text-foreground mt-4 mb-2">
+                            {children}
+                          </h3>
+                        ),
+                        p: ({ children }) => (
+                          <p className="text-muted-foreground mb-3 leading-relaxed">{children}</p>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="list-disc list-inside space-y-1 mb-4 text-muted-foreground">
+                            {children}
+                          </ul>
+                        ),
+                        ol: ({ children }) => (
+                          <ol className="list-decimal list-inside space-y-1 mb-4 text-muted-foreground">
+                            {children}
+                          </ol>
+                        ),
+                        li: ({ children }) => (
+                          <li className="text-muted-foreground">{children}</li>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-semibold text-foreground">{children}</strong>
+                        ),
+                        blockquote: ({ children }) => (
+                          <blockquote className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground">
+                            {children}
+                          </blockquote>
+                        ),
+                      }}
+                    >
+                      {artifact.content}
+                    </ReactMarkdown>
                   </div>
                 </TabsContent>
 
                 {Object.keys(SECTION_LABELS).map((key) => (
                   <TabsContent key={key} value={key} className="mt-0">
                     <div className="prose prose-sm dark:prose-invert max-w-none max-h-[600px] overflow-y-auto p-4 bg-muted/30 rounded-lg">
-                      <ReactMarkdown>
+                      <ReactMarkdown
+                        components={{
+                          table: ({ children }) => (
+                            <div className="overflow-x-auto my-4">
+                              <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden">
+                                {children}
+                              </table>
+                            </div>
+                          ),
+                          thead: ({ children }) => (
+                            <thead className="bg-muted/50">{children}</thead>
+                          ),
+                          th: ({ children }) => (
+                            <th className="border border-border px-4 py-2 text-left font-semibold text-foreground">
+                              {children}
+                            </th>
+                          ),
+                          td: ({ children }) => (
+                            <td className="border border-border px-4 py-2 text-muted-foreground">
+                              {children}
+                            </td>
+                          ),
+                          tr: ({ children }) => (
+                            <tr className="even:bg-muted/20">{children}</tr>
+                          ),
+                          h2: ({ children }) => (
+                            <h2 className="text-xl font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">
+                              {children}
+                            </h2>
+                          ),
+                          h3: ({ children }) => (
+                            <h3 className="text-lg font-medium text-foreground mt-4 mb-2">
+                              {children}
+                            </h3>
+                          ),
+                          p: ({ children }) => (
+                            <p className="text-muted-foreground mb-3 leading-relaxed">{children}</p>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="list-disc list-inside space-y-1 mb-4 text-muted-foreground">
+                              {children}
+                            </ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="list-decimal list-inside space-y-1 mb-4 text-muted-foreground">
+                              {children}
+                            </ol>
+                          ),
+                          li: ({ children }) => (
+                            <li className="text-muted-foreground">{children}</li>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="font-semibold text-foreground">{children}</strong>
+                          ),
+                        }}
+                      >
                         {sections[key] || `No ${SECTION_LABELS[key]} analysis available.`}
                       </ReactMarkdown>
                     </div>
