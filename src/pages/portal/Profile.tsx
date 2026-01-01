@@ -42,6 +42,7 @@ export default function Profile() {
     major: '',
     graduation_year: '',
     university_id: '',
+    other_university: '',
     availability: '',
     linkedin_url: '',
     github_url: '',
@@ -69,6 +70,7 @@ export default function Profile() {
         major: profile.major || '',
         graduation_year: profile.graduation_year?.toString() || '',
         university_id: profile.university_id || '',
+        other_university: '',
         availability: profile.availability || '',
         linkedin_url: profile.linkedin_url || '',
         github_url: profile.github_url || '',
@@ -358,7 +360,7 @@ export default function Profile() {
                 <Label htmlFor="university">University</Label>
                 <Select
                   value={formData.university_id}
-                  onValueChange={(value) => setFormData({ ...formData, university_id: value })}
+                  onValueChange={(value) => setFormData({ ...formData, university_id: value, other_university: value === 'other' ? formData.other_university : '' })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select university" />
@@ -369,8 +371,18 @@ export default function Profile() {
                         {uni.name}
                       </SelectItem>
                     ))}
+                    <SelectItem value="other">Other (Not Listed)</SelectItem>
                   </SelectContent>
                 </Select>
+                {formData.university_id === 'other' && (
+                  <Input
+                    id="other_university"
+                    value={formData.other_university}
+                    onChange={(e) => setFormData({ ...formData, other_university: e.target.value })}
+                    placeholder="Enter your university name"
+                    className="mt-2"
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="major">Major</Label>
