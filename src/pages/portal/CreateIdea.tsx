@@ -28,6 +28,15 @@ export default function CreateIdea() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!user?.id) {
+      toast({
+        title: 'Not authenticated',
+        description: 'Please log in to create an idea.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!formData.title.trim() || !formData.idea.trim() || !formData.problem.trim()) {
       toast({
         title: 'Missing required fields',
@@ -46,7 +55,7 @@ export default function CreateIdea() {
     const { data: idea, error } = await supabase
       .from('ideas')
       .insert({
-        created_by: user?.id,
+        created_by: user.id,
         title: formData.title,
         problem: formData.problem,
         solution: formData.idea,
