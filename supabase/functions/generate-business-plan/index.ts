@@ -91,6 +91,83 @@ Create fundraising materials:
 Focus on early-stage, pre-seed appropriate content.`,
 };
 
+// First step: Analyze the raw idea and extract structured information
+async function analyzeRawIdea(rawIdea: string, title: string, apiKey: string): Promise<{
+  problem: string;
+  solution: string;
+  target_user: string;
+  why_now: string;
+  assumptions: string;
+  desired_teammates: string;
+  tags: string[];
+}> {
+  const systemPrompt = `You are an expert startup analyst. Given a raw, unstructured idea description, your job is to extract and structure the key components of the startup idea.
+
+You MUST respond with valid JSON only, no markdown or explanation. The JSON must have these exact fields:
+{
+  "problem": "A clear 2-3 sentence description of the problem being solved",
+  "solution": "A clear description of the proposed solution",
+  "target_user": "Who is the primary target user/customer",
+  "why_now": "Why is this the right time for this idea (market trends, technology changes, etc.)",
+  "assumptions": "Key assumptions that need to be validated",
+  "desired_teammates": "What skills/roles would be helpful for a co-founder or team",
+  "tags": ["array", "of", "relevant", "tags"]
+}
+
+Be insightful and add value - don't just rephrase what the user said. Infer and expand based on your knowledge of the market and startups.`;
+
+  const userMessage = `Idea Title: ${title}
+
+Raw Idea Description:
+${rawIdea}
+
+Please analyze this and extract the structured components. Respond with JSON only.`;
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      stream: false,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Idea analysis error:", response.status, errorText);
+    throw new Error(`Idea analysis failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content || "";
+  
+  // Parse the JSON response
+  try {
+    // Remove any markdown code blocks if present
+    const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(cleanContent);
+  } catch (parseError) {
+    console.error("Failed to parse AI response:", content);
+    // Return defaults if parsing fails
+    return {
+      problem: rawIdea,
+      solution: "To be determined through analysis",
+      target_user: "To be identified",
+      why_now: "Market opportunity exists",
+      assumptions: "Core assumptions need validation",
+      desired_teammates: "Technical and business co-founders",
+      tags: ["Startup"],
+    };
+  }
+}
+
 async function runSingleWorkflow(
   workflowType: string,
   ideaContext: any,
@@ -156,8 +233,7 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    const { ideaId } = await req.json();
+    const { ideaId, rawIdea } = await req.json();
 
     if (!ideaId) {
       throw new Error("ideaId is required");
@@ -184,6 +260,53 @@ serve(async (req) => {
       throw new Error("Idea not found");
     }
 
+    console.log(`Processing idea: ${idea.title}`);
+
+    // Step 1: If rawIdea is provided, analyze it first to extract structured data
+    let enrichedIdea = { ...idea };
+    
+    if (rawIdea) {
+      console.log("Analyzing raw idea to extract structured information...");
+      
+      try {
+        const analysis = await analyzeRawIdea(rawIdea, idea.title, LOVABLE_API_KEY);
+        
+        // Update the idea with extracted information
+        const { error: updateError } = await supabase
+          .from("ideas")
+          .update({
+            problem: analysis.problem,
+            solution: analysis.solution,
+            target_user: analysis.target_user,
+            why_now: analysis.why_now,
+            assumptions: analysis.assumptions,
+            desired_teammates: analysis.desired_teammates,
+          })
+          .eq("id", ideaId);
+
+        if (updateError) {
+          console.error("Error updating idea with analysis:", updateError);
+        } else {
+          console.log("Idea enriched with AI analysis");
+          enrichedIdea = { ...idea, ...analysis };
+        }
+
+        // Add tags
+        if (analysis.tags && analysis.tags.length > 0) {
+          const tagInserts = analysis.tags.slice(0, 5).map((tag: string) => ({
+            idea_id: ideaId,
+            tag: tag,
+          }));
+          
+          await supabase.from("idea_tags").insert(tagInserts);
+          console.log(`Added ${tagInserts.length} tags`);
+        }
+      } catch (analysisError) {
+        console.error("Error analyzing raw idea:", analysisError);
+        // Continue with original idea data
+      }
+    }
+
     // Fetch user profile
     const { data: profile } = await supabase
       .from("profiles")
@@ -198,7 +321,7 @@ serve(async (req) => {
       interests: profile.interests,
     } : null;
 
-    console.log(`Generating business plan for idea: ${idea.title}`);
+    console.log(`Generating business plan for idea: ${enrichedIdea.title}`);
 
     // Create a workflow run record
     const { data: workflowRun, error: runError } = await supabase
@@ -208,7 +331,7 @@ serve(async (req) => {
         idea_id: ideaId,
         workflow_type: "idea_founder_fit", // Primary type for the combined run
         status: "running",
-        inputs: { type: "full_business_plan" },
+        inputs: { type: "full_business_plan", rawIdea: rawIdea || null },
       })
       .select()
       .single();
@@ -217,7 +340,7 @@ serve(async (req) => {
       console.error("Error creating workflow run:", runError);
     }
 
-    // Run all 8 workflows in parallel (in batches of 2 to avoid rate limits)
+    // Step 2: Run all 8 workflows in parallel (in batches of 2 to avoid rate limits)
     const results: Record<string, string> = {};
     
     for (let i = 0; i < WORKFLOW_TYPES.length; i += 2) {
@@ -226,7 +349,7 @@ serve(async (req) => {
         batch.map(async (workflowType) => {
           try {
             console.log(`Running workflow: ${workflowType}`);
-            const content = await runSingleWorkflow(workflowType, idea, userContext, LOVABLE_API_KEY);
+            const content = await runSingleWorkflow(workflowType, enrichedIdea, userContext, LOVABLE_API_KEY);
             return { workflowType, content, success: true };
           } catch (error) {
             console.error(`Workflow ${workflowType} failed:`, error);
@@ -246,8 +369,14 @@ serve(async (req) => {
     }
 
     // Compile the full business plan
-    let businessPlan = `# Business Plan: ${idea.title}\n\n`;
+    let businessPlan = `# Business Plan: ${enrichedIdea.title}\n\n`;
     businessPlan += `*Generated on ${new Date().toLocaleDateString()}*\n\n`;
+    
+    // Add executive summary from analyzed idea
+    businessPlan += `## Executive Summary\n\n`;
+    businessPlan += `**Problem:** ${enrichedIdea.problem}\n\n`;
+    businessPlan += `**Solution:** ${enrichedIdea.solution || 'See Product & MVP Design section'}\n\n`;
+    businessPlan += `**Target User:** ${enrichedIdea.target_user || 'See Idea-Founder Fit section'}\n\n`;
     businessPlan += `---\n\n`;
 
     for (const workflowType of WORKFLOW_TYPES) {
@@ -266,7 +395,8 @@ serve(async (req) => {
           metadata: { 
             type: "full_business_plan",
             sections: Object.keys(results),
-            idea_title: idea.title,
+            idea_title: enrichedIdea.title,
+            analyzed_from_raw: !!rawIdea,
           },
         });
 
@@ -277,13 +407,14 @@ serve(async (req) => {
         .eq("id", workflowRun.id);
     }
 
-    console.log(`Business plan generated successfully for: ${idea.title}`);
+    console.log(`Business plan generated successfully for: ${enrichedIdea.title}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         businessPlan,
         workflowRunId: workflowRun?.id,
+        enrichedIdea: rawIdea ? enrichedIdea : null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
