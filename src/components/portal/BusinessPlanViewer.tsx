@@ -182,14 +182,14 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
     
     // Priority-ordered keywords for each section (first match wins)
     const sectionPatterns: { key: string; patterns: string[] }[] = [
-      { key: 'idea_founder_fit', patterns: ['founder fit', 'founder-fit', 'idea-founder', 'why you', 'founder motivation'] },
+      { key: 'idea_founder_fit', patterns: ['founder fit', 'founder-fit', 'idea-founder', 'why you', 'founder motivation', 'problem statement', 'initial hypothesis'] },
       { key: 'competitive_landscape', patterns: ['competitive landscape', 'competitive analysis', 'competition', 'competitors', 'market landscape', 'market analysis', 'market map', 'competitor grid', 'whitespace'] },
       { key: 'risk_moat_builder', patterns: ['risk', 'moat', 'defensibility', 'barriers', 'swot', 'strategic advisor'] },
-      { key: 'product_mvp_design', patterns: ['mvp', 'product design', 'product roadmap', 'minimum viable', 'features', 'product strategy', 'user journey', 'wireframe'] },
-      { key: 'team_talent', patterns: ['team', 'talent', 'hiring', 'co-founder', 'roles', 'founding team', 'personnel'] },
-      { key: 'launch_plan', patterns: ['launch', 'go-to-market', 'gtm', 'marketing strategy', 'growth', 'acquisition', 'distribution'] },
-      { key: 'school_advantage', patterns: ['school', 'university', 'campus', 'student', 'academic', 'college', 'education'] },
-      { key: 'funding_pitch', patterns: ['funding', 'pitch', 'investor', 'raise', 'capital', 'valuation', 'investment', 'deck'] },
+      { key: 'product_mvp_design', patterns: ['mvp', 'product design', 'product roadmap', 'minimum viable', 'features', 'product strategy', 'user journey', 'wireframe', 'tech stack'] },
+      { key: 'team_talent', patterns: ['team', 'talent', 'hiring', 'co-founder', 'roles', 'founding team', 'personnel', 'org chart'] },
+      { key: 'launch_plan', patterns: ['launch', 'go-to-market', 'gtm', 'marketing strategy', 'growth', 'acquisition', 'distribution', 'launch checklist', 'metrics dashboard'] },
+      { key: 'school_advantage', patterns: ['school', 'university', 'campus', 'student', 'academic', 'college', 'education', 'university advantage', 'university resource'] },
+      { key: 'funding_pitch', patterns: ['funding', 'pitch', 'investor', 'raise', 'capital', 'valuation', 'investment', 'deck', 'fundraising', 'one-page pitch', 'investor intro'] },
     ];
 
     for (const part of parts) {
