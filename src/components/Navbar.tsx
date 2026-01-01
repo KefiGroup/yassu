@@ -30,12 +30,16 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
-            Sign In
-          </Button>
-          <Button variant="hero" size="sm">
-            Join Waitlist
-          </Button>
+          <a href="/auth">
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
+              Sign In
+            </Button>
+          </a>
+          <a href="/auth">
+            <Button variant="hero" size="sm">
+              Get Started
+            </Button>
+          </a>
         </div>
       </div>
     </motion.nav>
