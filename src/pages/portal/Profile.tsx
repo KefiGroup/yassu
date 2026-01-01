@@ -25,8 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { User, Save, Plus, X, CheckCircle, AlertCircle, Linkedin, Upload, ExternalLink, Loader2, Wand2 } from 'lucide-react';
-import { firecrawlApi } from '@/lib/api/firecrawl';
+import { User, Save, Plus, X, CheckCircle, AlertCircle, Linkedin, ExternalLink, Upload } from 'lucide-react';
 
 interface University {
   id: string;
@@ -42,9 +41,6 @@ export default function Profile() {
   const [newSkill, setNewSkill] = useState('');
   const [newInterest, setNewInterest] = useState('');
   const [linkedinDialogOpen, setLinkedinDialogOpen] = useState(false);
-  const [scrapeDialogOpen, setScrapeDialogOpen] = useState(false);
-  const [linkedinUrlToScrape, setLinkedinUrlToScrape] = useState('');
-  const [isScraping, setIsScraping] = useState(false);
   const [linkedinImportData, setLinkedinImportData] = useState({
     headline: '',
     summary: '',
@@ -164,88 +160,6 @@ export default function Profile() {
     });
   };
 
-  const handleLinkedinScrape = async () => {
-    if (!linkedinUrlToScrape.trim()) {
-      toast({
-        title: 'URL required',
-        description: 'Please enter your LinkedIn profile URL',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!linkedinUrlToScrape.includes('linkedin.com/in/')) {
-      toast({
-        title: 'Invalid LinkedIn URL',
-        description: 'Please enter a valid LinkedIn profile URL (e.g., linkedin.com/in/yourname)',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsScraping(true);
-
-    try {
-      const response = await firecrawlApi.scrape(linkedinUrlToScrape, {
-        formats: ['markdown'],
-        onlyMainContent: true,
-        waitFor: 5000,
-      });
-
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to scrape LinkedIn profile');
-      }
-
-      const markdown = response.data?.markdown || response.data?.data?.markdown || '';
-      
-      if (!markdown || markdown.length < 100) {
-        toast({
-          title: 'Limited data retrieved',
-          description: 'LinkedIn blocks most scraping attempts. Try the manual import instead.',
-          variant: 'destructive',
-        });
-        setScrapeDialogOpen(false);
-        setLinkedinDialogOpen(true);
-        return;
-      }
-
-      const lines = markdown.split('\n').filter((l: string) => l.trim());
-      const nameMatch = markdown.match(/^#\s*(.+)$/m) || markdown.match(/^(.+?)\s*[-|]/m);
-      const extractedName = nameMatch ? nameMatch[1].trim() : '';
-      const headlineMatch = markdown.match(/(?:^|\n)([A-Z][^.\n]{10,100})(?:\n|$)/);
-      const extractedHeadline = headlineMatch ? headlineMatch[1].trim() : '';
-      const skillsMatch = markdown.match(/skills?:?\s*([^\n]+)/i);
-      const extractedSkills = skillsMatch ? skillsMatch[1].trim() : '';
-
-      if (extractedName) {
-        setFormData(prev => ({ ...prev, full_name: extractedName }));
-      }
-      
-      setLinkedinImportData({
-        headline: extractedHeadline,
-        summary: markdown.slice(0, 1500),
-        skills: extractedSkills,
-        experience: '',
-      });
-
-      setScrapeDialogOpen(false);
-      setLinkedinDialogOpen(true);
-
-      toast({
-        title: 'Data scraped!',
-        description: 'Review the extracted data below and edit as needed before importing.',
-      });
-    } catch (error) {
-      console.error('Scrape error:', error);
-      toast({
-        title: 'Scraping failed',
-        description: error instanceof Error ? error.message : 'LinkedIn blocks automated access. Try manual import.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsScraping(false);
-    }
-  };
 
   const addSkill = () => {
     if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
@@ -339,82 +253,17 @@ export default function Profile() {
               <div>
                 <p className="font-medium">Import from LinkedIn</p>
                 <p className="text-sm text-muted-foreground">
-                  Quickly populate your profile with your LinkedIn information
+                  Copy your info from LinkedIn to quickly fill your profile
                 </p>
               </div>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              {/* Auto Scrape Dialog */}
-              <Dialog open={scrapeDialogOpen} onOpenChange={setScrapeDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="default" size="sm" className="gap-2 bg-[#0A66C2] hover:bg-[#004182] flex-1 sm:flex-none">
-                    <Wand2 className="w-4 h-4" />
-                    Auto Import
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Wand2 className="w-5 h-5 text-[#0A66C2]" />
-                      Quick Import from LinkedIn
-                    </DialogTitle>
-                    <DialogDescription>
-                      We'll extract your name, headline, and skills from your public profile.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="linkedin-url-scrape">Your LinkedIn URL</Label>
-                      <Input
-                        id="linkedin-url-scrape"
-                        value={linkedinUrlToScrape}
-                        onChange={(e) => setLinkedinUrlToScrape(e.target.value)}
-                        placeholder="linkedin.com/in/yourname"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Paste your full LinkedIn profile URL
-                      </p>
-                    </div>
-                    
-                    {!isScraping && (
-                      <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-                        <p className="font-medium text-muted-foreground">What we'll import:</p>
-                        <ul className="text-xs text-muted-foreground list-disc list-inside">
-                          <li>Full name</li>
-                          <li>Professional headline</li>
-                          <li>Skills (if public)</li>
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {isScraping && (
-                      <div className="flex items-center justify-center gap-3 p-4">
-                        <Loader2 className="w-5 h-5 animate-spin text-[#0A66C2]" />
-                        <span className="text-sm">Fetching your profile...</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setScrapeDialogOpen(false)} disabled={isScraping}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleLinkedinScrape} 
-                      disabled={isScraping || !linkedinUrlToScrape.trim()}
-                      className="gap-2 bg-[#0A66C2] hover:bg-[#004182]"
-                    >
-                      {isScraping ? 'Importing...' : 'Import Profile'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
               {/* Manual Import Dialog */}
               <Dialog open={linkedinDialogOpen} onOpenChange={setLinkedinDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
-                    <Upload className="w-4 h-4" />
-                    Manual
+                  <Button variant="default" size="sm" className="gap-2 bg-[#0A66C2] hover:bg-[#004182] flex-1 sm:flex-none">
+                    <Linkedin className="w-4 h-4" />
+                    Import from LinkedIn
                   </Button>
                 </DialogTrigger>
               <DialogContent className="sm:max-w-lg">
