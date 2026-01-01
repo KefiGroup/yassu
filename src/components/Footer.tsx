@@ -12,7 +12,7 @@ const Footer = () => {
           className="flex flex-col md:flex-row items-center justify-between gap-6"
         >
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-pink-400 flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">Y</span>
             </div>
             <span className="text-xl font-bold text-foreground">Yassu</span>

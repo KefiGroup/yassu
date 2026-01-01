@@ -6,8 +6,8 @@ const Vision = () => {
   return (
     <section className="py-32 relative overflow-hidden">
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-purple-500/5 to-transparent" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-gradient-to-r from-primary/20 via-purple-500/10 to-accent/20 rounded-full blur-3xl opacity-50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-pink-200/5 to-transparent" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-gradient-to-r from-primary/10 via-pink-300/10 to-accent/10 rounded-full blur-3xl opacity-50" />
 
       <div className="container mx-auto px-6 relative z-10">
         <motion.div

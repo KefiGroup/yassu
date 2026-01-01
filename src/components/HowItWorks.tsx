@@ -55,9 +55,9 @@ const HowItWorks = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="relative group"
             >
-              <div className="glass rounded-2xl p-6 h-full hover:border-primary/30 transition-all duration-300 hover:glow-primary">
+              <div className="glass rounded-2xl p-6 h-full hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center group-hover:from-primary/30 group-hover:to-purple-500/30 transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-pink-300/20 flex items-center justify-center group-hover:from-primary/30 group-hover:to-pink-300/30 transition-colors">
                     <step.icon className="w-6 h-6 text-primary" />
                   </div>
                   <span className="text-4xl font-bold text-muted-foreground/30 group-hover:text-primary/30 transition-colors">

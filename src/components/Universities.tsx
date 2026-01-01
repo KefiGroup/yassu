@@ -42,9 +42,9 @@ const Universities = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
-              className="glass rounded-2xl p-6 text-center hover:border-primary/30 transition-all duration-300 group hover:glow-primary"
+              className="glass rounded-2xl p-6 text-center hover:border-primary/40 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10"
             >
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 flex items-center justify-center group-hover:from-primary/20 group-hover:to-purple-500/20 transition-colors">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-pink-300/10 flex items-center justify-center group-hover:from-primary/20 group-hover:to-pink-300/20 transition-colors">
                 <GraduationCap className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-1">{uni.name}</h3>
