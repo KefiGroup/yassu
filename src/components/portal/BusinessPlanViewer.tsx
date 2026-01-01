@@ -61,13 +61,13 @@ const SECTION_ICONS: Record<string, any> = {
 
 const SECTION_LABELS: Record<string, string> = {
   idea_founder_fit: 'Founder Fit',
-  competitive_landscape: 'Competition',
+  competitive_landscape: 'Competitive Landscape',
   risk_moat_builder: 'Risk & Moat',
   product_mvp_design: 'MVP Design',
-  team_talent: 'Team',
-  launch_plan: 'Launch',
-  school_advantage: 'University',
-  funding_pitch: 'Funding',
+  team_talent: 'Team & Talent',
+  launch_plan: 'Launch Plan',
+  school_advantage: 'School Advantage',
+  funding_pitch: 'Funding Pitch',
 };
 
 export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) {
@@ -180,26 +180,17 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
     // Split by ## headers
     const parts = content.split(/(?=^##\s)/m);
     
-    const keyMapping: Record<string, string> = {
-      'founder': 'idea_founder_fit',
-      'fit': 'idea_founder_fit',
-      'competitive': 'competitive_landscape',
-      'competition': 'competitive_landscape',
-      'risk': 'risk_moat_builder',
-      'moat': 'risk_moat_builder',
-      'product': 'product_mvp_design',
-      'mvp': 'product_mvp_design',
-      'team': 'team_talent',
-      'talent': 'team_talent',
-      'launch': 'launch_plan',
-      'market': 'launch_plan',
-      'go-to-market': 'launch_plan',
-      'university': 'school_advantage',
-      'school': 'school_advantage',
-      'campus': 'school_advantage',
-      'funding': 'funding_pitch',
-      'pitch': 'funding_pitch',
-    };
+    // Priority-ordered keywords for each section (first match wins)
+    const sectionPatterns: { key: string; patterns: string[] }[] = [
+      { key: 'idea_founder_fit', patterns: ['founder fit', 'founder-fit', 'idea-founder', 'why you'] },
+      { key: 'competitive_landscape', patterns: ['competitive landscape', 'competitive analysis', 'competition', 'competitors', 'market landscape'] },
+      { key: 'risk_moat_builder', patterns: ['risk', 'moat', 'defensibility', 'barriers'] },
+      { key: 'product_mvp_design', patterns: ['mvp', 'product design', 'product roadmap', 'minimum viable', 'features'] },
+      { key: 'team_talent', patterns: ['team', 'talent', 'hiring', 'co-founder', 'roles'] },
+      { key: 'launch_plan', patterns: ['launch', 'go-to-market', 'gtm', 'marketing strategy', 'growth'] },
+      { key: 'school_advantage', patterns: ['school', 'university', 'campus', 'student', 'academic'] },
+      { key: 'funding_pitch', patterns: ['funding', 'pitch', 'investor', 'raise', 'capital', 'valuation'] },
+    ];
 
     for (const part of parts) {
       if (!part.startsWith('##')) continue;
@@ -208,11 +199,12 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
       const titleLine = lines[0].replace(/^##\s*\d*\.?\s*/, '').trim();
       const contentText = lines.slice(1).join('\n').trim();
       
-      // Find matching key
+      // Find matching key using priority-ordered patterns
       const lowerTitle = titleLine.toLowerCase();
       let matchedKey = 'other';
-      for (const [keyword, key] of Object.entries(keyMapping)) {
-        if (lowerTitle.includes(keyword)) {
+      
+      for (const { key, patterns } of sectionPatterns) {
+        if (patterns.some(pattern => lowerTitle.includes(pattern))) {
           matchedKey = key;
           break;
         }
