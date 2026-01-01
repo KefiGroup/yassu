@@ -269,21 +269,21 @@ export default function Profile() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-4">
-              <div className="relative group">
-                <Avatar className="h-16 w-16">
+              <div className="relative">
+                <Avatar className="h-20 w-20">
                   <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+                  <AvatarFallback className="text-xl bg-primary text-primary-foreground">
                     {getInitials(formData.full_name)}
                   </AvatarFallback>
                 </Avatar>
                 <label 
                   htmlFor="avatar-upload"
-                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  className="absolute -bottom-1 -right-1 p-1.5 bg-primary rounded-full cursor-pointer hover:bg-primary/90 transition-colors shadow-md"
                 >
                   {uploadingAvatar ? (
-                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    <Loader2 className="w-4 h-4 text-primary-foreground animate-spin" />
                   ) : (
-                    <Camera className="w-5 h-5 text-white" />
+                    <Camera className="w-4 h-4 text-primary-foreground" />
                   )}
                 </label>
                 <input
@@ -297,7 +297,7 @@ export default function Profile() {
               </div>
               <div>
                 <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Your public profile details</CardDescription>
+                <CardDescription>Click the camera icon to upload your headshot</CardDescription>
               </div>
             </div>
           </CardHeader>
