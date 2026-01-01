@@ -349,54 +349,61 @@ export default function Profile() {
                 <DialogTrigger asChild>
                   <Button variant="default" size="sm" className="gap-2 bg-[#0A66C2] hover:bg-[#004182] flex-1 sm:flex-none">
                     <Wand2 className="w-4 h-4" />
-                    Auto Scrape
+                    Auto Import
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <Wand2 className="w-5 h-5 text-[#0A66C2]" />
-                      Auto-Import from LinkedIn
+                      Quick Import from LinkedIn
                     </DialogTitle>
                     <DialogDescription>
-                      Enter your LinkedIn profile URL and we'll try to extract your information automatically.
+                      We'll extract your name, headline, and skills from your public profile.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
-                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-700">
-                      <p className="font-medium">Note: LinkedIn blocks most scraping</p>
-                      <p className="text-xs mt-1">If this doesn't work, use the manual import option instead.</p>
-                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="linkedin-url-scrape">LinkedIn Profile URL</Label>
+                      <Label htmlFor="linkedin-url-scrape">Your LinkedIn URL</Label>
                       <Input
                         id="linkedin-url-scrape"
                         value={linkedinUrlToScrape}
                         onChange={(e) => setLinkedinUrlToScrape(e.target.value)}
-                        placeholder="https://linkedin.com/in/yourname"
+                        placeholder="linkedin.com/in/yourname"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Paste your full LinkedIn profile URL
+                      </p>
                     </div>
+                    
+                    {!isScraping && (
+                      <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
+                        <p className="font-medium text-muted-foreground">What we'll import:</p>
+                        <ul className="text-xs text-muted-foreground list-disc list-inside">
+                          <li>Full name</li>
+                          <li>Professional headline</li>
+                          <li>Skills (if public)</li>
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {isScraping && (
+                      <div className="flex items-center justify-center gap-3 p-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-[#0A66C2]" />
+                        <span className="text-sm">Fetching your profile...</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setScrapeDialogOpen(false)}>
+                    <Button variant="outline" onClick={() => setScrapeDialogOpen(false)} disabled={isScraping}>
                       Cancel
                     </Button>
                     <Button 
                       onClick={handleLinkedinScrape} 
-                      disabled={isScraping}
+                      disabled={isScraping || !linkedinUrlToScrape.trim()}
                       className="gap-2 bg-[#0A66C2] hover:bg-[#004182]"
                     >
-                      {isScraping ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Scraping...
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4" />
-                          Scrape Profile
-                        </>
-                      )}
+                      {isScraping ? 'Importing...' : 'Import Profile'}
                     </Button>
                   </div>
                 </DialogContent>
