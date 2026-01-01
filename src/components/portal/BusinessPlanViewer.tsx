@@ -173,34 +173,119 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
   };
 
   // Parse sections from the full business plan
-  const parseSections = (content: string) => {
-    const sections: Record<string, string> = {};
-    const sectionHeaders = [
-      'Idea-Founder Fit',
-      'Competitive Landscape',
-      'Risk & Moat Analysis',
-      'Product & MVP Design',
-      'Team & Talent Strategy',
-      'Go-to-Market Plan',
-      'University Advantage',
-      'Funding & Pitch',
-    ];
+  const parseSections = (content: string): { key: string; title: string; content: string }[] => {
+    const sections: { key: string; title: string; content: string }[] = [];
+    
+    // Split by ## headers
+    const parts = content.split(/(?=^##\s)/m);
+    
+    const keyMapping: Record<string, string> = {
+      'founder': 'idea_founder_fit',
+      'fit': 'idea_founder_fit',
+      'competitive': 'competitive_landscape',
+      'competition': 'competitive_landscape',
+      'risk': 'risk_moat_builder',
+      'moat': 'risk_moat_builder',
+      'product': 'product_mvp_design',
+      'mvp': 'product_mvp_design',
+      'team': 'team_talent',
+      'talent': 'team_talent',
+      'launch': 'launch_plan',
+      'market': 'launch_plan',
+      'go-to-market': 'launch_plan',
+      'university': 'school_advantage',
+      'school': 'school_advantage',
+      'campus': 'school_advantage',
+      'funding': 'funding_pitch',
+      'pitch': 'funding_pitch',
+    };
 
-    for (let i = 0; i < sectionHeaders.length; i++) {
-      const start = content.indexOf(`## ${sectionHeaders[i]}`);
-      if (start === -1) continue;
-
-      const nextStart = i + 1 < sectionHeaders.length 
-        ? content.indexOf(`## ${sectionHeaders[i + 1]}`)
-        : content.length;
-
-      const sectionContent = content.slice(start, nextStart !== -1 ? nextStart : undefined);
-      const key = Object.keys(SECTION_LABELS).find(k => SECTION_LABELS[k] === sectionHeaders[i].split(' ')[0]) 
-        || sectionHeaders[i].toLowerCase().replace(/\s+/g, '_');
-      sections[key] = sectionContent;
+    for (const part of parts) {
+      if (!part.startsWith('##')) continue;
+      
+      const lines = part.split('\n');
+      const titleLine = lines[0].replace(/^##\s*\d*\.?\s*/, '').trim();
+      const contentText = lines.slice(1).join('\n').trim();
+      
+      // Find matching key
+      const lowerTitle = titleLine.toLowerCase();
+      let matchedKey = 'other';
+      for (const [keyword, key] of Object.entries(keyMapping)) {
+        if (lowerTitle.includes(keyword)) {
+          matchedKey = key;
+          break;
+        }
+      }
+      
+      sections.push({
+        key: matchedKey,
+        title: titleLine,
+        content: contentText,
+      });
     }
 
     return sections;
+  };
+
+  // Markdown components for rendering
+  const markdownComponents = {
+    table: ({ children }: any) => (
+      <div className="overflow-x-auto my-4">
+        <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden text-sm">
+          {children}
+        </table>
+      </div>
+    ),
+    thead: ({ children }: any) => (
+      <thead className="bg-muted/50">{children}</thead>
+    ),
+    th: ({ children }: any) => (
+      <th className="border border-border px-3 py-2 text-left font-semibold text-foreground text-xs">
+        {children}
+      </th>
+    ),
+    td: ({ children }: any) => (
+      <td className="border border-border px-3 py-2 text-muted-foreground text-sm">
+        {children}
+      </td>
+    ),
+    tr: ({ children }: any) => (
+      <tr className="even:bg-muted/20">{children}</tr>
+    ),
+    h3: ({ children }: any) => (
+      <h3 className="text-base font-semibold text-foreground mt-4 mb-2">
+        {children}
+      </h3>
+    ),
+    h4: ({ children }: any) => (
+      <h4 className="text-sm font-medium text-foreground mt-3 mb-1">
+        {children}
+      </h4>
+    ),
+    p: ({ children }: any) => (
+      <p className="text-muted-foreground mb-3 leading-relaxed text-sm">{children}</p>
+    ),
+    ul: ({ children }: any) => (
+      <ul className="list-disc list-outside ml-4 space-y-1 mb-4 text-muted-foreground text-sm">
+        {children}
+      </ul>
+    ),
+    ol: ({ children }: any) => (
+      <ol className="list-decimal list-outside ml-4 space-y-1 mb-4 text-muted-foreground text-sm">
+        {children}
+      </ol>
+    ),
+    li: ({ children }: any) => (
+      <li className="text-muted-foreground">{children}</li>
+    ),
+    strong: ({ children }: any) => (
+      <strong className="font-semibold text-foreground">{children}</strong>
+    ),
+    blockquote: ({ children }: any) => (
+      <blockquote className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground bg-muted/20 py-2 rounded-r">
+        {children}
+      </blockquote>
+    ),
   };
 
   if (loading) {
@@ -252,7 +337,15 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
     );
   }
 
-  const sections = artifact?.content ? parseSections(artifact.content) : {};
+  const parsedSections = artifact?.content ? parseSections(artifact.content) : [];
+
+  // Create a lookup for individual section tabs
+  const sectionLookup: Record<string, string> = {};
+  for (const section of parsedSections) {
+    if (!sectionLookup[section.key]) {
+      sectionLookup[section.key] = section.content;
+    }
+  }
 
   return (
     <motion.div
@@ -332,142 +425,63 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
                 </TabsList>
 
                 <TabsContent value="full" className="mt-0">
-                  <div className="prose prose-sm dark:prose-invert max-w-none max-h-[600px] overflow-y-auto p-4 bg-muted/30 rounded-lg">
-                    <ReactMarkdown
-                      components={{
-                        table: ({ children }) => (
-                          <div className="overflow-x-auto my-4">
-                            <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden">
-                              {children}
-                            </table>
-                          </div>
-                        ),
-                        thead: ({ children }) => (
-                          <thead className="bg-muted/50">{children}</thead>
-                        ),
-                        th: ({ children }) => (
-                          <th className="border border-border px-4 py-2 text-left font-semibold text-foreground">
-                            {children}
-                          </th>
-                        ),
-                        td: ({ children }) => (
-                          <td className="border border-border px-4 py-2 text-muted-foreground">
-                            {children}
-                          </td>
-                        ),
-                        tr: ({ children }) => (
-                          <tr className="even:bg-muted/20">{children}</tr>
-                        ),
-                        h1: ({ children }) => (
-                          <h1 className="text-2xl font-bold text-foreground mt-6 mb-4 pb-2 border-b border-border">
-                            {children}
-                          </h1>
-                        ),
-                        h2: ({ children }) => (
-                          <h2 className="text-xl font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">
-                            {children}
-                          </h2>
-                        ),
-                        h3: ({ children }) => (
-                          <h3 className="text-lg font-medium text-foreground mt-4 mb-2">
-                            {children}
-                          </h3>
-                        ),
-                        p: ({ children }) => (
-                          <p className="text-muted-foreground mb-3 leading-relaxed">{children}</p>
-                        ),
-                        ul: ({ children }) => (
-                          <ul className="list-disc list-inside space-y-1 mb-4 text-muted-foreground">
-                            {children}
-                          </ul>
-                        ),
-                        ol: ({ children }) => (
-                          <ol className="list-decimal list-inside space-y-1 mb-4 text-muted-foreground">
-                            {children}
-                          </ol>
-                        ),
-                        li: ({ children }) => (
-                          <li className="text-muted-foreground">{children}</li>
-                        ),
-                        strong: ({ children }) => (
-                          <strong className="font-semibold text-foreground">{children}</strong>
-                        ),
-                        blockquote: ({ children }) => (
-                          <blockquote className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground">
-                            {children}
-                          </blockquote>
-                        ),
-                      }}
-                    >
-                      {artifact.content}
-                    </ReactMarkdown>
+                  <div className="max-h-[700px] overflow-y-auto space-y-4 pr-2">
+                    {parsedSections.map((section, index) => {
+                      const Icon = SECTION_ICONS[section.key] || FileText;
+                      return (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Card className="border border-border/50 bg-card/50">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="flex items-center gap-2 text-base">
+                                <div className="p-1.5 rounded-md bg-primary/10">
+                                  <Icon className="w-4 h-4 text-primary" />
+                                </div>
+                                {section.title}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <div className="prose prose-sm dark:prose-invert max-w-none">
+                                <ReactMarkdown components={markdownComponents}>
+                                  {section.content}
+                                </ReactMarkdown>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </TabsContent>
 
-                {Object.keys(SECTION_LABELS).map((key) => (
-                  <TabsContent key={key} value={key} className="mt-0">
-                    <div className="prose prose-sm dark:prose-invert max-w-none max-h-[600px] overflow-y-auto p-4 bg-muted/30 rounded-lg">
-                      <ReactMarkdown
-                        components={{
-                          table: ({ children }) => (
-                            <div className="overflow-x-auto my-4">
-                              <table className="min-w-full border-collapse border border-border rounded-lg overflow-hidden">
-                                {children}
-                              </table>
+                {Object.keys(SECTION_LABELS).map((key) => {
+                  const Icon = SECTION_ICONS[key];
+                  return (
+                    <TabsContent key={key} value={key} className="mt-0">
+                      <Card className="border border-border/50 bg-card/50">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <div className="p-2 rounded-md bg-primary/10">
+                              <Icon className="w-5 h-5 text-primary" />
                             </div>
-                          ),
-                          thead: ({ children }) => (
-                            <thead className="bg-muted/50">{children}</thead>
-                          ),
-                          th: ({ children }) => (
-                            <th className="border border-border px-4 py-2 text-left font-semibold text-foreground">
-                              {children}
-                            </th>
-                          ),
-                          td: ({ children }) => (
-                            <td className="border border-border px-4 py-2 text-muted-foreground">
-                              {children}
-                            </td>
-                          ),
-                          tr: ({ children }) => (
-                            <tr className="even:bg-muted/20">{children}</tr>
-                          ),
-                          h2: ({ children }) => (
-                            <h2 className="text-xl font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">
-                              {children}
-                            </h2>
-                          ),
-                          h3: ({ children }) => (
-                            <h3 className="text-lg font-medium text-foreground mt-4 mb-2">
-                              {children}
-                            </h3>
-                          ),
-                          p: ({ children }) => (
-                            <p className="text-muted-foreground mb-3 leading-relaxed">{children}</p>
-                          ),
-                          ul: ({ children }) => (
-                            <ul className="list-disc list-inside space-y-1 mb-4 text-muted-foreground">
-                              {children}
-                            </ul>
-                          ),
-                          ol: ({ children }) => (
-                            <ol className="list-decimal list-inside space-y-1 mb-4 text-muted-foreground">
-                              {children}
-                            </ol>
-                          ),
-                          li: ({ children }) => (
-                            <li className="text-muted-foreground">{children}</li>
-                          ),
-                          strong: ({ children }) => (
-                            <strong className="font-semibold text-foreground">{children}</strong>
-                          ),
-                        }}
-                      >
-                        {sections[key] || `No ${SECTION_LABELS[key]} analysis available.`}
-                      </ReactMarkdown>
-                    </div>
-                  </TabsContent>
-                ))}
+                            {SECTION_LABELS[key]}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="prose prose-sm dark:prose-invert max-w-none max-h-[500px] overflow-y-auto">
+                            <ReactMarkdown components={markdownComponents}>
+                              {sectionLookup[key] || `No ${SECTION_LABELS[key]} analysis available.`}
+                            </ReactMarkdown>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  );
+                })}
               </Tabs>
             </>
           ) : (
