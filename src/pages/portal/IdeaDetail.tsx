@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,17 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import BusinessPlanViewer from '@/components/portal/BusinessPlanViewer';
 import {
   ArrowLeft,
-  User,
   Calendar,
-  Building,
-  Sparkles,
   Users,
   MessageSquare,
   Send,
   Edit,
-  Workflow,
 } from 'lucide-react';
 
 interface Idea {
@@ -323,17 +320,13 @@ export default function IdeaDetail() {
                   Request to Join
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/portal/workflows/run/idea_founder_fit?idea=${idea.id}`)}
-              >
-                <Workflow className="w-4 h-4 mr-2" />
-                Run Workflow
-              </Button>
             </div>
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Business Plan Section */}
+      <BusinessPlanViewer ideaId={ideaId!} />
 
       {/* Comments */}
       <motion.div

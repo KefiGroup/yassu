@@ -96,11 +96,22 @@ export default function CreateIdea() {
       );
     }
 
-    setSaving(false);
+    // Trigger automatic business plan generation
     toast({
       title: 'Idea posted!',
-      description: 'Your idea is now visible in the marketplace.',
+      description: 'Generating your AI business plan... This may take a minute.',
     });
+
+    // Fire and forget - the business plan will be generated in the background
+    supabase.functions.invoke('generate-business-plan', {
+      body: { ideaId: idea.id },
+    }).then(() => {
+      console.log('Business plan generation started');
+    }).catch((err) => {
+      console.error('Business plan generation error:', err);
+    });
+
+    setSaving(false);
     navigate(`/portal/ideas/${idea.id}`);
   };
 
