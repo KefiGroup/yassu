@@ -76,7 +76,7 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
   const [regenerating, setRegenerating] = useState(false);
   const [workflowRun, setWorkflowRun] = useState<WorkflowRun | null>(null);
   const [artifact, setArtifact] = useState<WorkflowArtifact | null>(null);
-  const [activeSection, setActiveSection] = useState('idea_founder_fit');
+  const [activeSection, setActiveSection] = useState('full');
 
   const fetchBusinessPlan = async () => {
     setLoading(true);
@@ -411,21 +411,53 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
 
               <Tabs value={activeSection} onValueChange={setActiveSection}>
                 <TabsList className="flex flex-wrap h-auto gap-1 mb-4">
+                  <TabsTrigger value="full" className="text-xs">
+                    Full Plan
+                  </TabsTrigger>
                   {Object.keys(SECTION_LABELS).map((key) => {
                     const Icon = SECTION_ICONS[key];
-                    const hasContent = !!sectionLookup[key];
                     return (
-                      <TabsTrigger 
-                        key={key} 
-                        value={key} 
-                        className={`text-xs gap-1 ${!hasContent ? 'opacity-50' : ''}`}
-                      >
+                      <TabsTrigger key={key} value={key} className="text-xs gap-1">
                         {Icon && <Icon className="w-3 h-3" />}
                         {SECTION_LABELS[key]}
                       </TabsTrigger>
                     );
                   })}
                 </TabsList>
+
+                <TabsContent value="full" className="mt-0">
+                  <div className="max-h-[700px] overflow-y-auto space-y-4 pr-2">
+                    {parsedSections.map((section, index) => {
+                      const Icon = SECTION_ICONS[section.key] || FileText;
+                      return (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Card className="border border-border/50 bg-card/50">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="flex items-center gap-2 text-base">
+                                <div className="p-1.5 rounded-md bg-primary/10">
+                                  <Icon className="w-4 h-4 text-primary" />
+                                </div>
+                                {section.title}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <div className="prose prose-sm dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                  {section.content}
+                                </ReactMarkdown>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </TabsContent>
 
                 {Object.keys(SECTION_LABELS).map((key) => {
                   const Icon = SECTION_ICONS[key];
