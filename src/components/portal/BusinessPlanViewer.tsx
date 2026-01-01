@@ -182,14 +182,14 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
     
     // Priority-ordered keywords for each section (first match wins)
     const sectionPatterns: { key: string; patterns: string[] }[] = [
-      { key: 'idea_founder_fit', patterns: ['founder fit', 'founder-fit', 'idea-founder', 'why you'] },
-      { key: 'competitive_landscape', patterns: ['competitive landscape', 'competitive analysis', 'competition', 'competitors', 'market landscape'] },
-      { key: 'risk_moat_builder', patterns: ['risk', 'moat', 'defensibility', 'barriers'] },
-      { key: 'product_mvp_design', patterns: ['mvp', 'product design', 'product roadmap', 'minimum viable', 'features'] },
-      { key: 'team_talent', patterns: ['team', 'talent', 'hiring', 'co-founder', 'roles'] },
-      { key: 'launch_plan', patterns: ['launch', 'go-to-market', 'gtm', 'marketing strategy', 'growth'] },
-      { key: 'school_advantage', patterns: ['school', 'university', 'campus', 'student', 'academic'] },
-      { key: 'funding_pitch', patterns: ['funding', 'pitch', 'investor', 'raise', 'capital', 'valuation'] },
+      { key: 'idea_founder_fit', patterns: ['founder fit', 'founder-fit', 'idea-founder', 'why you', 'founder motivation'] },
+      { key: 'competitive_landscape', patterns: ['competitive landscape', 'competitive analysis', 'competition', 'competitors', 'market landscape', 'market analysis', 'market map', 'competitor grid', 'whitespace'] },
+      { key: 'risk_moat_builder', patterns: ['risk', 'moat', 'defensibility', 'barriers', 'swot', 'strategic advisor'] },
+      { key: 'product_mvp_design', patterns: ['mvp', 'product design', 'product roadmap', 'minimum viable', 'features', 'product strategy', 'user journey', 'wireframe'] },
+      { key: 'team_talent', patterns: ['team', 'talent', 'hiring', 'co-founder', 'roles', 'founding team', 'personnel'] },
+      { key: 'launch_plan', patterns: ['launch', 'go-to-market', 'gtm', 'marketing strategy', 'growth', 'acquisition', 'distribution'] },
+      { key: 'school_advantage', patterns: ['school', 'university', 'campus', 'student', 'academic', 'college', 'education'] },
+      { key: 'funding_pitch', patterns: ['funding', 'pitch', 'investor', 'raise', 'capital', 'valuation', 'investment', 'deck'] },
     ];
 
     for (const part of parts) {
@@ -198,6 +198,9 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
       const lines = part.split('\n');
       const titleLine = lines[0].replace(/^##\s*\d*\.?\s*/, '').trim();
       const contentText = lines.slice(1).join('\n').trim();
+      
+      // Skip empty sections or section headers only
+      if (!contentText || contentText.length < 10) continue;
       
       // Find matching key using priority-ordered patterns
       const lowerTitle = titleLine.toLowerCase();
