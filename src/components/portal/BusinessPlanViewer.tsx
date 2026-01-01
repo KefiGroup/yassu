@@ -91,6 +91,11 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
     if (runs && runs.length > 0) {
       setWorkflowRun(runs[0]);
 
+      // If completed, stop regenerating state
+      if (runs[0].status === 'completed') {
+        setRegenerating(false);
+      }
+
       // Fetch the artifact
       const { data: artifacts } = await supabase
         .from('workflow_artifacts')
@@ -109,16 +114,18 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
 
   useEffect(() => {
     fetchBusinessPlan();
+  }, [ideaId]);
 
-    // Poll for updates if the workflow is running
+  // Poll for updates if the workflow is running
+  useEffect(() => {
+    if (workflowRun?.status !== 'running' && !regenerating) return;
+
     const interval = setInterval(async () => {
-      if (workflowRun?.status === 'running') {
-        await fetchBusinessPlan();
-      }
-    }, 5000);
+      await fetchBusinessPlan();
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, [ideaId, workflowRun?.status]);
+  }, [workflowRun?.status, regenerating]);
 
   const handleRegenerate = async () => {
     setRegenerating(true);
@@ -131,19 +138,22 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
       if (error) throw error;
 
       toast({
-        title: 'Regenerating business plan',
+        title: 'Generating business plan',
         description: 'This may take a minute. The page will update automatically.',
       });
 
-      // Start polling
-      setWorkflowRun(prev => prev ? { ...prev, status: 'running' } : null);
+      // Set a temporary running state to trigger polling
+      setWorkflowRun({ id: '', status: 'running', created_at: new Date().toISOString(), completed_at: null });
+      
+      // Fetch after a short delay to get the new workflow run
+      setTimeout(() => fetchBusinessPlan(), 2000);
     } catch (error) {
+      console.error('Error generating plan:', error);
       toast({
-        title: 'Error regenerating plan',
+        title: 'Error generating plan',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
-    } finally {
       setRegenerating(false);
     }
   };
