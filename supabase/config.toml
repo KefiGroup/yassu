@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.run-workflow]
 verify_jwt = false
+
+[functions.import-linkedin]
+verify_jwt = false

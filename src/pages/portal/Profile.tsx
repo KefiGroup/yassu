@@ -17,8 +17,9 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { User, Save, Plus, X, CheckCircle, AlertCircle, Camera, Loader2 } from 'lucide-react';
+import { User, Save, Plus, X, CheckCircle, AlertCircle, Camera, Loader2, Linkedin } from 'lucide-react';
 import { ImageCropper } from '@/components/ImageCropper';
+import { LinkedInImportModal } from '@/components/LinkedInImportModal';
 
 interface University {
   id: string;
@@ -36,6 +37,7 @@ export default function Profile() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     bio: '',
@@ -230,6 +232,16 @@ export default function Profile() {
     setFormData({ ...formData, interests: formData.interests.filter((i) => i !== interest) });
   };
 
+  const handleLinkedInImport = useCallback((bio: string, skills: string[]) => {
+    // Merge new skills with existing, avoiding duplicates
+    const mergedSkills = [...new Set([...formData.skills, ...skills])];
+    setFormData({ 
+      ...formData, 
+      bio,
+      skills: mergedSkills,
+    });
+  }, [formData]);
+
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name
@@ -239,6 +251,8 @@ export default function Profile() {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  const isUniversityMissing = !formData.university_id || (formData.university_id === 'other' && !formData.other_university.trim());
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -273,12 +287,19 @@ export default function Profile() {
             ) : (
               <>
                 <AlertCircle className="w-5 h-5 text-amber-500" />
-                <div>
+                <div className="flex-1">
                   <p className="font-medium text-amber-700">Pending Verification</p>
                   <p className="text-sm text-muted-foreground">
-                    Complete your profile with university details to get verified
+                    {isUniversityMissing 
+                      ? 'Please select your university below to enable verification'
+                      : 'Complete your profile with university details to get verified'}
                   </p>
                 </div>
+                {isUniversityMissing && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-600">
+                    University Required
+                  </Badge>
+                )}
               </>
             )}
           </CardContent>
@@ -344,7 +365,19 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio">Bio / Summary</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bio">Bio / Summary</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLinkedInModalOpen(true)}
+                  className="gap-2"
+                >
+                  <Linkedin className="w-4 h-4" />
+                  Import from LinkedIn
+                </Button>
+              </div>
               <Textarea
                 id="bio"
                 value={formData.bio}
@@ -543,6 +576,13 @@ export default function Profile() {
           aspectRatio={1}
         />
       )}
+
+      {/* LinkedIn Import Modal */}
+      <LinkedInImportModal
+        open={linkedInModalOpen}
+        onOpenChange={setLinkedInModalOpen}
+        onApply={handleLinkedInImport}
+      />
     </div>
   );
 }
