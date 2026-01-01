@@ -15,17 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { User, Save, Plus, X, CheckCircle, AlertCircle, Linkedin, ExternalLink, Upload } from 'lucide-react';
+import { User, Save, Plus, X, CheckCircle, AlertCircle, Camera, Loader2 } from 'lucide-react';
 
 interface University {
   id: string;
@@ -40,13 +32,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [newSkill, setNewSkill] = useState('');
   const [newInterest, setNewInterest] = useState('');
-  const [linkedinDialogOpen, setLinkedinDialogOpen] = useState(false);
-  const [linkedinImportData, setLinkedinImportData] = useState({
-    headline: '',
-    summary: '',
-    skills: '',
-    experience: '',
-  });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -130,36 +116,72 @@ export default function Profile() {
     }
   };
 
-  const handleLinkedinImport = () => {
-    // Parse skills from comma-separated string
-    const importedSkills = linkedinImportData.skills
-      .split(',')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-    
-    // Combine existing and new skills, removing duplicates
-    const combinedSkills = [...new Set([...formData.skills, ...importedSkills])];
-    
-    // Combine headline and summary for bio
-    const combinedBio = [linkedinImportData.headline, linkedinImportData.summary, linkedinImportData.experience]
-      .filter(s => s.trim())
-      .join('\n\n');
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
 
-    setFormData({
-      ...formData,
-      bio: combinedBio || formData.bio,
-      skills: combinedSkills,
-    });
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload an image file (JPG, PNG, etc.)',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    setLinkedinDialogOpen(false);
-    setLinkedinImportData({ headline: '', summary: '', skills: '', experience: '' });
-    
-    toast({
-      title: 'LinkedIn data imported',
-      description: 'Your profile has been updated with LinkedIn info. Remember to save!',
-    });
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please upload an image smaller than 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      await refreshProfile();
+      toast({
+        title: 'Photo updated',
+        description: 'Your profile photo has been updated.',
+      });
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload photo. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
-
 
   const addSkill = () => {
     if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
@@ -238,123 +260,41 @@ export default function Profile() {
         </Card>
       </motion.div>
 
-      {/* LinkedIn Import Card */}
+      {/* Profile Form */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.15 }}
       >
-        <Card className="border-[#0A66C2]/20 bg-[#0A66C2]/5">
-          <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[#0A66C2]">
-                <Linkedin className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="font-medium">Import from LinkedIn</p>
-                <p className="text-sm text-muted-foreground">
-                  Copy your info from LinkedIn to quickly fill your profile
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              {/* Manual Import Dialog */}
-              <Dialog open={linkedinDialogOpen} onOpenChange={setLinkedinDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="default" size="sm" className="gap-2 bg-[#0A66C2] hover:bg-[#004182] flex-1 sm:flex-none">
-                    <Linkedin className="w-4 h-4" />
-                    Import from LinkedIn
-                  </Button>
-                </DialogTrigger>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Linkedin className="w-5 h-5 text-[#0A66C2]" />
-                    Import from LinkedIn
-                  </DialogTitle>
-                  <DialogDescription>
-                    Copy information from your LinkedIn profile and paste it below. This helps build your startup resume.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg text-sm">
-                    <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                    <span>Open your <a href="https://www.linkedin.com/in/" target="_blank" rel="noopener noreferrer" className="text-[#0A66C2] underline">LinkedIn profile</a> in a new tab to copy your info</span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin-headline">Headline</Label>
-                    <Input
-                      id="linkedin-headline"
-                      value={linkedinImportData.headline}
-                      onChange={(e) => setLinkedinImportData({ ...linkedinImportData, headline: e.target.value })}
-                      placeholder="e.g., Computer Science Student | Aspiring Entrepreneur"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin-summary">About / Summary</Label>
-                    <Textarea
-                      id="linkedin-summary"
-                      value={linkedinImportData.summary}
-                      onChange={(e) => setLinkedinImportData({ ...linkedinImportData, summary: e.target.value })}
-                      placeholder="Paste your LinkedIn summary here..."
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin-experience">Experience (optional)</Label>
-                    <Textarea
-                      id="linkedin-experience"
-                      value={linkedinImportData.experience}
-                      onChange={(e) => setLinkedinImportData({ ...linkedinImportData, experience: e.target.value })}
-                      placeholder="Paste your key experience or roles..."
-                      rows={2}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin-skills">Skills (comma-separated)</Label>
-                    <Input
-                      id="linkedin-skills"
-                      value={linkedinImportData.skills}
-                      onChange={(e) => setLinkedinImportData({ ...linkedinImportData, skills: e.target.value })}
-                      placeholder="e.g., Python, React, Machine Learning, Product Management"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setLinkedinDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleLinkedinImport} className="gap-2 bg-[#0A66C2] hover:bg-[#004182]">
-                    <Upload className="w-4 h-4" />
-                    Import to Profile
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Profile Form */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-      >
         <Card>
           <CardHeader>
             <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                  {getInitials(formData.full_name)}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative group">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+                    {getInitials(formData.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <label 
+                  htmlFor="avatar-upload"
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="w-5 h-5 text-white" />
+                  )}
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                />
+              </div>
               <div>
                 <CardTitle>Personal Information</CardTitle>
                 <CardDescription>Your public profile details</CardDescription>
