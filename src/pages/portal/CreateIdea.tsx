@@ -20,16 +20,18 @@ export default function CreateIdea() {
 
   const [formData, setFormData] = useState({
     title: '',
-    rawIdea: '',
+    idea: '',
+    problem: '',
+    description: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim() || !formData.rawIdea.trim()) {
+    if (!formData.title.trim() || !formData.idea.trim() || !formData.problem.trim()) {
       toast({
         title: 'Missing required fields',
-        description: 'Please provide a title and describe your idea.',
+        description: 'Please fill in the idea name, what your idea is, and what problem it solves.',
         variant: 'destructive',
       });
       return;
@@ -37,13 +39,17 @@ export default function CreateIdea() {
 
     setSaving(true);
 
-    // Save the idea with just the raw description - AI will figure out the rest
+    // Combine the structured inputs for AI analysis
+    const rawIdea = `Idea: ${formData.idea}\n\nProblem it solves: ${formData.problem}${formData.description ? `\n\nAdditional details: ${formData.description}` : ''}`;
+
+    // Save the idea with the problem field
     const { data: idea, error } = await supabase
       .from('ideas')
       .insert({
         created_by: user?.id,
         title: formData.title,
-        problem: formData.rawIdea, // Store raw idea in problem field initially
+        problem: formData.problem,
+        solution: formData.idea,
         stage: 'concept',
         is_public: true,
       })
@@ -71,7 +77,7 @@ export default function CreateIdea() {
 
     // Fire and forget - the business plan will be generated in the background
     supabase.functions.invoke('generate-business-plan', {
-      body: { ideaId: idea.id, rawIdea: formData.rawIdea },
+      body: { ideaId: idea.id, rawIdea },
     }).then(() => {
       console.log('Business plan generation started');
     }).catch((err) => {
@@ -133,28 +139,47 @@ export default function CreateIdea() {
                 />
               </div>
 
-              {/* Raw Idea */}
+              {/* What is your idea */}
               <div className="space-y-2">
-                <Label htmlFor="rawIdea">Describe your idea *</Label>
+                <Label htmlFor="idea">What is your idea? *</Label>
                 <Textarea
-                  id="rawIdea"
-                  placeholder="Just write freely! For example:
-
-'I want to create an app that helps students find study groups. A lot of people struggle to find others to study with, especially in large classes. Maybe it could match people based on their schedule and what they're studying...'
-
-Or even simpler:
-
-'An Uber for tutoring' or 'Instagram for college recipes'
-
-Don't worry about structure - just describe what you're thinking!"
-                  value={formData.rawIdea}
-                  onChange={(e) => setFormData({ ...formData, rawIdea: e.target.value })}
-                  rows={8}
+                  id="idea"
+                  placeholder="e.g., An app that helps students find study groups based on their schedule and courses"
+                  value={formData.idea}
+                  onChange={(e) => setFormData({ ...formData, idea: e.target.value })}
+                  rows={3}
                   required
                   className="resize-none"
                 />
+              </div>
+
+              {/* Problem it solves */}
+              <div className="space-y-2">
+                <Label htmlFor="problem">What problem does it solve? *</Label>
+                <Textarea
+                  id="problem"
+                  placeholder="e.g., Students struggle to find others to study with, especially in large classes where they don't know anyone"
+                  value={formData.problem}
+                  onChange={(e) => setFormData({ ...formData, problem: e.target.value })}
+                  rows={3}
+                  required
+                  className="resize-none"
+                />
+              </div>
+
+              {/* Optional description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Describe your idea (optional)</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Add any additional details, context, or thoughts about your idea..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={4}
+                  className="resize-none"
+                />
                 <p className="text-xs text-muted-foreground">
-                  The more context you provide, the better the AI analysis will be. But even a single sentence works!
+                  The more context you provide, the better the AI analysis will be.
                 </p>
               </div>
 
