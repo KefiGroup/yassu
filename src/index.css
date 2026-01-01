@@ -8,50 +8,50 @@
 
 @layer base {
   :root {
-    --background: 220 30% 6%;
-    --foreground: 210 40% 98%;
+    --background: 30 30% 98%;
+    --foreground: 240 20% 20%;
 
-    --card: 220 25% 10%;
-    --card-foreground: 210 40% 98%;
+    --card: 30 25% 96%;
+    --card-foreground: 240 20% 20%;
 
-    --popover: 220 25% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 30 25% 96%;
+    --popover-foreground: 240 20% 20%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 220 30% 6%;
+    --primary: 250 60% 65%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 16%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 30 20% 92%;
+    --secondary-foreground: 240 20% 25%;
 
-    --muted: 220 20% 16%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 30 15% 90%;
+    --muted-foreground: 240 10% 45%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 220 30% 6%;
+    --accent: 15 80% 75%;
+    --accent-foreground: 15 60% 25%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 65% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 18%;
-    --input: 220 20% 18%;
-    --ring: 217 91% 60%;
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 250 60% 65%;
 
     --radius: 0.75rem;
 
-    /* Custom Yassu tokens */
-    --glow-primary: 217 91% 60%;
-    --glow-accent: 38 92% 50%;
-    --gradient-start: 217 91% 60%;
-    --gradient-end: 262 83% 58%;
+    /* Custom Yassu tokens - Pastel palette */
+    --glow-primary: 250 60% 75%;
+    --glow-accent: 15 80% 80%;
+    --gradient-start: 250 60% 70%;
+    --gradient-end: 320 60% 75%;
     
-    --sidebar-background: 220 25% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 220 30% 6%;
-    --sidebar-accent: 220 20% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 30 25% 96%;
+    --sidebar-foreground: 240 20% 20%;
+    --sidebar-primary: 250 60% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 20% 92%;
+    --sidebar-accent-foreground: 240 20% 25%;
+    --sidebar-border: 30 15% 88%;
+    --sidebar-ring: 250 60% 65%;
   }
 }
 
@@ -72,7 +72,7 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-accent;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-pink-400 to-accent;
   }
 
   .glow-primary {
