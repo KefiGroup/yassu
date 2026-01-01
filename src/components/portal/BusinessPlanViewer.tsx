@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
 import {
   FileText,
@@ -446,7 +447,7 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
                             </CardHeader>
                             <CardContent className="pt-0">
                               <div className="prose prose-sm dark:prose-invert max-w-none">
-                                <ReactMarkdown components={markdownComponents}>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                                   {section.content}
                                 </ReactMarkdown>
                               </div>
@@ -473,7 +474,7 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
                         </CardHeader>
                         <CardContent className="pt-0">
                           <div className="prose prose-sm dark:prose-invert max-w-none max-h-[500px] overflow-y-auto">
-                            <ReactMarkdown components={markdownComponents}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                               {sectionLookup[key] || `No ${SECTION_LABELS[key]} analysis available.`}
                             </ReactMarkdown>
                           </div>
