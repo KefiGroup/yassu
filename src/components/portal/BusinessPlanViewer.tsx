@@ -332,12 +332,13 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
 
   const parsedSections = artifact?.content ? parseSections(artifact.content) : [];
 
-  // Create a lookup for individual section tabs
-  const sectionLookup: Record<string, string> = {};
+  // Create a lookup for individual section tabs - aggregate all sections with same key
+  const sectionLookup: Record<string, { title: string; content: string }[]> = {};
   for (const section of parsedSections) {
     if (!sectionLookup[section.key]) {
-      sectionLookup[section.key] = section.content;
+      sectionLookup[section.key] = [];
     }
+    sectionLookup[section.key].push({ title: section.title, content: section.content });
   }
 
   return (
@@ -453,25 +454,46 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
 
                 {Object.keys(SECTION_LABELS).map((key) => {
                   const Icon = SECTION_ICONS[key];
+                  const sections = sectionLookup[key] || [];
                   return (
                     <TabsContent key={key} value={key} className="mt-0">
-                      <Card className="border border-border/50 bg-card/50">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="flex items-center gap-2 text-lg">
-                            <div className="p-2 rounded-md bg-primary/10">
-                              <Icon className="w-5 h-5 text-primary" />
-                            </div>
-                            {SECTION_LABELS[key]}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="prose prose-sm dark:prose-invert max-w-none max-h-[500px] overflow-y-auto">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                              {sectionLookup[key] || `No ${SECTION_LABELS[key]} analysis available.`}
-                            </ReactMarkdown>
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
+                        {sections.length > 0 ? (
+                          sections.map((section, idx) => (
+                            <Card key={idx} className="border border-border/50 bg-card/50">
+                              <CardHeader className="pb-3">
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                  <div className="p-2 rounded-md bg-primary/10">
+                                    <Icon className="w-5 h-5 text-primary" />
+                                  </div>
+                                  {section.title}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="pt-0">
+                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                    {section.content}
+                                  </ReactMarkdown>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        ) : (
+                          <Card className="border border-border/50 bg-card/50">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="flex items-center gap-2 text-lg">
+                                <div className="p-2 rounded-md bg-primary/10">
+                                  <Icon className="w-5 h-5 text-primary" />
+                                </div>
+                                {SECTION_LABELS[key]}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <p className="text-muted-foreground">No {SECTION_LABELS[key]} analysis available.</p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
                     </TabsContent>
                   );
                 })}
