@@ -1,5 +1,8 @@
 project_id = "ybdjbfirpnuprtuyfxfx"
 
+[functions.firecrawl-scrape]
+verify_jwt = false
+
 [functions.generate-business-plan]
 verify_jwt = false
 
