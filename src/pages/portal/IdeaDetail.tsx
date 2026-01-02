@@ -45,6 +45,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { SKILL_OPTIONS } from '@/lib/profileOptions';
 
 interface Idea {
   id: string;
@@ -60,6 +61,17 @@ interface Idea {
   createdAt: string;
   createdBy: number;
   tags?: string[];
+}
+
+interface PotentialTeamMember {
+  id: string;
+  userId: number;
+  fullName: string | null;
+  avatarUrl: string | null;
+  headline: string | null;
+  skills: string[];
+  matchingSkills: string[];
+  matchCount: number;
 }
 
 interface BusinessPlan {
@@ -110,6 +122,8 @@ export default function IdeaDetail() {
   const [generating, setGenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('executiveSummary');
+  const [potentialTeamMembers, setPotentialTeamMembers] = useState<PotentialTeamMember[]>([]);
+  const [loadingTeamMembers, setLoadingTeamMembers] = useState(false);
 
   useEffect(() => {
     async function fetchIdea() {
@@ -158,6 +172,92 @@ export default function IdeaDetail() {
 
     fetchIdea();
   }, [ideaId]);
+
+  // Helper to strip markdown formatting from skill names
+  const stripMarkdown = (text: string): string => {
+    return text
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold: **text**
+      .replace(/\*([^*]+)\*/g, '$1')     // Italic: *text*
+      .replace(/`([^`]+)`/g, '$1')       // Code: `text`
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links: [text](url)
+      .replace(/\(.*?\)/g, '')           // Remove parenthetical notes
+      .trim();
+  };
+
+  // Fetch potential team members when Team & Talent section is available
+  useEffect(() => {
+    async function fetchPotentialTeamMembers() {
+      if (!businessPlan?.sections?.teamTalent) {
+        setPotentialTeamMembers([]);
+        return;
+      }
+      
+      setLoadingTeamMembers(true);
+      try {
+        const teamTalentContent = businessPlan.sections.teamTalent;
+        
+        // Create lowercase skill lookup for case-insensitive matching
+        const skillLookup = new Map(SKILL_OPTIONS.map(s => [s.toLowerCase(), s]));
+        
+        // Extract skills from SKILLS_JSON markers
+        const skillsMatch = teamTalentContent.match(/<!-- SKILLS_JSON_START -->\s*([\s\S]*?)\s*<!-- SKILLS_JSON_END -->/);
+        
+        let candidateSkills: string[] = [];
+        
+        if (skillsMatch && skillsMatch[1]) {
+          // Parse comma-separated skills from the JSON marker section
+          const skillsText = skillsMatch[1].trim();
+          // Skip if it looks like instructional text
+          if (!skillsText.startsWith('[List') && !skillsText.includes('e.g.')) {
+            candidateSkills = skillsText
+              .split(',')
+              .map(s => stripMarkdown(s.replace(/^["']|["']$/g, ''))) // Remove quotes and markdown
+              .filter(s => s.length > 1 && s.length < 50);
+          }
+        }
+        
+        // Fallback: Try to find skills from table's first column if markers failed
+        if (candidateSkills.length === 0) {
+          // Look for table rows and extract first column (skill name)
+          const tableRows = teamTalentContent.match(/^\|\s*([^|]+)\s*\|[^|]+\|[^|]+\|[^|]+\|$/gm) || [];
+          for (const row of tableRows) {
+            const firstCellMatch = row.match(/^\|\s*([^|]+?)\s*\|/);
+            if (firstCellMatch && firstCellMatch[1]) {
+              const skill = stripMarkdown(firstCellMatch[1]);
+              // Skip header row indicators
+              if (!skill.includes('---') && skill.toLowerCase() !== 'skill' && !skill.startsWith('[')) {
+                candidateSkills.push(skill);
+              }
+            }
+          }
+        }
+        
+        // Validate against platform taxonomy (case-insensitive)
+        const validatedSkills = candidateSkills
+          .map(s => skillLookup.get(s.toLowerCase()))
+          .filter((s): s is string => s !== undefined);
+        
+        // Dedupe
+        const uniqueSkills = [...new Set(validatedSkills)];
+        
+        console.log('[TeamMatching] Extracted skills:', candidateSkills, 'Validated:', uniqueSkills);
+        
+        if (uniqueSkills.length > 0) {
+          const members = await api.profiles.matchSkills(uniqueSkills);
+          setPotentialTeamMembers(members);
+        } else {
+          setPotentialTeamMembers([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch potential team members:', error);
+        setPotentialTeamMembers([]);
+      } finally {
+        setLoadingTeamMembers(false);
+      }
+    }
+    
+    fetchPotentialTeamMembers();
+  }, [businessPlan?.sections?.teamTalent]);
 
   const handleGeneratePlan = async () => {
     if (!ideaId || !idea) return;
@@ -747,6 +847,68 @@ export default function IdeaDetail() {
                               </p>
                             )}
                           </div>
+                          
+                          {section.id === 'teamTalent' && (
+                            <div className="mt-8 pt-6 border-t">
+                              <div className="flex items-center gap-2 mb-4">
+                                <Users className="w-5 h-5 text-primary" />
+                                <h4 className="font-semibold text-lg">Potential Co-Founders on Yassu</h4>
+                              </div>
+                              
+                              {loadingTeamMembers ? (
+                                <div className="flex items-center justify-center py-8">
+                                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                                  <span className="ml-2 text-muted-foreground">Finding matches...</span>
+                                </div>
+                              ) : potentialTeamMembers.length > 0 ? (
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                  {potentialTeamMembers.map((member) => (
+                                    <Card key={member.id} className="hover-elevate" data-testid={`card-team-member-${member.id}`}>
+                                      <CardContent className="p-4">
+                                        <div className="flex items-start gap-3">
+                                          <Avatar className="w-12 h-12">
+                                            <AvatarImage src={member.avatarUrl || undefined} />
+                                            <AvatarFallback>
+                                              {member.fullName?.charAt(0) || 'U'}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="font-medium truncate">{member.fullName || 'Anonymous'}</p>
+                                            {member.headline && (
+                                              <p className="text-sm text-muted-foreground truncate">{member.headline}</p>
+                                            )}
+                                            <div className="flex items-center gap-1 mt-2">
+                                              <Badge variant="secondary" className="text-xs">
+                                                {member.matchCount} skill{member.matchCount !== 1 ? 's' : ''} match
+                                              </Badge>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1 mt-2">
+                                              {member.matchingSkills.slice(0, 3).map((skill) => (
+                                                <Badge key={skill} variant="outline" className="text-xs bg-primary/5">
+                                                  {skill}
+                                                </Badge>
+                                              ))}
+                                              {member.matchingSkills.length > 3 && (
+                                                <Badge variant="outline" className="text-xs">
+                                                  +{member.matchingSkills.length - 3} more
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-center py-6 text-muted-foreground">
+                                  <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                  <p>No matching co-founders found yet.</p>
+                                  <p className="text-sm mt-1">Invite people to join Yassu to grow your network!</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </TabsContent>

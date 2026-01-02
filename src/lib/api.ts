@@ -52,6 +52,14 @@ export const api = {
       }),
   },
 
+  profiles: {
+    matchSkills: (skills: string[]) =>
+      apiRequest<any[]>("/profiles/match-skills", {
+        method: "POST",
+        body: JSON.stringify({ skills }),
+      }),
+  },
+
   universities: {
     list: () => apiRequest<any[]>("/universities"),
     resources: (id: string) => apiRequest<any[]>(`/universities/${id}/resources`),

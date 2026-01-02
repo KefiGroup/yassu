@@ -207,32 +207,48 @@ ${outputRules}`,
 
 ${ideaContext}
 
+IMPORTANT: For the Skill Matrix, you MUST use skills from this exact list (pick the most relevant 6-8 skills):
+
+Technical Skills: JavaScript, TypeScript, Python, Java, C++, React, Vue.js, Angular, Node.js, Django, FastAPI, Machine Learning, Deep Learning, Data Science, TensorFlow, PyTorch, AWS, Google Cloud, Docker, Kubernetes, PostgreSQL, MongoDB
+
+Design Skills: UI/UX Design, Figma, Product Design, Graphic Design, User Research, Prototyping
+
+Business Skills: Product Management, Project Management, Business Development, Sales, Marketing, Growth Hacking, SEO/SEM, Content Marketing, Financial Modeling, Fundraising
+
+Leadership Skills: Team Leadership, Strategic Planning, People Management, Agile/Scrum, Public Speaking
+
 Generate the following sections in clean markdown format:
 
-## Skill Matrix Required
+## Required Skills
 
-| Skill | Priority | Level Needed | Source |
-|-------|----------|--------------|--------|
-| [Skill 1] | Critical | Expert | In-house |
-| [Skill 2] | Critical | Competent | In-house |
-| [Skill 3] | Important | Basic | Outsource |
+<!-- SKILLS_JSON_START -->
+[List the exact skill names from the list above, comma-separated, e.g.: "React, Node.js, Python, UI/UX Design, Product Management"]
+<!-- SKILLS_JSON_END -->
 
-Include 5-6 key skills.
+## Skill Matrix
+
+| Skill | Priority | Level Needed | Why Needed |
+|-------|----------|--------------|------------|
+| [Exact skill from list] | Critical | Expert | [Brief reason] |
+| [Exact skill from list] | Critical | Competent | [Brief reason] |
+| [Exact skill from list] | Important | Competent | [Brief reason] |
+
+Include 6-8 skills using EXACT names from the list above.
 
 ## Ideal Co-Founder Profiles
 
 ### Technical Co-Founder
 - Background: [specific experience needed]
-- Skills: [must-have capabilities]
+- Required Skills: [skills from the list above]
 - Where to find: [specific places on campus]
 
 ### Business Co-Founder
 - Background: [specific experience needed]
-- Skills: [must-have capabilities]
+- Required Skills: [skills from the list above]
 - Where to find: [specific places on campus]
 
 ## First 3 Hires (Post-Founding)
-1. [Role 1] - Why first, timing
+1. [Role 1] - Why first, key skills needed
 2. [Role 2] - Dependencies
 3. [Role 3] - Growth stage
 

@@ -6,6 +6,11 @@ import type {
   WorkflowRun, WorkflowArtifact, Notification, UserRole, InsertUser
 } from "../shared/schema";
 
+export interface ProfileWithMatchingSkills extends Profile {
+  matchingSkills: string[];
+  matchCount: number;
+}
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -14,6 +19,7 @@ export interface IStorage {
   getProfile(userId: number): Promise<Profile | undefined>;
   updateProfile(userId: number, data: Partial<Profile>): Promise<Profile | undefined>;
   createProfile(userId: number, data: Partial<Profile>): Promise<Profile>;
+  findProfilesBySkills(skills: string[], excludeUserId?: number): Promise<ProfileWithMatchingSkills[]>;
   
   getUserRoles(userId: number): Promise<UserRole[]>;
   addUserRole(userId: number, role: string): Promise<void>;
@@ -88,6 +94,41 @@ export class DatabaseStorage implements IStorage {
       .values({ ...data, userId })
       .returning();
     return profile;
+  }
+
+  async findProfilesBySkills(skills: string[], excludeUserId?: number): Promise<ProfileWithMatchingSkills[]> {
+    if (!skills || skills.length === 0) {
+      return [];
+    }
+
+    const normalizedSkills = skills.map(s => s.trim().toLowerCase());
+    
+    const profiles = await db.select().from(schema.profiles);
+    
+    const matchedProfiles: ProfileWithMatchingSkills[] = [];
+    
+    for (const profile of profiles) {
+      if (excludeUserId && profile.userId === excludeUserId) {
+        continue;
+      }
+      
+      const profileSkills = (profile.skills || []).map(s => s.toLowerCase());
+      const matchingSkills = skills.filter(skill => 
+        profileSkills.includes(skill.toLowerCase())
+      );
+      
+      if (matchingSkills.length > 0) {
+        matchedProfiles.push({
+          ...profile,
+          matchingSkills,
+          matchCount: matchingSkills.length,
+        });
+      }
+    }
+    
+    matchedProfiles.sort((a, b) => b.matchCount - a.matchCount);
+    
+    return matchedProfiles.slice(0, 10);
   }
 
   async getUserRoles(userId: number): Promise<UserRole[]> {

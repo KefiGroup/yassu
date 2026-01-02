@@ -179,6 +179,30 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  app.post("/api/profiles/match-skills", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { skills } = req.body;
+      
+      if (!skills || !Array.isArray(skills)) {
+        return res.status(400).json({ error: "Skills array is required" });
+      }
+
+      const matchedProfiles = await storage.findProfilesBySkills(
+        skills, 
+        req.session.userId
+      );
+      
+      res.json(matchedProfiles);
+    } catch (error) {
+      console.error("Profile match error:", error);
+      res.status(500).json({ error: "Failed to find matching profiles" });
+    }
+  });
+
   app.get("/api/universities", async (_req: Request, res: Response) => {
     try {
       const universities = await storage.getUniversities();
