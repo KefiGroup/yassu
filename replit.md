@@ -93,6 +93,13 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - AI Business Plan Generation
+- Added AI-powered business plan generation using OpenAI GPT-4o
+- Created server/ai.ts with generateBusinessPlan function
+- Business plans include 9 sections: Executive Summary, Founder Fit, Competitive Landscape, Risk & Moat, MVP Design, Team & Talent, Launch Plan, School Advantage, Funding Pitch
+- IdeaDetail page now uses Express API and includes tabbed business plan viewer
+- Added Settings page with notification preferences and account management
+
 ### January 2026 - Supabase to Replit Migration
 - Migrated from Supabase Auth to session-based Express authentication
 - Converted Supabase client calls to REST API endpoints
