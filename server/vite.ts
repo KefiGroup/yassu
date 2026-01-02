@@ -1,11 +1,24 @@
 import type { Express } from "express";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Get directory path - works in both ESM and CommonJS bundled code
+function getDirname(): string {
+  // In production (CommonJS bundle), use process.cwd()
+  // In development (ESM), this file is in the server directory
+  try {
+    // Check if we're in the bundled dist directory
+    if (fs.existsSync(path.join(process.cwd(), 'dist', 'index.cjs'))) {
+      return path.join(process.cwd(), 'dist');
+    }
+  } catch {
+    // Fallback
+  }
+  return path.join(process.cwd(), 'server');
+}
+
+const __dirname = getDirname();
 
 const viteLogger = createLogger();
 
