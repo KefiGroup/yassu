@@ -86,14 +86,14 @@ const Team = () => {
             >
               <Card className="h-full">
                 <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={member.image} alt={member.name} />
-                      <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                  <div className="flex flex-col items-center mb-4">
+                    <Avatar className="h-32 w-32 mb-4">
+                      <AvatarImage src={member.image} alt={member.name} className="object-cover object-top" />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                         {member.name.split(" ").map(n => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="text-center">
                       <h3 className="font-semibold text-lg text-foreground">{member.name}</h3>
                       <p className="text-sm text-muted-foreground">{member.role}</p>
                     </div>
