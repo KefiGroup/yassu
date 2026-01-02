@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ const sampleIdeas = [
     id: 1,
     title: "Foot Prints",
     category: "Tech",
-    categoryColor: "bg-cyan-500",
+    categoryColor: "bg-primary",
     image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop",
     description: "Digital footprint tracking and analytics platform",
   },
@@ -19,7 +19,7 @@ const sampleIdeas = [
     id: 2,
     title: "Trip-Sit for AI Hallucinations",
     category: "Healthcare",
-    categoryColor: "bg-fuchsia-500",
+    categoryColor: "bg-pink-500",
     image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=300&fit=crop",
     description: "AI safety monitoring for healthcare applications",
   },
@@ -27,7 +27,7 @@ const sampleIdeas = [
     id: 3,
     title: "User-based App Privacy T&C's",
     category: "Tech",
-    categoryColor: "bg-cyan-500",
+    categoryColor: "bg-primary",
     image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop",
     description: "Simplified privacy terms generator for apps",
   },
@@ -81,24 +81,40 @@ const IdeasSlider = () => {
     setCanScrollNext(emblaApi.canScrollNext());
   }, [emblaApi]);
 
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
   return (
-    <section id="ideas-slider" className="py-24 bg-zinc-900">
-      <div className="container mx-auto px-6">
+    <section id="ideas-slider" className="py-24 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-pink-300/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+      
+      <div className="container mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mb-12"
+          className="mb-12 text-center"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Sample of <span className="text-cyan-400">Yassu Ideas</span>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Sample of <span className="text-gradient">Yassu Ideas</span>
           </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Discover innovative startup concepts from university founders across the nation
+          </p>
         </motion.div>
 
         <div className="relative">
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex gap-4">
+            <div className="flex gap-6">
               {sampleIdeas.map((idea, index) => (
                 <motion.div
                   key={idea.id}
@@ -106,14 +122,14 @@ const IdeasSlider = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex-shrink-0 w-[280px] md:w-[300px]"
+                  className="flex-shrink-0 w-[280px] md:w-[320px]"
                 >
-                  <Card className="bg-zinc-800 border-zinc-700 overflow-hidden h-full">
+                  <Card className="glass border-border/50 overflow-hidden h-full hover-elevate">
                     <div className="relative">
-                      <div className="absolute top-2 left-2 flex gap-1">
-                        <div className="w-2 h-2 rounded-full bg-zinc-600" />
-                        <div className="w-2 h-2 rounded-full bg-zinc-600" />
-                        <div className="w-2 h-2 rounded-full bg-zinc-600" />
+                      <div className="absolute top-3 left-3 flex gap-1.5 z-10">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                       </div>
                       <img
                         src={idea.image}
@@ -121,20 +137,23 @@ const IdeasSlider = () => {
                         className="w-full h-48 object-cover"
                       />
                     </div>
-                    <div className="p-4 space-y-3">
+                    <div className="p-5 space-y-3">
                       <Badge className={`${idea.categoryColor} text-white border-0`}>
                         {idea.category}
                       </Badge>
-                      <h3 className="text-white font-semibold text-lg leading-tight">
+                      <h3 className="font-semibold text-lg leading-tight text-foreground">
                         {idea.title}
                       </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {idea.description}
+                      </p>
                       <a
                         href="#"
-                        className="inline-flex items-center gap-1 text-zinc-400 hover:text-white text-sm transition-colors group"
+                        className="inline-flex items-center gap-1 text-primary hover:text-primary/80 text-sm font-medium transition-colors group"
                         data-testid={`link-read-more-${idea.id}`}
                       >
                         Read More
-                        <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                       </a>
                     </div>
                   </Card>
@@ -146,9 +165,8 @@ const IdeasSlider = () => {
           <Button
             variant="outline"
             size="icon"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 rounded-full z-10"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-4 glass border-border/50 rounded-full z-10 shadow-lg"
             onClick={scrollPrev}
-            disabled={!canScrollPrev}
             data-testid="button-slider-prev"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -157,9 +175,8 @@ const IdeasSlider = () => {
           <Button
             variant="outline"
             size="icon"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 rounded-full z-10"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-4 glass border-border/50 rounded-full z-10 shadow-lg"
             onClick={scrollNext}
-            disabled={!canScrollNext}
             data-testid="button-slider-next"
           >
             <ChevronRight className="w-5 h-5" />
