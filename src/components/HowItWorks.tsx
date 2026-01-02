@@ -4,23 +4,23 @@ import { UserCheck, Lightbulb, Users, Rocket } from "lucide-react";
 const steps = [
   {
     icon: UserCheck,
-    title: "Verify Your Club",
-    description: "Free access for verified members of elite university clubs and their alumni networks.",
+    title: "Join the Network",
+    description: "Free access for members of recognized university clubs. Club-to-club connection with local accountability.",
   },
   {
     icon: Lightbulb,
-    title: "Explore & Ideate",
-    description: "Our AI agents guide you through structured mini-accelerator workflows to refine your ideas.",
+    title: "Post or Find Ideas",
+    description: "A two-sided marketplace: Ideas seeking builders, builders seeking meaningful companies.",
   },
   {
     icon: Users,
-    title: "Build Your Team",
-    description: "Match with peers who bring complementary skills from across connected university clubs.",
+    title: "Form Execution-Ready Teams",
+    description: "Cross-university talent liquidity. Match with peers who bring complementary skills and shared ambition.",
   },
   {
     icon: Rocket,
-    title: "Launch & Scale",
-    description: "Execute your go-to-market strategy with AI-driven planning and university resources.",
+    title: "Build Real Companies",
+    description: "Company formation is the goal. Funding is optional. Let execution determine what survives.",
   },
 ];
 
@@ -38,10 +38,11 @@ const HowItWorks = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            How <span className="text-gradient">Yassu</span> Works
+            The <span className="text-gradient">Foundry</span> Model
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            From idea to launch, our platform guides you through every step of building your startup.
+            A foundry accepts many raw inputs, applies shared structure and discipline, 
+            and produces fewer, stronger outcomes. Execution determines what survives.
           </p>
         </motion.div>
 

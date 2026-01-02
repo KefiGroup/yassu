@@ -4,36 +4,36 @@ import { Sparkles, Users, Rocket, Building2, Crown, TrendingUp } from "lucide-re
 const coreFeatures = [
   {
     icon: Sparkles,
-    title: "Free Access",
-    description: "Verified club members and alumni get full platform access at no cost"
+    title: "From Facebook",
+    description: "Identity anchored in real institutions. Trust derived from membership and affiliation."
   },
   {
     icon: Users,
-    title: "AI-Guided Workflows",
-    description: "GPT-based agents guide you through structured mini-accelerator programs"
+    title: "From Y Combinator",
+    description: "Company creation as the unit of value. Structured workflows for evaluation and growth."
   },
   {
     icon: Rocket,
-    title: "Publish & Collaborate",
-    description: "Share ideas, join teams, or run simulations for practice"
+    title: "What's New",
+    description: "Talent exchange replaces early capital. Contribution and execution determine influence."
   }
 ];
 
 const monetization = [
   {
     icon: Building2,
-    title: "Corporate Partnerships",
-    description: "Sponsorships with innovation-driven corporations"
+    title: "Not a Social Network",
+    description: "Not optimizing for engagement or vanity metrics—only companies that actually ship."
   },
   {
     icon: Crown,
-    title: "Premium Tools",
-    description: "Advanced features for professional founders and investors"
+    title: "Not an Accelerator",
+    description: "No demo days. No pitch competitions. Execution-focused company formation."
   },
   {
     icon: TrendingUp,
-    title: "Selective Equity",
-    description: "Strategic stakes in high-potential Yassu-born startups"
+    title: "Democratization Without Lowering the Bar",
+    description: "AI equalizes the starting line. Rigor and execution determine the outcome."
   }
 ];
 
@@ -51,11 +51,11 @@ const PlatformModel = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Platform <span className="text-gradient">Model</span>
+            Facebook × YC, <span className="text-gradient">Rebuilt</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            The LinkedIn × Notion × OpenAI for university founders — where human capital 
-            becomes the new currency for venture creation.
+            Combining the network effects of early Facebook with the company-building discipline of Y Combinator—
+            powered by AI that makes early capital optional, not prerequisite.
           </p>
         </motion.div>
 
@@ -72,7 +72,7 @@ const PlatformModel = () => {
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-pink-300/20 flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Core Experience</h3>
+              <h3 className="text-2xl font-bold text-foreground">The Marketplace Model</h3>
             </div>
             
             <div className="space-y-4">
@@ -109,7 +109,7 @@ const PlatformModel = () => {
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent/20 to-amber-300/20 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-accent" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">Monetization</h3>
+              <h3 className="text-2xl font-bold text-foreground">What Yassu Is Not</h3>
             </div>
             
             <div className="space-y-4">

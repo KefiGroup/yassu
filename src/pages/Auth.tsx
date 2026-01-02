@@ -168,7 +168,7 @@ const Auth = () => {
             </div>
             <span className="text-2xl font-bold text-foreground">Yassu</span>
           </a>
-          <p className="text-muted-foreground mt-2">Where university founders launch</p>
+          <p className="text-muted-foreground mt-2">The New-Age Marketplace for University-Native Company Creation</p>
         </div>
 
         <Card className="glass-strong border-border/50">

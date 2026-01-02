@@ -24,7 +24,7 @@ const Vision = () => {
             transition={{ duration: 0.6 }}
             className="text-primary font-medium text-lg mb-6"
           >
-            Our Vision
+            The Core Insight
           </motion.p>
 
           <motion.blockquote
@@ -35,8 +35,9 @@ const Vision = () => {
             className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight mb-10"
           >
             <span className="text-gradient">"</span>
-            Yassu empowers a generation of founders to start{" "}
-            <span className="text-gradient">faster, smarter, and together</span> — before graduation.
+            The most capable entrepreneurial talent lives inside universities.{" "}
+            <span className="text-gradient">AI has equalized the starting line.</span>{" "}
+            Yassu equalizes access to process.
             <span className="text-gradient">"</span>
           </motion.blockquote>
 

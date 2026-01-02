@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Building2 } from "lucide-react";
 
 const Hero = () => {
   return (
@@ -19,8 +19,8 @@ const Hero = () => {
             transition={{ duration: 0.6 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8"
           >
-            <Sparkles className="w-4 h-4 text-accent" />
-            <span className="text-sm text-muted-foreground">AI-Powered Startup Formation</span>
+            <Building2 className="w-4 h-4 text-accent" />
+            <span className="text-sm text-muted-foreground">The New-Age Marketplace for University-Native Company Creation</span>
           </motion.div>
 
           <motion.h1
@@ -29,8 +29,8 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight mb-6"
           >
-            Where Elite Talent
-            <span className="block text-gradient">Builds Together</span>
+            Ideas Meet Builders.
+            <span className="block text-gradient">Companies Are Born.</span>
           </motion.h1>
 
           <motion.p
@@ -39,8 +39,8 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Yassu connects top university talent through student-run clubs to execute startup ideas 
-            using structured, AI-driven workflows. Start faster, smarter, and together — before graduation.
+            Yassu is the national marketplace where university-native talent uses AI, shared structure, 
+            and cross-campus collaboration to build real companies—before capital decides who matters.
           </motion.p>
 
           <motion.div
@@ -64,9 +64,9 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="mt-16 flex flex-wrap items-center justify-center gap-8 text-muted-foreground"
           >
-            <p className="text-sm">Trusted by students at</p>
+            <p className="text-sm">Connecting students across</p>
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-              {['MIT', 'Harvard', 'Stanford', 'Berkeley', 'UCLA'].map((uni, i) => (
+              {['UCLA', 'MIT', 'Stanford', 'Harvard', 'Caltech', 'Northwestern'].map((uni, i) => (
                 <motion.span
                   key={uni}
                   initial={{ opacity: 0, y: 10 }}
