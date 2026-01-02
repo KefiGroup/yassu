@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Use Replit AI Integrations - no personal API key required
+// Charges are billed to your Replit credits
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
 
 interface IdeaInput {
   title: string;
@@ -100,8 +105,7 @@ Format each section with clear headers and bullet points where appropriate.`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_tokens: 4000,
-      temperature: 0.7,
+      max_completion_tokens: 4000,
     });
 
     const fullContent = response.choices[0]?.message?.content || "";

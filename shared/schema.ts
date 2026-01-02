@@ -267,3 +267,6 @@ export type WorkflowRun = typeof workflowRuns.$inferSelect;
 export type WorkflowArtifact = typeof workflowArtifacts.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type UserRole = typeof userRoles.$inferSelect;
+
+// Chat schema for OpenAI integration
+export * from "./models/chat";
