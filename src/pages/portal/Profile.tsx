@@ -48,8 +48,6 @@ export default function Profile() {
     other_university: '',
     availability: '',
     linkedin_url: '',
-    github_url: '',
-    portfolio_url: '',
     skills: [] as string[],
     interests: [] as string[],
   });
@@ -77,8 +75,6 @@ export default function Profile() {
         other_university: '',
         availability: profile.availability || '',
         linkedin_url: profile.linkedin_url || '',
-        github_url: profile.github_url || '',
-        portfolio_url: profile.portfolio_url || '',
         skills: profile.skills || [],
         interests: profile.interests || [],
       });
@@ -104,8 +100,6 @@ export default function Profile() {
         university_id: universityIdToSave,
         availability: formData.availability || null,
         linkedin_url: formData.linkedin_url || null,
-        github_url: formData.github_url || null,
-        portfolio_url: formData.portfolio_url || null,
         skills: formData.skills,
         interests: formData.interests,
         onboarding_completed: true,
@@ -484,24 +478,6 @@ export default function Profile() {
                     value={formData.linkedin_url}
                     onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
                     placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="github_url" className="text-sm text-muted-foreground">GitHub</Label>
-                  <Input
-                    id="github_url"
-                    value={formData.github_url}
-                    onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
-                    placeholder="https://github.com/yourusername"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="portfolio_url" className="text-sm text-muted-foreground">Portfolio</Label>
-                  <Input
-                    id="portfolio_url"
-                    value={formData.portfolio_url}
-                    onChange={(e) => setFormData({ ...formData, portfolio_url: e.target.value })}
-                    placeholder="https://yourportfolio.com"
                   />
                 </div>
               </div>
