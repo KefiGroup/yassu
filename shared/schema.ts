@@ -14,7 +14,8 @@ export const workflowTypeEnum = pgEnum("workflow_type", [
   "team_talent",
   "launch_plan",
   "school_advantage",
-  "funding_pitch"
+  "funding_pitch",
+  "business_plan"
 ]);
 export const pipelineStageEnum = pgEnum("pipeline_stage", ["watchlist", "diligence", "pass", "invest"]);
 
