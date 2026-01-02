@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { api } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { motion } from 'framer-motion';
-import { Lightbulb, Plus, Search, Filter, User, Calendar, Building } from 'lucide-react';
+import { Lightbulb, Plus, Search, User, Calendar, Building } from 'lucide-react';
 
 interface Idea {
   id: string;
@@ -21,17 +21,15 @@ interface Idea {
   problem: string;
   solution: string | null;
   stage: string;
-  created_at: string;
-  created_by: string;
-  university_id: string | null;
-  profiles: { full_name: string | null; avatar_url: string | null } | null;
-  universities: { short_name: string | null } | null;
+  createdAt: string;
+  createdBy: number;
+  universityId: string | null;
 }
 
 interface University {
   id: string;
   name: string;
-  short_name: string | null;
+  shortName: string | null;
 }
 
 const stageOptions = [
@@ -53,64 +51,41 @@ export default function Ideas() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: unis } = await supabase
-        .from('universities')
-        .select('id, name, short_name')
-        .order('name');
-
-      if (unis) setUniversities(unis);
-
-      await fetchIdeas();
+      try {
+        const [ideasData, unisData] = await Promise.all([
+          api.ideas.list(),
+          api.universities.list()
+        ]);
+        setIdeas(ideasData);
+        setUniversities(unisData);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchData();
   }, []);
 
-  async function fetchIdeas() {
-    setLoading(true);
-    let query = supabase
-      .from('ideas')
-      .select(`
-        id, title, problem, solution, stage, created_at, created_by, university_id
-      `)
-      .eq('is_public', true)
-      .order('created_at', { ascending: false });
-
-    if (stageFilter !== 'all') {
-      query = query.eq('stage', stageFilter as 'concept' | 'validating' | 'building' | 'launched');
-    }
-
-    if (universityFilter !== 'all') {
-      query = query.eq('university_id', universityFilter);
-    }
-
-    const { data } = await query;
-    if (data) {
-      // Map to our interface with null profiles/universities for now
-      setIdeas(data.map(d => ({ ...d, profiles: null, universities: null })) as Idea[]);
-    }
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    fetchIdeas();
-  }, [stageFilter, universityFilter]);
-
-  const filteredIdeas = ideas.filter((idea) =>
-    idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    idea.problem.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredIdeas = ideas.filter((idea) => {
+    const matchesSearch = 
+      idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      idea.problem.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStage = stageFilter === 'all' || idea.stage === stageFilter;
+    const matchesUniversity = universityFilter === 'all' || idea.universityId === universityFilter;
+    return matchesSearch && matchesStage && matchesUniversity;
+  });
 
   const stageColors: Record<string, string> = {
-    concept: 'bg-blue-100 text-blue-700',
-    validating: 'bg-amber-100 text-amber-700',
-    building: 'bg-emerald-100 text-emerald-700',
-    launched: 'bg-purple-100 text-purple-700',
+    concept: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    validating: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+    building: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    launched: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -123,13 +98,12 @@ export default function Ideas() {
             Discover startup ideas and find the right one to join
           </p>
         </div>
-        <Button onClick={() => navigate('/portal/ideas/new')}>
+        <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-post-idea">
           <Plus className="w-4 h-4 mr-2" />
           Post Idea
         </Button>
       </motion.div>
 
-      {/* Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -143,10 +117,11 @@ export default function Ideas() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
+            data-testid="input-search-ideas"
           />
         </div>
         <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-full sm:w-40">
+          <SelectTrigger className="w-full sm:w-40" data-testid="select-stage-filter">
             <SelectValue placeholder="Stage" />
           </SelectTrigger>
           <SelectContent>
@@ -158,21 +133,20 @@ export default function Ideas() {
           </SelectContent>
         </Select>
         <Select value={universityFilter} onValueChange={setUniversityFilter}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-48" data-testid="select-university-filter">
             <SelectValue placeholder="University" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Universities</SelectItem>
             {universities.map((uni) => (
               <SelectItem key={uni.id} value={uni.id}>
-                {uni.short_name || uni.name}
+                {uni.shortName || uni.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </motion.div>
 
-      {/* Ideas Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -199,12 +173,13 @@ export default function Ideas() {
               <Card
                 className="h-full cursor-pointer hover:shadow-md hover:border-primary/20 transition-all"
                 onClick={() => navigate(`/portal/ideas/${idea.id}`)}
+                data-testid={`card-idea-${idea.id}`}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-lg line-clamp-2">{idea.title}</CardTitle>
-                    <Badge className={stageColors[idea.stage] || 'bg-muted'}>
-                      {idea.stage}
+                    <Badge className={stageColors[idea.stage || 'concept'] || 'bg-muted'}>
+                      {idea.stage || 'concept'}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -215,18 +190,18 @@ export default function Ideas() {
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User className="w-3 h-3" />
-                      <span>{idea.profiles?.full_name || 'Anonymous'}</span>
+                      <span>Founder</span>
                     </div>
-                    {idea.universities?.short_name && (
+                    {idea.universityId && (
                       <div className="flex items-center gap-1">
                         <Building className="w-3 h-3" />
-                        <span>{idea.universities.short_name}</span>
+                        <span>{universities.find(u => u.id === idea.universityId)?.shortName || 'University'}</span>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar className="w-3 h-3" />
-                    <span>{new Date(idea.created_at).toLocaleDateString()}</span>
+                    <span>{new Date(idea.createdAt).toLocaleDateString()}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -247,7 +222,7 @@ export default function Ideas() {
               ? 'Try adjusting your filters'
               : 'Be the first to post an idea!'}
           </p>
-          <Button onClick={() => navigate('/portal/ideas/new')}>
+          <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-post-idea-empty">
             <Plus className="w-4 h-4 mr-2" />
             Post an Idea
           </Button>

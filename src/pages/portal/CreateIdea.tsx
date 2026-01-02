@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,62 +48,40 @@ export default function CreateIdea() {
 
     setSaving(true);
 
-    // Combine the structured inputs for AI analysis
-    const rawIdea = `Idea: ${formData.idea}\n\nProblem it solves: ${formData.problem}${formData.description ? `\n\nAdditional details: ${formData.description}` : ''}`;
-
-    // Save the idea with the problem field
-    const { data: idea, error } = await supabase
-      .from('ideas')
-      .insert({
-        created_by: user.id,
+    try {
+      const idea = await api.ideas.create({
         title: formData.title,
         problem: formData.problem,
         solution: formData.idea,
         stage: 'concept',
-        is_public: true,
-      })
-      .select()
-      .single();
+        isPublic: true,
+      });
 
-    if (error) {
+      toast({
+        title: 'Idea saved!',
+        description: 'Your idea has been created successfully.',
+      });
+
+      navigate(`/portal/ideas/${idea.id}`);
+    } catch (error) {
       setSaving(false);
       toast({
         title: 'Error creating idea',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to create idea',
         variant: 'destructive',
       });
-      return;
     }
-
-    // Trigger automatic business plan generation
-    toast({
-      title: 'Idea saved!',
-      description: 'AI is analyzing your idea and generating a complete business plan...',
-    });
-
-    // Navigate immediately - business plan generates in background
-    navigate(`/portal/ideas/${idea.id}`);
-
-    // Fire and forget - the business plan will be generated in the background
-    supabase.functions.invoke('generate-business-plan', {
-      body: { ideaId: idea.id, rawIdea },
-    }).then(() => {
-      console.log('Business plan generation started');
-    }).catch((err) => {
-      console.error('Business plan generation error:', err);
-    });
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="flex items-center gap-4"
       >
-        <Button variant="ghost" size="icon" onClick={() => navigate('/portal/ideas')}>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/portal/ideas')} data-testid="button-back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex items-center gap-3">
@@ -112,12 +90,11 @@ export default function CreateIdea() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Post an Idea</h1>
-            <p className="text-muted-foreground">Just describe your idea - AI will do the rest</p>
+            <p className="text-muted-foreground">Share your startup concept with the community</p>
           </div>
         </div>
       </motion.div>
 
-      {/* Form */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -128,15 +105,13 @@ export default function CreateIdea() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
-                AI-Powered Idea Analysis
+                New Idea
               </CardTitle>
               <CardDescription>
-                Simply describe your idea in your own words. Our AI will analyze it to identify the problem, 
-                solution, target market, and generate a complete 8-step business plan.
+                Describe your idea to share it with other founders and potential teammates.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Title */}
               <div className="space-y-2">
                 <Label htmlFor="title">Give your idea a name *</Label>
                 <Input
@@ -145,10 +120,10 @@ export default function CreateIdea() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
+                  data-testid="input-idea-title"
                 />
               </div>
 
-              {/* What is your idea */}
               <div className="space-y-2">
                 <Label htmlFor="idea">What is your idea? *</Label>
                 <Textarea
@@ -159,10 +134,10 @@ export default function CreateIdea() {
                   rows={3}
                   required
                   className="resize-none"
+                  data-testid="input-idea-solution"
                 />
               </div>
 
-              {/* Problem it solves */}
               <div className="space-y-2">
                 <Label htmlFor="problem">What problem does it solve? *</Label>
                 <Textarea
@@ -173,10 +148,10 @@ export default function CreateIdea() {
                   rows={3}
                   required
                   className="resize-none"
+                  data-testid="input-idea-problem"
                 />
               </div>
 
-              {/* Optional description */}
               <div className="space-y-2">
                 <Label htmlFor="description">Describe your idea (optional)</Label>
                 <Textarea
@@ -186,46 +161,23 @@ export default function CreateIdea() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
                   className="resize-none"
+                  data-testid="input-idea-description"
                 />
                 <p className="text-xs text-muted-foreground">
-                  The more context you provide, the better the AI analysis will be.
+                  The more context you provide, the better for potential teammates.
                 </p>
               </div>
 
-              {/* What AI will do */}
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                <h4 className="font-medium text-sm">What happens next:</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    AI extracts the problem you're solving
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Identifies your solution and target users
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Runs 8 comprehensive workflow analyses
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Generates a complete business plan in ~2 minutes
-                  </li>
-                </ul>
-              </div>
-
-              {/* Submit */}
-              <Button type="submit" className="w-full" size="lg" disabled={saving}>
+              <Button type="submit" className="w-full" size="lg" disabled={saving} data-testid="button-submit-idea">
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing with AI...
+                    Creating...
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Analyze & Generate Business Plan
+                    Post Idea
                   </>
                 )}
               </Button>

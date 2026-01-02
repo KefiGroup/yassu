@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,14 +24,14 @@ interface Idea {
   title: string;
   problem: string;
   stage: string;
-  created_at: string;
+  createdAt: string;
 }
 
 interface WorkflowRun {
   id: string;
-  workflow_type: string;
+  workflowType: string;
   status: string;
-  created_at: string;
+  createdAt: string;
 }
 
 const quickActions = [
@@ -85,24 +85,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchData() {
-      // Fetch recent ideas
-      const { data: ideas } = await supabase
-        .from('ideas')
-        .select('id, title, problem, stage, created_at')
-        .eq('is_public', true)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (ideas) setRecentIdeas(ideas);
-
-      // Fetch user's recent workflow runs
-      const { data: workflows } = await supabase
-        .from('workflow_runs')
-        .select('id, workflow_type, status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (workflows) setRecentWorkflows(workflows);
+      try {
+        const ideas = await api.ideas.list();
+        setRecentIdeas(ideas.slice(0, 5));
+      } catch {
+        setRecentIdeas([]);
+      }
+      
+      try {
+        const workflows = await api.workflows.list();
+        setRecentWorkflows(workflows.slice(0, 3));
+      } catch {
+        setRecentWorkflows([]);
+      }
+      
       setLoading(false);
     }
 
@@ -110,22 +106,21 @@ export default function Dashboard() {
   }, []);
 
   const stageColors: Record<string, string> = {
-    concept: 'bg-blue-100 text-blue-700',
-    validating: 'bg-amber-100 text-amber-700',
-    building: 'bg-emerald-100 text-emerald-700',
-    launched: 'bg-purple-100 text-purple-700',
+    concept: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    validating: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+    building: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    launched: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   };
 
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-3xl font-bold text-foreground">
-          Welcome back, {profile?.full_name?.split(' ')[0] || 'Founder'}!
+        <h1 className="text-3xl font-bold text-foreground" data-testid="text-welcome">
+          Welcome back, {profile?.fullName?.split(' ')[0] || 'Founder'}!
         </h1>
         <p className="text-muted-foreground mt-1">
           {isVerified
@@ -134,7 +129,6 @@ export default function Dashboard() {
         </p>
       </motion.div>
 
-      {/* Verification Banner */}
       {!isVerified && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -142,7 +136,7 @@ export default function Dashboard() {
           transition={{ duration: 0.4, delay: 0.1 }}
         >
           <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-4 flex items-center justify-between">
+            <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-primary" />
@@ -154,7 +148,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <Button onClick={() => navigate('/portal/profile')}>
+              <Button onClick={() => navigate('/portal/profile')} data-testid="button-complete-profile">
                 Complete Profile
               </Button>
             </CardContent>
@@ -162,7 +156,6 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Quick Actions */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -180,6 +173,7 @@ export default function Dashboard() {
               <Card
                 className="cursor-pointer hover:shadow-md hover:border-primary/20 transition-all group"
                 onClick={() => navigate(action.href)}
+                data-testid={`card-action-${action.title.toLowerCase().replace(/\s/g, '-')}`}
               >
                 <CardContent className="p-4">
                   <action.icon className={`w-8 h-8 ${action.color} mb-3`} />
@@ -195,19 +189,18 @@ export default function Dashboard() {
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Ideas */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
         >
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
               <div>
                 <CardTitle className="text-lg">Recommended Ideas</CardTitle>
                 <CardDescription>Ideas looking for teammates</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/portal/ideas')}>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/portal/ideas')} data-testid="button-view-all-ideas">
                 View all <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardHeader>
@@ -225,11 +218,12 @@ export default function Dashboard() {
                       key={idea.id}
                       className="p-3 rounded-lg border border-border hover:border-primary/20 hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => navigate(`/portal/ideas/${idea.id}`)}
+                      data-testid={`card-idea-${idea.id}`}
                     >
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between gap-2 mb-1">
                         <h4 className="font-medium text-sm">{idea.title}</h4>
-                        <Badge className={stageColors[idea.stage] || 'bg-muted'}>
-                          {idea.stage}
+                        <Badge className={stageColors[idea.stage || 'concept'] || 'bg-muted'}>
+                          {idea.stage || 'concept'}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-1">
@@ -247,6 +241,7 @@ export default function Dashboard() {
                     size="sm"
                     className="mt-3"
                     onClick={() => navigate('/portal/ideas/new')}
+                    data-testid="button-post-first-idea"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Post the first idea
@@ -257,19 +252,18 @@ export default function Dashboard() {
           </Card>
         </motion.div>
 
-        {/* Continue Workflows */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.4 }}
         >
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
               <div>
-                <CardTitle className="text-lg">Continue Workflows</CardTitle>
+                <CardTitle className="text-lg">Your Workflows</CardTitle>
                 <CardDescription>Pick up where you left off</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/portal/workflows')}>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/portal/workflows')} data-testid="button-view-all-workflows">
                 View all <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardHeader>
@@ -283,13 +277,14 @@ export default function Dashboard() {
               ) : recentWorkflows.length > 0 ? (
                 <div className="space-y-3">
                   {recentWorkflows.map((run) => {
-                    const workflow = workflowTypes[run.workflow_type];
+                    const workflow = workflowTypes[run.workflowType];
                     const Icon = workflow?.icon || Workflow;
                     return (
                       <div
                         key={run.id}
                         className="p-3 rounded-lg border border-border hover:border-primary/20 hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => navigate(`/portal/workflows/${run.id}`)}
+                        data-testid={`card-workflow-${run.id}`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -297,10 +292,10 @@ export default function Dashboard() {
                           </div>
                           <div className="flex-1">
                             <h4 className="font-medium text-sm">
-                              {workflow?.label || run.workflow_type}
+                              {workflow?.label || run.workflowType}
                             </h4>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(run.created_at).toLocaleDateString()}
+                              {new Date(run.createdAt).toLocaleDateString()}
                             </p>
                           </div>
                           <Badge
@@ -328,6 +323,7 @@ export default function Dashboard() {
                     size="sm"
                     className="mt-3"
                     onClick={() => navigate('/portal/workflows')}
+                    data-testid="button-start-workflow"
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
                     Start a workflow

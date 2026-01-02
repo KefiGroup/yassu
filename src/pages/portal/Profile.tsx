@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,8 +17,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { User, Save, Plus, X, CheckCircle, AlertCircle, Camera, Loader2, Linkedin } from 'lucide-react';
-import { ImageCropper } from '@/components/ImageCropper';
+import { Save, CheckCircle, AlertCircle, Camera, Loader2, Linkedin } from 'lucide-react';
 import { LinkedInImportModal } from '@/components/LinkedInImportModal';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
@@ -26,7 +25,7 @@ import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 interface University {
   id: string;
   name: string;
-  short_name: string | null;
+  shortName: string | null;
 }
 
 export default function Profile() {
@@ -34,47 +33,44 @@ export default function Profile() {
   const { toast } = useToast();
   const [universities, setUniversities] = useState<University[]>([]);
   const [saving, setSaving] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [formData, setFormData] = useState({
-    full_name: '',
+    fullName: '',
     bio: '',
     major: '',
-    graduation_year: '',
-    university_id: '',
-    other_university: '',
+    graduationYear: '',
+    universityId: '',
+    otherUniversity: '',
     availability: '',
-    linkedin_url: '',
+    linkedinUrl: '',
     skills: [] as string[],
     interests: [] as string[],
   });
 
   useEffect(() => {
     async function fetchUniversities() {
-      const { data } = await supabase
-        .from('universities')
-        .select('id, name, short_name')
-        .order('name');
-      if (data) setUniversities(data);
+      try {
+        const data = await api.universities.list();
+        setUniversities(data);
+      } catch {
+        setUniversities([]);
+      }
     }
     fetchUniversities();
   }, []);
 
-  // Only sync form data from profile on initial load, not on every profile change
   useEffect(() => {
     if (profile && !initialLoadDone) {
       setFormData({
-        full_name: profile.full_name || '',
+        fullName: profile.fullName || '',
         bio: profile.bio || '',
         major: profile.major || '',
-        graduation_year: profile.graduation_year?.toString() || '',
-        university_id: profile.university_id || '',
-        other_university: '',
+        graduationYear: profile.graduationYear?.toString() || '',
+        universityId: profile.universityId || '',
+        otherUniversity: '',
         availability: profile.availability || '',
-        linkedin_url: profile.linkedin_url || '',
+        linkedinUrl: profile.linkedinUrl || '',
         skills: profile.skills || [],
         interests: profile.interests || [],
       });
@@ -87,129 +83,37 @@ export default function Profile() {
 
     setSaving(true);
     
-    // Don't save "other" as university_id - it's not a valid UUID
-    const universityIdToSave = formData.university_id === 'other' ? null : (formData.university_id || null);
+    const universityIdToSave = formData.universityId === 'other' ? null : (formData.universityId || null);
     
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: formData.full_name,
+    try {
+      await api.profile.update({
+        fullName: formData.fullName,
         bio: formData.bio,
         major: formData.major,
-        graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null,
-        university_id: universityIdToSave,
+        graduationYear: formData.graduationYear ? parseInt(formData.graduationYear) : null,
+        universityId: universityIdToSave,
         availability: formData.availability || null,
-        linkedin_url: formData.linkedin_url || null,
+        linkedinUrl: formData.linkedinUrl || null,
         skills: formData.skills,
         interests: formData.interests,
-        onboarding_completed: true,
-      })
-      .eq('id', user.id);
-
-    setSaving(false);
-
-    if (error) {
-      toast({
-        title: 'Error saving profile',
-        description: error.message,
-        variant: 'destructive',
+        onboardingCompleted: true,
       });
-    } else {
+
       await refreshProfile();
       toast({
         title: 'Profile saved',
         description: 'Your profile has been updated successfully.',
       });
-    }
-  };
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please upload an image file (JPG, PNG, etc.)',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Please upload an image smaller than 5MB',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Create a URL for the selected image and open cropper
-    const imageUrl = URL.createObjectURL(file);
-    setSelectedImage(imageUrl);
-    setCropperOpen(true);
-    
-    // Reset input so the same file can be selected again
-    event.target.value = '';
-  };
-
-  const handleCroppedImage = useCallback(async (croppedBlob: Blob) => {
-    if (!user) return;
-
-    setUploadingAvatar(true);
-
-    try {
-      const filePath = `${user.id}/avatar.jpg`;
-
-      // Upload cropped image to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, croppedBlob, { 
-          upsert: true,
-          contentType: 'image/jpeg'
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL with cache-busting timestamp
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
-
-      // Update profile with new avatar URL
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: urlWithTimestamp })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
-      await refreshProfile();
-      toast({
-        title: 'Photo updated',
-        description: 'Your profile photo has been updated.',
-      });
     } catch (error) {
-      console.error('Avatar upload error:', error);
       toast({
-        title: 'Upload failed',
-        description: 'Failed to upload photo. Please try again.',
+        title: 'Error saving profile',
+        description: error instanceof Error ? error.message : 'Failed to save profile',
         variant: 'destructive',
       });
     } finally {
-      setUploadingAvatar(false);
-      if (selectedImage) {
-        URL.revokeObjectURL(selectedImage);
-        setSelectedImage(null);
-      }
+      setSaving(false);
     }
-  }, [user, refreshProfile, toast, selectedImage]);
-
+  };
 
   const handleSkillsChange = (skills: string[]) => {
     setFormData({ ...formData, skills });
@@ -220,7 +124,6 @@ export default function Profile() {
   };
 
   const handleLinkedInImport = useCallback((bio: string, skills: string[]) => {
-    // Merge new skills with existing, avoiding duplicates
     const mergedSkills = [...new Set([...formData.skills, ...skills])];
     setFormData({ 
       ...formData, 
@@ -239,11 +142,10 @@ export default function Profile() {
       .slice(0, 2);
   };
 
-  const isUniversityMissing = !formData.university_id || (formData.university_id === 'other' && !formData.other_university.trim());
+  const isUniversityMissing = !formData.universityId || (formData.universityId === 'other' && !formData.otherUniversity.trim());
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -255,7 +157,6 @@ export default function Profile() {
         </p>
       </motion.div>
 
-      {/* Verification Status */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -267,7 +168,7 @@ export default function Profile() {
               <>
                 <CheckCircle className="w-5 h-5 text-emerald-500" />
                 <div>
-                  <p className="font-medium text-emerald-700">Verified Member</p>
+                  <p className="font-medium text-emerald-700 dark:text-emerald-400">Verified Member</p>
                   <p className="text-sm text-muted-foreground">You have full access to all features</p>
                 </div>
               </>
@@ -275,7 +176,7 @@ export default function Profile() {
               <>
                 <AlertCircle className="w-5 h-5 text-amber-500" />
                 <div className="flex-1">
-                  <p className="font-medium text-amber-700">Pending Verification</p>
+                  <p className="font-medium text-amber-700 dark:text-amber-400">Pending Verification</p>
                   <p className="text-sm text-muted-foreground">
                     {isUniversityMissing 
                       ? 'Please select your university below to enable verification'
@@ -293,7 +194,6 @@ export default function Profile() {
         </Card>
       </motion.div>
 
-      {/* Profile Form */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -304,55 +204,38 @@ export default function Profile() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarImage src={profile?.avatarUrl || undefined} />
                   <AvatarFallback className="text-xl bg-primary text-primary-foreground">
-                    {getInitials(formData.full_name)}
+                    {getInitials(formData.fullName)}
                   </AvatarFallback>
                 </Avatar>
-                <label 
-                  htmlFor="avatar-upload"
-                  className="absolute -bottom-1 -right-1 p-1.5 bg-primary rounded-full cursor-pointer hover:bg-primary/90 transition-colors shadow-md"
-                >
-                  {uploadingAvatar ? (
-                    <Loader2 className="w-4 h-4 text-primary-foreground animate-spin" />
-                  ) : (
-                    <Camera className="w-4 h-4 text-primary-foreground" />
-                  )}
-                </label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  disabled={uploadingAvatar}
-                />
               </div>
               <div>
                 <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Click the camera icon to upload your headshot</CardDescription>
+                <CardDescription>Update your profile details</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name</Label>
+                <Label htmlFor="fullName">Full Name</Label>
                 <Input
-                  id="full_name"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   placeholder="Jane Doe"
+                  data-testid="input-fullname"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" value={user?.email || ''} disabled className="bg-muted" />
+                <Input id="email" value={user?.email || ''} disabled className="bg-muted" data-testid="input-email" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <Label htmlFor="bio">Bio / Summary</Label>
                 <Button
                   type="button"
@@ -360,6 +243,7 @@ export default function Profile() {
                   size="sm"
                   onClick={() => setLinkedInModalOpen(true)}
                   className="gap-2"
+                  data-testid="button-import-linkedin"
                 >
                   <Linkedin className="w-4 h-4" />
                   Import from LinkedIn
@@ -371,18 +255,19 @@ export default function Profile() {
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 placeholder="Tell us about yourself, your experience, and what you're looking for..."
                 rows={4}
+                data-testid="input-bio"
               />
-              <p className="text-xs text-muted-foreground">This will be displayed on your public profile and acts as your professional summary.</p>
+              <p className="text-xs text-muted-foreground">This will be displayed on your public profile.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="university">University</Label>
                 <Select
-                  value={formData.university_id}
-                  onValueChange={(value) => setFormData({ ...formData, university_id: value, other_university: value === 'other' ? formData.other_university : '' })}
+                  value={formData.universityId}
+                  onValueChange={(value) => setFormData({ ...formData, universityId: value, otherUniversity: value === 'other' ? formData.otherUniversity : '' })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger data-testid="select-university">
                     <SelectValue placeholder="Select university" />
                   </SelectTrigger>
                   <SelectContent>
@@ -394,13 +279,14 @@ export default function Profile() {
                     <SelectItem value="other">Other (Not Listed)</SelectItem>
                   </SelectContent>
                 </Select>
-                {formData.university_id === 'other' && (
+                {formData.universityId === 'other' && (
                   <Input
-                    id="other_university"
-                    value={formData.other_university}
-                    onChange={(e) => setFormData({ ...formData, other_university: e.target.value })}
+                    id="otherUniversity"
+                    value={formData.otherUniversity}
+                    onChange={(e) => setFormData({ ...formData, otherUniversity: e.target.value })}
                     placeholder="Enter your university name"
                     className="mt-2"
+                    data-testid="input-other-university"
                   />
                 )}
               </div>
@@ -411,21 +297,23 @@ export default function Profile() {
                   value={formData.major}
                   onChange={(e) => setFormData({ ...formData, major: e.target.value })}
                   placeholder="Computer Science"
+                  data-testid="input-major"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="graduation_year">Graduation Year</Label>
+                <Label htmlFor="graduationYear">Graduation Year</Label>
                 <Input
-                  id="graduation_year"
+                  id="graduationYear"
                   type="number"
-                  value={formData.graduation_year}
-                  onChange={(e) => setFormData({ ...formData, graduation_year: e.target.value })}
+                  value={formData.graduationYear}
+                  onChange={(e) => setFormData({ ...formData, graduationYear: e.target.value })}
                   placeholder="2025"
                   min="2020"
                   max="2030"
+                  data-testid="input-graduation-year"
                 />
               </div>
               <div className="space-y-2">
@@ -434,7 +322,7 @@ export default function Profile() {
                   value={formData.availability}
                   onValueChange={(value) => setFormData({ ...formData, availability: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger data-testid="select-availability">
                     <SelectValue placeholder="Select availability" />
                   </SelectTrigger>
                   <SelectContent>
@@ -447,7 +335,6 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Skills */}
             <GroupedMultiSelect
               label="Skills"
               categories={SKILL_CATEGORIES}
@@ -457,7 +344,6 @@ export default function Profile() {
               badgeVariant="secondary"
             />
 
-            {/* Interests */}
             <GroupedMultiSelect
               label="Interests"
               categories={INTEREST_CATEGORIES}
@@ -467,25 +353,28 @@ export default function Profile() {
               badgeVariant="outline"
             />
 
-            {/* Links */}
             <div className="space-y-4">
               <Label className="text-base">Links</Label>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <Label htmlFor="linkedin_url" className="text-sm text-muted-foreground">LinkedIn</Label>
+                  <Label htmlFor="linkedinUrl" className="text-sm text-muted-foreground">LinkedIn</Label>
                   <Input
-                    id="linkedin_url"
-                    value={formData.linkedin_url}
-                    onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                    id="linkedinUrl"
+                    value={formData.linkedinUrl}
+                    onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
                     placeholder="https://linkedin.com/in/yourprofile"
+                    data-testid="input-linkedin-url"
                   />
                 </div>
               </div>
             </div>
 
-            <Button onClick={handleSave} disabled={saving} className="w-full">
+            <Button onClick={handleSave} disabled={saving} className="w-full" data-testid="button-save-profile">
               {saving ? (
-                'Saving...'
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
@@ -497,24 +386,6 @@ export default function Profile() {
         </Card>
       </motion.div>
 
-      {/* Image Cropper Dialog */}
-      {selectedImage && (
-        <ImageCropper
-          open={cropperOpen}
-          onClose={() => {
-            setCropperOpen(false);
-            if (selectedImage) {
-              URL.revokeObjectURL(selectedImage);
-              setSelectedImage(null);
-            }
-          }}
-          imageSrc={selectedImage}
-          onCropComplete={handleCroppedImage}
-          aspectRatio={1}
-        />
-      )}
-
-      {/* LinkedIn Import Modal */}
       <LinkedInImportModal
         open={linkedInModalOpen}
         onOpenChange={setLinkedInModalOpen}
