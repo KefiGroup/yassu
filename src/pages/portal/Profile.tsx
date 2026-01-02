@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,8 +17,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Save, CheckCircle, AlertCircle, Camera, Loader2, Linkedin } from 'lucide-react';
-import { LinkedInImportModal } from '@/components/LinkedInImportModal';
+import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 
@@ -33,7 +32,6 @@ export default function Profile() {
   const { toast } = useToast();
   const [universities, setUniversities] = useState<University[]>([]);
   const [saving, setSaving] = useState(false);
-  const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -122,15 +120,6 @@ export default function Profile() {
   const handleInterestsChange = (interests: string[]) => {
     setFormData({ ...formData, interests });
   };
-
-  const handleLinkedInImport = useCallback((bio: string, skills: string[]) => {
-    const mergedSkills = [...new Set([...formData.skills, ...skills])];
-    setFormData({ 
-      ...formData, 
-      bio,
-      skills: mergedSkills,
-    });
-  }, [formData]);
 
   const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -235,29 +224,21 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <Label htmlFor="bio">Bio / Summary</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setLinkedInModalOpen(true)}
-                  className="gap-2"
-                  data-testid="button-import-linkedin"
-                >
-                  <Linkedin className="w-4 h-4" />
-                  Import from LinkedIn
-                </Button>
-              </div>
+              <Label htmlFor="bio">Bio / Summary</Label>
               <Textarea
                 id="bio"
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 placeholder="Tell us about yourself, your experience, and what you're looking for..."
-                rows={4}
+                rows={5}
                 data-testid="input-bio"
               />
-              <p className="text-xs text-muted-foreground">This will be displayed on your public profile.</p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>This will be displayed on your public profile.</p>
+                <p className="text-muted-foreground/80">
+                  Tip: You can copy your bio from LinkedIn by going to your profile, clicking "About", then copying the text.
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -385,12 +366,6 @@ export default function Profile() {
           </CardContent>
         </Card>
       </motion.div>
-
-      <LinkedInImportModal
-        open={linkedInModalOpen}
-        onOpenChange={setLinkedInModalOpen}
-        onApply={handleLinkedInImport}
-      />
     </div>
   );
 }

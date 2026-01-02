@@ -102,12 +102,4 @@ export const api = {
     markRead: (id: string) =>
       apiRequest<{ success: boolean }>(`/notifications/${id}/read`, { method: "PATCH" }),
   },
-
-  functions: {
-    importLinkedin: (linkedinContent: string) =>
-      apiRequest<any>("/functions/import-linkedin", {
-        method: "POST",
-        body: JSON.stringify({ linkedinContent }),
-      }),
-  },
 };
