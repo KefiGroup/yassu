@@ -40,7 +40,7 @@ const Hero = () => {
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
             Yassu is the national marketplace where university-native talent uses AI, shared structure, 
-            and cross-campus collaboration to build real companies—before capital decides who matters.
+            and cross-campus collaboration to build real companies, before capital decides who matters.
           </motion.p>
 
           <motion.div

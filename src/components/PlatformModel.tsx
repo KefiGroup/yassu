@@ -23,7 +23,7 @@ const monetization = [
   {
     icon: Building2,
     title: "Not a Social Network",
-    description: "Not optimizing for engagement or vanity metrics—only companies that actually ship."
+    description: "Not optimizing for engagement or vanity metrics. Only companies that actually ship."
   },
   {
     icon: Crown,
@@ -54,7 +54,7 @@ const PlatformModel = () => {
             Facebook × YC, <span className="text-gradient">Rebuilt</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Combining the network effects of early Facebook with the company-building discipline of Y Combinator—
+            Combining the network effects of early Facebook with the company-building discipline of Y Combinator,
             powered by AI that makes early capital optional, not prerequisite.
           </p>
         </motion.div>
