@@ -17,9 +17,10 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Save, CheckCircle, AlertCircle, Loader2, Camera } from 'lucide-react';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
+import { AvatarUploadDialog } from '@/components/AvatarUploadDialog';
 
 interface University {
   id: string;
@@ -33,6 +34,7 @@ export default function Profile() {
   const [universities, setUniversities] = useState<University[]>([]);
   const [saving, setSaving] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     bio: '',
@@ -133,6 +135,36 @@ export default function Profile() {
 
   const isUniversityMissing = !formData.universityId || (formData.universityId === 'other' && !formData.otherUniversity.trim());
 
+  const handleAvatarSave = async (croppedImageBlob: Blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', croppedImageBlob, 'avatar.png');
+
+      const response = await fetch('/api/profile/avatar', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload avatar');
+      }
+
+      await refreshProfile();
+      toast({
+        title: 'Photo updated',
+        description: 'Your profile photo has been updated.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Upload failed',
+        description: error instanceof Error ? error.message : 'Failed to upload photo',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <motion.div
@@ -191,13 +223,22 @@ export default function Profile() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-4">
-              <div className="relative">
+              <div className="relative group">
                 <Avatar className="h-20 w-20">
                   <AvatarImage src={profile?.avatarUrl || undefined} />
                   <AvatarFallback className="text-xl bg-primary text-primary-foreground">
                     {getInitials(formData.fullName)}
                   </AvatarFallback>
                 </Avatar>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="absolute bottom-0 right-0 h-7 w-7 rounded-full shadow-md"
+                  onClick={() => setAvatarDialogOpen(true)}
+                  data-testid="button-edit-avatar"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                </Button>
               </div>
               <div>
                 <CardTitle>Personal Information</CardTitle>
@@ -366,6 +407,13 @@ export default function Profile() {
           </CardContent>
         </Card>
       </motion.div>
+
+      <AvatarUploadDialog
+        open={avatarDialogOpen}
+        onOpenChange={setAvatarDialogOpen}
+        onSave={handleAvatarSave}
+        currentAvatarUrl={profile?.avatarUrl || undefined}
+      />
     </div>
   );
 }

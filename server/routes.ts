@@ -1,6 +1,38 @@
 import type { Express, Request, Response } from "express";
 import { storage } from "./storage";
 import bcrypt from "bcryptjs";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const userId = (req as any).session?.userId || "unknown";
+    const ext = path.extname(file.originalname) || ".png";
+    cb(null, `avatar-${userId}-${Date.now()}${ext}`);
+  },
+});
+
+const avatarUpload = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type. Only JPEG, PNG and WebP are allowed."));
+    }
+  },
+});
 
 declare module "express-session" {
   interface SessionData {
@@ -122,6 +154,27 @@ export function registerRoutes(app: Express): void {
       res.json(profile);
     } catch (error) {
       res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  app.post("/api/profile/avatar", avatarUpload.single("avatar"), async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const avatarUrl = `/uploads/${file.filename}`;
+      await storage.updateProfile(req.session.userId, { avatarUrl });
+
+      res.json({ avatarUrl });
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      res.status(500).json({ error: "Failed to upload avatar" });
     }
   });
 
