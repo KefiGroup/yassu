@@ -45,15 +45,28 @@ ${idea.targetUser ? `Target Users: ${idea.targetUser}` : "Target Users: To be id
 ${idea.whyNow ? `Why Now: ${idea.whyNow}` : ""}
 `.trim();
 
+  const outputRules = `
+
+CRITICAL OUTPUT RULES:
+1. DO NOT include any introduction, greeting, or preamble. Start directly with the content.
+2. DO NOT write "As an expert..." or similar phrases.
+3. For tables, use proper markdown format with header row and separator row:
+   | Column1 | Column2 | Column3 |
+   |---------|---------|---------|
+   | Data1   | Data2   | Data3   |
+4. Every table MUST have data rows, not just headers.
+5. Use clear section headings but skip the main title (it's already shown in the UI).
+6. Be concise and actionable.`;
+
   return [
     {
       key: "founderFit",
       title: "Idea-Founder Fit",
-      prompt: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+      prompt: `Analyze this startup idea and generate IDEA-FOUNDER FIT content.
 
 ${ideaContext}
 
-Generate a detailed IDEA-FOUNDER FIT analysis in markdown format. Cover:
+Generate the following sections in clean markdown format. Cover:
 
 ## Problem Statement & Validation
 - Restate the core problem in 2-3 sentences
@@ -71,58 +84,56 @@ Generate a detailed IDEA-FOUNDER FIT analysis in markdown format. Cover:
 - Falsifiable hypotheses (at least 3)
 - Minimum viable experiment to validate
 - Expected learning timeline
-
-Be specific, actionable, and brutally honest. Use bullet points and clear structure.`,
+${outputRules}`,
     },
     {
       key: "competitiveLandscape",
       title: "Competitive Landscape",
-      prompt: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+      prompt: `Analyze this startup idea and generate COMPETITIVE LANDSCAPE content.
 
 ${ideaContext}
 
-Generate a detailed COMPETITIVE LANDSCAPE analysis in markdown format. Cover:
+Generate the following sections in clean markdown format:
 
 ## Market Map
 - Industry/sector categorization
 - Market size estimation (TAM, SAM, SOM)
 - Key market trends driving opportunity
-- Regulatory or environmental factors
 
 ## Competitor Grid
-Create a comparison table with columns:
-| Competitor | Type | Strengths | Weaknesses | Pricing | Target Segment |
 
-Include:
-- 3-5 direct competitors (name real companies if they exist)
-- 2-3 indirect competitors/substitutes
-- Status quo (doing nothing) as a competitor
+| Competitor | Type | Strengths | Weaknesses | Pricing | Target Segment |
+|------------|------|-----------|------------|---------|----------------|
+| [Company 1] | Direct | ... | ... | ... | ... |
+| [Company 2] | Direct | ... | ... | ... | ... |
+| [Company 3] | Indirect | ... | ... | ... | ... |
+| Status Quo | Alternative | ... | ... | Free | ... |
+
+Fill in the table with 4-6 real competitors.
 
 ## Whitespace Analysis
 - Specific gaps in current market offerings
 - Underserved customer segments
-- Unmet needs or pain points
 - Your potential wedge/entry point
-- Sustainable differentiation strategy
-
-Be specific with company names and data. Use tables and bullet points.`,
+${outputRules}`,
     },
     {
       key: "riskMoat",
       title: "Risk & Moat Analysis",
-      prompt: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+      prompt: `Analyze this startup idea and generate RISK & MOAT content.
 
 ${ideaContext}
 
-Generate a detailed RISK & MOAT analysis in markdown format. Cover:
+Generate the following sections in clean markdown format:
 
 ## SWOT Analysis
-| Strengths | Weaknesses |
-|-----------|------------|
-| ... | ... |
 
-| Opportunities | Threats |
-|---------------|---------|
+| Category | Analysis |
+|----------|----------|
+| Strengths | [List 3-4 key strengths] |
+| Weaknesses | [List 3-4 key weaknesses] |
+| Opportunities | [List 3-4 opportunities] |
+| Threats | [List 3-4 threats] |
 | ... | ... |
 
 ## Defensibility Score (1-10)
@@ -147,285 +158,249 @@ For each risk:
 - First 30 days priorities
 - 90-day risk reduction plan
 - 1-year defensive strategy
-
-Be brutally honest about risks. Founders need truth, not comfort.`,
+${outputRules}`,
     },
     {
       key: "mvpDesign",
       title: "Product MVP Design",
-      prompt: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+      prompt: `Analyze this startup idea and generate MVP DESIGN content.
 
 ${ideaContext}
 
-Generate a detailed MVP DESIGN analysis in markdown format. Cover:
+Generate the following sections in clean markdown format:
 
-## Feature Backlog (Prioritized)
+## Feature Backlog
+
 | Priority | Feature | User Value | Effort | MVP? |
 |----------|---------|------------|--------|------|
-| P0 | ... | ... | S/M/L | Yes |
-| P1 | ... | ... | S/M/L | Maybe |
-| P2 | ... | ... | S/M/L | No |
+| P0 | User onboarding | Core functionality | M | Yes |
+| P0 | [Feature 2] | ... | S/M/L | Yes |
+| P1 | [Feature 3] | ... | S/M/L | Maybe |
+| P2 | [Feature 4] | ... | S/M/L | No |
 
-Include 8-12 features, clearly marking MVP vs. post-MVP.
+Include 6-8 features with real names, clearly marking MVP vs. post-MVP.
 
 ## MVP Specification
 - Core user flow (step by step)
 - Essential screens/pages (list with purpose)
-- Data model (key entities and relationships)
-- Integration requirements (APIs, services)
+- Key data entities
 
 ## Tech Stack Recommendation
-- Frontend: [choice] - rationale
-- Backend: [choice] - rationale
-- Database: [choice] - rationale
-- Hosting: [choice] - rationale
-- Key libraries/services
+- Frontend: [specific choice] - rationale
+- Backend: [specific choice] - rationale
+- Database: [specific choice] - rationale
 
 ## Development Milestones
-| Week | Milestone | Deliverable | Success Criteria |
-|------|-----------|-------------|------------------|
-| 1-2 | ... | ... | ... |
-| 3-4 | ... | ... | ... |
-| 5-6 | ... | ... | ... |
-| 7-8 | Launch | MVP live | First users acquired |
 
-Be specific about technology choices. Students need concrete guidance.`,
+| Week | Milestone | Deliverable |
+|------|-----------|-------------|
+| 1-2 | Setup & Design | Wireframes, tech setup |
+| 3-4 | Core Features | Main functionality |
+| 5-6 | Polish | Testing, fixes |
+| 7-8 | Launch | MVP live |
+${outputRules}`,
     },
     {
       key: "teamTalent",
       title: "Team & Talent Strategy",
-      prompt: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+      prompt: `Analyze this startup idea and generate TEAM & TALENT content.
 
 ${ideaContext}
 
-Generate a detailed TEAM & TALENT strategy in markdown format. Cover:
+Generate the following sections in clean markdown format:
 
 ## Skill Matrix Required
-| Skill | Priority | Level Needed | In-house vs Outsource |
-|-------|----------|--------------|----------------------|
-| ... | Critical/Important/Nice | Expert/Competent/Basic | ... |
+
+| Skill | Priority | Level Needed | Source |
+|-------|----------|--------------|--------|
+| [Skill 1] | Critical | Expert | In-house |
+| [Skill 2] | Critical | Competent | In-house |
+| [Skill 3] | Important | Basic | Outsource |
+
+Include 5-6 key skills.
 
 ## Ideal Co-Founder Profiles
-For each recommended co-founder role:
-1. **[Role Title]**
-   - Background: Ideal prior experience
-   - Skills: Must-have capabilities
-   - Personality: Complementary traits
-   - Where to find: Specific places on campus
+
+### Technical Co-Founder
+- Background: [specific experience needed]
+- Skills: [must-have capabilities]
+- Where to find: [specific places on campus]
+
+### Business Co-Founder
+- Background: [specific experience needed]
+- Skills: [must-have capabilities]
+- Where to find: [specific places on campus]
 
 ## First 3 Hires (Post-Founding)
-1. [Role] - Why this role first, estimated timing
-2. [Role] - Dependencies on role 1
-3. [Role] - Growth stage hire
-
-## Outreach Templates
-Provide 2 ready-to-use templates:
-
-**Co-Founder Outreach (LinkedIn/Email):**
-\`\`\`
-Subject: [Template]
-Body: [Template with placeholders]
-\`\`\`
-
-**Advisor Ask Template:**
-\`\`\`
-Subject: [Template]
-Body: [Template with placeholders]
-\`\`\`
+1. [Role 1] - Why first, timing
+2. [Role 2] - Dependencies
+3. [Role 3] - Growth stage
 
 ## Campus Recruiting Strategy
 - Student orgs to partner with
 - Classes with relevant talent
-- Events to attend/host
-- Professor connections to make`,
+- Events to attend
+${outputRules}`,
     },
     {
       key: "launchPlan",
       title: "Go-to-Market Launch",
-      prompt: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+      prompt: `Analyze this startup idea and generate GO-TO-MARKET content.
 
 ${ideaContext}
 
-Generate a detailed GO-TO-MARKET strategy in markdown format. Cover:
+Generate the following sections in clean markdown format:
 
 ## Marketing Calendar (12 Weeks)
+
 | Week | Phase | Activities | Goals |
 |------|-------|------------|-------|
-| 1-2 | Pre-launch | ... | ... |
-| 3-4 | Pre-launch | ... | ... |
-| 5-6 | Soft launch | ... | ... |
-| 7-8 | Launch | ... | ... |
-| 9-10 | Growth | ... | ... |
-| 11-12 | Optimize | ... | ... |
+| 1-2 | Pre-launch | Build landing page, email list | 100 signups |
+| 3-4 | Pre-launch | Content creation, outreach | 500 signups |
+| 5-6 | Soft launch | Beta with early users | 50 active users |
+| 7-8 | Launch | Public launch | 200 users |
+| 9-10 | Growth | Paid ads, partnerships | 500 users |
+| 11-12 | Optimize | A/B testing, retention | 1000 users |
+
+Fill in with specific activities and realistic goals.
 
 ## Channel Strategy
-For each channel, rate Priority (1-5) and provide tactics:
 
-1. **Organic Social** (Priority: X/5)
-   - Platforms to focus on
-   - Content themes
-   - Posting cadence
+### Organic Social (Priority: X/5)
+- Platforms to focus on
+- Content themes
+- Posting cadence
 
-2. **Campus Marketing** (Priority: X/5)
-   - Specific tactics
-   - Events and partnerships
+### Campus Marketing (Priority: X/5)
+- Specific tactics
+- Events and partnerships
 
-3. **Referral/Viral** (Priority: X/5)
-   - Referral mechanism
-   - Viral loops
-
-4. **Content/SEO** (Priority: X/5)
-   - Content strategy
-   - Keyword targets
-
-5. **Paid Acquisition** (Priority: X/5)
-   - When to start
-   - Budget allocation
+### Referral Program (Priority: X/5)
+- Referral mechanism
+- Incentive structure
 
 ## Launch Checklist
-Week before launch:
-- [ ] [Specific task]
-- [ ] [Specific task]
-...
-
-Launch day:
-- [ ] [Specific task]
-- [ ] [Specific task]
-...
-
-Week after launch:
-- [ ] [Specific task]
-- [ ] [Specific task]
-...
+**Week before:** Key preparation tasks
+**Launch day:** Critical actions
+**Week after:** Follow-up tasks
 
 ## Success Metrics
-| Metric | Week 4 Target | Week 8 Target | Week 12 Target |
-|--------|---------------|---------------|----------------|
-| Users | ... | ... | ... |
-| Engagement | ... | ... | ... |
-| Revenue | ... | ... | ... |`,
+
+| Metric | Week 4 | Week 8 | Week 12 |
+|--------|--------|--------|---------|
+| Users | 200 | 500 | 1000 |
+| Engagement | 30% | 40% | 50% |
+| Revenue | $0 | $500 | $2000 |
+
+Fill in with realistic targets.
+${outputRules}`,
     },
     {
       key: "schoolAdvantage",
       title: "University Advantage",
-      prompt: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+      prompt: `Analyze this startup idea and generate UNIVERSITY ADVANTAGE content.
 
 ${ideaContext}
 
-Generate a detailed UNIVERSITY ADVANTAGE strategy in markdown format. Cover:
+Generate the following sections in clean markdown format:
 
 ## School Resources Inventory
-| Resource Type | Examples | How to Access | Value for This Startup |
-|---------------|----------|---------------|----------------------|
-| Entrepreneurship Centers | ... | ... | High/Med/Low |
-| Grants/Competitions | ... | ... | High/Med/Low |
-| Faculty Expertise | ... | ... | High/Med/Low |
-| Labs/Equipment | ... | ... | High/Med/Low |
-| Student Talent | ... | ... | High/Med/Low |
+
+| Resource Type | Examples | How to Access | Value |
+|---------------|----------|---------------|-------|
+| Entrepreneurship Centers | Incubators, accelerators | Apply online | High |
+| Grants/Competitions | Pitch competitions | Application deadlines | High |
+| Faculty Expertise | Professors in domain | Office hours, email | Medium |
+| Labs/Equipment | Relevant facilities | Course enrollment | Medium |
+| Student Talent | CS, Design, Business | Student orgs, classes | High |
+
+Fill in with specific resources relevant to this startup.
 
 ## Key Contacts to Make
-1. **[Title/Department]**
-   - Why: Specific value they provide
-   - How to connect: Approach strategy
-   - Ask: What to request
 
-2. **[Title/Department]**
-   - Why: ...
-   - How to connect: ...
-   - Ask: ...
+### Entrepreneurship Director
+- Why: Access to resources, mentorship
+- How to connect: Email, office hours
+- Ask: Incubator application, introductions
 
-(List 5-7 key contacts)
+### Faculty Advisor
+- Why: Domain expertise, credibility
+- How to connect: Course enrollment, research
+- Ask: Feedback, introductions
+
+### Student Org Leaders
+- Why: Access to talent, early users
+- How to connect: Events, LinkedIn
+- Ask: Speaking opportunities, partnerships
 
 ## Competition & Grant Roadmap
-| Opportunity | Deadline | Award | Fit Score | Prep Required |
-|-------------|----------|-------|-----------|---------------|
-| ... | ... | ... | 1-5 | ... |
 
-(List 5-8 relevant opportunities)
+| Opportunity | Award | Deadline | Prep Required |
+|-------------|-------|----------|---------------|
+| [Competition 1] | $5K | Spring | Pitch deck |
+| [Competition 2] | $10K | Fall | Business plan |
+| [Grant 1] | $2K | Rolling | Application |
+
+List 4-5 relevant opportunities.
 
 ## Campus as Testing Ground
-- **Pilot opportunities:** Where to test on campus
-- **Student segments:** Who to target first
-- **Feedback loops:** How to iterate quickly
-- **Scale path:** Campus to city to national
-
-## Alumni Network Activation
-- Notable alumni in relevant industries
-- Alumni groups to engage
-- Mentorship program access
-- Investment potential from alumni`,
+- Pilot opportunities on campus
+- Student segments to target first
+- Feedback collection methods
+${outputRules}`,
     },
     {
       key: "fundingPitch",
       title: "Funding & Pitch Strategy",
-      prompt: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+      prompt: `Analyze this startup idea and generate FUNDING & PITCH content.
 
 ${ideaContext}
 
-Generate a detailed FUNDING & PITCH strategy in markdown format. Cover:
+Generate the following sections in clean markdown format:
 
 ## One-Page Pitch Summary
-Create a structured one-pager:
 
 **THE PROBLEM**
-[2-3 sentences]
+[2-3 sentences describing the problem]
 
 **THE SOLUTION**
-[2-3 sentences]
+[2-3 sentences describing your solution]
 
 **MARKET OPPORTUNITY**
-[TAM/SAM/SOM with numbers]
+- TAM: $X billion
+- SAM: $X million
+- SOM: $X million (Year 1 target)
 
 **BUSINESS MODEL**
-[How you make money]
+[How you make money - pricing, revenue streams]
 
-**TRACTION** (target for fundraise)
-[Key metrics to hit]
+**TRACTION TARGETS**
+[Key metrics to hit before fundraising]
 
 **THE ASK**
-[Amount and use of funds]
+[Amount seeking and use of funds]
 
 ## Grant & Competition List
-| Name | Amount | Deadline | Requirements | Fit |
-|------|--------|----------|--------------|-----|
-| ... | ... | ... | ... | High/Med |
 
-(Include 8-10 relevant grants/competitions)
+| Name | Amount | Deadline | Fit |
+|------|--------|----------|-----|
+| [Grant/Competition 1] | $5,000 | March | High |
+| [Grant/Competition 2] | $10,000 | June | High |
+| [Grant/Competition 3] | $2,500 | Rolling | Medium |
+| [Grant/Competition 4] | $25,000 | September | High |
 
-## Investor Email Templates
-
-**Warm Intro Request:**
-\`\`\`
-Subject: [Template]
-Body: [Template with placeholders]
-\`\`\`
-
-**Cold Outreach:**
-\`\`\`
-Subject: [Template]  
-Body: [Template with placeholders]
-\`\`\`
-
-**Follow-up After Meeting:**
-\`\`\`
-Subject: [Template]
-Body: [Template with placeholders]
-\`\`\`
+List 4-6 relevant opportunities with real names if possible.
 
 ## Funding Roadmap
-| Stage | Amount | Timeline | Milestones to Hit First |
-|-------|--------|----------|------------------------|
-| Pre-seed | ... | ... | ... |
-| Seed | ... | ... | ... |
-| Series A | ... | ... | ... |
 
-## Common Objections & Rebuttals
-| Objection | Rebuttal |
-|-----------|----------|
-| "Market too small" | ... |
-| "No technical moat" | ... |
-| "Team inexperience" | ... |
-| "Competition" | ... |`,
+| Stage | Amount | Timeline | Milestones First |
+|-------|--------|----------|------------------|
+| Pre-seed | $50-100K | Month 6 | MVP, 100 users |
+| Seed | $500K-1M | Month 18 | PMF, 10K users |
+| Series A | $3-5M | Month 36 | $1M ARR |
+
+Customize based on the specific startup.
+${outputRules}`,
     },
   ];
 }
