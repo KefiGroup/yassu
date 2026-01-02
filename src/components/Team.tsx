@@ -50,6 +50,7 @@ const teamMembers = [
     quote: "I believe commitment, hard work, and consistency allows for results to subsequently flourish.",
     superpower: "Fostering connections and making people smile",
     hope: "For everyone in the world to have an actual opportunity to build upon an idea or dream.",
+    imagePosition: "center",
   },
 ];
 
@@ -88,7 +89,11 @@ const Team = () => {
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center mb-4">
                     <Avatar className="h-32 w-32 mb-4">
-                      <AvatarImage src={member.image} alt={member.name} className="object-cover object-top" />
+                      <AvatarImage 
+                        src={member.image} 
+                        alt={member.name} 
+                        className={`object-cover ${(member as any).imagePosition === "center" ? "object-center" : "object-top"}`} 
+                      />
                       <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                         {member.name.split(" ").map(n => n[0]).join("")}
                       </AvatarFallback>
