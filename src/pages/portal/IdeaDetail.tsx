@@ -702,20 +702,26 @@ export default function IdeaDetail() {
                     Download Word Document
                   </Button>
                 </div>
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-2 rounded-lg w-full">
-                    {planSections.map((section) => (
-                      <TabsTrigger
-                        key={section.id}
-                        value={section.id}
-                        className="text-xs sm:text-sm data-[state=active]:bg-background"
-                        data-testid={`tab-${section.id}`}
-                      >
-                        <section.icon className="w-4 h-4 mr-1.5" />
-                        {section.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <div className="bg-muted/50 p-2 rounded-lg mb-4">
+                    <div className="flex flex-wrap gap-1">
+                      {planSections.map((section) => (
+                        <button
+                          key={section.id}
+                          onClick={() => setActiveTab(section.id)}
+                          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs sm:text-sm font-medium transition-all ${
+                            activeTab === section.id
+                              ? 'bg-background text-foreground shadow-sm'
+                              : 'text-muted-foreground hover:bg-background/50'
+                          }`}
+                          data-testid={`tab-${section.id}`}
+                        >
+                          <section.icon className="w-4 h-4 mr-1.5" />
+                          {section.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   
                   {planSections.map((section) => (
                     <TabsContent key={section.id} value={section.id} className="mt-6">
