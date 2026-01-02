@@ -21,11 +21,8 @@ const Navbar = () => {
           <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
             How It Works
           </a>
-          <a href="#agents" className="text-muted-foreground hover:text-foreground transition-colors">
-            AI Agents
-          </a>
-          <a href="#universities" className="text-muted-foreground hover:text-foreground transition-colors">
-            Universities
+          <a href="#platform" className="text-muted-foreground hover:text-foreground transition-colors">
+            Platform
           </a>
         </div>
 
