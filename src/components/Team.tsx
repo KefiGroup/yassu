@@ -52,7 +52,7 @@ const teamMembers = [
   {
     name: "Ricardo Mazzi",
     role: "Marketing, Partnerships",
-    image: "https://yassu.co/wp-content/uploads/2024/04/ricardo_mazzi-scaled-e1714152057994.jpg",
+    image: "https://media.licdn.com/dms/image/v2/C5603AQFW5cQH_g4hsg/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1516286399520?e=1769040000&v=beta&t=LzVqd6QoGqRdMkKZy--SuRcWvi8mAvNL8TCUEL-RfhY",
     linkedin: "https://www.linkedin.com/in/ricardomazzi/",
     quote: "I believe commitment, hard work, and consistency allows for results to subsequently flourish.",
     superpower: "Fostering connections and making people smile",
