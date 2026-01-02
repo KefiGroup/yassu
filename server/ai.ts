@@ -444,8 +444,11 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
         model: "gemini-2.5-flash",
         contents: section.prompt,
         config: {
-          maxOutputTokens: 2000,
+          maxOutputTokens: 8192,
           temperature: 0.7,
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
         },
       });
       
@@ -532,8 +535,11 @@ Generate an Executive Summary in markdown format covering:
 
 Keep it to ~400 words. Make it compelling enough to hook an investor or co-founder.`,
     config: {
-      maxOutputTokens: 1000,
+      maxOutputTokens: 4096,
       temperature: 0.7,
+      thinkingConfig: {
+        thinkingBudget: 0,
+      },
     },
   });
 
