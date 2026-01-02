@@ -703,7 +703,7 @@ export default function IdeaDetail() {
                   </Button>
                 </div>
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
+                  <TabsList className="flex flex-wrap h-auto gap-1 bg-muted p-1 sticky top-0 z-50">
                     {planSections.map((section) => (
                       <TabsTrigger
                         key={section.id}
