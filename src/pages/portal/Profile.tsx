@@ -87,6 +87,10 @@ export default function Profile() {
     if (!user) return;
 
     setSaving(true);
+    
+    // Don't save "other" as university_id - it's not a valid UUID
+    const universityIdToSave = formData.university_id === 'other' ? null : (formData.university_id || null);
+    
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -94,7 +98,7 @@ export default function Profile() {
         bio: formData.bio,
         major: formData.major,
         graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null,
-        university_id: formData.university_id || null,
+        university_id: universityIdToSave,
         availability: formData.availability || null,
         linkedin_url: formData.linkedin_url || null,
         github_url: formData.github_url || null,
