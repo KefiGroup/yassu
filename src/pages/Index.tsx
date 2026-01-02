@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import HowItWorks from "@/components/HowItWorks";
 import Team from "@/components/Team";
-import Ideas from "@/components/Ideas";
+import IdeasSlider from "@/components/IdeasSlider";
 import Ambassadors from "@/components/Ambassadors";
 import WaitlistForm from "@/components/WaitlistForm";
 import Vision from "@/components/Vision";
@@ -15,7 +15,7 @@ const Index = () => {
       <Hero />
       <HowItWorks />
       <Team />
-      <Ideas />
+      <IdeasSlider />
       <Ambassadors />
       <WaitlistForm />
       <Vision />
