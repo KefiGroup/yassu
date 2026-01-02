@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Save, CheckCircle, AlertCircle, Loader2, Camera } from 'lucide-react';
+import { Save, Loader2, Camera } from 'lucide-react';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 import { AvatarUploadDialog } from '@/components/AvatarUploadDialog';
@@ -29,7 +29,7 @@ interface University {
 }
 
 export default function Profile() {
-  const { user, profile, refreshProfile, isVerified } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [universities, setUniversities] = useState<University[]>([]);
   const [saving, setSaving] = useState(false);
@@ -182,42 +182,6 @@ export default function Profile() {
         </p>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-      >
-        <Card className={isVerified ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-amber-500/20 bg-amber-500/5'}>
-          <CardContent className="p-4 flex items-center gap-3">
-            {isVerified ? (
-              <>
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
-                <div>
-                  <p className="font-medium text-emerald-700 dark:text-emerald-400">Verified Member</p>
-                  <p className="text-sm text-muted-foreground">You have full access to all features</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                <div className="flex-1">
-                  <p className="font-medium text-amber-700 dark:text-amber-400">Pending Verification</p>
-                  <p className="text-sm text-muted-foreground">
-                    {isUniversityMissing 
-                      ? 'Please select your university below to enable verification'
-                      : 'Complete your profile with university details to get verified'}
-                  </p>
-                </div>
-                {isUniversityMissing && (
-                  <Badge variant="outline" className="border-amber-500 text-amber-600">
-                    University Required
-                  </Badge>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

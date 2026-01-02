@@ -77,7 +77,7 @@ const workflowTypes: Record<string, { label: string; icon: typeof Workflow }> = 
 };
 
 export default function Dashboard() {
-  const { profile, isVerified } = useAuth();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const [recentIdeas, setRecentIdeas] = useState<Idea[]>([]);
   const [recentWorkflows, setRecentWorkflows] = useState<WorkflowRun[]>([]);
@@ -123,38 +123,9 @@ export default function Dashboard() {
           Welcome back, {profile?.fullName?.split(' ')[0] || 'Founder'}!
         </h1>
         <p className="text-muted-foreground mt-1">
-          {isVerified
-            ? 'Your portal to building and launching your startup.'
-            : 'Complete your profile to unlock all features.'}
+          Your portal to building and launching your startup.
         </p>
       </motion.div>
-
-      {!isVerified && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Complete your profile</p>
-                  <p className="text-sm text-muted-foreground">
-                    Add your university and skills to get verified
-                  </p>
-                </div>
-              </div>
-              <Button onClick={() => navigate('/portal/profile')} data-testid="button-complete-profile">
-                Complete Profile
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
