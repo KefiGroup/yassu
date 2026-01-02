@@ -109,20 +109,20 @@ export function PortalHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 pl-2 pr-3">
               <Avatar className="h-7 w-7">
-                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarImage src={profile?.avatarUrl || undefined} />
                 <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                  {getInitials(profile?.full_name || user?.email)}
+                  {getInitials(profile?.fullName || user?.email)}
                 </AvatarFallback>
               </Avatar>
               <span className="hidden sm:inline text-sm font-medium">
-                {profile?.full_name || 'User'}
+                {profile?.fullName || 'User'}
               </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span>{profile?.full_name || 'User'}</span>
+                <span>{profile?.fullName || 'User'}</span>
                 <span className="text-xs text-muted-foreground font-normal">
                   {user?.email}
                 </span>
