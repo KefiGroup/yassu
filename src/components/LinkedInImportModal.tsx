@@ -7,11 +7,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, Check, Sparkles, Link2, AlertCircle } from 'lucide-react';
+import { Loader2, RefreshCw, Check, Sparkles, AlertCircle, Copy } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface GeneratedBio {
   shortBio: string;
@@ -28,25 +29,17 @@ interface LinkedInImportModalProps {
 
 export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImportModalProps) {
   const { toast } = useToast();
-  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [linkedinContent, setLinkedinContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<'scraping' | 'generating' | null>(null);
   const [generatedBio, setGeneratedBio] = useState<GeneratedBio | null>(null);
   const [selectedBioType, setSelectedBioType] = useState<'short' | 'long'>('short');
   const [error, setError] = useState<string | null>(null);
 
-  const isValidLinkedInUrl = (url: string) => {
-    const trimmed = url.trim();
-    if (!trimmed) return false;
-    // Accept linkedin.com/in/ URLs
-    return trimmed.includes('linkedin.com/in/');
-  };
-
-  const processLinkedInUrl = useCallback(async (url: string) => {
-    if (!isValidLinkedInUrl(url)) {
+  const processLinkedInContent = useCallback(async (content: string) => {
+    if (!content || content.trim().length < 50) {
       toast({
-        title: 'Invalid LinkedIn URL',
-        description: 'Please enter a valid LinkedIn profile URL (e.g., linkedin.com/in/yourname)',
+        title: 'Not enough content',
+        description: 'Please paste more content from your LinkedIn profile (at least 50 characters)',
         variant: 'destructive',
       });
       return;
@@ -57,70 +50,11 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
     setGeneratedBio(null);
 
     try {
-      // Step 1: Scrape LinkedIn profile using Firecrawl
-      setLoadingStep('scraping');
-      
-      let formattedUrl = url.trim();
-      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
-        formattedUrl = `https://${formattedUrl}`;
-      }
-
-      const scrapeResponse = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/firecrawl-scrape`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ 
-            url: formattedUrl,
-            options: {
-              formats: ['markdown'],
-              onlyMainContent: true,
-              waitFor: 5000,
-            }
-          }),
-        }
-      );
-
-      const scrapeData = await scrapeResponse.json();
-
-      if (!scrapeResponse.ok || !scrapeData.success) {
-        throw new Error(scrapeData.error || 'Failed to fetch LinkedIn profile. The profile may be private or LinkedIn may be blocking the request.');
-      }
-
-      const scrapedContent = scrapeData.data?.markdown || scrapeData.data?.content;
-      
-      if (!scrapedContent || scrapedContent.length < 50) {
-        throw new Error('Could not extract enough content from the LinkedIn profile. Please ensure the profile is public.');
-      }
-
-      // Step 2: Send to OpenAI for bio generation
-      setLoadingStep('generating');
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-linkedin`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ linkedinContent: scrapedContent }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate bio');
-      }
-
+      const data = await api.functions.importLinkedin(content);
       setGeneratedBio(data);
     } catch (error) {
       console.error('LinkedIn import error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to import LinkedIn profile';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate bio';
       setError(errorMessage);
       toast({
         title: 'Import failed',
@@ -129,27 +63,25 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
       });
     } finally {
       setIsLoading(false);
-      setLoadingStep(null);
     }
   }, [toast]);
 
   const handleGenerate = useCallback(() => {
-    processLinkedInUrl(linkedinUrl);
-  }, [linkedinUrl, processLinkedInUrl]);
+    processLinkedInContent(linkedinContent);
+  }, [linkedinContent, processLinkedInContent]);
 
   const handleRegenerate = useCallback(() => {
-    processLinkedInUrl(linkedinUrl);
-  }, [linkedinUrl, processLinkedInUrl]);
+    processLinkedInContent(linkedinContent);
+  }, [linkedinContent, processLinkedInContent]);
 
   const handleApply = useCallback(() => {
     if (!generatedBio) return;
 
     const bioToApply = selectedBioType === 'short' ? generatedBio.shortBio : generatedBio.longBio;
     
-    // Combine highlights into bio if present
     let finalBio = bioToApply;
     if (generatedBio.highlights.length > 0) {
-      finalBio += '\n\n' + generatedBio.highlights.map(h => `• ${h}`).join('\n');
+      finalBio += '\n\n' + generatedBio.highlights.map(h => `- ${h}`).join('\n');
     }
 
     onApply(finalBio, generatedBio.skills);
@@ -159,21 +91,20 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
       description: 'Your profile has been updated with the generated bio.',
     });
 
-    // Reset and close
     setGeneratedBio(null);
-    setLinkedinUrl('');
+    setLinkedinContent('');
     setError(null);
     onOpenChange(false);
   }, [generatedBio, selectedBioType, onApply, onOpenChange, toast]);
 
   const handleClose = useCallback(() => {
     setGeneratedBio(null);
-    setLinkedinUrl('');
+    setLinkedinContent('');
     setError(null);
     onOpenChange(false);
   }, [onOpenChange]);
 
-  const canGenerate = isValidLinkedInUrl(linkedinUrl);
+  const canGenerate = linkedinContent.trim().length >= 50;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -184,33 +115,38 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
             Import from LinkedIn
           </DialogTitle>
           <DialogDescription>
-            Enter your LinkedIn profile URL to automatically generate a professional bio
+            Paste your LinkedIn profile content to generate a professional bio
           </DialogDescription>
         </DialogHeader>
 
         {!generatedBio ? (
           <div className="space-y-6">
-            {/* URL Input */}
             <div className="space-y-3">
-              <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
-              <div className="relative">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="linkedin-url"
-                  type="url"
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  value={linkedinUrl}
-                  onChange={(e) => setLinkedinUrl(e.target.value)}
-                  className="pl-10"
-                  disabled={isLoading}
-                />
+              <Label htmlFor="linkedin-content">LinkedIn Profile Content</Label>
+              <Textarea
+                id="linkedin-content"
+                placeholder="Go to your LinkedIn profile, select all text (Ctrl+A / Cmd+A), copy it (Ctrl+C / Cmd+C), and paste it here..."
+                value={linkedinContent}
+                onChange={(e) => setLinkedinContent(e.target.value)}
+                rows={8}
+                disabled={isLoading}
+                className="resize-none"
+                data-testid="input-linkedin-content"
+              />
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <h4 className="font-medium text-sm flex items-center gap-2">
+                  <Copy className="w-4 h-4" />
+                  How to copy your LinkedIn profile:
+                </h4>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Go to your LinkedIn profile page</li>
+                  <li>Press Ctrl+A (Windows) or Cmd+A (Mac) to select all</li>
+                  <li>Press Ctrl+C (Windows) or Cmd+C (Mac) to copy</li>
+                  <li>Paste the content in the box above</li>
+                </ol>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Paste your full LinkedIn profile URL. Make sure your profile is set to public.
-              </p>
             </div>
 
-            {/* Error Display */}
             {error && (
               <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
@@ -221,33 +157,23 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
               </div>
             )}
 
-            {/* Loading State */}
             {isLoading && (
               <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 text-primary animate-spin" />
                   <div>
-                    <p className="font-medium text-sm">
-                      {loadingStep === 'scraping' 
-                        ? 'Fetching your LinkedIn profile...' 
-                        : 'Generating your bio with AI...'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {loadingStep === 'scraping'
-                        ? 'This may take a few seconds'
-                        : 'Almost there!'}
-                    </p>
+                    <p className="font-medium text-sm">Generating your bio with AI...</p>
+                    <p className="text-xs text-muted-foreground mt-1">This may take a few seconds</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="outline" onClick={handleClose} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button onClick={handleGenerate} disabled={!canGenerate || isLoading}>
+              <Button onClick={handleGenerate} disabled={!canGenerate || isLoading} data-testid="button-generate-bio">
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -264,7 +190,6 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Bio Type Selection */}
             <div className="space-y-3">
               <Label>Select Bio Version</Label>
               <div className="grid grid-cols-2 gap-3">
@@ -275,6 +200,7 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'
                   }`}
+                  data-testid="button-select-short-bio"
                 >
                   <div className="font-medium mb-1">Short Bio</div>
                   <div className="text-xs text-muted-foreground">Max 600 characters</div>
@@ -286,6 +212,7 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'
                   }`}
+                  data-testid="button-select-long-bio"
                 >
                   <div className="font-medium mb-1">Long Bio</div>
                   <div className="text-xs text-muted-foreground">Max 1200 characters</div>
@@ -293,22 +220,20 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
               </div>
             </div>
 
-            {/* Preview */}
             <div className="space-y-3">
               <Label>Bio Preview</Label>
-              <div className="rounded-lg bg-muted/50 p-4 text-sm whitespace-pre-wrap">
+              <div className="rounded-lg bg-muted/50 p-4 text-sm whitespace-pre-wrap" data-testid="text-bio-preview">
                 {selectedBioType === 'short' ? generatedBio.shortBio : generatedBio.longBio}
               </div>
             </div>
 
-            {/* Highlights */}
             {generatedBio.highlights.length > 0 && (
               <div className="space-y-3">
                 <Label>Highlights (will be appended)</Label>
                 <ul className="space-y-1 text-sm">
                   {generatedBio.highlights.map((highlight, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
+                      <span className="text-primary">-</span>
                       {highlight}
                     </li>
                   ))}
@@ -316,7 +241,6 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
               </div>
             )}
 
-            {/* Skills */}
             {generatedBio.skills.length > 0 && (
               <div className="space-y-3">
                 <Label>Skills to Add</Label>
@@ -330,8 +254,7 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
               </div>
             )}
 
-            {/* Actions */}
-            <div className="flex justify-between gap-3 pt-4 border-t">
+            <div className="flex justify-between gap-3 pt-4 border-t flex-wrap">
               <Button variant="outline" onClick={handleRegenerate} disabled={isLoading}>
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -344,7 +267,7 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
                 <Button variant="outline" onClick={handleClose}>
                   Cancel
                 </Button>
-                <Button onClick={handleApply}>
+                <Button onClick={handleApply} data-testid="button-apply-bio">
                   <Check className="w-4 h-4 mr-2" />
                   Apply to Profile
                 </Button>
