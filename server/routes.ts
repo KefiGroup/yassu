@@ -359,17 +359,28 @@ Only output valid JSON, no markdown or explanations.`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-3.5-turbo",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Generate a professional bio from this LinkedIn content:\n\n${linkedinContent}` }
+            { role: "user", content: `Generate a professional bio from this LinkedIn content:\n\n${linkedinContent.slice(0, 4000)}` }
           ],
           max_tokens: 1000,
         }),
       });
 
       if (!response.ok) {
-        return res.status(response.status).json({ error: "Failed to generate bio" });
+        const errorData = await response.json().catch(() => ({})) as any;
+        console.error("OpenAI API error:", response.status, errorData);
+        
+        if (response.status === 429) {
+          return res.status(429).json({ 
+            error: "OpenAI rate limit exceeded. Please wait a minute and try again, or check your OpenAI account has sufficient credits." 
+          });
+        }
+        if (response.status === 401) {
+          return res.status(401).json({ error: "Invalid OpenAI API key. Please check your API key configuration." });
+        }
+        return res.status(response.status).json({ error: errorData.error?.message || "Failed to generate bio" });
       }
 
       const data = await response.json() as any;
