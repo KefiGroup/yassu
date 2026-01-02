@@ -61,6 +61,7 @@ The database includes 20+ tables covering:
 ### Profile
 - `GET /api/profile` - Get current user profile
 - `PATCH /api/profile` - Update profile
+- `POST /api/profiles/match-skills` - Find profiles matching given skills (for team building)
 
 ### Ideas
 - `GET /api/ideas` - List all public ideas
@@ -93,11 +94,19 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - Team Matching Feature
+- AI outputs required skills between `<!-- SKILLS_JSON_START/END -->` markers in Team & Talent section
+- Backend `/api/profiles/match-skills` endpoint finds profiles with overlapping skills
+- IdeaDetail.tsx extracts skills with markdown stripping (bold, italic, backticks, links, parentheses)
+- Validates extracted skills against platform taxonomy (SKILL_OPTIONS from profileOptions.ts)
+- Displays top 10 potential co-founders sorted by skill match count
+
 ### January 2026 - AI Business Plan Generation
-- Added AI-powered business plan generation using OpenAI GPT-4o
+- Migrated from OpenAI GPT-4o to Google Gemini 2.5 Flash with parallel batch processing (8 sections, 4 concurrent)
 - Created server/ai.ts with generateBusinessPlan function
 - Business plans include 9 sections: Executive Summary, Founder Fit, Competitive Landscape, Risk & Moat, MVP Design, Team & Talent, Launch Plan, School Advantage, Funding Pitch
 - IdeaDetail page now uses Express API and includes tabbed business plan viewer
+- Added Word document download functionality for business plans
 - Added Settings page with notification preferences and account management
 
 ### January 2026 - Supabase to Replit Migration
