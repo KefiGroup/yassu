@@ -20,8 +20,8 @@ import { motion } from 'framer-motion';
 import { User, Save, Plus, X, CheckCircle, AlertCircle, Camera, Loader2, Linkedin } from 'lucide-react';
 import { ImageCropper } from '@/components/ImageCropper';
 import { LinkedInImportModal } from '@/components/LinkedInImportModal';
-import { MultiSelectDropdown } from '@/components/MultiSelectDropdown';
-import { SKILL_OPTIONS, INTEREST_OPTIONS } from '@/lib/profileOptions';
+import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
+import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 
 interface University {
   id: string;
@@ -447,9 +447,9 @@ export default function Profile() {
             </div>
 
             {/* Skills */}
-            <MultiSelectDropdown
+            <GroupedMultiSelect
               label="Skills"
-              options={SKILL_OPTIONS}
+              categories={SKILL_CATEGORIES}
               selected={formData.skills}
               onChange={handleSkillsChange}
               placeholder="Select or add skills..."
@@ -457,9 +457,9 @@ export default function Profile() {
             />
 
             {/* Interests */}
-            <MultiSelectDropdown
+            <GroupedMultiSelect
               label="Interests"
-              options={INTEREST_OPTIONS}
+              categories={INTEREST_CATEGORIES}
               selected={formData.interests}
               onChange={handleInterestsChange}
               placeholder="Select or add interests..."
