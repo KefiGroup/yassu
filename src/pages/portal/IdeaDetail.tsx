@@ -30,7 +30,19 @@ import {
   Download,
   RefreshCw,
   CheckCircle,
+  Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Idea {
   id: string;
@@ -94,6 +106,7 @@ export default function IdeaDetail() {
   const [businessPlan, setBusinessPlan] = useState<BusinessPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('executiveSummary');
 
   useEffect(() => {
@@ -113,10 +126,8 @@ export default function IdeaDetail() {
           if (planWorkflow) {
             const fullWorkflow = await api.workflows.get(planWorkflow.id);
             if (fullWorkflow.artifacts && fullWorkflow.artifacts.length > 0) {
-              const planArtifact = fullWorkflow.artifacts.find(
-                (a: any) => a.artifactType === 'business_plan'
-              );
-              if (planArtifact) {
+              const planArtifact = fullWorkflow.artifacts[0];
+              if (planArtifact && planArtifact.content) {
                 setBusinessPlan({
                   id: fullWorkflow.id,
                   status: fullWorkflow.status,
@@ -197,11 +208,9 @@ export default function IdeaDetail() {
       try {
         const workflow = await api.workflows.get(workflowId);
         
-        if (workflow.status === 'completed' && workflow.artifacts) {
-          const planArtifact = workflow.artifacts.find(
-            (a: any) => a.artifactType === 'business_plan'
-          );
-          if (planArtifact) {
+        if (workflow.status === 'completed' && workflow.artifacts && workflow.artifacts.length > 0) {
+          const planArtifact = workflow.artifacts[0];
+          if (planArtifact && planArtifact.content) {
             setBusinessPlan({
               id: workflow.id,
               status: 'completed',
@@ -233,6 +242,28 @@ export default function IdeaDetail() {
     };
     
     setTimeout(poll, 4000);
+  };
+
+  const handleDeleteIdea = async () => {
+    if (!ideaId) return;
+    
+    setDeleting(true);
+    try {
+      await api.ideas.delete(ideaId);
+      toast({
+        title: 'Idea Deleted',
+        description: 'Your idea has been permanently deleted.',
+      });
+      navigate('/portal/ideas');
+    } catch (error) {
+      toast({
+        title: 'Delete Failed',
+        description: 'Could not delete the idea. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -274,14 +305,54 @@ export default function IdeaDetail() {
           Back to Ideas
         </Button>
         {isOwner && (
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/portal/ideas/${ideaId}/edit`)}
-            data-testid="button-edit-idea"
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            Edit Idea
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/portal/ideas/${ideaId}/edit`)}
+              data-testid="button-edit-idea"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit Idea
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="text-destructive border-destructive/50"
+                  data-testid="button-delete-idea"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Idea</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{idea?.title}"? This action cannot be undone and will permanently remove this idea and all associated data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteIdea}
+                    disabled={deleting}
+                    className="bg-destructive text-destructive-foreground"
+                    data-testid="button-confirm-delete"
+                  >
+                    {deleting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </motion.div>
 
