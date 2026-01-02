@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import BusinessPlanViewer from '@/components/portal/BusinessPlanViewer';
 import {
   ArrowLeft,
   Calendar,
@@ -18,6 +18,18 @@ import {
   MessageSquare,
   Send,
   Edit,
+  Sparkles,
+  FileText,
+  Target,
+  TrendingUp,
+  Lightbulb,
+  Rocket,
+  GraduationCap,
+  DollarSign,
+  Loader2,
+  Download,
+  RefreshCw,
+  CheckCircle,
 } from 'lucide-react';
 
 interface Idea {
@@ -25,197 +37,217 @@ interface Idea {
   title: string;
   problem: string;
   solution: string | null;
-  target_user: string | null;
-  why_now: string | null;
+  targetUser: string | null;
+  whyNow: string | null;
   assumptions: string | null;
-  desired_teammates: string | null;
-  expected_timeline: string | null;
+  desiredTeammates: string | null;
+  expectedTimeline: string | null;
   stage: string;
-  created_at: string;
-  created_by: string;
+  createdAt: string;
+  createdBy: number;
+  tags?: string[];
 }
 
-interface Comment {
+interface BusinessPlan {
   id: string;
-  content: string;
-  created_at: string;
-  profiles: { full_name: string | null; avatar_url: string | null } | null;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  createdAt: string;
+  sections: {
+    executiveSummary?: string;
+    founderFit?: string;
+    competitiveLandscape?: string;
+    riskMoat?: string;
+    mvpDesign?: string;
+    teamTalent?: string;
+    launchPlan?: string;
+    schoolAdvantage?: string;
+    fundingPitch?: string;
+  };
 }
 
-interface Tag {
-  tag: string;
-}
+const stageColors: Record<string, string> = {
+  concept: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  validating: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+  building: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+  launched: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+};
+
+const planSections = [
+  { id: 'executiveSummary', label: 'Full Plan', icon: FileText },
+  { id: 'founderFit', label: 'Founder Fit', icon: Lightbulb },
+  { id: 'competitiveLandscape', label: 'Competitive Landscape', icon: TrendingUp },
+  { id: 'riskMoat', label: 'Risk & Moat', icon: Target },
+  { id: 'mvpDesign', label: 'MVP Design', icon: Sparkles },
+  { id: 'teamTalent', label: 'Team & Talent', icon: Users },
+  { id: 'launchPlan', label: 'Launch Plan', icon: Rocket },
+  { id: 'schoolAdvantage', label: 'School Advantage', icon: GraduationCap },
+  { id: 'fundingPitch', label: 'Funding Pitch', icon: DollarSign },
+];
 
 export default function IdeaDetail() {
   const { ideaId } = useParams<{ ideaId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
 
   const [idea, setIdea] = useState<Idea | null>(null);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState('');
+  const [businessPlan, setBusinessPlan] = useState<BusinessPlan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState('executiveSummary');
 
   useEffect(() => {
     async function fetchIdea() {
       if (!ideaId) return;
 
-      const { data: ideaData } = await supabase
-        .from('ideas')
-        .select('*')
-        .eq('id', ideaId)
-        .single();
-
-      if (ideaData) setIdea(ideaData);
-
-      const { data: tagsData } = await supabase
-        .from('idea_tags')
-        .select('tag')
-        .eq('idea_id', ideaId);
-
-      if (tagsData) setTags(tagsData);
-
-      const { data: commentsData } = await supabase
-        .from('comments')
-        .select('id, content, created_at, user_id')
-        .eq('idea_id', ideaId)
-        .order('created_at', { ascending: true });
-
-      if (commentsData) {
-        // Fetch profiles separately
-        const userIds = commentsData.map(c => c.user_id);
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .in('id', userIds);
-
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      try {
+        const ideaData = await api.ideas.get(ideaId);
+        setIdea(ideaData);
         
-        setComments(commentsData.map(c => ({
-          ...c,
-          profiles: profileMap.get(c.user_id) || null
-        })));
+        // Check for existing business plan
+        try {
+          const workflows = await api.workflows.list();
+          const planWorkflow = workflows.find(
+            (w: any) => w.ideaId === ideaId && w.workflowType === 'business_plan'
+          );
+          if (planWorkflow) {
+            const fullWorkflow = await api.workflows.get(planWorkflow.id);
+            if (fullWorkflow.artifacts && fullWorkflow.artifacts.length > 0) {
+              const planArtifact = fullWorkflow.artifacts.find(
+                (a: any) => a.artifactType === 'business_plan'
+              );
+              if (planArtifact) {
+                setBusinessPlan({
+                  id: fullWorkflow.id,
+                  status: fullWorkflow.status,
+                  createdAt: fullWorkflow.createdAt,
+                  sections: JSON.parse(planArtifact.content),
+                });
+              }
+            } else if (fullWorkflow.status === 'pending' || fullWorkflow.status === 'running') {
+              setBusinessPlan({
+                id: fullWorkflow.id,
+                status: fullWorkflow.status,
+                createdAt: fullWorkflow.createdAt,
+                sections: {},
+              });
+            }
+          }
+        } catch (e) {
+          // No business plan yet
+        }
+      } catch (error) {
+        console.error('Failed to fetch idea:', error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     fetchIdea();
   }, [ideaId]);
 
-  const handleComment = async () => {
-    if (!newComment.trim() || !user || !ideaId) return;
-
-    setSubmitting(true);
-    const { error } = await supabase.from('comments').insert({
-      user_id: user.id,
-      idea_id: ideaId,
-      content: newComment,
-    });
-
-    if (error) {
+  const handleGeneratePlan = async () => {
+    if (!ideaId || !idea) return;
+    
+    setGenerating(true);
+    try {
+      const result = await api.workflows.run({
+        workflowType: 'business_plan',
+        ideaId,
+        inputs: {
+          title: idea.title,
+          problem: idea.problem,
+          solution: idea.solution,
+          targetUser: idea.targetUser,
+          whyNow: idea.whyNow,
+        },
+      });
+      
+      setBusinessPlan({
+        id: result.id,
+        status: 'running',
+        createdAt: new Date().toISOString(),
+        sections: {},
+      });
+      
       toast({
-        title: 'Error posting comment',
-        description: error.message,
+        title: 'Generating Business Plan',
+        description: 'AI is analyzing your idea. This may take 1-2 minutes.',
+      });
+      
+      // Poll for completion
+      pollForCompletion(result.id);
+    } catch (error) {
+      toast({
+        title: 'Generation Failed',
+        description: 'Could not start business plan generation.',
         variant: 'destructive',
       });
-    } else {
-      setNewComment('');
-      // Refresh comments
-      const { data } = await supabase
-        .from('comments')
-        .select('id, content, created_at, user_id')
-        .eq('idea_id', ideaId)
-        .order('created_at', { ascending: true });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-      if (data) {
-        const userIds = data.map(c => c.user_id);
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .in('id', userIds);
-
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+  const pollForCompletion = async (workflowId: string) => {
+    const maxAttempts = 30;
+    let attempts = 0;
+    
+    const poll = async () => {
+      attempts++;
+      try {
+        const workflow = await api.workflows.get(workflowId);
         
-        setComments(data.map(c => ({
-          ...c,
-          profiles: profileMap.get(c.user_id) || null
-        })));
+        if (workflow.status === 'completed' && workflow.artifacts) {
+          const planArtifact = workflow.artifacts.find(
+            (a: any) => a.artifactType === 'business_plan'
+          );
+          if (planArtifact) {
+            setBusinessPlan({
+              id: workflow.id,
+              status: 'completed',
+              createdAt: workflow.createdAt,
+              sections: JSON.parse(planArtifact.content),
+            });
+            toast({
+              title: 'Business Plan Ready',
+              description: 'Your AI-generated business plan is complete!',
+            });
+            return;
+          }
+        } else if (workflow.status === 'failed') {
+          setBusinessPlan(prev => prev ? { ...prev, status: 'failed' } : null);
+          toast({
+            title: 'Generation Failed',
+            description: 'Could not generate business plan. Please try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 4000);
+        }
+      } catch (error) {
+        console.error('Poll error:', error);
       }
-    }
-    setSubmitting(false);
-  };
-
-  const handleJoinRequest = async () => {
-    if (!user || !ideaId) return;
-
-    const { error } = await supabase.from('join_requests').insert({
-      user_id: user.id,
-      idea_id: ideaId,
-      message: 'I would like to join this idea!',
-    });
-
-    if (error) {
-      if (error.message.includes('duplicate')) {
-        toast({
-          title: 'Already requested',
-          description: 'You have already requested to join this idea.',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
-    } else {
-      toast({
-        title: 'Request sent!',
-        description: 'The idea creator will review your request.',
-      });
-    }
-  };
-
-  const getInitials = (name: string | null) => {
-    if (!name) return '?';
-    return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const stageColors: Record<string, string> = {
-    concept: 'bg-blue-100 text-blue-700',
-    validating: 'bg-amber-100 text-amber-700',
-    building: 'bg-emerald-100 text-emerald-700',
-    launched: 'bg-purple-100 text-purple-700',
+    };
+    
+    setTimeout(poll, 4000);
   };
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="h-8 bg-muted animate-pulse rounded w-1/3" />
-        <Card className="animate-pulse">
-          <CardHeader>
-            <div className="h-8 bg-muted rounded w-2/3" />
-            <div className="h-4 bg-muted rounded w-1/2 mt-2" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="h-20 bg-muted rounded" />
-              <div className="h-20 bg-muted rounded" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!idea) {
     return (
-      <div className="text-center py-16">
-        <p className="text-muted-foreground">Idea not found</p>
-        <Button variant="outline" onClick={() => navigate('/portal/ideas')} className="mt-4">
+      <div className="text-center py-12">
+        <p className="text-muted-foreground mb-4">Idea not found</p>
+        <Button variant="outline" onClick={() => navigate('/portal/ideas')} data-testid="button-back-ideas">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Ideas
         </Button>
@@ -223,25 +255,36 @@ export default function IdeaDetail() {
     );
   }
 
-  const isOwner = user?.id === idea.created_by;
+  const isOwner = user?.id === idea.createdBy;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
+    <div className="space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex items-center gap-4"
+        className="flex items-center justify-between gap-4 flex-wrap"
       >
-        <Button variant="ghost" size="icon" onClick={() => navigate('/portal/ideas')}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/portal/ideas')}
+          data-testid="button-back"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Ideas
         </Button>
-        <h1 className="text-2xl font-bold flex-1">{idea.title}</h1>
-        <Badge className={stageColors[idea.stage] || 'bg-muted'}>{idea.stage}</Badge>
+        {isOwner && (
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/portal/ideas/${ideaId}/edit`)}
+            data-testid="button-edit-idea"
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Idea
+          </Button>
+        )}
       </motion.div>
 
-      {/* Main Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -249,86 +292,63 @@ export default function IdeaDetail() {
       >
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                {new Date(idea.created_at).toLocaleDateString()}
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <CardTitle className="text-2xl">{idea.title}</CardTitle>
+                  <Badge className={stageColors[idea.stage] || stageColors.concept}>
+                    {idea.stage}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    Founder
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(idea.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
-              {isOwner && (
-                <Button variant="outline" size="sm">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {tags.map((t) => (
-                  <Badge key={t.tag} variant="secondary">
-                    {t.tag}
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="font-semibold mb-2">Problem</h3>
+              <p className="text-muted-foreground">{idea.problem}</p>
+            </div>
+            {idea.solution && (
+              <div>
+                <h3 className="font-semibold mb-2">Solution</h3>
+                <p className="text-muted-foreground">{idea.solution}</p>
+              </div>
+            )}
+            {idea.targetUser && (
+              <div>
+                <h3 className="font-semibold mb-2">Target Users</h3>
+                <p className="text-muted-foreground">{idea.targetUser}</p>
+              </div>
+            )}
+            {idea.whyNow && (
+              <div>
+                <h3 className="font-semibold mb-2">Why Now?</h3>
+                <p className="text-muted-foreground">{idea.whyNow}</p>
+              </div>
+            )}
+            {idea.tags && idea.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {idea.tags.map((tag) => (
+                  <Badge key={tag} variant="secondary">
+                    {tag}
                   </Badge>
                 ))}
               </div>
             )}
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Problem */}
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Problem</h3>
-              <p className="text-muted-foreground">{idea.problem}</p>
-            </div>
-
-            {/* Solution */}
-            {idea.solution && (
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Proposed Solution</h3>
-                <p className="text-muted-foreground">{idea.solution}</p>
-              </div>
-            )}
-
-            {/* Target User */}
-            {idea.target_user && (
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Target User</h3>
-                <p className="text-muted-foreground">{idea.target_user}</p>
-              </div>
-            )}
-
-            {/* Why Now */}
-            {idea.why_now && (
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Why Now?</h3>
-                <p className="text-muted-foreground">{idea.why_now}</p>
-              </div>
-            )}
-
-            {/* Desired Teammates */}
-            {idea.desired_teammates && (
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Looking For</h3>
-                <p className="text-muted-foreground">{idea.desired_teammates}</p>
-              </div>
-            )}
-
-            <Separator />
-
-            {/* Actions */}
-            <div className="flex flex-wrap gap-3">
-              {!isOwner && (
-                <Button onClick={handleJoinRequest}>
-                  <Users className="w-4 h-4 mr-2" />
-                  Request to Join
-                </Button>
-              )}
-            </div>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Business Plan Section */}
-      <BusinessPlanViewer ideaId={ideaId!} />
-
-      {/* Comments */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -336,53 +356,148 @@ export default function IdeaDetail() {
       >
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              Discussion
-            </CardTitle>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    AI Business Plan
+                    {businessPlan?.status === 'completed' && (
+                      <Badge className="bg-emerald-500 text-white">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Complete
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  {businessPlan?.createdAt && (
+                    <p className="text-sm text-muted-foreground">
+                      Generated {new Date(businessPlan.createdAt).toLocaleDateString()} at{' '}
+                      {new Date(businessPlan.createdAt).toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {businessPlan?.status === 'completed' && (
+                  <>
+                    <Button variant="outline" size="sm" data-testid="button-download-plan">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGeneratePlan}
+                      disabled={generating}
+                      data-testid="button-regenerate-plan"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Regenerate
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {comments.length > 0 ? (
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                        {getInitials(comment.profiles?.full_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">
-                          {comment.profiles?.full_name || 'Anonymous'}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(comment.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
-                    </div>
-                  </div>
-                ))}
+          <CardContent>
+            {!businessPlan ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Generate AI Business Plan</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Our AI will analyze your idea and generate a comprehensive business plan
+                  covering 8 key areas in about 2 minutes.
+                </p>
+                <Button
+                  onClick={handleGeneratePlan}
+                  disabled={generating}
+                  data-testid="button-generate-plan"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Business Plan
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : businessPlan.status === 'running' || businessPlan.status === 'pending' ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                <h3 className="font-semibold text-lg mb-2">Generating Your Business Plan...</h3>
+                <p className="text-muted-foreground">
+                  AI is analyzing your idea. This usually takes 1-2 minutes.
+                </p>
+              </div>
+            ) : businessPlan.status === 'failed' ? (
+              <div className="text-center py-8">
+                <p className="text-destructive mb-4">Generation failed. Please try again.</p>
+                <Button onClick={handleGeneratePlan} disabled={generating}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Retry
+                </Button>
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-4">No comments yet. Start the discussion!</p>
+              <div className="space-y-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
+                    {planSections.map((section) => (
+                      <TabsTrigger
+                        key={section.id}
+                        value={section.id}
+                        className="text-xs sm:text-sm"
+                        data-testid={`tab-${section.id}`}
+                      >
+                        <section.icon className="w-4 h-4 mr-1.5" />
+                        {section.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  
+                  {planSections.map((section) => (
+                    <TabsContent key={section.id} value={section.id} className="mt-6">
+                      <Card className="bg-muted/30">
+                        <CardContent className="p-6">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <section.icon className="w-4 h-4 text-primary" />
+                            </div>
+                            <h3 className="font-semibold text-lg">{section.label}</h3>
+                          </div>
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            {businessPlan.sections[section.id as keyof typeof businessPlan.sections] ? (
+                              <div
+                                dangerouslySetInnerHTML={{
+                                  __html: (businessPlan.sections[section.id as keyof typeof businessPlan.sections] || '')
+                                    .replace(/\n/g, '<br/>')
+                                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                    .replace(/^### (.*?)$/gm, '<h3>$1</h3>')
+                                    .replace(/^## (.*?)$/gm, '<h2>$1</h2>')
+                                    .replace(/^# (.*?)$/gm, '<h1>$1</h1>'),
+                                }}
+                              />
+                            ) : (
+                              <p className="text-muted-foreground italic">
+                                This section is not available.
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
             )}
-
-            <Separator />
-
-            <div className="flex gap-3">
-              <Textarea
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={2}
-              />
-              <Button onClick={handleComment} disabled={submitting || !newComment.trim()}>
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </motion.div>

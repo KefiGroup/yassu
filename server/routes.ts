@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { generateBusinessPlan } from "./ai";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -341,10 +342,33 @@ export function registerRoutes(app: Express): void {
         workflowType,
         ideaId,
         inputs: JSON.stringify(inputs || {}),
-        status: "pending",
+        status: "running",
       });
 
       res.json(run);
+
+      // Run AI generation asynchronously
+      if (workflowType === "business_plan" && inputs) {
+        generateBusinessPlan({
+          title: inputs.title || "",
+          problem: inputs.problem || "",
+          solution: inputs.solution,
+          targetUser: inputs.targetUser,
+          whyNow: inputs.whyNow,
+        })
+          .then(async (sections) => {
+            await storage.createWorkflowArtifact({
+              runId: run.id,
+              artifactType: "business_plan",
+              content: JSON.stringify(sections),
+            });
+            await storage.updateWorkflowRun(run.id, { status: "completed" });
+          })
+          .catch(async (error) => {
+            console.error("AI generation failed:", error);
+            await storage.updateWorkflowRun(run.id, { status: "failed" });
+          });
+      }
     } catch (error) {
       console.error("Workflow run error:", error);
       res.status(500).json({ error: "Failed to start workflow" });

@@ -19,6 +19,7 @@ import Projects from "./pages/portal/Projects";
 import Resources from "./pages/portal/Resources";
 import Messages from "./pages/portal/Messages";
 import Profile from "./pages/portal/Profile";
+import Settings from "./pages/portal/Settings";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="resources" element={<Resources />} />
               <Route path="messages" element={<Messages />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
