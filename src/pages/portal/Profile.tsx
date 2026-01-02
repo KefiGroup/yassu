@@ -20,6 +20,8 @@ import { motion } from 'framer-motion';
 import { User, Save, Plus, X, CheckCircle, AlertCircle, Camera, Loader2, Linkedin } from 'lucide-react';
 import { ImageCropper } from '@/components/ImageCropper';
 import { LinkedInImportModal } from '@/components/LinkedInImportModal';
+import { MultiSelectDropdown } from '@/components/MultiSelectDropdown';
+import { SKILL_OPTIONS, INTEREST_OPTIONS } from '@/lib/profileOptions';
 
 interface University {
   id: string;
@@ -32,8 +34,6 @@ export default function Profile() {
   const { toast } = useToast();
   const [universities, setUniversities] = useState<University[]>([]);
   const [saving, setSaving] = useState(false);
-  const [newSkill, setNewSkill] = useState('');
-  const [newInterest, setNewInterest] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -210,26 +210,12 @@ export default function Profile() {
   }, [user, refreshProfile, toast, selectedImage]);
 
 
-  const addSkill = () => {
-    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
-      setFormData({ ...formData, skills: [...formData.skills, newSkill.trim()] });
-      setNewSkill('');
-    }
+  const handleSkillsChange = (skills: string[]) => {
+    setFormData({ ...formData, skills });
   };
 
-  const removeSkill = (skill: string) => {
-    setFormData({ ...formData, skills: formData.skills.filter((s) => s !== skill) });
-  };
-
-  const addInterest = () => {
-    if (newInterest.trim() && !formData.interests.includes(newInterest.trim())) {
-      setFormData({ ...formData, interests: [...formData.interests, newInterest.trim()] });
-      setNewInterest('');
-    }
-  };
-
-  const removeInterest = (interest: string) => {
-    setFormData({ ...formData, interests: formData.interests.filter((i) => i !== interest) });
+  const handleInterestsChange = (interests: string[]) => {
+    setFormData({ ...formData, interests });
   };
 
   const handleLinkedInImport = useCallback((bio: string, skills: string[]) => {
@@ -461,56 +447,24 @@ export default function Profile() {
             </div>
 
             {/* Skills */}
-            <div className="space-y-2">
-              <Label>Skills</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {formData.skills.map((skill) => (
-                  <Badge key={skill} variant="secondary" className="gap-1">
-                    {skill}
-                    <button onClick={() => removeSkill(skill)}>
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  placeholder="Add a skill..."
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-                />
-                <Button type="button" variant="outline" size="icon" onClick={addSkill}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <MultiSelectDropdown
+              label="Skills"
+              options={SKILL_OPTIONS}
+              selected={formData.skills}
+              onChange={handleSkillsChange}
+              placeholder="Select or add skills..."
+              badgeVariant="secondary"
+            />
 
             {/* Interests */}
-            <div className="space-y-2">
-              <Label>Interests</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {formData.interests.map((interest) => (
-                  <Badge key={interest} variant="outline" className="gap-1">
-                    {interest}
-                    <button onClick={() => removeInterest(interest)}>
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  value={newInterest}
-                  onChange={(e) => setNewInterest(e.target.value)}
-                  placeholder="Add an interest..."
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addInterest())}
-                />
-                <Button type="button" variant="outline" size="icon" onClick={addInterest}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <MultiSelectDropdown
+              label="Interests"
+              options={INTEREST_OPTIONS}
+              selected={formData.interests}
+              onChange={handleInterestsChange}
+              placeholder="Select or add interests..."
+              badgeVariant="outline"
+            />
 
             {/* Links */}
             <div className="space-y-4">
