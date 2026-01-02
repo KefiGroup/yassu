@@ -358,8 +358,7 @@ export function registerRoutes(app: Express): void {
         })
           .then(async (sections) => {
             await storage.createWorkflowArtifact({
-              runId: run.id,
-              artifactType: "business_plan",
+              workflowRunId: run.id,
               content: JSON.stringify(sections),
             });
             await storage.updateWorkflowRun(run.id, { status: "completed" });
