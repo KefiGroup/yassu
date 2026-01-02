@@ -148,7 +148,7 @@ export function GroupedMultiSelect({
         </button>
 
         {isOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg">
+          <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden">
             <div className="p-2 border-b">
               <Input
                 placeholder="Search or type to add..."
@@ -167,8 +167,7 @@ export function GroupedMultiSelect({
               />
             </div>
 
-            <ScrollArea className="max-h-72">
-              <div className="p-1">
+            <div className="max-h-64 overflow-y-auto p-1">
                 {showAddCustom && (
                   <button
                     type="button"
@@ -237,8 +236,7 @@ export function GroupedMultiSelect({
                     </div>
                   )
                 )}
-              </div>
-            </ScrollArea>
+            </div>
           </div>
         )}
       </div>
