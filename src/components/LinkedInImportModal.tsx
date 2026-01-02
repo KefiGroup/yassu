@@ -6,14 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, ClipboardPaste, RefreshCw, Check, FileText, Sparkles } from 'lucide-react';
+import { Loader2, RefreshCw, Check, Sparkles, Link2, AlertCircle } from 'lucide-react';
 
 interface GeneratedBio {
   shortBio: string;
@@ -30,28 +28,77 @@ interface LinkedInImportModalProps {
 
 export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImportModalProps) {
   const { toast } = useToast();
-  const [pastedContent, setPastedContent] = useState('');
-  const [uploadedContent, setUploadedContent] = useState('');
-  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<'scraping' | 'generating' | null>(null);
   const [generatedBio, setGeneratedBio] = useState<GeneratedBio | null>(null);
   const [selectedBioType, setSelectedBioType] = useState<'short' | 'long'>('short');
-  const [activeTab, setActiveTab] = useState('paste');
+  const [error, setError] = useState<string | null>(null);
 
-  const processContent = useCallback(async (content: string) => {
-    if (content.trim().length < 50) {
+  const isValidLinkedInUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return false;
+    // Accept linkedin.com/in/ URLs
+    return trimmed.includes('linkedin.com/in/');
+  };
+
+  const processLinkedInUrl = useCallback(async (url: string) => {
+    if (!isValidLinkedInUrl(url)) {
       toast({
-        title: 'Not enough content',
-        description: 'Please provide more LinkedIn content (at least 50 characters)',
+        title: 'Invalid LinkedIn URL',
+        description: 'Please enter a valid LinkedIn profile URL (e.g., linkedin.com/in/yourname)',
         variant: 'destructive',
       });
       return;
     }
 
     setIsLoading(true);
+    setError(null);
     setGeneratedBio(null);
 
     try {
+      // Step 1: Scrape LinkedIn profile using Firecrawl
+      setLoadingStep('scraping');
+      
+      let formattedUrl = url.trim();
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+
+      const scrapeResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/firecrawl-scrape`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ 
+            url: formattedUrl,
+            options: {
+              formats: ['markdown'],
+              onlyMainContent: true,
+              waitFor: 5000,
+            }
+          }),
+        }
+      );
+
+      const scrapeData = await scrapeResponse.json();
+
+      if (!scrapeResponse.ok || !scrapeData.success) {
+        throw new Error(scrapeData.error || 'Failed to fetch LinkedIn profile. The profile may be private or LinkedIn may be blocking the request.');
+      }
+
+      const scrapedContent = scrapeData.data?.markdown || scrapeData.data?.content;
+      
+      if (!scrapedContent || scrapedContent.length < 50) {
+        throw new Error('Could not extract enough content from the LinkedIn profile. Please ensure the profile is public.');
+      }
+
+      // Step 2: Send to OpenAI for bio generation
+      setLoadingStep('generating');
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-linkedin`,
         {
@@ -60,7 +107,7 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ linkedinContent: content }),
+          body: JSON.stringify({ linkedinContent: scrapedContent }),
         }
       );
 
@@ -73,64 +120,26 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
       setGeneratedBio(data);
     } catch (error) {
       console.error('LinkedIn import error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to import LinkedIn profile';
+      setError(errorMessage);
       toast({
         title: 'Import failed',
-        description: error instanceof Error ? error.message : 'Failed to process LinkedIn content',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
+      setLoadingStep(null);
     }
-  }, [toast]);
-
-  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ['.zip', '.csv', '.json', '.pdf', '.txt'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    
-    if (!allowedTypes.includes(fileExtension)) {
-      toast({
-        title: 'Unsupported file type',
-        description: 'Please upload a .zip, .csv, .json, .pdf, or .txt file',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setUploadedFileName(file.name);
-
-    // For text-based files, read content directly
-    if (['.txt', '.csv', '.json'].includes(fileExtension)) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        setUploadedContent(content);
-      };
-      reader.readAsText(file);
-    } else {
-      // For zip/pdf, we'd need server-side processing
-      // For now, show a message to use paste instead
-      toast({
-        title: 'File uploaded',
-        description: 'For best results with ZIP/PDF files, please copy and paste the text content directly.',
-      });
-      setUploadedContent('');
-    }
-
-    event.target.value = '';
   }, [toast]);
 
   const handleGenerate = useCallback(() => {
-    const content = activeTab === 'paste' ? pastedContent : uploadedContent;
-    processContent(content);
-  }, [activeTab, pastedContent, uploadedContent, processContent]);
+    processLinkedInUrl(linkedinUrl);
+  }, [linkedinUrl, processLinkedInUrl]);
 
   const handleRegenerate = useCallback(() => {
-    const content = activeTab === 'paste' ? pastedContent : uploadedContent;
-    processContent(content);
-  }, [activeTab, pastedContent, uploadedContent, processContent]);
+    processLinkedInUrl(linkedinUrl);
+  }, [linkedinUrl, processLinkedInUrl]);
 
   const handleApply = useCallback(() => {
     if (!generatedBio) return;
@@ -152,22 +161,19 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
 
     // Reset and close
     setGeneratedBio(null);
-    setPastedContent('');
-    setUploadedContent('');
-    setUploadedFileName('');
+    setLinkedinUrl('');
+    setError(null);
     onOpenChange(false);
   }, [generatedBio, selectedBioType, onApply, onOpenChange, toast]);
 
   const handleClose = useCallback(() => {
     setGeneratedBio(null);
-    setPastedContent('');
-    setUploadedContent('');
-    setUploadedFileName('');
+    setLinkedinUrl('');
+    setError(null);
     onOpenChange(false);
   }, [onOpenChange]);
 
-  const currentContent = activeTab === 'paste' ? pastedContent : uploadedContent;
-  const canGenerate = currentContent.trim().length >= 50;
+  const canGenerate = isValidLinkedInUrl(linkedinUrl);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -178,103 +184,74 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
             Import from LinkedIn
           </DialogTitle>
           <DialogDescription>
-            Generate a professional bio from your LinkedIn profile
+            Enter your LinkedIn profile URL to automatically generate a professional bio
           </DialogDescription>
         </DialogHeader>
 
         {!generatedBio ? (
-          <>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="paste" className="flex items-center gap-2">
-                  <ClipboardPaste className="w-4 h-4" />
-                  Paste Content
-                </TabsTrigger>
-                <TabsTrigger value="upload" className="flex items-center gap-2">
-                  <Upload className="w-4 h-4" />
-                  Upload Export
-                </TabsTrigger>
-              </TabsList>
+          <div className="space-y-6">
+            {/* URL Input */}
+            <div className="space-y-3">
+              <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
+              <div className="relative">
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="linkedin-url"
+                  type="url"
+                  placeholder="https://linkedin.com/in/yourprofile"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  className="pl-10"
+                  disabled={isLoading}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Paste your full LinkedIn profile URL. Make sure your profile is set to public.
+              </p>
+            </div>
 
-              <TabsContent value="paste" className="space-y-4 mt-4">
-                <div className="rounded-lg bg-muted/50 p-4 text-sm space-y-2">
-                  <p className="font-medium">How to copy from LinkedIn:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                    <li>Go to your LinkedIn profile</li>
-                    <li>Copy your <strong>About</strong> section</li>
-                    <li>Copy your <strong>Experience</strong> (role titles + descriptions)</li>
-                    <li>Paste everything below</li>
-                  </ol>
+            {/* Error Display */}
+            {error && (
+              <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-destructive">
+                  <p className="font-medium">Import failed</p>
+                  <p className="text-destructive/80 mt-1">{error}</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="linkedin-paste">Your LinkedIn Content</Label>
-                  <Textarea
-                    id="linkedin-paste"
-                    placeholder="Paste your LinkedIn About section and Experience here..."
-                    value={pastedContent}
-                    onChange={(e) => setPastedContent(e.target.value)}
-                    rows={8}
-                    className="resize-none"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {pastedContent.length} characters {pastedContent.length < 50 && '(minimum 50)'}
-                  </p>
-                </div>
-              </TabsContent>
+              </div>
+            )}
 
-              <TabsContent value="upload" className="space-y-4 mt-4">
-                <div className="rounded-lg bg-muted/50 p-4 text-sm space-y-2">
-                  <p className="font-medium">Upload your LinkedIn export:</p>
-                  <p className="text-muted-foreground">
-                    You can request your data from LinkedIn Settings → Get a copy of your data.
-                    Supported formats: .zip, .csv, .json, .pdf, .txt
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="linkedin-upload">Upload File</Label>
-                  <div className="flex items-center gap-3">
-                    <Input
-                      id="linkedin-upload"
-                      type="file"
-                      accept=".zip,.csv,.json,.pdf,.txt"
-                      onChange={handleFileUpload}
-                      className="flex-1"
-                    />
-                  </div>
-                  {uploadedFileName && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <FileText className="w-4 h-4" />
-                      {uploadedFileName}
-                      {uploadedContent && <span className="text-emerald-600">✓ Content extracted</span>}
-                    </div>
-                  )}
-                </div>
-                {uploadedContent && (
-                  <div className="space-y-2">
-                    <Label>Extracted Content</Label>
-                    <Textarea
-                      value={uploadedContent}
-                      onChange={(e) => setUploadedContent(e.target.value)}
-                      rows={6}
-                      className="resize-none"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {uploadedContent.length} characters
+            {/* Loading State */}
+            {isLoading && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                  <div>
+                    <p className="font-medium text-sm">
+                      {loadingStep === 'scraping' 
+                        ? 'Fetching your LinkedIn profile...' 
+                        : 'Generating your bio with AI...'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {loadingStep === 'scraping'
+                        ? 'This may take a few seconds'
+                        : 'Almost there!'}
                     </p>
                   </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                </div>
+              </div>
+            )}
 
+            {/* Actions */}
             <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" onClick={handleClose} disabled={isLoading}>
                 Cancel
               </Button>
               <Button onClick={handleGenerate} disabled={!canGenerate || isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
+                    Processing...
                   </>
                 ) : (
                   <>
@@ -284,7 +261,7 @@ export function LinkedInImportModal({ open, onOpenChange, onApply }: LinkedInImp
                 )}
               </Button>
             </div>
-          </>
+          </div>
         ) : (
           <div className="space-y-6">
             {/* Bio Type Selection */}
