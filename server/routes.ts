@@ -203,6 +203,26 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  app.get("/api/advisors", async (_req: Request, res: Response) => {
+    try {
+      const advisors = await storage.getProfilesByYassuRole("advisor");
+      res.json(advisors);
+    } catch (error) {
+      console.error("Fetch advisors error:", error);
+      res.status(500).json({ error: "Failed to fetch advisors" });
+    }
+  });
+
+  app.get("/api/ambassadors", async (_req: Request, res: Response) => {
+    try {
+      const ambassadors = await storage.getProfilesByYassuRole("ambassador");
+      res.json(ambassadors);
+    } catch (error) {
+      console.error("Fetch ambassadors error:", error);
+      res.status(500).json({ error: "Failed to fetch ambassadors" });
+    }
+  });
+
   app.get("/api/universities", async (_req: Request, res: Response) => {
     try {
       const universities = await storage.getUniversities();

@@ -20,6 +20,7 @@ export interface IStorage {
   updateProfile(userId: number, data: Partial<Profile>): Promise<Profile | undefined>;
   createProfile(userId: number, data: Partial<Profile>): Promise<Profile>;
   findProfilesBySkills(skills: string[], excludeUserId?: number): Promise<ProfileWithMatchingSkills[]>;
+  getProfilesByYassuRole(role: "ambassador" | "advisor"): Promise<Profile[]>;
   
   getUserRoles(userId: number): Promise<UserRole[]>;
   addUserRole(userId: number, role: string): Promise<void>;
@@ -129,6 +130,12 @@ export class DatabaseStorage implements IStorage {
     matchedProfiles.sort((a, b) => b.matchCount - a.matchCount);
     
     return matchedProfiles.slice(0, 10);
+  }
+
+  async getProfilesByYassuRole(role: "ambassador" | "advisor"): Promise<Profile[]> {
+    return db.select().from(schema.profiles)
+      .where(eq(schema.profiles.yassuRole, role))
+      .orderBy(schema.profiles.fullName);
   }
 
   async getUserRoles(userId: number): Promise<UserRole[]> {

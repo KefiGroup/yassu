@@ -18,6 +18,7 @@ export const workflowTypeEnum = pgEnum("workflow_type", [
   "business_plan"
 ]);
 export const pipelineStageEnum = pgEnum("pipeline_stage", ["watchlist", "diligence", "pass", "invest"]);
+export const yassuRoleEnum = pgEnum("yassu_role", ["ambassador", "advisor"]);
 
 export const universities = pgTable("universities", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -76,6 +77,7 @@ export const profiles = pgTable("profiles", {
   bio: text("bio"),
   verificationStatus: verificationStatusEnum("verification_status").default("pending"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
+  yassuRole: yassuRoleEnum("yassu_role"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
