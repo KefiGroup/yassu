@@ -38,6 +38,7 @@ export default function Profile() {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [linkedInModalOpen, setLinkedInModalOpen] = useState(false);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     bio: '',
@@ -64,8 +65,9 @@ export default function Profile() {
     fetchUniversities();
   }, []);
 
+  // Only sync form data from profile on initial load, not on every profile change
   useEffect(() => {
-    if (profile) {
+    if (profile && !initialLoadDone) {
       setFormData({
         full_name: profile.full_name || '',
         bio: profile.bio || '',
@@ -80,8 +82,9 @@ export default function Profile() {
         skills: profile.skills || [],
         interests: profile.interests || [],
       });
+      setInitialLoadDone(true);
     }
-  }, [profile]);
+  }, [profile, initialLoadDone]);
 
   const handleSave = async () => {
     if (!user) return;
