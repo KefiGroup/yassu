@@ -62,13 +62,14 @@ export default function Profile() {
 
   useEffect(() => {
     if (profile && !initialLoadDone) {
+      const hasOtherUniversity = !profile.universityId && profile.otherUniversity;
       setFormData({
         fullName: profile.fullName || '',
         bio: profile.bio || '',
         major: profile.major || '',
         graduationYear: profile.graduationYear?.toString() || '',
-        universityId: profile.universityId || '',
-        otherUniversity: '',
+        universityId: hasOtherUniversity ? 'other' : (profile.universityId || ''),
+        otherUniversity: profile.otherUniversity || '',
         availability: profile.availability || '',
         linkedinUrl: profile.linkedinUrl || '',
         skills: profile.skills || [],
@@ -83,7 +84,9 @@ export default function Profile() {
 
     setSaving(true);
     
-    const universityIdToSave = formData.universityId === 'other' ? null : (formData.universityId || null);
+    const isOtherUniversity = formData.universityId === 'other';
+    const universityIdToSave = isOtherUniversity ? null : (formData.universityId || null);
+    const otherUniversityToSave = isOtherUniversity ? formData.otherUniversity : null;
     
     try {
       await api.profile.update({
@@ -92,6 +95,7 @@ export default function Profile() {
         major: formData.major,
         graduationYear: formData.graduationYear ? parseInt(formData.graduationYear) : null,
         universityId: universityIdToSave,
+        otherUniversity: otherUniversityToSave,
         availability: formData.availability || null,
         linkedinUrl: formData.linkedinUrl || null,
         skills: formData.skills,

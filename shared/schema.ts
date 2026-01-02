@@ -62,6 +62,7 @@ export const profiles = pgTable("profiles", {
   fullName: text("full_name"),
   avatarUrl: text("avatar_url"),
   universityId: uuid("university_id").references(() => universities.id),
+  otherUniversity: text("other_university"),
   clubId: uuid("club_id").references(() => clubs.id),
   major: text("major"),
   graduationYear: integer("graduation_year"),

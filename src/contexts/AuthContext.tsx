@@ -14,6 +14,7 @@ interface Profile {
   fullName: string | null;
   avatarUrl: string | null;
   universityId: string | null;
+  otherUniversity: string | null;
   clubId: string | null;
   major: string | null;
   graduationYear: number | null;
