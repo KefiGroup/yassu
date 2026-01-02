@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { Linkedin } from "lucide-react";
 
 const teamMembers = [
   {
     name: "Bob Battista",
     role: "Founder / Northwestern University",
     image: "https://yassu.co/wp-content/uploads/2024/03/pic_bob_battista.png",
+    linkedin: "https://www.linkedin.com/in/bob-battista-ceo/",
     quote: "I believe that anything could be accomplished with will, determination and some form of talent.",
     superpower: "Passion and rigor for strategy",
     hope: "To let ideas flourish and help people get rewarded for their contributions.",
@@ -15,6 +17,7 @@ const teamMembers = [
     name: "Kloey Battista",
     role: "Founder / UC Berkeley",
     image: "https://yassu.co/wp-content/uploads/2024/03/pic_kloey_battista-e1711734781360.jpeg",
+    linkedin: "https://www.linkedin.com/in/kloeybattista/",
     quote: "I believe that we all deserve to accomplish our big dreams, and if you dream it, you can create it.",
     superpower: "Building products and pushing the status quo",
     hope: "To provide a new way of access to talented people to collaborate to launch brilliant ideas.",
@@ -23,6 +26,7 @@ const teamMembers = [
     name: "Hae Yung Kim",
     role: "Founder / UCLA",
     image: "https://yassu.co/wp-content/uploads/2024/03/pci_hae_3.jpg",
+    linkedin: "https://www.linkedin.com/in/hae-yung-kim-37952a3/",
     quote: "I believe everyone deserves the chance to be their best self and achieve their dreams.",
     superpower: "Seeing big opportunities and bringing them to life",
     hope: "To enable and empower everyone to develop their big idea and let the market judge its value.",
@@ -31,6 +35,7 @@ const teamMembers = [
     name: "Michael Stamatinos",
     role: "Chief Access Officer",
     image: "https://yassu.co/wp-content/uploads/2024/03/pic_michael_stamatinos_greece.jpg",
+    linkedin: "https://www.linkedin.com/in/michaelstamo/",
     quote: "I believe you're one relationship away from changing the trajectory of your destiny.",
     superpower: "Being a connector and bridge-builder",
     hope: "To elevate society at large, one business idea at a time.",
@@ -39,6 +44,7 @@ const teamMembers = [
     name: "Mark Wilson",
     role: "Chief Financial Officer",
     image: "https://yassu.co/wp-content/uploads/2024/04/pic_mark_wilson.jpg",
+    linkedin: "https://www.linkedin.com/in/mark-wilson-cpa/",
     quote: "I believe that new business ventures are the purest expression of American meritocracy.",
     superpower: "Supporting future Captains of Industry keep their ships on a steady course",
     hope: "To help drive 'dare to be great' ideas to unimagined success.",
@@ -47,6 +53,7 @@ const teamMembers = [
     name: "Ricardo Mazzi",
     role: "Marketing, Partnerships",
     image: "https://yassu.co/wp-content/uploads/2024/04/ricardo_mazzi-scaled-e1714152057994.jpg",
+    linkedin: "https://www.linkedin.com/in/ricardomazzi/",
     quote: "I believe commitment, hard work, and consistency allows for results to subsequently flourish.",
     superpower: "Fostering connections and making people smile",
     hope: "For everyone in the world to have an actual opportunity to build upon an idea or dream.",
@@ -99,7 +106,18 @@ const Team = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-center">
-                      <h3 className="font-semibold text-lg text-foreground">{member.name}</h3>
+                      <div className="flex items-center justify-center gap-2">
+                        <h3 className="font-semibold text-lg text-foreground">{member.name}</h3>
+                        <a 
+                          href={member.linkedin} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                          data-testid={`link-linkedin-${member.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        >
+                          <Linkedin className="w-4 h-4" />
+                        </a>
+                      </div>
                       <p className="text-sm text-muted-foreground">{member.role}</p>
                     </div>
                   </div>
