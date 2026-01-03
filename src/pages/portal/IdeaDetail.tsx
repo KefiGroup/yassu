@@ -13,6 +13,25 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { 
+  MDXEditor, 
+  headingsPlugin,
+  listsPlugin,
+  quotePlugin,
+  thematicBreakPlugin,
+  markdownShortcutPlugin,
+  tablePlugin,
+  linkPlugin,
+  linkDialogPlugin,
+  toolbarPlugin,
+  BoldItalicUnderlineToggles,
+  BlockTypeSelect,
+  CreateLink,
+  InsertTable,
+  ListsToggle,
+  UndoRedo,
+} from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
 import {
   ArrowLeft,
   Calendar,
@@ -20,7 +39,6 @@ import {
   MessageSquare,
   Send,
   Edit,
-  Eye,
   Sparkles,
   FileText,
   Target,
@@ -154,7 +172,6 @@ export default function IdeaDetail() {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [saving, setSaving] = useState(false);
-  const [editMode, setEditMode] = useState<'edit' | 'preview'>('edit');
 
   useEffect(() => {
     async function fetchIdea() {
@@ -416,7 +433,6 @@ export default function IdeaDetail() {
     const content = businessPlan.sections[sectionId as keyof typeof businessPlan.sections] || '';
     setEditContent(content);
     setEditingSection(sectionId);
-    setEditMode('edit');
   };
 
   const handleSaveSection = async () => {
@@ -1144,60 +1160,48 @@ export default function IdeaDetail() {
       </motion.div>
 
       <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="w-5 h-5" />
               Edit {planSections.find(s => s.id === editingSection)?.label || 'Section'}
             </DialogTitle>
             <DialogDescription>
-              Edit the content using Markdown. Switch to Preview to see how it will look.
+              Edit directly below. Use the toolbar for formatting options.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex gap-2 mb-2">
-            <Button
-              variant={editMode === 'edit' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setEditMode('edit')}
-              data-testid="button-edit-mode"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-            <Button
-              variant={editMode === 'preview' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setEditMode('preview')}
-              data-testid="button-preview-mode"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              Preview
-            </Button>
-          </div>
-          
-          <div className="flex-1 overflow-auto min-h-0 border rounded-lg">
-            {editMode === 'edit' ? (
-              <Textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="min-h-[400px] h-full font-mono text-sm resize-none border-0"
-                placeholder="Enter content using Markdown..."
-                data-testid="textarea-edit-section"
+          <div className="flex-1 overflow-auto min-h-0 border rounded-lg bg-background">
+            {editingSection && (
+              <MDXEditor
+                key={editingSection}
+                markdown={editContent}
+                onChange={(value) => setEditContent(value || '')}
+                className="min-h-[450px] prose prose-sm dark:prose-invert max-w-none"
+                contentEditableClassName="p-4 min-h-[400px] outline-none"
+                plugins={[
+                  headingsPlugin(),
+                  listsPlugin(),
+                  quotePlugin(),
+                  thematicBreakPlugin(),
+                  markdownShortcutPlugin(),
+                  tablePlugin(),
+                  linkPlugin(),
+                  linkDialogPlugin(),
+                  toolbarPlugin({
+                    toolbarContents: () => (
+                      <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
+                        <UndoRedo />
+                        <BlockTypeSelect />
+                        <BoldItalicUnderlineToggles />
+                        <ListsToggle />
+                        <CreateLink />
+                        <InsertTable />
+                      </div>
+                    ),
+                  }),
+                ]}
               />
-            ) : (
-              <div className="p-4 prose prose-sm dark:prose-invert max-w-none min-h-[400px]">
-                {editContent ? (
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={markdownComponents}
-                  >
-                    {preprocessMarkdown(editContent)}
-                  </ReactMarkdown>
-                ) : (
-                  <p className="text-muted-foreground italic">No content to preview.</p>
-                )}
-              </div>
             )}
           </div>
           
