@@ -27,20 +27,29 @@ import {
   TrendingUp,
   Trophy,
   Rocket,
+  GraduationCap,
+  Briefcase,
+  Settings,
 } from 'lucide-react';
 
 const mainNavItems = [
-  { title: 'Dashboard', url: '/portal', icon: LayoutDashboard },
+  { title: 'My Dashboard', url: '/portal', icon: LayoutDashboard },
+  { title: 'My Projects', url: '/portal/projects', icon: FolderKanban },
+  { title: 'My Workflows', url: '/portal/workflows', icon: Workflow },
+  { title: 'My Teams', url: '/portal/teams', icon: Users },
+];
+
+const marketplaceNavItems = [
   { title: 'Ideas', url: '/portal/ideas', icon: Lightbulb },
-  { title: 'Teams', url: '/portal/teams', icon: Users },
-  { title: 'Workflows', url: '/portal/workflows', icon: Workflow },
-  { title: 'Projects', url: '/portal/projects', icon: FolderKanban },
+  { title: 'Ambassadors', url: '/ambassadors', icon: GraduationCap },
+  { title: 'Advisors', url: '/advisors', icon: Briefcase },
   { title: 'Resources', url: '/portal/resources', icon: BookOpen },
   { title: 'Messages', url: '/portal/messages', icon: MessageSquare },
 ];
 
-const userNavItems = [
+const accountNavItems = [
   { title: 'Profile', url: '/portal/profile', icon: User },
+  { title: 'Settings', url: '/portal/settings', icon: Settings },
 ];
 
 const adminNavItems = [
@@ -101,10 +110,31 @@ export function PortalSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
+          <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {marketplaceNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.url)}
+                  >
+                    <NavLink to={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {userNavItems.map((item) => (
+              {accountNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
