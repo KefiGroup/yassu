@@ -99,6 +99,18 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - Editable Business Plan Workflows
+- Added `ideaWorkflowSections` table to store editable versions of business plan sections
+- Founders can now customize and refine AI-generated business plan content
+- New "My Workflows" card appears on idea detail page for idea owners
+- Auto-populates 9 sections from AI when business plan is generated:
+  - Executive Summary, Founder Fit, Competitive Landscape, Risk & Moat, MVP Design, Team & Talent, Launch Plan, School Advantage, Funding Pitch
+- New API endpoints:
+  - `GET /api/ideas/:id/workflows` - Get all workflow sections for an idea
+  - `GET /api/ideas/:id/workflows/:sectionType` - Get specific section
+  - `PATCH /api/ideas/:id/workflows/:sectionType` - Update section (owner only)
+- Markdown formatting supported in all sections
+
 ### January 2026 - Club Affiliation Field
 - Added `clubType` field to profiles schema
 - Profile page now includes "Club Affiliation" dropdown with 13 options (alphabetical):
