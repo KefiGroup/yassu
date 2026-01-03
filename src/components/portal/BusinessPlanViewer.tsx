@@ -235,8 +235,11 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
     thead: ({ children }: any) => (
       <thead className="bg-muted/50">{children}</thead>
     ),
+    tbody: ({ children }: any) => (
+      <tbody>{children}</tbody>
+    ),
     th: ({ children }: any) => (
-      <th className="border border-border px-3 py-2 text-left font-semibold text-foreground text-xs">
+      <th className="border border-border px-3 py-2 text-left font-semibold text-foreground text-xs whitespace-nowrap">
         {children}
       </th>
     ),
@@ -282,6 +285,59 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
         {children}
       </blockquote>
     ),
+  };
+
+  // Pre-process markdown to fix common table formatting issues
+  const preprocessMarkdown = (content: string): string => {
+    if (!content) return '';
+    
+    const lines = content.split('\n');
+    const processedLines: string[] = [];
+    let inTable = false;
+    let headerLine = '';
+    let separatorParts: string[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      if (line.startsWith('|') && line.endsWith('|') && !line.match(/^[\|\s:\-]+$/)) {
+        inTable = true;
+        headerLine = line;
+        processedLines.push(line);
+        separatorParts = [];
+        continue;
+      }
+      
+      if (inTable && line.match(/^[\|\s:\-]+$/)) {
+        separatorParts.push(line);
+        const headerCols = (headerLine.match(/\|/g) || []).length;
+        const combinedSeparator = separatorParts.join('');
+        const sepCols = (combinedSeparator.match(/\|/g) || []).length;
+        
+        if (sepCols >= headerCols - 1) {
+          const colCount = headerCols - 1;
+          const separator = '|' + Array(colCount).fill('---').join('|') + '|';
+          processedLines.push(separator);
+          separatorParts = [];
+        }
+        continue;
+      }
+      
+      if (inTable && line.startsWith('|') && line.endsWith('|')) {
+        processedLines.push(line);
+        continue;
+      }
+      
+      if (inTable && (line === '' || !line.startsWith('|'))) {
+        inTable = false;
+        headerLine = '';
+        separatorParts = [];
+      }
+      
+      processedLines.push(lines[i]);
+    }
+    
+    return processedLines.join('\n');
   };
 
   if (loading) {
@@ -444,7 +500,7 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
                             <CardContent className="pt-0">
                               <div className="prose prose-sm dark:prose-invert max-w-none">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                                  {section.content}
+                                  {preprocessMarkdown(section.content)}
                                 </ReactMarkdown>
                               </div>
                             </CardContent>
@@ -475,7 +531,7 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
                               <CardContent className="pt-0">
                                 <div className="prose prose-sm dark:prose-invert max-w-none">
                                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                                    {section.content}
+                                    {preprocessMarkdown(section.content)}
                                   </ReactMarkdown>
                                 </div>
                               </CardContent>

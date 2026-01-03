@@ -495,8 +495,11 @@ export default function IdeaDetail() {
     thead: ({ children }: any) => (
       <thead className="bg-muted/50">{children}</thead>
     ),
+    tbody: ({ children }: any) => (
+      <tbody>{children}</tbody>
+    ),
     th: ({ children }: any) => (
-      <th className="border border-border px-3 py-2 text-left font-semibold text-foreground text-xs">
+      <th className="border border-border px-3 py-2 text-left font-semibold text-foreground text-xs whitespace-nowrap">
         {children}
       </th>
     ),
@@ -553,6 +556,67 @@ export default function IdeaDetail() {
     pre: ({ children }: any) => (
       <pre className="bg-muted p-4 rounded-lg overflow-x-auto my-4 text-sm">{children}</pre>
     ),
+  };
+
+  // Pre-process markdown to fix common table formatting issues
+  const preprocessMarkdown = (content: string): string => {
+    if (!content) return '';
+    
+    // Fix tables that have broken separator rows (lines with only dashes and pipes)
+    // Join separator line fragments back together
+    const lines = content.split('\n');
+    const processedLines: string[] = [];
+    let inTable = false;
+    let headerLine = '';
+    let separatorParts: string[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Check if this is a table header line (starts and ends with |, contains text)
+      if (line.startsWith('|') && line.endsWith('|') && !line.match(/^[\|\s:\-]+$/)) {
+        inTable = true;
+        headerLine = line;
+        processedLines.push(line);
+        separatorParts = [];
+        continue;
+      }
+      
+      // Check if this is a separator line or part of one
+      if (inTable && line.match(/^[\|\s:\-]+$/)) {
+        separatorParts.push(line);
+        // Check if we have a complete separator (matches header column count)
+        const headerCols = (headerLine.match(/\|/g) || []).length;
+        const combinedSeparator = separatorParts.join('');
+        const sepCols = (combinedSeparator.match(/\|/g) || []).length;
+        
+        if (sepCols >= headerCols - 1) {
+          // Reconstruct proper separator
+          const colCount = headerCols - 1;
+          const separator = '|' + Array(colCount).fill('---').join('|') + '|';
+          processedLines.push(separator);
+          separatorParts = [];
+        }
+        continue;
+      }
+      
+      // Check if this is a table data row
+      if (inTable && line.startsWith('|') && line.endsWith('|')) {
+        processedLines.push(line);
+        continue;
+      }
+      
+      // Exit table mode on empty line or non-table content
+      if (inTable && (line === '' || !line.startsWith('|'))) {
+        inTable = false;
+        headerLine = '';
+        separatorParts = [];
+      }
+      
+      processedLines.push(lines[i]);
+    }
+    
+    return processedLines.join('\n');
   };
 
   if (loading) {
@@ -913,7 +977,7 @@ export default function IdeaDetail() {
                                 remarkPlugins={[remarkGfm]}
                                 components={markdownComponents}
                               >
-                                {businessPlan.sections[section.id as keyof typeof businessPlan.sections] || ''}
+                                {preprocessMarkdown(businessPlan.sections[section.id as keyof typeof businessPlan.sections] || '')}
                               </ReactMarkdown>
                             ) : (
                               <p className="text-muted-foreground italic">
