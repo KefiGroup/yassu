@@ -103,6 +103,18 @@ export interface IStorage {
   rejectConnection(connectionId: string, userId: number): Promise<Connection | undefined>;
   cancelConnection(connectionId: string, userId: number): Promise<void>;
   removeConnection(connectionId: string, userId: number): Promise<void>;
+  
+  // Collaborators marketplace
+  getCollaborators(filters: {
+    roles?: string[];
+    skills?: string[];
+    interests?: string[];
+    clubType?: string;
+    search?: string;
+  }): Promise<(Profile & { 
+    roles: string[]; 
+    university?: { name: string; shortName: string | null } | null;
+  })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -725,6 +737,94 @@ export class DatabaseStorage implements IStorage {
         ),
         eq(schema.connections.status, 'accepted')
       ));
+  }
+
+  async getCollaborators(filters: {
+    roles?: string[];
+    skills?: string[];
+    interests?: string[];
+    clubType?: string;
+    search?: string;
+  }): Promise<(Profile & { 
+    roles: string[]; 
+    university?: { name: string; shortName: string | null } | null;
+  })[]> {
+    // Get all profiles with their universities
+    const profiles = await db.select({
+      profile: schema.profiles,
+      university: schema.universities,
+    })
+    .from(schema.profiles)
+    .leftJoin(schema.universities, eq(schema.profiles.universityId, schema.universities.id));
+    
+    // Get all ideas to identify creators
+    const ideas = await db.select({ createdBy: schema.ideas.createdBy })
+      .from(schema.ideas);
+    const creatorIds = new Set(ideas.map(i => i.createdBy));
+    
+    // Get all profile badges (ambassadors/advisors)
+    const badges = await db.select().from(schema.profileBadges);
+    const badgesByUser = new Map<number, string[]>();
+    badges.forEach(b => {
+      const existing = badgesByUser.get(b.userId) || [];
+      existing.push(b.badgeType);
+      badgesByUser.set(b.userId, existing);
+    });
+    
+    // Build enriched profiles with roles
+    const enrichedProfiles = profiles.map(({ profile, university }) => {
+      const roles: string[] = [];
+      if (creatorIds.has(profile.userId)) roles.push('creator');
+      const userBadges = badgesByUser.get(profile.userId) || [];
+      if (userBadges.includes('ambassador')) roles.push('ambassador');
+      if (userBadges.includes('advisor')) roles.push('advisor');
+      
+      return {
+        ...profile,
+        roles,
+        university: university ? { name: university.name, shortName: university.shortName } : null,
+      };
+    });
+    
+    // Apply filters
+    let result = enrichedProfiles;
+    
+    // Filter by roles
+    if (filters.roles && filters.roles.length > 0) {
+      result = result.filter(p => 
+        filters.roles!.some(role => p.roles.includes(role))
+      );
+    }
+    
+    // Filter by skills (any match)
+    if (filters.skills && filters.skills.length > 0) {
+      result = result.filter(p => 
+        p.skills && filters.skills!.some(skill => p.skills!.includes(skill))
+      );
+    }
+    
+    // Filter by interests (any match)
+    if (filters.interests && filters.interests.length > 0) {
+      result = result.filter(p => 
+        p.interests && filters.interests!.some(interest => p.interests!.includes(interest))
+      );
+    }
+    
+    // Filter by clubType
+    if (filters.clubType) {
+      result = result.filter(p => p.clubType === filters.clubType);
+    }
+    
+    // Filter by search (name or university)
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      result = result.filter(p => 
+        (p.fullName && p.fullName.toLowerCase().includes(searchLower)) ||
+        (p.university?.name && p.university.name.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    return result;
   }
 }
 

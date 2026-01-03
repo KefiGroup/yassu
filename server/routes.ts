@@ -295,6 +295,29 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Collaborators marketplace - all users with filters
+  app.get("/api/collaborators", async (req: Request, res: Response) => {
+    try {
+      const roles = req.query.roles ? (Array.isArray(req.query.roles) ? req.query.roles : [req.query.roles]) as string[] : undefined;
+      const skills = req.query.skills ? (Array.isArray(req.query.skills) ? req.query.skills : [req.query.skills]) as string[] : undefined;
+      const interests = req.query.interests ? (Array.isArray(req.query.interests) ? req.query.interests : [req.query.interests]) as string[] : undefined;
+      const clubType = req.query.clubType as string | undefined;
+      const search = req.query.search as string | undefined;
+      
+      const collaborators = await storage.getCollaborators({
+        roles,
+        skills,
+        interests,
+        clubType,
+        search,
+      });
+      res.json(collaborators);
+    } catch (error) {
+      console.error("Fetch collaborators error:", error);
+      res.status(500).json({ error: "Failed to fetch collaborators" });
+    }
+  });
+
   app.get("/api/universities", async (_req: Request, res: Response) => {
     try {
       const universities = await storage.getUniversities();
