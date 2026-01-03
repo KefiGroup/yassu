@@ -1,11 +1,11 @@
 import OpenAI from "openai";
 import { batchProcess } from "./replit_integrations/batch";
 
-// Create Gemini-compatible client using OpenAI SDK with Gemini endpoints
-function getGeminiClient(): OpenAI {
+// Create AI client using Replit's AI Integrations (OpenAI-compatible endpoint)
+function getAIClient(): OpenAI {
   return new OpenAI({
-    apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-    baseURL: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   });
 }
 
@@ -424,9 +424,9 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
     async (section, index) => {
       console.log(`[AI] Generating section ${index + 1}/${sectionPrompts.length}: ${section.title}`);
       
-      const client = getGeminiClient();
+      const client = getAIClient();
       const response = await client.chat.completions.create({
-        model: "gemini-2.5-flash",
+        model: "gpt-5.1",
         messages: [{ role: "user", content: section.prompt }],
         max_completion_tokens: 8192,
       });
@@ -512,9 +512,9 @@ Generate an Executive Summary in markdown format covering:
 
 Keep it to ~400 words. Make it compelling enough to hook an investor or co-founder.`;
 
-  const client = getGeminiClient();
+  const client = getAIClient();
   const response = await client.chat.completions.create({
-    model: "gemini-2.5-flash",
+    model: "gpt-5.1",
     messages: [{ role: "user", content: prompt }],
     max_completion_tokens: 8192,
   });
