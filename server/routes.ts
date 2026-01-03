@@ -431,6 +431,11 @@ export function registerRoutes(app: Express): void {
               content: JSON.stringify(sections),
             });
             await storage.updateWorkflowRun(run.id, { status: "completed" });
+            
+            // Update idea stage to "find_advisors" after business plan is generated
+            if (ideaId) {
+              await storage.updateIdea(ideaId, { stage: "find_advisors" });
+            }
           })
           .catch(async (error) => {
             console.error("AI generation failed:", error);
