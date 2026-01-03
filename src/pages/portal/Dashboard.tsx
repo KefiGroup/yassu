@@ -345,7 +345,7 @@ export default function Dashboard() {
               <UserPlus className="w-5 h-5 text-emerald-500" />
               People to Invite
             </CardTitle>
-            <CardDescription>Advisors and Ambassadors you can invite to your team</CardDescription>
+            <CardDescription>Suggested Advisors and Ambassadors you may want to invite to your team</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
