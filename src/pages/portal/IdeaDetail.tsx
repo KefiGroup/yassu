@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Send,
   Edit,
+  Eye,
   Sparkles,
   FileText,
   Target,
@@ -153,6 +154,7 @@ export default function IdeaDetail() {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState<'edit' | 'preview'>('edit');
 
   useEffect(() => {
     async function fetchIdea() {
@@ -414,6 +416,7 @@ export default function IdeaDetail() {
     const content = businessPlan.sections[sectionId as keyof typeof businessPlan.sections] || '';
     setEditContent(content);
     setEditingSection(sectionId);
+    setEditMode('edit');
   };
 
   const handleSaveSection = async () => {
@@ -1148,18 +1151,56 @@ export default function IdeaDetail() {
               Edit {planSections.find(s => s.id === editingSection)?.label || 'Section'}
             </DialogTitle>
             <DialogDescription>
-              Edit the content below using Markdown formatting. Changes will be saved when you click Save.
+              Edit the content using Markdown. Switch to Preview to see how it will look.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-auto min-h-0">
-            <Textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="min-h-[400px] font-mono text-sm resize-none"
-              placeholder="Enter content using Markdown..."
-              data-testid="textarea-edit-section"
-            />
+          
+          <div className="flex gap-2 mb-2">
+            <Button
+              variant={editMode === 'edit' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setEditMode('edit')}
+              data-testid="button-edit-mode"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant={editMode === 'preview' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setEditMode('preview')}
+              data-testid="button-preview-mode"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              Preview
+            </Button>
           </div>
+          
+          <div className="flex-1 overflow-auto min-h-0 border rounded-lg">
+            {editMode === 'edit' ? (
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="min-h-[400px] h-full font-mono text-sm resize-none border-0"
+                placeholder="Enter content using Markdown..."
+                data-testid="textarea-edit-section"
+              />
+            ) : (
+              <div className="p-4 prose prose-sm dark:prose-invert max-w-none min-h-[400px]">
+                {editContent ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={markdownComponents}
+                  >
+                    {preprocessMarkdown(editContent)}
+                  </ReactMarkdown>
+                ) : (
+                  <p className="text-muted-foreground italic">No content to preview.</p>
+                )}
+              </div>
+            )}
+          </div>
+          
           <DialogFooter className="gap-2">
             <Button
               variant="outline"
