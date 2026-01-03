@@ -22,6 +22,8 @@ import Resources from "./pages/portal/Resources";
 import Messages from "./pages/portal/Messages";
 import Profile from "./pages/portal/Profile";
 import Settings from "./pages/portal/Settings";
+import PortalAmbassadors from "./pages/portal/Ambassadors";
+import PortalAdvisors from "./pages/portal/Advisors";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ const App = () => (
               <Route path="projects" element={<Projects />} />
               <Route path="resources" element={<Resources />} />
               <Route path="messages" element={<Messages />} />
+              <Route path="ambassadors" element={<PortalAmbassadors />} />
+              <Route path="advisors" element={<PortalAdvisors />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
             </Route>

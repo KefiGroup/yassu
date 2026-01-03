@@ -1,5 +1,5 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,10 +42,18 @@ const getStageNumber = (stage: string | null | undefined): number => {
 
 export default function Projects() {
   const navigate = useNavigate();
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: ideas = [], isLoading } = useQuery<Idea[]>({
-    queryKey: ['/api/ideas/mine'],
-  });
+  useEffect(() => {
+    fetch('/api/ideas/mine', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        setIdeas(data);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, []);
 
   return (
     <div className="space-y-6">

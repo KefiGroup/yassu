@@ -41,8 +41,8 @@ const mainNavItems = [
 
 const marketplaceNavItems = [
   { title: 'Ideas', url: '/portal/ideas', icon: Lightbulb },
-  { title: 'Ambassadors', url: '/ambassadors', icon: GraduationCap },
-  { title: 'Advisors', url: '/advisors', icon: Briefcase },
+  { title: 'Ambassadors', url: '/portal/ambassadors', icon: GraduationCap },
+  { title: 'Advisors', url: '/portal/advisors', icon: Briefcase },
   { title: 'Resources', url: '/portal/resources', icon: BookOpen },
   { title: 'Messages', url: '/portal/messages', icon: MessageSquare },
 ];
