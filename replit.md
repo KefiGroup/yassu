@@ -94,6 +94,19 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - Dashboard Redesign
+- Redesigned Dashboard with three focused sections:
+  1. **My Ideas** - Shows user's own ideas with current stage progress
+  2. **Team Join Requests** - Shows advisors/ambassadors requesting to join with accept/reject buttons
+  3. **People to Invite** - Shows advisors/ambassadors the user can invite with profile preview
+- Added `teamInvites` table to schema for tracking invitations
+- New API endpoints:
+  - `GET /api/ideas/mine` - Get current user's ideas
+  - `GET /api/join-requests` - Get pending join requests for user's ideas
+  - `PATCH /api/join-requests/:id` - Accept or reject join requests
+  - `GET /api/profiles/potential-team` - Get advisors/ambassadors for inviting
+  - `POST /api/team-invites` - Send team invitation
+
 ### January 2026 - Journey Progress Tracker & Branding
 - Added 7-step journey progress tracker to each idea detail page showing:
   1. Post Idea (completed when idea exists)
