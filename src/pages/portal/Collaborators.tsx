@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion } from 'framer-motion';
-import { Users, Search, X, Check } from 'lucide-react';
+import { Users, Search, X } from 'lucide-react';
 import { ConnectionButton } from '@/components/ConnectionButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -71,14 +71,14 @@ interface Collaborator {
 export default function Collaborators() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [selectedSkillCategories, setSelectedSkillCategories] = useState<string[]>([]);
-  const [selectedInterestCategories, setSelectedInterestCategories] = useState<string[]>([]);
+  const [selectedRole, setSelectedRole] = useState<string>('all');
+  const [selectedSkillCategory, setSelectedSkillCategory] = useState<string>('all');
+  const [selectedInterestCategory, setSelectedInterestCategory] = useState<string>('all');
   const [selectedClub, setSelectedClub] = useState<string>('all');
 
-  const selectedSkills = selectedSkillCategories.flatMap(
-    cat => SKILL_CATEGORIES.find(c => c.value === cat)?.skills || []
-  );
+  const selectedSkills = selectedSkillCategory !== 'all' 
+    ? SKILL_CATEGORIES.find(c => c.value === selectedSkillCategory)?.skills || []
+    : [];
 
   const interestMapping: Record<string, string[]> = {
     fintech: ['Fintech'],
@@ -93,13 +93,13 @@ export default function Collaborators() {
     social: ['Social Impact'],
   };
 
-  const selectedInterests = selectedInterestCategories.flatMap(
-    cat => interestMapping[cat] || []
-  );
+  const selectedInterests = selectedInterestCategory !== 'all'
+    ? interestMapping[selectedInterestCategory] || []
+    : [];
 
   const filters = {
     search: searchTerm || undefined,
-    roles: selectedRoles.length > 0 ? selectedRoles : undefined,
+    roles: selectedRole !== 'all' ? [selectedRole] : undefined,
     skills: selectedSkills.length > 0 ? selectedSkills : undefined,
     interests: selectedInterests.length > 0 ? selectedInterests : undefined,
     clubType: selectedClub && selectedClub !== 'all' ? selectedClub : undefined,
@@ -124,58 +124,15 @@ export default function Collaborators() {
     }
   };
 
-  const toggleRole = (role: string) => {
-    setSelectedRoles(prev =>
-      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
-    );
-  };
-
-  const toggleSkillCategory = (category: string) => {
-    setSelectedSkillCategories(prev =>
-      prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
-    );
-  };
-
-  const toggleInterestCategory = (category: string) => {
-    setSelectedInterestCategories(prev =>
-      prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
-    );
-  };
-
   const clearFilters = () => {
     setSearchTerm('');
-    setSelectedRoles([]);
-    setSelectedSkillCategories([]);
-    setSelectedInterestCategories([]);
+    setSelectedRole('all');
+    setSelectedSkillCategory('all');
+    setSelectedInterestCategory('all');
     setSelectedClub('all');
   };
 
-  const hasActiveFilters = selectedRoles.length > 0 || selectedSkillCategories.length > 0 || selectedInterestCategories.length > 0 || (selectedClub && selectedClub !== 'all');
-
-  const FilterChip = ({ 
-    label, 
-    selected, 
-    onClick 
-  }: { 
-    label: string; 
-    selected: boolean; 
-    onClick: () => void;
-  }) => (
-    <button
-      onClick={onClick}
-      className={`
-        inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium
-        transition-all duration-150 border
-        ${selected 
-          ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
-          : 'bg-background text-foreground border-border hover:border-primary/50 hover:bg-muted/50'
-        }
-      `}
-    >
-      {selected && <Check className="w-3.5 h-3.5" />}
-      {label}
-    </button>
-  );
+  const hasActiveFilters = selectedRole !== 'all' || selectedSkillCategory !== 'all' || selectedInterestCategory !== 'all' || selectedClub !== 'all';
 
   return (
     <div className="space-y-8">
@@ -228,56 +185,58 @@ export default function Collaborators() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">Roles</label>
-              <div className="flex flex-wrap gap-2">
-                {ROLE_OPTIONS.map(role => (
-                  <FilterChip
-                    key={role.value}
-                    label={role.label}
-                    selected={selectedRoles.includes(role.value)}
-                    onClick={() => toggleRole(role.value)}
-                  />
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Role</label>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger data-testid="select-role">
+                    <SelectValue placeholder="All roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All roles</SelectItem>
+                    {ROLE_OPTIONS.map(role => (
+                      <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">Skills</label>
-              <div className="flex flex-wrap gap-2">
-                {SKILL_CATEGORIES.map(cat => (
-                  <FilterChip
-                    key={cat.value}
-                    label={cat.label}
-                    selected={selectedSkillCategories.includes(cat.value)}
-                    onClick={() => toggleSkillCategory(cat.value)}
-                  />
-                ))}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Skills</label>
+                <Select value={selectedSkillCategory} onValueChange={setSelectedSkillCategory}>
+                  <SelectTrigger data-testid="select-skills">
+                    <SelectValue placeholder="All skills" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All skills</SelectItem>
+                    {SKILL_CATEGORIES.map(cat => (
+                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">Interests</label>
-              <div className="flex flex-wrap gap-2">
-                {INTEREST_CATEGORIES.map(cat => (
-                  <FilterChip
-                    key={cat.value}
-                    label={cat.label}
-                    selected={selectedInterestCategories.includes(cat.value)}
-                    onClick={() => toggleInterestCategory(cat.value)}
-                  />
-                ))}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Interests</label>
+                <Select value={selectedInterestCategory} onValueChange={setSelectedInterestCategory}>
+                  <SelectTrigger data-testid="select-interests">
+                    <SelectValue placeholder="All interests" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All interests</SelectItem>
+                    {INTEREST_CATEGORIES.map(cat => (
+                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             {hasActiveFilters && (
-              <div className="flex items-center justify-between pt-4 border-t">
-                <span className="text-sm text-muted-foreground">
-                  {selectedRoles.length + selectedSkillCategories.length + selectedInterestCategories.length + (selectedClub !== 'all' ? 1 : 0)} filter(s) applied
-                </span>
+              <div className="flex items-center justify-end pt-4 border-t">
                 <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
                   <X className="w-4 h-4 mr-1.5" />
-                  Clear all
+                  Clear all filters
                 </Button>
               </div>
             )}
