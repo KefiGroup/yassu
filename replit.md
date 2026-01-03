@@ -57,6 +57,11 @@ The database includes 20+ tables covering:
 - `POST /api/auth/login` - Sign in
 - `POST /api/auth/logout` - Sign out
 - `GET /api/auth/me` - Get current user
+- `POST /api/auth/forgot-password` - Request password reset email
+- `POST /api/auth/change-password` - Change password (requires authentication)
+- `GET /api/auth/providers` - Check available OAuth providers
+- `GET /api/auth/google` - Initiate Google OAuth login
+- `GET /api/auth/google/callback` - Google OAuth callback
 
 ### Profile
 - `GET /api/profile` - Get current user profile

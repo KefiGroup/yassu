@@ -4,6 +4,7 @@ import { createServer } from "http";
 import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { setupOAuth } from "./oauth";
 
 const app = express();
 app.use(express.json());
@@ -23,6 +24,8 @@ app.use(
     },
   })
 );
+
+setupOAuth(app);
 
 app.use((req, res, next) => {
   const start = Date.now();
