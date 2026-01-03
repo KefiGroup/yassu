@@ -1,20 +1,14 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { batchProcess } from "./replit_integrations/batch";
 
-const geminiApiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+});
 
-if (!geminiApiKey) {
+if (!process.env.AI_INTEGRATIONS_GEMINI_API_KEY) {
   console.error("[AI] Warning: AI_INTEGRATIONS_GEMINI_API_KEY is not set");
 }
-
-const ai = new GoogleGenAI({
-  apiKey: geminiApiKey,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: geminiBaseUrl,
-  },
-});
 
 interface IdeaInput {
   title: string;
@@ -431,19 +425,14 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
     async (section, index) => {
       console.log(`[AI] Generating section ${index + 1}/${sectionPrompts.length}: ${section.title}`);
       
-      const response = await ai.models.generateContent({
+      const response = await openai.chat.completions.create({
         model: "gemini-2.5-flash",
-        contents: section.prompt,
-        config: {
-          maxOutputTokens: 8192,
-          temperature: 0.7,
-          thinkingConfig: {
-            thinkingBudget: 0,
-          },
-        },
+        messages: [{ role: "user", content: section.prompt }],
+        max_tokens: 8192,
+        temperature: 0.7,
       });
       
-      const content = response.text || `## ${section.title}\n\nGeneration failed. Please try again.`;
+      const content = response.choices[0]?.message?.content || `## ${section.title}\n\nGeneration failed. Please try again.`;
       console.log(`[AI] Completed section: ${section.title} (${content.length} chars)`);
       
       return { key: section.key, content };
@@ -489,9 +478,11 @@ async function generateExecutiveSummary(
     .map((r) => `${r.key}: ${r.content.slice(0, 500)}...`)
     .join("\n\n");
 
-  const response = await ai.models.generateContent({
+  const response = await openai.chat.completions.create({
     model: "gemini-2.5-flash",
-    contents: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+    messages: [{
+      role: "user",
+      content: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
 
 Based on the detailed analysis sections below, create a compelling EXECUTIVE SUMMARY for this startup:
 
@@ -524,15 +515,11 @@ Generate an Executive Summary in markdown format covering:
 - What's needed to succeed
 - Key risks acknowledged
 
-Keep it to ~400 words. Make it compelling enough to hook an investor or co-founder.`,
-    config: {
-      maxOutputTokens: 4096,
-      temperature: 0.7,
-      thinkingConfig: {
-        thinkingBudget: 0,
-      },
-    },
+Keep it to ~400 words. Make it compelling enough to hook an investor or co-founder.`
+    }],
+    max_tokens: 4096,
+    temperature: 0.7,
   });
 
-  return response.text || "## Executive Summary\n\nGeneration pending...";
+  return response.choices[0]?.message?.content || "## Executive Summary\n\nGeneration pending...";
 }
