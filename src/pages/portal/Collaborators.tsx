@@ -8,9 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { motion } from 'framer-motion';
-import { Users, Search, X, Filter, Briefcase, Heart, Check } from 'lucide-react';
+import { Users, Search, X, SlidersHorizontal, Check } from 'lucide-react';
 import { ConnectionButton } from '@/components/ConnectionButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { SKILL_OPTIONS, INTEREST_OPTIONS } from '@/lib/profileOptions';
@@ -127,7 +126,7 @@ export default function Collaborators() {
     setSelectedClub('all');
   };
 
-  const hasActiveFilters = searchTerm || selectedRoles.length > 0 || selectedSkills.length > 0 || selectedInterests.length > 0 || (selectedClub && selectedClub !== 'all');
+  const hasActiveFilters = selectedSkills.length > 0 || selectedInterests.length > 0 || selectedRoles.length > 0 || (selectedClub && selectedClub !== 'all');
   const activeFilterCount = selectedRoles.length + selectedSkills.length + selectedInterests.length + (selectedClub && selectedClub !== 'all' ? 1 : 0);
 
   const isSkillMatch = (collabSkills: string[] | null, skill: string) => 
@@ -136,231 +135,232 @@ export default function Collaborators() {
   const isInterestMatch = (collabInterests: string[] | null, interest: string) => 
     collabInterests?.includes(interest) ?? false;
 
+  const FilterChip = ({ 
+    label, 
+    selected, 
+    onClick 
+  }: { 
+    label: string; 
+    selected: boolean; 
+    onClick: () => void;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`
+        inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
+        transition-all duration-200 ease-out
+        ${selected 
+          ? 'bg-primary text-primary-foreground shadow-sm' 
+          : 'bg-secondary/50 text-foreground hover:bg-secondary'
+        }
+      `}
+      data-testid={`chip-${label.replace(/\s+/g, '-').toLowerCase()}`}
+    >
+      {selected && <Check className="w-3.5 h-3.5" />}
+      {label}
+    </button>
+  );
+
+  const ActiveFilterPill = ({ 
+    label, 
+    onRemove 
+  }: { 
+    label: string; 
+    onRemove: () => void;
+  }) => (
+    <span className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1 rounded-full text-sm bg-primary text-primary-foreground">
+      {label}
+      <button
+        onClick={onRemove}
+        className="p-0.5 rounded-full hover:bg-primary-foreground/20 transition-colors"
+        aria-label={`Remove ${label} filter`}
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </span>
+  );
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-2xl font-bold text-foreground">Find Collaborators</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-semibold text-foreground">Find Collaborators</h1>
+        <p className="text-muted-foreground mt-1">
           Select skills or interests to find the right people for your team
         </p>
       </motion.div>
 
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or university..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-              data-testid="input-search-collaborators"
-            />
-          </div>
-          <Sheet open={showFilters} onOpenChange={setShowFilters}>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                data-testid="button-toggle-filters"
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                More Filters
-                {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Filter Collaborators</SheetTitle>
-              </SheetHeader>
-              <div className="space-y-6 mt-6">
-                <div>
-                  <h3 className="text-sm font-medium mb-3">Roles</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {ROLE_OPTIONS.map(role => (
-                      <Badge
-                        key={role.value}
-                        variant={selectedRoles.includes(role.value) ? 'default' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => toggleRole(role.value)}
-                        data-testid={`filter-role-${role.value}`}
-                      >
-                        {selectedRoles.includes(role.value) && <Check className="w-3 h-3 mr-1" />}
-                        {role.label}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="space-y-5"
+      >
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or university..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-12 h-12 text-base bg-background"
+            data-testid="input-search-collaborators"
+          />
+        </div>
 
-                <div>
-                  <h3 className="text-sm font-medium mb-3">Club Affiliation</h3>
-                  <Select value={selectedClub} onValueChange={setSelectedClub}>
-                    <SelectTrigger className="w-full" data-testid="select-club">
-                      <SelectValue placeholder="Select club type..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All clubs</SelectItem>
-                      {CLUB_OPTIONS.map(club => (
-                        <SelectItem key={club} value={club}>{club}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium mb-3">All Skills (select up to 5)</h3>
-                  <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto">
-                    {SKILL_OPTIONS.map(skill => (
-                      <Badge
-                        key={skill}
-                        variant={selectedSkills.includes(skill) ? 'default' : 'outline'}
-                        className="cursor-pointer text-xs"
-                        onClick={() => toggleSkill(skill)}
-                        data-testid={`filter-skill-${skill.replace(/\s+/g, '-').toLowerCase()}`}
-                      >
-                        {selectedSkills.includes(skill) && <Check className="w-2.5 h-2.5 mr-0.5" />}
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium mb-3">All Interests (select up to 5)</h3>
-                  <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto">
-                    {INTEREST_OPTIONS.map(interest => (
-                      <Badge
-                        key={interest}
-                        variant={selectedInterests.includes(interest) ? 'default' : 'outline'}
-                        className="cursor-pointer text-xs"
-                        onClick={() => toggleInterest(interest)}
-                        data-testid={`filter-interest-${interest.replace(/\s+/g, '-').toLowerCase()}`}
-                      >
-                        {selectedInterests.includes(interest) && <Check className="w-2.5 h-2.5 mr-0.5" />}
-                        {interest}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {hasActiveFilters && (
-                  <Button variant="outline" onClick={clearFilters} className="w-full" data-testid="button-clear-filters">
-                    <X className="w-4 h-4 mr-2" />
-                    Clear All Filters
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Skills</h3>
+              <Sheet open={showFilters} onOpenChange={setShowFilters}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-more-filters">
+                    <SlidersHorizontal className="w-4 h-4 mr-1.5" />
+                    More options
                   </Button>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+                </SheetTrigger>
+                <SheetContent className="overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>All Filters</SheetTitle>
+                  </SheetHeader>
+                  <div className="space-y-8 mt-8">
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">Roles</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {ROLE_OPTIONS.map(role => (
+                          <FilterChip
+                            key={role.value}
+                            label={role.label}
+                            selected={selectedRoles.includes(role.value)}
+                            onClick={() => toggleRole(role.value)}
+                          />
+                        ))}
+                      </div>
+                    </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Briefcase className="w-4 h-4" />
-            <span className="font-medium">Skills:</span>
-          </div>
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-2 pb-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">Club Affiliation</h3>
+                      <Select value={selectedClub} onValueChange={setSelectedClub}>
+                        <SelectTrigger className="w-full" data-testid="select-club">
+                          <SelectValue placeholder="Select club type..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All clubs</SelectItem>
+                          {CLUB_OPTIONS.map(club => (
+                            <SelectItem key={club} value={club}>{club}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">All Skills</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {SKILL_OPTIONS.map(skill => (
+                          <FilterChip
+                            key={skill}
+                            label={skill}
+                            selected={selectedSkills.includes(skill)}
+                            onClick={() => toggleSkill(skill)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">All Interests</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {INTEREST_OPTIONS.map(interest => (
+                          <FilterChip
+                            key={interest}
+                            label={interest}
+                            selected={selectedInterests.includes(interest)}
+                            onClick={() => toggleInterest(interest)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {hasActiveFilters && (
+                      <Button variant="outline" onClick={clearFilters} className="w-full" data-testid="button-clear-filters">
+                        Clear All Filters
+                      </Button>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+            <div className="flex flex-wrap gap-2">
               {POPULAR_SKILLS.map(skill => (
-                <Badge
+                <FilterChip
                   key={skill}
-                  variant={selectedSkills.includes(skill) ? 'default' : 'outline'}
-                  className="cursor-pointer shrink-0"
+                  label={skill}
+                  selected={selectedSkills.includes(skill)}
                   onClick={() => toggleSkill(skill)}
-                  data-testid={`quick-skill-${skill.replace(/\s+/g, '-').toLowerCase()}`}
-                >
-                  {selectedSkills.includes(skill) && <Check className="w-3 h-3 mr-1" />}
-                  {skill}
-                </Badge>
+                />
               ))}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="shrink-0 text-xs"
-                onClick={() => setShowFilters(true)}
-                data-testid="button-see-all-skills"
-              >
-                See all skills...
-              </Button>
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Heart className="w-4 h-4" />
-            <span className="font-medium">Interests:</span>
           </div>
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-2 pb-2">
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Interests</h3>
+            <div className="flex flex-wrap gap-2">
               {POPULAR_INTERESTS.map(interest => (
-                <Badge
+                <FilterChip
                   key={interest}
-                  variant={selectedInterests.includes(interest) ? 'default' : 'outline'}
-                  className="cursor-pointer shrink-0"
+                  label={interest}
+                  selected={selectedInterests.includes(interest)}
                   onClick={() => toggleInterest(interest)}
-                  data-testid={`quick-interest-${interest.replace(/\s+/g, '-').toLowerCase()}`}
-                >
-                  {selectedInterests.includes(interest) && <Check className="w-3 h-3 mr-1" />}
-                  {interest}
-                </Badge>
+                />
               ))}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="shrink-0 text-xs"
-                onClick={() => setShowFilters(true)}
-                data-testid="button-see-all-interests"
-              >
-                See all interests...
-              </Button>
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          </div>
         </div>
 
-        {(selectedSkills.length > 0 || selectedInterests.length > 0 || selectedRoles.length > 0) && (
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
-            <span className="text-sm text-muted-foreground">Active filters:</span>
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2 pt-4 border-t">
+            <span className="text-sm text-muted-foreground font-medium">
+              {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} applied:
+            </span>
             {selectedRoles.map(role => (
-              <Badge key={role} variant="default" className="gap-1 cursor-pointer" onClick={() => toggleRole(role)}>
-                {ROLE_OPTIONS.find(r => r.value === role)?.label}
-                <X className="w-3 h-3" />
-              </Badge>
+              <ActiveFilterPill
+                key={role}
+                label={ROLE_OPTIONS.find(r => r.value === role)?.label || role}
+                onRemove={() => toggleRole(role)}
+              />
             ))}
             {selectedSkills.map(skill => (
-              <Badge key={skill} variant="default" className="gap-1 cursor-pointer" onClick={() => toggleSkill(skill)}>
-                {skill}
-                <X className="w-3 h-3" />
-              </Badge>
+              <ActiveFilterPill key={skill} label={skill} onRemove={() => toggleSkill(skill)} />
             ))}
             {selectedInterests.map(interest => (
-              <Badge key={interest} variant="default" className="gap-1 cursor-pointer" onClick={() => toggleInterest(interest)}>
-                {interest}
-                <X className="w-3 h-3" />
-              </Badge>
+              <ActiveFilterPill key={interest} label={interest} onRemove={() => toggleInterest(interest)} />
             ))}
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs" data-testid="button-clear-active-filters">
+            {selectedClub && selectedClub !== 'all' && (
+              <ActiveFilterPill label={selectedClub} onRemove={() => setSelectedClub('all')} />
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearFilters} 
+              className="text-muted-foreground ml-auto"
+              data-testid="button-clear-active-filters"
+            >
               Clear all
             </Button>
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <div className="text-sm text-muted-foreground">
-        {isLoading ? 'Loading...' : `${collaborators.length} collaborator${collaborators.length !== 1 ? 's' : ''} found`}
+      <div className="flex items-center justify-between pt-2">
+        <p className="text-sm text-muted-foreground">
+          {isLoading ? 'Searching...' : `${collaborators.length} collaborator${collaborators.length !== 1 ? 's' : ''} found`}
+        </p>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
@@ -374,7 +374,7 @@ export default function Collaborators() {
           ))}
         </div>
       ) : collaborators.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {collaborators.map((collab, index) => {
             const matchedSkills = selectedSkills.filter(s => isSkillMatch(collab.skills, s));
             const matchedInterests = selectedInterests.filter(i => isInterestMatch(collab.interests, i));
@@ -385,36 +385,36 @@ export default function Collaborators() {
                 key={collab.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.02 * Math.min(index, 10) }}
+                transition={{ duration: 0.3, delay: 0.03 * Math.min(index, 8) }}
               >
                 <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-collaborator-${collab.id}`}>
                   <Link to={`/portal/users/${collab.userId}`} className="block">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-3">
                       <div className="flex items-start gap-3">
-                        <Avatar className="w-12 h-12 shrink-0">
+                        <Avatar className="w-11 h-11 shrink-0">
                           <AvatarImage src={collab.avatarUrl || undefined} alt={collab.fullName || 'User'} />
                           <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                             {getInitials(collab.fullName)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-base line-clamp-1">{collab.fullName || 'Anonymous'}</CardTitle>
-                          <div className="flex items-center gap-1 mt-1 flex-wrap">
+                          <CardTitle className="text-base font-semibold line-clamp-1">{collab.fullName || 'Anonymous'}</CardTitle>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             {collab.roles.map(role => (
                               <Badge key={role} variant={getRoleBadgeVariant(role)} className="text-xs capitalize">
                                 {role}
                               </Badge>
                             ))}
                             {collab.university?.shortName && (
-                              <Badge variant="secondary" className="text-xs">
+                              <span className="text-xs text-muted-foreground">
                                 {collab.university.shortName}
-                              </Badge>
+                              </span>
                             )}
                           </div>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-3 pt-0">
                       {collab.bio && (
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {collab.bio}
@@ -422,51 +422,41 @@ export default function Collaborators() {
                       )}
                       
                       {hasMatches && (
-                        <div className="space-y-1">
-                          {matchedSkills.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              <span className="text-xs text-muted-foreground mr-1">Skills match:</span>
-                              {matchedSkills.map((skill, i) => (
-                                <Badge key={i} variant="default" className="text-xs">
-                                  <Check className="w-2.5 h-2.5 mr-0.5" />
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                          {matchedInterests.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              <span className="text-xs text-muted-foreground mr-1">Interests match:</span>
-                              {matchedInterests.map((interest, i) => (
-                                <Badge key={i} variant="default" className="text-xs">
-                                  <Check className="w-2.5 h-2.5 mr-0.5" />
-                                  {interest}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
+                        <div className="flex flex-wrap gap-1.5">
+                          {matchedSkills.map((skill, i) => (
+                            <span 
+                              key={i} 
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                            >
+                              <Check className="w-3 h-3" />
+                              {skill}
+                            </span>
+                          ))}
+                          {matchedInterests.map((interest, i) => (
+                            <span 
+                              key={i} 
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                            >
+                              <Check className="w-3 h-3" />
+                              {interest}
+                            </span>
+                          ))}
                         </div>
                       )}
                       
                       {!hasMatches && collab.skills && collab.skills.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1.5">
                           {collab.skills.slice(0, 3).map((skill, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
+                            <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-secondary/70 text-secondary-foreground">
                               {skill}
-                            </Badge>
+                            </span>
                           ))}
                           {collab.skills.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-secondary/70 text-secondary-foreground">
                               +{collab.skills.length - 3}
-                            </Badge>
+                            </span>
                           )}
                         </div>
-                      )}
-                      
-                      {collab.clubType && collab.clubType !== 'None' && (
-                        <p className="text-xs text-muted-foreground">
-                          {collab.clubType}
-                        </p>
                       )}
                     </CardContent>
                   </Link>
@@ -489,18 +479,20 @@ export default function Collaborators() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="text-center py-16"
+          className="text-center py-20"
         >
-          <Users className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No collaborators found</h3>
-          <p className="text-muted-foreground mb-4">
+          <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-5">
+            <Users className="w-8 h-8 text-muted-foreground/50" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">No collaborators found</h3>
+          <p className="text-muted-foreground max-w-sm mx-auto mb-6">
             {hasActiveFilters 
-              ? `No one matches ${selectedSkills.length > 0 ? 'these skills' : ''}${selectedSkills.length > 0 && selectedInterests.length > 0 ? ' and ' : ''}${selectedInterests.length > 0 ? 'these interests' : ''} yet` 
-              : 'Check back later for new members'}
+              ? 'No one matches your current filters yet. Try different criteria or check back later.' 
+              : 'New collaborators are joining regularly. Check back soon!'}
           </p>
           {hasActiveFilters && (
-            <Button variant="outline" onClick={clearFilters}>
-              Clear filters and show all
+            <Button variant="outline" onClick={clearFilters} data-testid="button-clear-empty-state">
+              Clear all filters
             </Button>
           )}
         </motion.div>
