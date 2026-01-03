@@ -50,7 +50,7 @@ interface Idea {
   assumptions: string | null;
   desiredTeammates: string | null;
   expectedTimeline: string | null;
-  stage: 'concept' | 'validating' | 'building' | 'launched' | null;
+  stage: 'idea_posted' | 'business_plan' | 'find_advisors' | 'form_team' | 'build_mvp' | 'yassu_foundry' | 'launched' | null;
   universityId: string | null;
   isPublic: boolean | null;
   createdAt: string;
@@ -148,10 +148,23 @@ export default function Dashboard() {
   };
 
   const stageColors: Record<string, string> = {
-    concept: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    validating: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-    building: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    idea_posted: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    business_plan: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
+    find_advisors: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+    form_team: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+    build_mvp: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    yassu_foundry: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300',
     launched: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  };
+
+  const stageLabels: Record<string, string> = {
+    idea_posted: 'Post Idea',
+    business_plan: 'Business Plan',
+    find_advisors: 'Find Advisors',
+    form_team: 'Form Team',
+    build_mvp: 'Build MVP',
+    yassu_foundry: 'Yassu Foundry',
+    launched: 'Launched',
   };
 
   const getInitials = (name: string | null) => {
@@ -212,8 +225,8 @@ export default function Dashboard() {
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <h4 className="font-medium">{idea.title}</h4>
-                      <Badge className={stageColors[idea.stage || 'concept'] || 'bg-muted'}>
-                        {idea.stage || 'concept'}
+                      <Badge className={stageColors[idea.stage || 'idea_posted'] || 'bg-muted'}>
+                        {stageLabels[idea.stage || 'idea_posted'] || 'Post Idea'}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-1">

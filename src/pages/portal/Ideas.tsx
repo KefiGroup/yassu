@@ -34,11 +34,24 @@ interface University {
 
 const stageOptions = [
   { value: 'all', label: 'All Stages' },
-  { value: 'concept', label: 'Concept' },
-  { value: 'validating', label: 'Validating' },
-  { value: 'building', label: 'Building' },
+  { value: 'idea_posted', label: 'Post Idea' },
+  { value: 'business_plan', label: 'Business Plan' },
+  { value: 'find_advisors', label: 'Find Advisors' },
+  { value: 'form_team', label: 'Form Team' },
+  { value: 'build_mvp', label: 'Build MVP' },
+  { value: 'yassu_foundry', label: 'Yassu Foundry' },
   { value: 'launched', label: 'Launched' },
 ];
+
+const stageLabels: Record<string, string> = {
+  idea_posted: 'Post Idea',
+  business_plan: 'Business Plan',
+  find_advisors: 'Find Advisors',
+  form_team: 'Form Team',
+  build_mvp: 'Build MVP',
+  yassu_foundry: 'Yassu Foundry',
+  launched: 'Launched',
+};
 
 export default function Ideas() {
   const navigate = useNavigate();
@@ -78,9 +91,12 @@ export default function Ideas() {
   });
 
   const stageColors: Record<string, string> = {
-    concept: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    validating: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-    building: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    idea_posted: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    business_plan: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
+    find_advisors: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+    form_team: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+    build_mvp: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    yassu_foundry: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300',
     launched: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   };
 
@@ -178,8 +194,8 @@ export default function Ideas() {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-lg line-clamp-2">{idea.title}</CardTitle>
-                    <Badge className={stageColors[idea.stage || 'concept'] || 'bg-muted'}>
-                      {idea.stage || 'concept'}
+                    <Badge className={stageColors[idea.stage || 'idea_posted'] || 'bg-muted'}>
+                      {stageLabels[idea.stage || 'idea_posted'] || 'Post Idea'}
                     </Badge>
                   </div>
                 </CardHeader>

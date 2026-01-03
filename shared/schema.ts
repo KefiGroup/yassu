@@ -5,7 +5,7 @@ import { relations } from "drizzle-orm";
 
 export const appRoleEnum = pgEnum("app_role", ["student", "alumni", "founder_pro", "investor", "sponsor", "admin"]);
 export const verificationStatusEnum = pgEnum("verification_status", ["pending", "verified", "rejected"]);
-export const ideaStageEnum = pgEnum("idea_stage", ["concept", "validating", "building", "launched"]);
+export const ideaStageEnum = pgEnum("idea_stage", ["idea_posted", "business_plan", "find_advisors", "form_team", "build_mvp", "yassu_foundry", "launched"]);
 export const workflowTypeEnum = pgEnum("workflow_type", [
   "idea_founder_fit",
   "competitive_landscape",
@@ -100,7 +100,7 @@ export const ideas = pgTable("ideas", {
   assumptions: text("assumptions"),
   desiredTeammates: text("desired_teammates"),
   expectedTimeline: text("expected_timeline"),
-  stage: ideaStageEnum("stage").default("concept"),
+  stage: ideaStageEnum("stage").default("idea_posted"),
   universityId: uuid("university_id").references(() => universities.id),
   isPublic: boolean("is_public").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
