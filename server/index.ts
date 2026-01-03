@@ -1,5 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import pgSession from "connect-pg-simple";
+import { Pool } from "pg";
 import { createServer } from "http";
 import path from "path";
 import { registerRoutes } from "./routes";
@@ -8,6 +10,13 @@ import { seedDatabase } from "./seed";
 
 const app = express();
 const server = createServer(app);
+
+// Create PostgreSQL pool for session store
+const pgPool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const PgStore = pgSession(session);
 
 // Health check endpoints - ALWAYS return 200 immediately, no conditions
 app.head("/", (_req, res) => res.sendStatus(200));
@@ -25,6 +34,11 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use(
   session({
+    store: new PgStore({
+      pool: pgPool,
+      tableName: 'session',
+      createTableIfMissing: true,
+    }),
     secret: process.env.SESSION_SECRET || "unicorn-founders-secret-key-change-in-production",
     resave: false,
     saveUninitialized: false,
