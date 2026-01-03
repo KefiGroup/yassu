@@ -113,3 +113,50 @@
   from { box-shadow: 0 0 20px -10px hsl(var(--primary) / 0.5); }
   to { box-shadow: 0 0 40px -10px hsl(var(--primary) / 0.8); }
 }
+
+/* MDXEditor styling fixes */
+.mdxeditor {
+  --accentBase: hsl(var(--primary));
+  --accentBgSubtle: hsl(var(--muted));
+  --accentBg: hsl(var(--primary) / 0.1);
+  --accentText: hsl(var(--primary));
+  --accentSolid: hsl(var(--primary));
+  --basePageBg: hsl(var(--background));
+  --baseBgSubtle: hsl(var(--muted));
+  --baseBgActive: hsl(var(--muted));
+  --baseBorder: hsl(var(--border));
+  --baseText: hsl(var(--foreground));
+  --baseTextContrast: hsl(var(--foreground));
+}
+
+.mdxeditor table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.mdxeditor table th,
+.mdxeditor table td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.5rem;
+  text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.mdxeditor table th {
+  background-color: hsl(var(--muted));
+  font-weight: 600;
+}
+
+.mdxeditor [data-lexical-editor="true"] {
+  min-height: 400px;
+  outline: none;
+}
+
+/* Ensure tables don't overflow in the editor container */
+.mdxeditor-root-contenteditable {
+  overflow-x: auto;
+}

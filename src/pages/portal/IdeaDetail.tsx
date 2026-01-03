@@ -430,8 +430,10 @@ export default function IdeaDetail() {
 
   const handleEditSection = (sectionId: string) => {
     if (!businessPlan?.sections) return;
-    const content = businessPlan.sections[sectionId as keyof typeof businessPlan.sections] || '';
-    setEditContent(content);
+    const rawContent = businessPlan.sections[sectionId as keyof typeof businessPlan.sections] || '';
+    // Preprocess the markdown to fix any formatting issues before loading into editor
+    const processedContent = preprocessMarkdown(rawContent);
+    setEditContent(processedContent);
     setEditingSection(sectionId);
   };
 
