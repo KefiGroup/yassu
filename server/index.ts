@@ -9,6 +9,11 @@ import { seedDatabase } from "./seed";
 
 const app = express();
 
+// Health check endpoint - must respond immediately for VM deployments
+app.get("/health", (_req, res) => {
+  res.status(200).send("OK");
+});
+
 // Trust reverse proxy in production (required for secure cookies behind Replit's proxy)
 if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", 1);
@@ -67,7 +72,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await seedDatabase();
+  // Start seeding in background - don't block server startup
+  seedDatabase().catch(err => console.error("Database seeding error:", err));
   registerRoutes(app);
   const server = createServer(app);
 
