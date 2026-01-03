@@ -9,23 +9,20 @@ import { seedDatabase } from "./seed";
 
 const app = express();
 
-// Health check endpoints - must respond immediately for deployments
-// These MUST be before any other middleware
+// Health check endpoints - MUST respond immediately, no conditions
+// These are before ANY other middleware
 app.head("/", (_req, res) => res.sendStatus(200));
 app.head("/health", (_req, res) => res.sendStatus(200));
 app.get("/health", (_req, res) => res.status(200).send("OK"));
-// Root health check - only pass through if it's a real browser with cookies/referer
-app.get("/", (req, res, next) => {
-  // Real browsers have cookies, referer, or complex accept headers
-  // Health checks are simple requests without these
-  const hasCookies = req.headers.cookie;
-  const hasReferer = req.headers.referer;
-  const isHealthCheck = !hasCookies && !hasReferer;
-  
-  if (isHealthCheck) {
+// Root GET - serve minimal HTML that loads the SPA (for health checks AND users)
+app.get("/", (_req, res) => {
+  // In development, let Vite handle it
+  if (process.env.NODE_ENV !== "production") {
     return res.status(200).send("OK");
   }
-  next();
+  // In production, redirect to let catch-all serve SPA
+  // Health checks get 200, browsers follow redirect
+  res.status(200).send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/home"><title>Yassu</title></head><body></body></html>`);
 });
 
 // Trust reverse proxy in production (required for secure cookies behind Replit's proxy)
