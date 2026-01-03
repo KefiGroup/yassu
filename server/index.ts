@@ -80,35 +80,35 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  // Start seeding in background - don't block server startup
-  seedDatabase().catch(err => console.error("Database seeding error:", err));
-  registerRoutes(app);
-  const server = createServer(app);
+// Register routes synchronously
+registerRoutes(app);
+const server = createServer(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
-  });
+  res.status(status).json({ message });
+  throw err;
+});
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+// Setup static serving or Vite
+if (process.env.NODE_ENV === "production") {
+  serveStatic(app);
+} else {
+  setupVite(app, server);
+}
+
+const port = 5000;
+server.listen(
+  {
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+  },
+  () => {
+    log(`serving on port ${port}`);
+    // Seed database AFTER server is listening
+    seedDatabase().catch(err => console.error("Database seeding error:", err));
   }
-
-  const port = 5000;
-  server.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    }
-  );
-})();
+);
