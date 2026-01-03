@@ -53,6 +53,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { SKILL_OPTIONS } from '@/lib/profileOptions';
+import MyWorkflows from '@/components/portal/MyWorkflows';
 
 interface Idea {
   id: string;
@@ -1057,6 +1058,21 @@ export default function IdeaDetail() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* My Workflows - Editable Business Plan Sections */}
+      {isOwner && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+        >
+          <MyWorkflows
+            ideaId={ideaId!}
+            isOwner={isOwner}
+            hasBusinessPlan={!!businessPlan && businessPlan.status === 'completed'}
+          />
+        </motion.div>
+      )}
     </div>
   );
 }

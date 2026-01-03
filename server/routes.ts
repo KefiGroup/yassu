@@ -497,6 +497,27 @@ export function registerRoutes(app: Express): void {
             // Update idea stage to "find_advisors" after business plan is generated
             if (ideaId) {
               await storage.updateIdea(ideaId, { stage: "find_advisors" });
+              
+              // Auto-populate editable workflow sections with AI-generated content
+              // Keys must match the actual AI output fields from generateBusinessPlan
+              const sectionMapping: Record<string, string> = {
+                executiveSummary: "executive_summary",
+                founderFit: "founder_fit",
+                competitiveLandscape: "competitive_landscape",
+                riskMoat: "risk_and_moat",
+                mvpDesign: "mvp_design",
+                teamTalent: "team_and_talent",
+                launchPlan: "launch_plan",
+                schoolAdvantage: "school_advantage",
+                fundingPitch: "funding_pitch",
+              };
+              
+              for (const [key, sectionType] of Object.entries(sectionMapping)) {
+                const content = (sections as any)[key];
+                if (content) {
+                  await storage.upsertIdeaWorkflowSection(ideaId, sectionType, content, true);
+                }
+              }
             }
           })
           .catch(async (error) => {
