@@ -1,70 +1,54 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import { FolderKanban, Plus, Calendar, Users, ArrowRight } from 'lucide-react';
+import { Lightbulb, Plus, Calendar, ArrowRight } from 'lucide-react';
 
-interface Project {
+interface Idea {
   id: string;
-  name: string;
-  description: string | null;
-  status: string;
-  created_at: string;
-  teams: { name: string } | null;
+  title: string;
+  problem: string | null;
+  solution: string | null;
+  stage: string | null;
+  createdAt: string | null;
 }
+
+const stageLabels: Record<string, string> = {
+  idea_posted: 'Post Idea',
+  business_plan: 'Business Plan',
+  find_advisors: 'Find Advisors',
+  form_team: 'Form Team',
+  build_mvp: 'Build MVP',
+  yassu_foundry: 'Yassu Foundry',
+  launched: 'Launched',
+};
+
+const stageColors: Record<string, string> = {
+  idea_posted: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  business_plan: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  find_advisors: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  form_team: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+  build_mvp: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+  yassu_foundry: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300',
+  launched: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+};
+
+const getStageNumber = (stage: string | null | undefined): number => {
+  const stages = ['idea_posted', 'business_plan', 'find_advisors', 'form_team', 'build_mvp', 'yassu_foundry', 'launched'];
+  return stages.indexOf(stage || 'idea_posted') + 1;
+};
 
 export default function Projects() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchProjects() {
-      if (!user) return;
-
-      // Get team IDs the user is a member of
-      const { data: memberships } = await supabase
-        .from('team_members')
-        .select('team_id')
-        .eq('user_id', user.id);
-
-      if (!memberships || memberships.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const teamIds = memberships.map((m) => m.team_id);
-
-      const { data } = await supabase
-        .from('projects')
-        .select(`
-          id, name, description, status, created_at,
-          teams:team_id (name)
-        `)
-        .in('team_id', teamIds)
-        .order('created_at', { ascending: false });
-
-      if (data) setProjects(data as Project[]);
-      setLoading(false);
-    }
-
-    fetchProjects();
-  }, [user]);
-
-  const statusColors: Record<string, string> = {
-    active: 'bg-emerald-100 text-emerald-700',
-    paused: 'bg-amber-100 text-amber-700',
-    completed: 'bg-blue-100 text-blue-700',
-  };
+  const { data: ideas = [], isLoading } = useQuery<Idea[]>({
+    queryKey: ['/api/ideas/mine'],
+  });
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -72,14 +56,18 @@ export default function Projects() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Projects</h1>
+          <h1 className="text-2xl font-bold text-foreground">My Projects</h1>
           <p className="text-muted-foreground">
-            Your team projects and workspaces
+            Your startup ideas and their progress
           </p>
         </div>
+        <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-new-idea">
+          <Plus className="w-4 h-4 mr-2" />
+          New Idea
+        </Button>
       </motion.div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
@@ -93,47 +81,50 @@ export default function Projects() {
             </Card>
           ))}
         </div>
-      ) : projects.length > 0 ? (
+      ) : ideas.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
+          {ideas.map((idea, index) => (
             <motion.div
-              key={project.id}
+              key={idea.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.05 * index }}
             >
               <Card
                 className="h-full cursor-pointer hover:shadow-md hover:border-primary/20 transition-all group"
-                onClick={() => navigate(`/portal/projects/${project.id}`)}
+                onClick={() => navigate(`/portal/ideas/${idea.id}`)}
+                data-testid={`card-project-${idea.id}`}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                      {project.name}
+                      {idea.title}
                     </CardTitle>
-                    <Badge className={statusColors[project.status] || 'bg-muted'}>
-                      {project.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        Stage {getStageNumber(idea.stage)} of 7
+                      </span>
+                      <Badge className={stageColors[idea.stage || 'idea_posted'] || 'bg-muted'}>
+                        {stageLabels[idea.stage || 'idea_posted'] || 'Post Idea'}
+                      </Badge>
+                    </div>
                   </div>
                   <CardDescription className="line-clamp-2">
-                    {project.description || 'No description'}
+                    {idea.problem || 'No problem statement'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {idea.solution || 'No solution defined yet'}
+                  </p>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {project.teams && (
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        <span>{project.teams.name}</span>
-                      </div>
-                    )}
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>{new Date(project.created_at).toLocaleDateString()}</span>
+                      <span>{idea.createdAt ? new Date(idea.createdAt).toLocaleDateString() : 'Recently'}</span>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="w-full">
-                    Open Project <ArrowRight className="w-4 h-4 ml-2" />
+                    View Details <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </CardContent>
               </Card>
@@ -147,15 +138,15 @@ export default function Projects() {
           transition={{ duration: 0.4 }}
           className="text-center py-16"
         >
-          <FolderKanban className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <Lightbulb className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No projects yet</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Projects are created within teams. Join or create a team first, then start a project to
-            collaborate with your teammates.
+            Start your entrepreneurship journey by posting your first startup idea.
+            Yassu will help you develop it into a real venture.
           </p>
-          <Button onClick={() => navigate('/portal/teams')}>
-            <Users className="w-4 h-4 mr-2" />
-            Browse Teams
+          <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-create-first-idea">
+            <Plus className="w-4 h-4 mr-2" />
+            Post Your First Idea
           </Button>
         </motion.div>
       )}
