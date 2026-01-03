@@ -13,25 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { 
-  MDXEditor, 
-  headingsPlugin,
-  listsPlugin,
-  quotePlugin,
-  thematicBreakPlugin,
-  markdownShortcutPlugin,
-  tablePlugin,
-  linkPlugin,
-  linkDialogPlugin,
-  toolbarPlugin,
-  BoldItalicUnderlineToggles,
-  BlockTypeSelect,
-  CreateLink,
-  InsertTable,
-  ListsToggle,
-  UndoRedo,
-} from '@mdxeditor/editor';
-import '@mdxeditor/editor/style.css';
+import { Bold, Italic, List, Heading2, Link2, Eye, Code } from 'lucide-react';
 import {
   ArrowLeft,
   Calendar,
@@ -171,7 +153,7 @@ export default function IdeaDetail() {
   
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
-  const [editorReady, setEditorReady] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -438,15 +420,30 @@ export default function IdeaDetail() {
     console.log('[Edit] Section:', sectionId, 'Raw content length:', rawContent.length);
     // Preprocess the markdown to fix any formatting issues before loading into editor
     const processedContent = preprocessMarkdown(rawContent);
-    console.log('[Edit] Processed content length:', processedContent.length, 'First 100 chars:', processedContent.substring(0, 100));
+    console.log('[Edit] Processed content length:', processedContent.length);
     
-    // Set content first, then open dialog after a tick to ensure content is ready
     setEditContent(processedContent);
-    setEditorReady(false);
+    setPreviewMode(false);
     setEditingSection(sectionId);
+  };
+  
+  // Helper function to insert markdown formatting at cursor position
+  const insertMarkdown = (before: string, after: string = '') => {
+    const textarea = document.getElementById('edit-textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
     
-    // Delay editor mount to ensure content state is ready
-    setTimeout(() => setEditorReady(true), 50);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = editContent.substring(start, end);
+    const newText = editContent.substring(0, start) + before + selectedText + after + editContent.substring(end);
+    setEditContent(newText);
+    
+    // Set cursor position after the operation
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + before.length + selectedText.length + after.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
   };
 
   const handleSaveSection = async () => {
@@ -1181,50 +1178,108 @@ export default function IdeaDetail() {
               Edit {planSections.find(s => s.id === editingSection)?.label || 'Section'}
             </DialogTitle>
             <DialogDescription>
-              Edit directly below. Use the toolbar for formatting options.
+              Edit your content below. Use the formatting buttons or switch to Preview to see the result.
             </DialogDescription>
           </DialogHeader>
           
+          {/* Formatting Toolbar */}
+          <div className="flex items-center gap-1 p-2 border rounded-lg bg-muted/30 flex-wrap">
+            <Button
+              type="button"
+              size="icon"
+              variant={previewMode ? "ghost" : "secondary"}
+              onClick={() => setPreviewMode(false)}
+              title="Edit"
+              data-testid="button-edit-mode"
+            >
+              <Code className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant={previewMode ? "secondary" : "ghost"}
+              onClick={() => setPreviewMode(true)}
+              title="Preview"
+              data-testid="button-preview-mode"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            
+            <Separator orientation="vertical" className="h-6 mx-2" />
+            
+            {!previewMode && (
+              <>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => insertMarkdown('**', '**')}
+                  title="Bold"
+                  data-testid="button-format-bold"
+                >
+                  <Bold className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => insertMarkdown('*', '*')}
+                  title="Italic"
+                  data-testid="button-format-italic"
+                >
+                  <Italic className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => insertMarkdown('## ', '')}
+                  title="Heading"
+                  data-testid="button-format-heading"
+                >
+                  <Heading2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => insertMarkdown('- ', '')}
+                  title="Bullet List"
+                  data-testid="button-format-list"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => insertMarkdown('[', '](url)')}
+                  title="Link"
+                  data-testid="button-format-link"
+                >
+                  <Link2 className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+          </div>
+          
+          {/* Editor / Preview Area */}
           <div className="flex-1 overflow-auto min-h-0 border rounded-lg bg-background">
-            {editingSection && editorReady && editContent && (
-              <MDXEditor
-                markdown={editContent}
-                onChange={(value) => setEditContent(value || '')}
-                className="min-h-[450px]"
-                contentEditableClassName="p-4 min-h-[400px] outline-none prose prose-sm dark:prose-invert max-w-none"
-                plugins={[
-                  headingsPlugin(),
-                  listsPlugin(),
-                  quotePlugin(),
-                  thematicBreakPlugin(),
-                  markdownShortcutPlugin(),
-                  tablePlugin(),
-                  linkPlugin(),
-                  linkDialogPlugin(),
-                  toolbarPlugin({
-                    toolbarContents: () => (
-                      <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
-                        <UndoRedo />
-                        <BlockTypeSelect />
-                        <BoldItalicUnderlineToggles />
-                        <ListsToggle />
-                        <CreateLink />
-                        <InsertTable />
-                      </div>
-                    ),
-                  }),
-                ]}
+            {previewMode ? (
+              <div className="p-4 prose prose-sm dark:prose-invert max-w-none min-h-[400px]">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {editContent || '*No content yet*'}
+                </ReactMarkdown>
+              </div>
+            ) : (
+              <Textarea
+                id="edit-textarea"
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full min-h-[400px] h-[400px] resize-none border-0 focus-visible:ring-0 font-mono text-sm"
+                placeholder="Enter your content here using Markdown formatting..."
+                data-testid="textarea-edit-content"
               />
-            )}
-            {editingSection && !editorReady && (
-              <div className="flex items-center justify-center min-h-[450px]">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {editingSection && editorReady && !editContent && (
-              <div className="p-4 text-muted-foreground italic min-h-[450px]">
-                No content available. Start typing to add content.
-              </div>
             )}
           </div>
           
