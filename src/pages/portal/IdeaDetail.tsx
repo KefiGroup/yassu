@@ -33,6 +33,13 @@ import {
   RefreshCw,
   CheckCircle,
   Trash2,
+  PenLine,
+  Brain,
+  UserCheck,
+  Users2,
+  Wrench,
+  Presentation,
+  TrendingUp as Funding,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -108,6 +115,16 @@ const planSections = [
   { id: 'launchPlan', label: 'Launch Plan', icon: Rocket },
   { id: 'schoolAdvantage', label: 'School Advantage', icon: GraduationCap },
   { id: 'fundingPitch', label: 'Funding Pitch', icon: DollarSign },
+];
+
+const journeySteps = [
+  { id: 1, title: 'Post Idea', icon: PenLine, description: 'Share your startup idea' },
+  { id: 2, title: 'Business Plan', icon: Brain, description: 'Generate with Yassu AI' },
+  { id: 3, title: 'Find Mentors', icon: UserCheck, description: 'Connect with advisors' },
+  { id: 4, title: 'Form Team', icon: Users2, description: 'Build your founding team' },
+  { id: 5, title: 'Build MVP', icon: Wrench, description: 'Develop your product' },
+  { id: 6, title: 'Yassu Foundry', icon: Presentation, description: 'Present your progress' },
+  { id: 7, title: 'Launch', icon: Rocket, description: 'Funding or market launch' },
 ];
 
 export default function IdeaDetail() {
@@ -628,10 +645,67 @@ export default function IdeaDetail() {
         )}
       </motion.div>
 
+      {/* Journey Progress Tracker */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Your Yassu Journey</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
+              {journeySteps.map((step, index) => {
+                const StepIcon = step.icon;
+                const isCompleted = step.id === 1 || (step.id === 2 && businessPlan?.status === 'completed');
+                const isCurrent = (step.id === 2 && !businessPlan) || 
+                  (step.id === 2 && businessPlan?.status === 'running') ||
+                  (step.id === 3 && businessPlan?.status === 'completed');
+                
+                return (
+                  <div key={step.id} className="flex items-center flex-shrink-0">
+                    <div className="flex flex-col items-center gap-1">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                          isCompleted
+                            ? 'bg-primary text-primary-foreground'
+                            : isCurrent
+                            ? 'bg-primary/20 text-primary ring-2 ring-primary'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                        data-testid={`journey-step-${step.id}`}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : (
+                          <StepIcon className="w-5 h-5" />
+                        )}
+                      </div>
+                      <span className={`text-xs text-center max-w-[70px] ${
+                        isCompleted || isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground'
+                      }`}>
+                        {step.title}
+                      </span>
+                    </div>
+                    {index < journeySteps.length - 1 && (
+                      <div className={`w-6 h-0.5 mx-1 ${
+                        isCompleted ? 'bg-primary' : 'bg-muted'
+                      }`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.15 }}
       >
         <Card>
           <CardHeader>
@@ -695,7 +769,7 @@ export default function IdeaDetail() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
+        transition={{ duration: 0.4, delay: 0.25 }}
       >
         <Card>
           <CardHeader>
@@ -706,7 +780,7 @@ export default function IdeaDetail() {
                 </div>
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    AI Business Plan
+                    Yassu Business Plan
                     {businessPlan?.status === 'completed' && (
                       <Badge className="bg-emerald-500 text-white">
                         <CheckCircle className="w-3 h-3 mr-1" />
@@ -750,9 +824,9 @@ export default function IdeaDetail() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">Generate AI Business Plan</h3>
+                <h3 className="font-semibold text-lg mb-2">Generate Yassu Business Plan</h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Our AI will analyze your idea and generate a comprehensive business plan
+                  Yassu AI will analyze your idea and generate a comprehensive business plan
                   covering 8 key areas in about 2 minutes.
                 </p>
                 <Button

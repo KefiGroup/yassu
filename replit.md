@@ -94,6 +94,18 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - Journey Progress Tracker & Branding
+- Added 7-step journey progress tracker to each idea detail page showing:
+  1. Post Idea (completed when idea exists)
+  2. Business Plan (current/completed based on plan status)
+  3. Find Mentors (next step after plan generation)
+  4. Form Team
+  5. Build MVP
+  6. Yassu Foundry
+  7. Launch
+- Rebranded "AI Business Plan" to "Yassu Business Plan" across all pages
+- Updated description: "Yassu AI will analyze your idea and generate a comprehensive business plan covering 8 key areas in about 2 minutes."
+
 ### January 2026 - How Yassu Works Section
 - Updated "How Yassu Works" section with 7-step journey:
   1. Post an Idea (Yassu!)
