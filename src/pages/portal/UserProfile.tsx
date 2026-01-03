@@ -103,6 +103,10 @@ export default function UserProfile() {
 
   const { profile, university, roles, badges, ideas } = data;
   const isOwnProfile = user?.id === profile.userId;
+  
+  // Filter out roles that are already shown as awarded badges to avoid duplicates
+  const badgeTypes = badges.map(b => b.badgeType);
+  const filteredRoles = roles.filter(role => !badgeTypes.includes(role as 'ambassador' | 'advisor'));
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -138,7 +142,7 @@ export default function UserProfile() {
                   <CardTitle className="text-2xl" data-testid="text-profile-name">
                     {profile.fullName || 'Anonymous'}
                   </CardTitle>
-                  {roles.map(role => (
+                  {filteredRoles.map(role => (
                     <Badge key={role} variant={getRoleBadgeVariant(role)} className="capitalize" data-testid={`badge-role-${role}`}>
                       {role}
                     </Badge>
