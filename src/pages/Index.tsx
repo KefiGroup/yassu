@@ -4,7 +4,6 @@ import HowItWorks from "@/components/HowItWorks";
 import Team from "@/components/Team";
 import IdeasSlider from "@/components/IdeasSlider";
 import Ambassadors from "@/components/Ambassadors";
-import WaitlistForm from "@/components/WaitlistForm";
 import Vision from "@/components/Vision";
 import Footer from "@/components/Footer";
 
@@ -17,7 +16,6 @@ const Index = () => {
       <IdeasSlider />
       <Team />
       <Ambassadors />
-      <WaitlistForm />
       <Vision />
       <Footer />
     </main>
