@@ -19,7 +19,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge';
 import { Search, Bell, LogOut, User, Settings, Home, Shield } from 'lucide-react';
 
 export function PortalHeader() {
@@ -86,36 +85,16 @@ export function PortalHeader() {
         {/* Notifications */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative" data-testid="button-notifications">
               <Bell className="h-4 w-4" />
-              <Badge 
-                className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
-                variant="destructive"
-              >
-                3
-              </Badge>
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80" align="end">
             <div className="space-y-2">
               <h4 className="font-medium">Notifications</h4>
-              <div className="space-y-2">
-                <div className="p-2 rounded-lg bg-muted/50 text-sm">
-                  <p className="font-medium">New join request</p>
-                  <p className="text-muted-foreground text-xs">Someone wants to join your idea</p>
-                </div>
-                <div className="p-2 rounded-lg bg-muted/50 text-sm">
-                  <p className="font-medium">Workflow completed</p>
-                  <p className="text-muted-foreground text-xs">Your competitive analysis is ready</p>
-                </div>
-                <div className="p-2 rounded-lg bg-muted/50 text-sm">
-                  <p className="font-medium">Team invite</p>
-                  <p className="text-muted-foreground text-xs">You've been invited to join a team</p>
-                </div>
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                No new notifications
               </div>
-              <Button variant="outline" size="sm" className="w-full">
-                View all notifications
-              </Button>
             </div>
           </PopoverContent>
         </Popover>
