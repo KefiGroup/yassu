@@ -5,6 +5,9 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { generateBusinessPlan } from "./ai";
+import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
+
+const objectStorageService = new ObjectStorageService();
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -42,6 +45,9 @@ declare module "express-session" {
 }
 
 export function registerRoutes(app: Express): void {
+  // Register object storage routes for file uploads
+  registerObjectStorageRoutes(app);
+
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       const { email, password, fullName } = req.body;
@@ -230,24 +236,47 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/profile/avatar", avatarUpload.single("avatar"), async (req: Request, res: Response) => {
+  // Get presigned URL for avatar upload
+  app.post("/api/profile/avatar/request-url", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const file = req.file;
-      if (!file) {
-        return res.status(400).json({ error: "No file uploaded" });
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+
+      res.json({ uploadURL, objectPath });
+    } catch (error) {
+      console.error("Avatar upload URL error:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // Save avatar path after upload
+  app.post("/api/profile/avatar", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { objectPath } = req.body;
+      if (!objectPath) {
+        return res.status(400).json({ error: "Object path is required" });
       }
 
-      const avatarUrl = `/uploads/${file.filename}`;
-      await storage.updateProfile(req.session.userId, { avatarUrl });
+      // Set ACL policy to make avatar public
+      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(objectPath, {
+        owner: req.session.userId.toString(),
+        visibility: "public",
+      });
 
-      res.json({ avatarUrl });
+      await storage.updateProfile(req.session.userId, { avatarUrl: normalizedPath });
+
+      res.json({ avatarUrl: normalizedPath });
     } catch (error) {
-      console.error("Avatar upload error:", error);
-      res.status(500).json({ error: "Failed to upload avatar" });
+      console.error("Avatar save error:", error);
+      res.status(500).json({ error: "Failed to save avatar" });
     }
   });
 
