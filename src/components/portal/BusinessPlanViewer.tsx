@@ -287,11 +287,14 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
     ),
   };
 
-  // Pre-process markdown to fix common table formatting issues
+  // Pre-process markdown to fix common table formatting issues and hide internal markers
   const preprocessMarkdown = (content: string): string => {
     if (!content) return '';
     
-    const lines = content.split('\n');
+    // Remove SKILLS_JSON markers and their content (used for programmatic extraction, not display)
+    let processed = content.replace(/<!-- SKILLS_JSON_START -->[\s\S]*?<!-- SKILLS_JSON_END -->/g, '');
+    
+    const lines = processed.split('\n');
     const processedLines: string[] = [];
     let inTable = false;
     let headerLine = '';
