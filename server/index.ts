@@ -5,6 +5,7 @@ import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupOAuth } from "./oauth";
+import { seedDatabase } from "./seed";
 
 const app = express();
 app.use(express.json());
@@ -59,6 +60,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await seedDatabase();
   registerRoutes(app);
   const server = createServer(app);
 
