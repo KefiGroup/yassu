@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, Building2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
@@ -49,11 +50,23 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button variant="hero" size="xl" className="group">
-              Get Early Access
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <Button variant="hero" size="xl" className="group" asChild data-testid="button-get-early-access">
+              <Link to="/portal">
+                Get Early Access
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
-            <Button variant="glass" size="xl">
+            <Button 
+              variant="glass" 
+              size="xl" 
+              data-testid="button-see-how-it-works"
+              onClick={() => {
+                const section = document.getElementById('how-it-works');
+                if (section) {
+                  section.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
               See How It Works
             </Button>
           </motion.div>
