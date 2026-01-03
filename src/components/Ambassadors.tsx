@@ -67,9 +67,11 @@ const Ambassadors = () => {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="text-center"
         >
-          <Button variant="hero" size="xl" className="group">
-            Become an Ambassador
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <Button variant="hero" size="xl" className="group" asChild data-testid="button-become-ambassador">
+            <a href="/auth">
+              Become an Ambassador
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </a>
           </Button>
         </motion.div>
       </div>
