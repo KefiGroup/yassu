@@ -27,7 +27,7 @@ import Profile from "./pages/portal/Profile";
 import Settings from "./pages/portal/Settings";
 import PortalAmbassadors from "./pages/portal/Ambassadors";
 import PortalAdvisors from "./pages/portal/Advisors";
-import AdminBadges from "./pages/portal/AdminBadges";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -63,8 +63,10 @@ const App = () => (
               <Route path="advisors" element={<PortalAdvisors />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
-              <Route path="admin/badges" element={<AdminBadges />} />
             </Route>
+
+            {/* Admin Route */}
+            <Route path="/admin" element={<Admin />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

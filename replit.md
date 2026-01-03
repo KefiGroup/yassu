@@ -99,20 +99,25 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
-### January 2026 - Badge System & Role Refactoring
-- Replaced self-selected `yassuRole` with badge-based system
-- Added `profile_badges` table to track ambassador/advisor badges awarded by superadmins
-- Created admin badge management page at `/portal/admin/badges` for superadmins only
-- Superadmins identified via `user_roles` table with `role = 'superadmin'`
-- All users are now "Collaborators" by default - Ambassador/Advisor are exclusive awarded titles
+### January 2026 - Unified Admin Dashboard
+- Created comprehensive admin dashboard at `/admin` with three tabs:
+  1. **Badges** - Award/revoke Ambassador and Advisor badges to platform members
+  2. **All Ideas** - View all ideas including private ones with visibility indicators
+  3. **Admin Access** - Grant/revoke admin privileges to other users
+- Admins identified via `user_roles` table with `role = 'admin'`
+- All users are "Collaborators" by default - Ambassador/Advisor are badge titles awarded by admins
 - Changed "Founder" terminology to "Creator" for idea creators throughout the app
 - Profile page displays awarded badges with Award icon
-- Advisor/Ambassador rosters now query `profile_badges` table
+- Advisor/Ambassador rosters query `profile_badges` table
 - New API endpoints:
-  - `GET /api/admin/check` - Check if current user is superadmin
-  - `GET /api/admin/profiles` - Get all profiles with badge info (superadmin only)
-  - `POST /api/admin/badges` - Award badge (superadmin only)
-  - `DELETE /api/admin/badges/:badgeId` - Revoke badge (superadmin only)
+  - `GET /api/admin/check` - Check if current user is admin
+  - `GET /api/admin/profiles` - Get all profiles with badge info (admin only)
+  - `POST /api/admin/badges` - Award badge (admin only)
+  - `DELETE /api/admin/badges/:userId/:badgeType` - Revoke badge (admin only)
+  - `GET /api/admin/ideas` - Get all ideas including private (admin only)
+  - `GET /api/admin/admins` - Get list of current admins
+  - `POST /api/admin/admins` - Grant admin privileges
+  - `DELETE /api/admin/admins/:userId` - Revoke admin privileges
   - `GET /api/profile/badges` - Get current user's badges
 
 ### January 2026 - Idea Privacy Toggle
