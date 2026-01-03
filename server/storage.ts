@@ -4,7 +4,7 @@ import * as schema from "../shared/schema";
 import type { 
   User, Profile, Idea, Team, Project, University, 
   WorkflowRun, WorkflowArtifact, Notification, UserRole, InsertUser,
-  JoinRequest, TeamInvite
+  JoinRequest, TeamInvite, IdeaWorkflowSection
 } from "../shared/schema";
 
 export interface ProfileWithMatchingSkills extends Profile {
@@ -74,6 +74,11 @@ export interface IStorage {
   
   // Potential team members (advisors/ambassadors for inviting)
   getPotentialTeamMembers(excludeUserId: number, ideaId?: string): Promise<Profile[]>;
+  
+  // Editable workflow sections for business plans
+  getIdeaWorkflowSections(ideaId: string): Promise<IdeaWorkflowSection[]>;
+  getIdeaWorkflowSection(ideaId: string, sectionType: string): Promise<IdeaWorkflowSection | undefined>;
+  upsertIdeaWorkflowSection(ideaId: string, sectionType: string, content: string, aiGenerated?: boolean): Promise<IdeaWorkflowSection>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -379,6 +384,38 @@ export class DatabaseStorage implements IStorage {
     ]);
     
     return profiles.filter(p => !excludeUserIds.has(p.userId));
+  }
+
+  async getIdeaWorkflowSections(ideaId: string): Promise<IdeaWorkflowSection[]> {
+    return db.select().from(schema.ideaWorkflowSections)
+      .where(eq(schema.ideaWorkflowSections.ideaId, ideaId))
+      .orderBy(schema.ideaWorkflowSections.sectionType);
+  }
+
+  async getIdeaWorkflowSection(ideaId: string, sectionType: string): Promise<IdeaWorkflowSection | undefined> {
+    const [section] = await db.select().from(schema.ideaWorkflowSections)
+      .where(and(
+        eq(schema.ideaWorkflowSections.ideaId, ideaId),
+        eq(schema.ideaWorkflowSections.sectionType, sectionType as any)
+      ));
+    return section;
+  }
+
+  async upsertIdeaWorkflowSection(ideaId: string, sectionType: string, content: string, aiGenerated: boolean = false): Promise<IdeaWorkflowSection> {
+    const existing = await this.getIdeaWorkflowSection(ideaId, sectionType);
+    
+    if (existing) {
+      const [updated] = await db.update(schema.ideaWorkflowSections)
+        .set({ content, aiGenerated, updatedAt: new Date() })
+        .where(eq(schema.ideaWorkflowSections.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(schema.ideaWorkflowSections)
+        .values({ ideaId, sectionType: sectionType as any, content, aiGenerated })
+        .returning();
+      return created;
+    }
   }
 }
 

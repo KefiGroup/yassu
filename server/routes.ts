@@ -621,4 +621,59 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to create invite" });
     }
   });
+
+  // Editable Workflow Sections for Ideas
+  app.get("/api/ideas/:id/workflows", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const sections = await storage.getIdeaWorkflowSections(req.params.id);
+      res.json(sections);
+    } catch (error) {
+      console.error("Fetch workflow sections error:", error);
+      res.status(500).json({ error: "Failed to fetch workflow sections" });
+    }
+  });
+
+  app.get("/api/ideas/:id/workflows/:sectionType", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const section = await storage.getIdeaWorkflowSection(req.params.id, req.params.sectionType);
+      res.json(section || null);
+    } catch (error) {
+      console.error("Fetch workflow section error:", error);
+      res.status(500).json({ error: "Failed to fetch workflow section" });
+    }
+  });
+
+  app.patch("/api/ideas/:id/workflows/:sectionType", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Verify user owns the idea
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea || idea.createdBy !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to edit this idea" });
+      }
+
+      const { content } = req.body;
+      const section = await storage.upsertIdeaWorkflowSection(
+        req.params.id,
+        req.params.sectionType,
+        content,
+        false // aiGenerated = false since user is editing
+      );
+      res.json(section);
+    } catch (error) {
+      console.error("Update workflow section error:", error);
+      res.status(500).json({ error: "Failed to update workflow section" });
+    }
+  });
 }
