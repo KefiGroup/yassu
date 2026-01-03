@@ -115,6 +115,15 @@ export interface IStorage {
     roles: string[]; 
     university?: { name: string; shortName: string | null } | null;
   })[]>;
+  
+  // Public profile view
+  getPublicProfile(userId: number): Promise<{
+    profile: Profile;
+    university: { name: string; shortName: string | null } | null;
+    roles: string[];
+    badges: ProfileBadge[];
+    ideas: Idea[];
+  } | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -825,6 +834,54 @@ export class DatabaseStorage implements IStorage {
     }
     
     return result;
+  }
+  
+  async getPublicProfile(userId: number): Promise<{
+    profile: Profile;
+    university: { name: string; shortName: string | null } | null;
+    roles: string[];
+    badges: ProfileBadge[];
+    ideas: Idea[];
+  } | null> {
+    // Get profile with university
+    const [result] = await db.select({
+      profile: schema.profiles,
+      university: schema.universities,
+    })
+    .from(schema.profiles)
+    .leftJoin(schema.universities, eq(schema.profiles.universityId, schema.universities.id))
+    .where(eq(schema.profiles.userId, userId));
+    
+    if (!result) return null;
+    
+    // Get badges
+    const badges = await db.select()
+      .from(schema.profileBadges)
+      .where(eq(schema.profileBadges.userId, userId));
+    
+    // Get public ideas created by this user
+    const ideas = await db.select()
+      .from(schema.ideas)
+      .where(and(
+        eq(schema.ideas.createdBy, userId),
+        eq(schema.ideas.isPublic, true)
+      ));
+    
+    // Determine roles
+    const roles: string[] = [];
+    if (ideas.length > 0 || (await db.select().from(schema.ideas).where(eq(schema.ideas.createdBy, userId))).length > 0) {
+      roles.push('creator');
+    }
+    if (badges.some(b => b.badgeType === 'ambassador')) roles.push('ambassador');
+    if (badges.some(b => b.badgeType === 'advisor')) roles.push('advisor');
+    
+    return {
+      profile: result.profile,
+      university: result.university ? { name: result.university.name, shortName: result.university.shortName } : null,
+      roles,
+      badges,
+      ideas,
+    };
   }
 }
 

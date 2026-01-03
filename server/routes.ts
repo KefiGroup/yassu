@@ -318,6 +318,30 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Public profile view - get another user's profile info
+  app.get("/api/users/:userId", async (req: Request, res: Response) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      const publicProfile = await storage.getPublicProfile(userId);
+      if (!publicProfile) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(publicProfile);
+    } catch (error) {
+      console.error("Fetch public profile error:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
   app.get("/api/universities", async (_req: Request, res: Response) => {
     try {
       const universities = await storage.getUniversities();

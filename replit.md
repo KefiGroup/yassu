@@ -99,16 +99,19 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
-### January 2026 - Collaborators Marketplace
+### January 2026 - Collaborators Marketplace & Profile View
 - Added `/portal/collaborators` page showing all platform users
-- Filter options:
+- Filter options via slide-out panel (Sheet component):
   - **Roles**: Creators (users who started ideas), Ambassadors, Advisors
   - **Skills**: Filter by technical/business skills
   - **Interests**: Filter by interests  
   - **Clubs**: Filter by club affiliation
   - **Search**: Search by name or university
-- Displays profile cards with role badges, skills, university, and connection button
-- New API endpoint: `GET /api/collaborators?roles=&skills=&interests=&clubType=&search=`
+- Profile cards are clickable - navigate to full profile view at `/portal/users/:userId`
+- New user profile page shows: bio, skills, interests, badges, club affiliation, public ideas
+- New API endpoints:
+  - `GET /api/collaborators?roles=&skills=&interests=&clubType=&search=`
+  - `GET /api/users/:userId` - Get public profile for another user
 - Added "Collaborators" link in sidebar Marketplace section
 
 ### January 2026 - Connection System (LinkedIn/Facebook Style)

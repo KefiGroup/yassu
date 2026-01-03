@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { motion } from 'framer-motion';
 import { Users, Search, X, Filter } from 'lucide-react';
 import { ConnectionButton } from '@/components/ConnectionButton';
@@ -54,7 +56,7 @@ export default function Collaborators() {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [selectedClub, setSelectedClub] = useState<string>('');
+  const [selectedClub, setSelectedClub] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
 
   const filters = {
@@ -62,7 +64,7 @@ export default function Collaborators() {
     roles: selectedRoles.length > 0 ? selectedRoles : undefined,
     skills: selectedSkills.length > 0 ? selectedSkills : undefined,
     interests: selectedInterests.length > 0 ? selectedInterests : undefined,
-    clubType: selectedClub || undefined,
+    clubType: selectedClub && selectedClub !== 'all' ? selectedClub : undefined,
   };
 
   const { data: collaborators = [], isLoading } = useQuery<Collaborator[]>({
@@ -107,10 +109,10 @@ export default function Collaborators() {
     setSelectedRoles([]);
     setSelectedSkills([]);
     setSelectedInterests([]);
-    setSelectedClub('');
+    setSelectedClub('all');
   };
 
-  const hasActiveFilters = searchTerm || selectedRoles.length > 0 || selectedSkills.length > 0 || selectedInterests.length > 0 || selectedClub;
+  const hasActiveFilters = searchTerm || selectedRoles.length > 0 || selectedSkills.length > 0 || selectedInterests.length > 0 || (selectedClub && selectedClub !== 'all');
 
   return (
     <div className="space-y-6">
@@ -137,101 +139,108 @@ export default function Collaborators() {
               data-testid="input-search-collaborators"
             />
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            data-testid="button-toggle-filters"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-            {hasActiveFilters && (
-              <Badge variant="secondary" className="ml-2">
-                {(selectedRoles.length + selectedSkills.length + selectedInterests.length + (selectedClub ? 1 : 0))}
-              </Badge>
-            )}
-          </Button>
+          <Sheet open={showFilters} onOpenChange={setShowFilters}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                data-testid="button-toggle-filters"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-2">
+                    {(selectedRoles.length + selectedSkills.length + selectedInterests.length + (selectedClub ? 1 : 0))}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filter Collaborators</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-6 mt-6">
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Roles</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {ROLE_OPTIONS.map(role => (
+                      <Badge
+                        key={role.value}
+                        variant={selectedRoles.includes(role.value) ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => toggleRole(role.value)}
+                        data-testid={`filter-role-${role.value}`}
+                      >
+                        {role.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Club Affiliation</h3>
+                  <Select value={selectedClub} onValueChange={setSelectedClub}>
+                    <SelectTrigger className="w-full" data-testid="select-club">
+                      <SelectValue placeholder="Select club type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All clubs</SelectItem>
+                      {CLUB_OPTIONS.map(club => (
+                        <SelectItem key={club} value={club}>{club}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Skills (select up to 5)</h3>
+                  <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto">
+                    {SKILL_OPTIONS.slice(0, 30).map(skill => (
+                      <Badge
+                        key={skill}
+                        variant={selectedSkills.includes(skill) ? 'default' : 'outline'}
+                        className="cursor-pointer text-xs"
+                        onClick={() => selectedSkills.length < 5 || selectedSkills.includes(skill) ? toggleSkill(skill) : null}
+                        data-testid={`filter-skill-${skill.replace(/\s+/g, '-').toLowerCase()}`}
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Interests (select up to 5)</h3>
+                  <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto">
+                    {INTEREST_OPTIONS.slice(0, 30).map(interest => (
+                      <Badge
+                        key={interest}
+                        variant={selectedInterests.includes(interest) ? 'default' : 'outline'}
+                        className="cursor-pointer text-xs"
+                        onClick={() => selectedInterests.length < 5 || selectedInterests.includes(interest) ? toggleInterest(interest) : null}
+                        data-testid={`filter-interest-${interest.replace(/\s+/g, '-').toLowerCase()}`}
+                      >
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {hasActiveFilters && (
+                  <Button variant="outline" onClick={clearFilters} className="w-full" data-testid="button-clear-filters">
+                    <X className="w-4 h-4 mr-2" />
+                    Clear All Filters
+                  </Button>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
+            <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-filters-inline">
               <X className="w-4 h-4 mr-1" />
               Clear
             </Button>
           )}
         </div>
-
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-4 p-4 bg-muted/50 rounded-lg"
-          >
-            <div>
-              <h3 className="text-sm font-medium mb-2">Roles</h3>
-              <div className="flex flex-wrap gap-2">
-                {ROLE_OPTIONS.map(role => (
-                  <Badge
-                    key={role.value}
-                    variant={selectedRoles.includes(role.value) ? 'default' : 'outline'}
-                    className="cursor-pointer"
-                    onClick={() => toggleRole(role.value)}
-                    data-testid={`filter-role-${role.value}`}
-                  >
-                    {role.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-2">Club Affiliation</h3>
-              <Select value={selectedClub} onValueChange={setSelectedClub}>
-                <SelectTrigger className="w-full max-w-xs" data-testid="select-club">
-                  <SelectValue placeholder="Select club type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All clubs</SelectItem>
-                  {CLUB_OPTIONS.map(club => (
-                    <SelectItem key={club} value={club}>{club}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-2">Skills (select up to 5)</h3>
-              <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-                {SKILL_OPTIONS.slice(0, 30).map(skill => (
-                  <Badge
-                    key={skill}
-                    variant={selectedSkills.includes(skill) ? 'default' : 'outline'}
-                    className="cursor-pointer text-xs"
-                    onClick={() => selectedSkills.length < 5 || selectedSkills.includes(skill) ? toggleSkill(skill) : null}
-                    data-testid={`filter-skill-${skill.replace(/\s+/g, '-').toLowerCase()}`}
-                  >
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-2">Interests (select up to 5)</h3>
-              <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-                {INTEREST_OPTIONS.slice(0, 30).map(interest => (
-                  <Badge
-                    key={interest}
-                    variant={selectedInterests.includes(interest) ? 'default' : 'outline'}
-                    className="cursor-pointer text-xs"
-                    onClick={() => selectedInterests.length < 5 || selectedInterests.includes(interest) ? toggleInterest(interest) : null}
-                    data-testid={`filter-interest-${interest.replace(/\s+/g, '-').toLowerCase()}`}
-                  >
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
       </div>
 
       <div className="text-sm text-muted-foreground">
@@ -261,65 +270,69 @@ export default function Collaborators() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.02 * Math.min(index, 10) }}
             >
-              <Card className="h-full" data-testid={`card-collaborator-${collab.id}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-12 h-12 shrink-0">
-                      <AvatarImage src={collab.avatarUrl || undefined} alt={collab.fullName || 'User'} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                        {getInitials(collab.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-base line-clamp-1">{collab.fullName || 'Anonymous'}</CardTitle>
-                      <div className="flex items-center gap-1 mt-1 flex-wrap">
-                        {collab.roles.map(role => (
-                          <Badge key={role} variant={getRoleBadgeVariant(role)} className="text-xs capitalize">
-                            {role}
+              <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-collaborator-${collab.id}`}>
+                <Link to={`/portal/users/${collab.userId}`} className="block">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-12 h-12 shrink-0">
+                        <AvatarImage src={collab.avatarUrl || undefined} alt={collab.fullName || 'User'} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                          {getInitials(collab.fullName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base line-clamp-1">{collab.fullName || 'Anonymous'}</CardTitle>
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                          {collab.roles.map(role => (
+                            <Badge key={role} variant={getRoleBadgeVariant(role)} className="text-xs capitalize">
+                              {role}
+                            </Badge>
+                          ))}
+                          {collab.university?.shortName && (
+                            <Badge variant="secondary" className="text-xs">
+                              {collab.university.shortName}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {collab.bio && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {collab.bio}
+                      </p>
+                    )}
+                    {collab.skills && collab.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {collab.skills.slice(0, 3).map((skill, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {skill}
                           </Badge>
                         ))}
-                        {collab.university?.shortName && (
+                        {collab.skills.length > 3 && (
                           <Badge variant="secondary" className="text-xs">
-                            {collab.university.shortName}
+                            +{collab.skills.length - 3}
                           </Badge>
                         )}
                       </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {collab.bio && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {collab.bio}
-                    </p>
-                  )}
-                  {collab.skills && collab.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {collab.skills.slice(0, 3).map((skill, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          {skill}
-                        </Badge>
-                      ))}
-                      {collab.skills.length > 3 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{collab.skills.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  {collab.clubType && collab.clubType !== 'None' && (
-                    <p className="text-xs text-muted-foreground">
-                      {collab.clubType}
-                    </p>
-                  )}
-                  {user?.id !== collab.userId && (
+                    )}
+                    {collab.clubType && collab.clubType !== 'None' && (
+                      <p className="text-xs text-muted-foreground">
+                        {collab.clubType}
+                      </p>
+                    )}
+                  </CardContent>
+                </Link>
+                {user?.id !== collab.userId && (
+                  <CardContent className="pt-0">
                     <ConnectionButton
                       targetUserId={collab.userId}
                       currentUserId={user?.id}
                       className="w-full"
                     />
-                  )}
-                </CardContent>
+                  </CardContent>
+                )}
               </Card>
             </motion.div>
           ))}

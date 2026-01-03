@@ -28,6 +28,7 @@ import Settings from "./pages/portal/Settings";
 import PortalAmbassadors from "./pages/portal/Ambassadors";
 import PortalAdvisors from "./pages/portal/Advisors";
 import Collaborators from "./pages/portal/Collaborators";
+import UserProfile from "./pages/portal/UserProfile";
 import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="ambassadors" element={<PortalAmbassadors />} />
               <Route path="advisors" element={<PortalAdvisors />} />
               <Route path="collaborators" element={<Collaborators />} />
+              <Route path="users/:userId" element={<UserProfile />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
             </Route>
