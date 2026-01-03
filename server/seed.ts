@@ -27,23 +27,28 @@ const UNIVERSITIES_DATA = [
 
 export async function seedDatabase(): Promise<void> {
   try {
-    const existingCount = await db.select({ count: sql<number>`count(*)` }).from(universities);
+    const existingCount = await db.select({ count: sql<number>`count(*)::int` }).from(universities);
+    const count = Number(existingCount[0]?.count) || 0;
     
-    if (existingCount[0].count === 0) {
+    if (count === 0) {
       console.log("Seeding universities...");
       
       for (const uni of UNIVERSITIES_DATA) {
-        await db.insert(universities).values({
-          id: crypto.randomUUID(),
-          name: uni.name,
-          shortName: uni.shortName,
-          domain: uni.domain,
-        }).onConflictDoNothing();
+        try {
+          await db.insert(universities).values({
+            id: crypto.randomUUID(),
+            name: uni.name,
+            shortName: uni.shortName,
+            domain: uni.domain,
+          }).onConflictDoNothing();
+        } catch (insertError) {
+          console.error(`Failed to insert ${uni.name}:`, insertError);
+        }
       }
       
       console.log(`Seeded ${UNIVERSITIES_DATA.length} universities`);
     } else {
-      console.log(`Universities already seeded (${existingCount[0].count} found)`);
+      console.log(`Universities already seeded (${count} found)`);
     }
   } catch (error) {
     console.error("Error seeding database:", error);
