@@ -68,6 +68,25 @@ export const api = {
     list: () => apiRequest<any[]>("/ambassadors"),
   },
 
+  collaborators: {
+    list: (params?: {
+      roles?: string[];
+      skills?: string[];
+      interests?: string[];
+      clubType?: string;
+      search?: string;
+    }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.search) searchParams.append('search', params.search);
+      params?.roles?.forEach(r => searchParams.append('roles', r));
+      params?.skills?.forEach(s => searchParams.append('skills', s));
+      params?.interests?.forEach(i => searchParams.append('interests', i));
+      if (params?.clubType) searchParams.append('clubType', params.clubType);
+      const queryString = searchParams.toString();
+      return apiRequest<any[]>(`/collaborators${queryString ? `?${queryString}` : ''}`);
+    },
+  },
+
   universities: {
     list: () => apiRequest<any[]>("/universities"),
     resources: (id: string) => apiRequest<any[]>(`/universities/${id}/resources`),

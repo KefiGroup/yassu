@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { Users, Search, X, Filter } from 'lucide-react';
 import { ConnectionButton } from '@/components/ConnectionButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { SKILL_OPTIONS, INTEREST_OPTIONS } from '@/lib/profileOptions';
+import { api } from '@/lib/api';
 
 const ROLE_OPTIONS = [
   { value: 'creator', label: 'Creators' },
@@ -56,23 +57,17 @@ export default function Collaborators() {
   const [selectedClub, setSelectedClub] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const queryParams = useMemo(() => {
-    const params = new URLSearchParams();
-    if (searchTerm) params.append('search', searchTerm);
-    selectedRoles.forEach(r => params.append('roles', r));
-    selectedSkills.forEach(s => params.append('skills', s));
-    selectedInterests.forEach(i => params.append('interests', i));
-    if (selectedClub) params.append('clubType', selectedClub);
-    return params.toString();
-  }, [searchTerm, selectedRoles, selectedSkills, selectedInterests, selectedClub]);
+  const filters = {
+    search: searchTerm || undefined,
+    roles: selectedRoles.length > 0 ? selectedRoles : undefined,
+    skills: selectedSkills.length > 0 ? selectedSkills : undefined,
+    interests: selectedInterests.length > 0 ? selectedInterests : undefined,
+    clubType: selectedClub || undefined,
+  };
 
   const { data: collaborators = [], isLoading } = useQuery<Collaborator[]>({
-    queryKey: ['/api/collaborators', queryParams],
-    queryFn: async () => {
-      const res = await fetch(`/api/collaborators?${queryParams}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch collaborators');
-      return res.json();
-    },
+    queryKey: ['/api/collaborators', filters],
+    queryFn: () => api.collaborators.list(filters),
   });
 
   const getInitials = (name: string | null) => {
