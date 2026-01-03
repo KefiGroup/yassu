@@ -9,9 +9,18 @@ import { seedDatabase } from "./seed";
 
 const app = express();
 
-// Health check endpoint - must respond immediately for VM deployments
+// Health check endpoints - must respond immediately for VM deployments
 app.get("/health", (_req, res) => {
   res.status(200).send("OK");
+});
+// Root health check - responds to non-browser requests immediately
+app.get("/", (_req, res, next) => {
+  const accept = _req.headers.accept || "";
+  // If not requesting HTML (likely health check), respond immediately
+  if (!accept.includes("text/html")) {
+    return res.status(200).send("OK");
+  }
+  next();
 });
 
 // Trust reverse proxy in production (required for secure cookies behind Replit's proxy)
