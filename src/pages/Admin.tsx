@@ -83,7 +83,7 @@ export default function Admin() {
         setAdmins(adminsData);
       } catch (error) {
         console.error('Admin check failed:', error);
-        navigate('/portal/dashboard');
+        navigate('/portal');
       } finally {
         setLoading(false);
       }
