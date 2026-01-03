@@ -260,6 +260,21 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Get current user's ideas - must be before /api/ideas/:id
+  app.get("/api/ideas/mine", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const ideas = await storage.getUserIdeas(req.session.userId);
+      res.json(ideas);
+    } catch (error) {
+      console.error("Fetch user ideas error:", error);
+      res.status(500).json({ error: "Failed to fetch user ideas" });
+    }
+  });
+
   app.get("/api/ideas/:id", async (req: Request, res: Response) => {
     try {
       const idea = await storage.getIdea(req.params.id);
@@ -451,20 +466,6 @@ export function registerRoutes(app: Express): void {
   });
 
   // Dashboard endpoints
-  app.get("/api/ideas/mine", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      const ideas = await storage.getUserIdeas(req.session.userId);
-      res.json(ideas);
-    } catch (error) {
-      console.error("Fetch user ideas error:", error);
-      res.status(500).json({ error: "Failed to fetch ideas" });
-    }
-  });
-
   app.get("/api/join-requests", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
