@@ -263,6 +263,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteIdea(id: string): Promise<void> {
+    await db.delete(schema.ideaWorkflowSections).where(eq(schema.ideaWorkflowSections.ideaId, id));
+    await db.delete(schema.ideaTags).where(eq(schema.ideaTags.ideaId, id));
+    await db.delete(schema.teamInvites).where(eq(schema.teamInvites.ideaId, id));
+    await db.delete(schema.joinRequests).where(eq(schema.joinRequests.ideaId, id));
+    await db.delete(schema.workflowRuns).where(eq(schema.workflowRuns.ideaId, id));
+    await db.delete(schema.teams).where(eq(schema.teams.ideaId, id));
     await db.delete(schema.ideas).where(eq(schema.ideas.id, id));
   }
 
