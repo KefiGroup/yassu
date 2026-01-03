@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -225,9 +225,19 @@ export default function Admin() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="flex items-center gap-3 mb-2">
-          <Shield className="w-8 h-8 text-primary" />
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <Shield className="w-8 h-8 text-primary" />
+            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/portal')}
+            data-testid="button-back-to-portal"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Portal
+          </Button>
         </div>
         <p className="text-muted-foreground">
           Manage badges, view all ideas, and control admin access.
