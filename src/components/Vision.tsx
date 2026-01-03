@@ -48,12 +48,11 @@ const Vision = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button variant="hero" size="xl" className="group">
-              Join the Waitlist
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button variant="outline" size="xl">
-              Partner With Us
+            <Button variant="hero" size="xl" className="group" asChild data-testid="button-join-yassu-vision">
+              <a href="/portal">
+                Join Yassu
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </a>
             </Button>
           </motion.div>
         </motion.div>
