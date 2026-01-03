@@ -304,7 +304,7 @@ export default function Profile() {
                   <SelectTrigger data-testid="select-university">
                     <SelectValue placeholder="Select university" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom" className="max-h-60">
                     {universities.map((uni) => (
                       <SelectItem key={uni.id} value={uni.id}>
                         {uni.name}
