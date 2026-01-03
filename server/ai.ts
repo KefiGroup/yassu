@@ -1,18 +1,11 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { batchProcess } from "./replit_integrations/batch";
 
-// Create Gemini client lazily to ensure env vars are read at runtime
-function getGeminiClient(): GoogleGenAI {
-  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-  const baseURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-  
-  if (!apiKey) {
-    console.error("[AI] Missing GEMINI API Key");
-  }
-  
-  return new GoogleGenAI({
-    apiKey: apiKey || "missing-key",
-    httpOptions: baseURL ? { baseUrl: baseURL } : undefined,
+// Create Gemini-compatible client using OpenAI SDK with Gemini endpoints
+function getGeminiClient(): OpenAI {
+  return new OpenAI({
+    apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+    baseURL: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
   });
 }
 
@@ -432,12 +425,13 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
       console.log(`[AI] Generating section ${index + 1}/${sectionPrompts.length}: ${section.title}`);
       
       const client = getGeminiClient();
-      const response = await client.models.generateContent({
+      const response = await client.chat.completions.create({
         model: "gemini-2.5-flash",
-        contents: [{ role: "user", parts: [{ text: section.prompt }] }],
+        messages: [{ role: "user", content: section.prompt }],
+        max_completion_tokens: 8192,
       });
       
-      const content = response.text || `## ${section.title}\n\nGeneration failed. Please try again.`;
+      const content = response.choices[0]?.message?.content || `## ${section.title}\n\nGeneration failed. Please try again.`;
       console.log(`[AI] Completed section: ${section.title} (${content.length} chars)`);
       
       return { key: section.key, content };
@@ -519,10 +513,11 @@ Generate an Executive Summary in markdown format covering:
 Keep it to ~400 words. Make it compelling enough to hook an investor or co-founder.`;
 
   const client = getGeminiClient();
-  const response = await client.models.generateContent({
+  const response = await client.chat.completions.create({
     model: "gemini-2.5-flash",
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    messages: [{ role: "user", content: prompt }],
+    max_completion_tokens: 8192,
   });
 
-  return response.text || "## Executive Summary\n\nGeneration pending...";
+  return response.choices[0]?.message?.content || "## Executive Summary\n\nGeneration pending...";
 }
