@@ -608,8 +608,16 @@ export function registerRoutes(app: Express): void {
             }
           })
           .catch(async (error: any) => {
-            console.error("AI generation failed:", error?.message || error);
-            console.error("Full error:", JSON.stringify(error, null, 2));
+            console.error("AI generation failed:");
+            console.error("Error message:", error?.message || "No message");
+            console.error("Error name:", error?.name || "No name");
+            console.error("Error status:", error?.status || "No status");
+            console.error("Error code:", error?.code || "No code");
+            if (error?.response) {
+              console.error("Response status:", error.response.status);
+              console.error("Response data:", JSON.stringify(error.response.data));
+            }
+            console.error("Stack:", error?.stack || "No stack");
             await storage.updateWorkflowRun(run.id, { status: "failed" });
           });
       }
