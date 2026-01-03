@@ -102,14 +102,9 @@ Generate the following sections in clean markdown format:
 
 ## Competitor Grid
 
-| Competitor | Type | Strengths | Weaknesses | Pricing | Target Segment |
-|------------|------|-----------|------------|---------|----------------|
-| [Company 1] | Direct | ... | ... | ... | ... |
-| [Company 2] | Direct | ... | ... | ... | ... |
-| [Company 3] | Indirect | ... | ... | ... | ... |
-| Status Quo | Alternative | ... | ... | Free | ... |
+Create a markdown table with these exact columns: Competitor | Type | Strengths | Weaknesses | Pricing | Target Segment
 
-Fill in the table with 4-6 real competitors.
+IMPORTANT: You MUST populate this table with 4-6 REAL competitor companies. Do NOT leave the table empty or use placeholders. Research and include actual companies that compete in this space. Include at least one direct competitor, one indirect competitor, and the "Status Quo" (what customers currently do without a dedicated solution).
 
 ## Whitespace Analysis
 - Specific gaps in current market offerings
@@ -128,13 +123,11 @@ Generate the following sections in clean markdown format:
 
 ## SWOT Analysis
 
-| Category | Analysis |
-|----------|----------|
-| Strengths | [List 3-4 key strengths] |
-| Weaknesses | [List 3-4 key weaknesses] |
-| Opportunities | [List 3-4 opportunities] |
-| Threats | [List 3-4 threats] |
-| ... | ... |
+Create a SWOT table with two columns: Category | Analysis. Populate each row with real analysis:
+- Strengths: List 3-4 specific strengths of this startup idea
+- Weaknesses: List 3-4 specific weaknesses or challenges  
+- Opportunities: List 3-4 market opportunities to leverage
+- Threats: List 3-4 external threats to watch for
 
 ## Defensibility Score (1-10)
 Rate and explain potential moats:
