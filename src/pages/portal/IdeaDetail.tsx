@@ -868,22 +868,16 @@ export default function IdeaDetail() {
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 {businessPlan?.status === 'completed' && (
-                  <>
-                    <Button variant="outline" size="sm" data-testid="button-download-plan">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGeneratePlan}
-                      disabled={generating}
-                      data-testid="button-regenerate-plan"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Regenerate
-                    </Button>
-                  </>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGeneratePlan}
+                    disabled={generating}
+                    data-testid="button-regenerate-plan"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Regenerate
+                  </Button>
                 )}
               </div>
             </div>
