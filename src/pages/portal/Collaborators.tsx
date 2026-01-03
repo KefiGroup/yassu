@@ -29,11 +29,11 @@ const CLUB_OPTIONS = [
   'Engineering Societies',
   'Entrepreneurship Clubs',
   'Innovation / Incubator Clubs',
+  'Others',
   'Product Management Clubs',
   'Startup / Founder Clubs',
   'Venture Capital Clubs',
-  'Others',
-];
+].sort();
 
 const skillCategoryNames = Object.keys(SKILL_CATEGORIES);
 const interestCategoryNames = Object.keys(INTEREST_CATEGORIES);
@@ -145,7 +145,7 @@ export default function Collaborators() {
                   <SelectTrigger data-testid="select-club">
                     <SelectValue placeholder="All clubs" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom" align="start" className="max-h-60">
                     <SelectItem value="all">All clubs</SelectItem>
                     {CLUB_OPTIONS.map(club => (
                       <SelectItem key={club} value={club}>{club}</SelectItem>
@@ -162,9 +162,9 @@ export default function Collaborators() {
                   <SelectTrigger data-testid="select-role">
                     <SelectValue placeholder="All roles" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom" align="start">
                     <SelectItem value="all">All roles</SelectItem>
-                    {ROLE_OPTIONS.map(role => (
+                    {ROLE_OPTIONS.sort((a, b) => a.label.localeCompare(b.label)).map(role => (
                       <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -177,9 +177,9 @@ export default function Collaborators() {
                   <SelectTrigger data-testid="select-skills">
                     <SelectValue placeholder="All skills" />
                   </SelectTrigger>
-                  <SelectContent position="popper" side="bottom" align="start">
+                  <SelectContent position="popper" side="bottom" align="start" className="max-h-60">
                     <SelectItem value="all">All skills</SelectItem>
-                    {skillCategoryNames.map(cat => (
+                    {skillCategoryNames.sort().map(cat => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
                   </SelectContent>
@@ -192,9 +192,9 @@ export default function Collaborators() {
                   <SelectTrigger data-testid="select-interests">
                     <SelectValue placeholder="All interests" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom" align="start" className="max-h-60">
                     <SelectItem value="all">All interests</SelectItem>
-                    {interestCategoryNames.map(cat => (
+                    {interestCategoryNames.sort().map(cat => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
                   </SelectContent>
