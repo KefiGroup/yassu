@@ -132,9 +132,9 @@ const Auth = () => {
     } else {
       toast({
         title: 'Account created!',
-        description: 'Welcome to Yassu. Let\'s get you started.',
+        description: 'Welcome to Yassu. Let\'s complete your profile first.',
       });
-      navigate('/portal');
+      navigate('/portal/profile');
     }
   };
 
