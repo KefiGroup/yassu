@@ -283,11 +283,16 @@ export default function Collaborators() {
                       </div>
                     </div>
 
-                    {hasActiveFilters && (
-                      <Button variant="outline" onClick={clearFilters} className="w-full" data-testid="button-clear-filters">
-                        Clear All Filters
+                    <div className="flex flex-col gap-3 pt-4 border-t">
+                      <Button onClick={() => setShowFilters(false)} className="w-full" data-testid="button-show-results">
+                        Show Results
                       </Button>
-                    )}
+                      {hasActiveFilters && (
+                        <Button variant="outline" onClick={clearFilters} className="w-full" data-testid="button-clear-filters">
+                          Clear All Filters
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </SheetContent>
               </Sheet>
