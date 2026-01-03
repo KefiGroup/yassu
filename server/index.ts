@@ -6,22 +6,13 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
 
-// Readiness flag - server responds OK until fully ready
-let isReady = false;
-
 const app = express();
 const server = createServer(app);
 
-// Health check endpoints - ALWAYS return OK immediately
+// Health check endpoints - ALWAYS return 200 immediately, no conditions
 app.head("/", (_req, res) => res.sendStatus(200));
 app.head("/health", (_req, res) => res.sendStatus(200));
 app.get("/health", (_req, res) => res.status(200).type("text/plain").send("OK"));
-app.get("/", (_req, res, next) => {
-  if (!isReady) {
-    return res.status(200).type("text/plain").send("OK");
-  }
-  next();
-});
 
 // Trust reverse proxy in production
 if (process.env.NODE_ENV === "production") {
@@ -74,40 +65,32 @@ app.use((req, res, next) => {
   next();
 });
 
-// Register API routes
+// Register API routes FIRST
 registerRoutes(app);
 
-// Error handler
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  res.status(status).json({ message });
-  throw err;
-});
-
-// Setup static/Vite BEFORE listening but synchronously
+// Setup static/Vite (SPA serving) - this includes catch-all for /
 if (process.env.NODE_ENV === "production") {
   serveStatic(app);
 }
 
-// Start listening FIRST, then do async initialization
+// Error handler LAST (after all routes and static serving)
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  res.status(status).json({ message });
+  console.error(err);
+});
+
+// Start listening
 const port = 5000;
-server.listen({ port, host: "0.0.0.0", reusePort: true }, async () => {
-  log(`listening on port ${port}`);
+server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+  log(`serving on port ${port}`);
   
   // In development, setup Vite after listening
   if (process.env.NODE_ENV !== "production") {
-    await setupVite(app, server);
+    setupVite(app, server).catch(err => console.error("Vite setup error:", err));
   }
   
-  // Seed database after server is listening
-  try {
-    await seedDatabase();
-  } catch (err) {
-    console.error("Database seeding error:", err);
-  }
-  
-  // Mark as ready - now SPA requests will be served
-  isReady = true;
-  log("Server is ready");
+  // Fire-and-forget database seeding - don't block startup
+  void seedDatabase().catch(err => console.error("Database seeding error:", err));
 });
