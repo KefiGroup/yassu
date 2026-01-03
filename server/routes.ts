@@ -951,4 +951,149 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to revoke admin role" });
     }
   });
+
+  // ===============================================
+  // Connection System (LinkedIn/Facebook style)
+  // ===============================================
+
+  // Send a connection request
+  app.post("/api/connections", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { recipientId, message } = req.body;
+      
+      if (!recipientId) {
+        return res.status(400).json({ error: "recipientId is required" });
+      }
+
+      if (recipientId === req.session.userId) {
+        return res.status(400).json({ error: "Cannot connect with yourself" });
+      }
+
+      const connection = await storage.sendConnectionRequest(req.session.userId, recipientId, message);
+      res.json(connection);
+    } catch (error: any) {
+      console.error("Send connection error:", error);
+      if (error.message === 'Connection already exists') {
+        return res.status(400).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to send connection request" });
+    }
+  });
+
+  // Get connection status with another user
+  app.get("/api/connections/status/:userId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const otherUserId = parseInt(req.params.userId);
+      const status = await storage.getConnectionStatus(req.session.userId, otherUserId);
+      res.json(status || { status: 'none' });
+    } catch (error) {
+      console.error("Get connection status error:", error);
+      res.status(500).json({ error: "Failed to get connection status" });
+    }
+  });
+
+  // Get pending connection requests (received or sent)
+  app.get("/api/connections/pending", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const direction = (req.query.direction as 'received' | 'sent') || 'received';
+      const requests = await storage.getPendingConnectionRequests(req.session.userId, direction);
+      res.json(requests);
+    } catch (error) {
+      console.error("Get pending connections error:", error);
+      res.status(500).json({ error: "Failed to get pending connections" });
+    }
+  });
+
+  // Get all accepted connections
+  app.get("/api/connections", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const connections = await storage.getConnections(req.session.userId);
+      res.json(connections);
+    } catch (error) {
+      console.error("Get connections error:", error);
+      res.status(500).json({ error: "Failed to get connections" });
+    }
+  });
+
+  // Accept a connection request
+  app.post("/api/connections/:id/accept", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const connection = await storage.acceptConnection(req.params.id, req.session.userId);
+      if (!connection) {
+        return res.status(404).json({ error: "Connection not found or cannot accept" });
+      }
+      res.json(connection);
+    } catch (error) {
+      console.error("Accept connection error:", error);
+      res.status(500).json({ error: "Failed to accept connection" });
+    }
+  });
+
+  // Reject a connection request
+  app.post("/api/connections/:id/reject", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const connection = await storage.rejectConnection(req.params.id, req.session.userId);
+      if (!connection) {
+        return res.status(404).json({ error: "Connection not found or cannot reject" });
+      }
+      res.json(connection);
+    } catch (error) {
+      console.error("Reject connection error:", error);
+      res.status(500).json({ error: "Failed to reject connection" });
+    }
+  });
+
+  // Cancel a pending connection request (sender only)
+  app.delete("/api/connections/:id/cancel", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      await storage.cancelConnection(req.params.id, req.session.userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Cancel connection error:", error);
+      res.status(500).json({ error: "Failed to cancel connection" });
+    }
+  });
+
+  // Remove an accepted connection (either party)
+  app.delete("/api/connections/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      await storage.removeConnection(req.params.id, req.session.userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove connection error:", error);
+      res.status(500).json({ error: "Failed to remove connection" });
+    }
+  });
 }
