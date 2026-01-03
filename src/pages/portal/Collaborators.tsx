@@ -177,7 +177,7 @@ export default function Collaborators() {
                   <SelectTrigger data-testid="select-skills">
                     <SelectValue placeholder="All skills" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom" align="start">
                     <SelectItem value="all">All skills</SelectItem>
                     {skillCategoryNames.map(cat => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
