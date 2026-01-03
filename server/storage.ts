@@ -87,8 +87,12 @@ export interface IStorage {
   getAllProfiles(): Promise<Profile[]>;
   getProfilesWithBadges(): Promise<(Profile & { badges: ProfileBadge[] })[]>;
   
-  // Superadmin check
+  // Admin functions
   isSuperadmin(userId: number): Promise<boolean>;
+  getAllIdeasAdmin(): Promise<Idea[]>;
+  getAdmins(): Promise<{ userId: number; email: string; fullName: string | null }[]>;
+  grantAdminRole(userId: number): Promise<void>;
+  revokeAdminRole(userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -488,6 +492,49 @@ export class DatabaseStorage implements IStorage {
         eq(schema.userRoles.role, 'admin')
       ));
     return roles.length > 0;
+  }
+
+  async getAllIdeasAdmin(): Promise<Idea[]> {
+    return db.select().from(schema.ideas)
+      .orderBy(desc(schema.ideas.createdAt));
+  }
+
+  async getAdmins(): Promise<{ userId: number; email: string; fullName: string | null }[]> {
+    const adminRoles = await db.select().from(schema.userRoles)
+      .where(eq(schema.userRoles.role, 'admin'));
+    
+    if (adminRoles.length === 0) return [];
+    
+    const adminUserIds = adminRoles.map(r => r.userId);
+    const users = await db.select({
+      userId: schema.users.id,
+      email: schema.users.email,
+      fullName: schema.users.fullName
+    }).from(schema.users)
+      .where(inArray(schema.users.id, adminUserIds));
+    
+    return users;
+  }
+
+  async grantAdminRole(userId: number): Promise<void> {
+    // Check if already admin
+    const existing = await db.select().from(schema.userRoles)
+      .where(and(
+        eq(schema.userRoles.userId, userId),
+        eq(schema.userRoles.role, 'admin')
+      ));
+    
+    if (existing.length > 0) return;
+    
+    await db.insert(schema.userRoles).values({ userId, role: 'admin' });
+  }
+
+  async revokeAdminRole(userId: number): Promise<void> {
+    await db.delete(schema.userRoles)
+      .where(and(
+        eq(schema.userRoles.userId, userId),
+        eq(schema.userRoles.role, 'admin')
+      ));
   }
 }
 

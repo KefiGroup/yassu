@@ -859,4 +859,96 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to fetch badges" });
     }
   });
+
+  // Get all ideas (admin only - includes private ideas)
+  app.get("/api/admin/ideas", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const ideas = await storage.getAllIdeasAdmin();
+      res.json(ideas);
+    } catch (error) {
+      console.error("Admin get ideas error:", error);
+      res.status(500).json({ error: "Failed to fetch ideas" });
+    }
+  });
+
+  // Get all admins (admin only)
+  app.get("/api/admin/admins", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const admins = await storage.getAdmins();
+      res.json(admins);
+    } catch (error) {
+      console.error("Get admins error:", error);
+      res.status(500).json({ error: "Failed to fetch admins" });
+    }
+  });
+
+  // Grant admin role (admin only)
+  app.post("/api/admin/admins", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      
+      await storage.grantAdminRole(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Grant admin error:", error);
+      res.status(500).json({ error: "Failed to grant admin role" });
+    }
+  });
+
+  // Revoke admin role (admin only)
+  app.delete("/api/admin/admins/:userId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Prevent removing yourself as admin
+      if (userId === req.session.userId) {
+        return res.status(400).json({ error: "Cannot remove your own admin access" });
+      }
+      
+      await storage.revokeAdminRole(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Revoke admin error:", error);
+      res.status(500).json({ error: "Failed to revoke admin role" });
+    }
+  });
 }
