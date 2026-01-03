@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiRequest } from '@/lib/api';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,12 +20,27 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Search, Bell, LogOut, User, Settings, Home } from 'lucide-react';
+import { Search, Bell, LogOut, User, Settings, Home, Shield } from 'lucide-react';
 
 export function PortalHeader() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkAdminStatus() {
+      try {
+        const result = await apiRequest<{ isAdmin: boolean }>('/admin/check');
+        setIsAdmin(result.isAdmin);
+      } catch {
+        setIsAdmin(false);
+      }
+    }
+    if (user) {
+      checkAdminStatus();
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -141,6 +157,12 @@ export function PortalHeader() {
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem onClick={() => navigate('/admin')}>
+                <Shield className="mr-2 h-4 w-4" />
+                Admin
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
