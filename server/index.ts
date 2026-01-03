@@ -25,7 +25,8 @@ app.use(
   })
 );
 
-setupOAuth(app);
+// OAuth disabled - uncomment when ready to enable social sign-in
+// setupOAuth(app);
 
 app.use((req, res, next) => {
   const start = Date.now();
