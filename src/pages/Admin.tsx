@@ -68,7 +68,7 @@ export default function Admin() {
             description: 'You do not have admin privileges.',
             variant: 'destructive',
           });
-          navigate('/portal/dashboard');
+          navigate('/portal');
           return;
         }
         
