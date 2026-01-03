@@ -13,9 +13,25 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import MDEditor from '@uiw/react-md-editor';
-import '@uiw/react-md-editor/markdown-editor.css';
-import '@uiw/react-markdown-preview/markdown.css';
+import { 
+  MDXEditor, 
+  headingsPlugin,
+  listsPlugin,
+  quotePlugin,
+  thematicBreakPlugin,
+  markdownShortcutPlugin,
+  tablePlugin,
+  linkPlugin,
+  linkDialogPlugin,
+  toolbarPlugin,
+  BoldItalicUnderlineToggles,
+  BlockTypeSelect,
+  CreateLink,
+  InsertTable,
+  ListsToggle,
+  UndoRedo,
+} from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
 import {
   ArrowLeft,
   Calendar,
@@ -155,7 +171,7 @@ export default function IdeaDetail() {
   
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
-  const [editorKey, setEditorKey] = useState(0);
+  const [editorReady, setEditorReady] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -423,9 +439,14 @@ export default function IdeaDetail() {
     // Preprocess the markdown to fix any formatting issues before loading into editor
     const processedContent = preprocessMarkdown(rawContent);
     console.log('[Edit] Processed content length:', processedContent.length, 'First 100 chars:', processedContent.substring(0, 100));
+    
+    // Set content first, then open dialog after a tick to ensure content is ready
     setEditContent(processedContent);
-    setEditorKey(prev => prev + 1); // Force new editor instance
+    setEditorReady(false);
     setEditingSection(sectionId);
+    
+    // Delay editor mount to ensure content state is ready
+    setTimeout(() => setEditorReady(true), 50);
   };
 
   const handleSaveSection = async () => {
@@ -1164,16 +1185,46 @@ export default function IdeaDetail() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex-1 overflow-auto min-h-0" data-color-mode="light">
-            {editingSection && (
-              <MDEditor
-                key={editorKey}
-                value={editContent}
+          <div className="flex-1 overflow-auto min-h-0 border rounded-lg bg-background">
+            {editingSection && editorReady && editContent && (
+              <MDXEditor
+                markdown={editContent}
                 onChange={(value) => setEditContent(value || '')}
-                height={500}
-                preview="live"
-                data-testid="md-editor"
+                className="min-h-[450px]"
+                contentEditableClassName="p-4 min-h-[400px] outline-none prose prose-sm dark:prose-invert max-w-none"
+                plugins={[
+                  headingsPlugin(),
+                  listsPlugin(),
+                  quotePlugin(),
+                  thematicBreakPlugin(),
+                  markdownShortcutPlugin(),
+                  tablePlugin(),
+                  linkPlugin(),
+                  linkDialogPlugin(),
+                  toolbarPlugin({
+                    toolbarContents: () => (
+                      <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
+                        <UndoRedo />
+                        <BlockTypeSelect />
+                        <BoldItalicUnderlineToggles />
+                        <ListsToggle />
+                        <CreateLink />
+                        <InsertTable />
+                      </div>
+                    ),
+                  }),
+                ]}
               />
+            )}
+            {editingSection && !editorReady && (
+              <div className="flex items-center justify-center min-h-[450px]">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {editingSection && editorReady && !editContent && (
+              <div className="p-4 text-muted-foreground italic min-h-[450px]">
+                No content available. Start typing to add content.
+              </div>
             )}
           </div>
           
