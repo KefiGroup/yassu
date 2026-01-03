@@ -263,10 +263,12 @@ export const notifications = pgTable("notifications", {
 });
 
 // Editable workflow sections for business plans - allows users to customize AI-generated content
+// Section types: executive_summary, founder_fit, competitive_landscape, risk_and_moat, 
+// mvp_design, team_and_talent, launch_plan, school_advantage, funding_pitch
 export const ideaWorkflowSections = pgTable("idea_workflow_sections", {
   id: uuid("id").primaryKey().defaultRandom(),
   ideaId: uuid("idea_id").references(() => ideas.id).notNull(),
-  sectionType: workflowTypeEnum("section_type").notNull(),
+  sectionType: text("section_type").notNull(),
   content: text("content").default(""),
   aiGenerated: boolean("ai_generated").default(true), // tracks if content was auto-populated from AI
   createdAt: timestamp("created_at").defaultNow().notNull(),

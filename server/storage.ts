@@ -396,7 +396,7 @@ export class DatabaseStorage implements IStorage {
     const [section] = await db.select().from(schema.ideaWorkflowSections)
       .where(and(
         eq(schema.ideaWorkflowSections.ideaId, ideaId),
-        eq(schema.ideaWorkflowSections.sectionType, sectionType as any)
+        eq(schema.ideaWorkflowSections.sectionType, sectionType)
       ));
     return section;
   }
@@ -412,7 +412,7 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } else {
       const [created] = await db.insert(schema.ideaWorkflowSections)
-        .values({ ideaId, sectionType: sectionType as any, content, aiGenerated })
+        .values({ ideaId, sectionType, content, aiGenerated })
         .returning();
       return created;
     }
