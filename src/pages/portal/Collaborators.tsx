@@ -12,6 +12,7 @@ import { Users, Search, X } from 'lucide-react';
 import { ConnectionButton } from '@/components/ConnectionButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 
 const ROLE_OPTIONS = [
   { value: 'creator', label: 'Creators' },
@@ -34,26 +35,8 @@ const CLUB_OPTIONS = [
   'Others',
 ];
 
-const SKILL_CATEGORIES = [
-  { value: 'engineering', label: 'Engineering', skills: ['JavaScript', 'TypeScript', 'Python', 'Java', 'React', 'Node.js', 'AWS', 'DevOps'] },
-  { value: 'design', label: 'Design', skills: ['UI/UX Design', 'Figma', 'Product Design', 'Graphic Design'] },
-  { value: 'data', label: 'Data & AI', skills: ['Data Analysis', 'Machine Learning', 'Data Science', 'SQL', 'TensorFlow'] },
-  { value: 'business', label: 'Business', skills: ['Product Management', 'Marketing', 'Sales', 'Finance', 'Strategy'] },
-  { value: 'operations', label: 'Operations', skills: ['Project Management', 'Operations', 'HR', 'Legal'] },
-];
-
-const INTEREST_CATEGORIES = [
-  { value: 'fintech', label: 'Fintech' },
-  { value: 'healthtech', label: 'Healthtech' },
-  { value: 'edtech', label: 'Edtech' },
-  { value: 'saas', label: 'SaaS' },
-  { value: 'ai', label: 'AI/ML' },
-  { value: 'ecommerce', label: 'E-commerce' },
-  { value: 'consumer', label: 'Consumer' },
-  { value: 'enterprise', label: 'Enterprise' },
-  { value: 'climate', label: 'Climate' },
-  { value: 'social', label: 'Social Impact' },
-];
+const skillCategoryNames = Object.keys(SKILL_CATEGORIES);
+const interestCategoryNames = Object.keys(INTEREST_CATEGORIES);
 
 interface Collaborator {
   id: number;
@@ -77,24 +60,11 @@ export default function Collaborators() {
   const [selectedClub, setSelectedClub] = useState<string>('all');
 
   const selectedSkills = selectedSkillCategory !== 'all' 
-    ? SKILL_CATEGORIES.find(c => c.value === selectedSkillCategory)?.skills || []
+    ? SKILL_CATEGORIES[selectedSkillCategory as keyof typeof SKILL_CATEGORIES] || []
     : [];
 
-  const interestMapping: Record<string, string[]> = {
-    fintech: ['Fintech'],
-    healthtech: ['Healthtech'],
-    edtech: ['Edtech'],
-    saas: ['SaaS'],
-    ai: ['AI/ML Applications', 'LLMs/GenAI'],
-    ecommerce: ['E-commerce', 'Marketplaces'],
-    consumer: ['Consumer Apps'],
-    enterprise: ['Enterprise Software'],
-    climate: ['Climate Tech', 'Clean Energy'],
-    social: ['Social Impact'],
-  };
-
   const selectedInterests = selectedInterestCategory !== 'all'
-    ? interestMapping[selectedInterestCategory] || []
+    ? INTEREST_CATEGORIES[selectedInterestCategory as keyof typeof INTEREST_CATEGORIES] || []
     : [];
 
   const filters = {
@@ -209,8 +179,8 @@ export default function Collaborators() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All skills</SelectItem>
-                    {SKILL_CATEGORIES.map(cat => (
-                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    {skillCategoryNames.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -224,8 +194,8 @@ export default function Collaborators() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All interests</SelectItem>
-                    {INTEREST_CATEGORIES.map(cat => (
-                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    {interestCategoryNames.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
