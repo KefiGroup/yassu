@@ -434,7 +434,7 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
       const client = getGeminiClient();
       const response = await client.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: section.prompt,
+        contents: [{ role: "user", parts: [{ text: section.prompt }] }],
       });
       
       const content = response.text || `## ${section.title}\n\nGeneration failed. Please try again.`;
@@ -483,10 +483,7 @@ async function generateExecutiveSummary(
     .map((r) => `${r.key}: ${r.content.slice(0, 500)}...`)
     .join("\n\n");
 
-  const client = getGeminiClient();
-  const response = await client.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
+  const prompt = `You are an expert startup advisor at Yassu, "The New-Age Marketplace for University-Native Company Creation."
 
 Based on the detailed analysis sections below, create a compelling EXECUTIVE SUMMARY for this startup:
 
@@ -519,7 +516,12 @@ Generate an Executive Summary in markdown format covering:
 - What's needed to succeed
 - Key risks acknowledged
 
-Keep it to ~400 words. Make it compelling enough to hook an investor or co-founder.`
+Keep it to ~400 words. Make it compelling enough to hook an investor or co-founder.`;
+
+  const client = getGeminiClient();
+  const response = await client.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
   });
 
   return response.text || "## Executive Summary\n\nGeneration pending...";
