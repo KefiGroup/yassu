@@ -99,6 +99,14 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - Idea Privacy Toggle
+- Added `isPublic` toggle for ideas - creators can choose to keep ideas private or public
+- Private ideas are hidden from the marketplace (ideas list)
+- Private ideas cannot be seen by others in public listings
+- Skill-matched profiles still appear on creator's dashboard for team invitations
+- Toggle button shows Globe (public) or Lock (private) icon with current status
+- Privacy badge displayed on idea detail page when private
+
 ### January 2026 - Inline Business Plan Editing
 - Removed separate "My Workflows" component
 - Added inline Edit button to each business plan section (Full Plan + 8 sections)

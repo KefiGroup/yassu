@@ -13,7 +13,26 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bold, Italic, List, Heading2, Link2, Eye, Code } from 'lucide-react';
+import { Bold, Italic, List, Heading2, Link2, Eye, Code, Globe, Lock } from 'lucide-react';
+import { 
+  MDXEditor, 
+  headingsPlugin,
+  listsPlugin,
+  quotePlugin,
+  thematicBreakPlugin,
+  markdownShortcutPlugin,
+  tablePlugin,
+  linkPlugin,
+  linkDialogPlugin,
+  toolbarPlugin,
+  BoldItalicUnderlineToggles,
+  BlockTypeSelect,
+  CreateLink,
+  InsertTable,
+  ListsToggle,
+  UndoRedo,
+} from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
 import {
   ArrowLeft,
   Calendar,
@@ -76,6 +95,7 @@ interface Idea {
   stage: string;
   createdAt: string;
   createdBy: number;
+  isPublic: boolean;
   tags?: string[];
 }
 
@@ -147,12 +167,15 @@ export default function IdeaDetail() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [togglingPrivacy, setTogglingPrivacy] = useState(false);
   const [activeTab, setActiveTab] = useState('executiveSummary');
   const [potentialTeamMembers, setPotentialTeamMembers] = useState<PotentialTeamMember[]>([]);
   const [loadingTeamMembers, setLoadingTeamMembers] = useState(false);
   
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [editorReady, setEditorReady] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
   const [previewMode, setPreviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -398,6 +421,31 @@ export default function IdeaDetail() {
       setDeleting(false);
     }
   };
+  
+  const handleTogglePrivacy = async () => {
+    if (!ideaId || !idea) return;
+    
+    setTogglingPrivacy(true);
+    try {
+      const newIsPublic = !idea.isPublic;
+      const updatedIdea = await api.ideas.update(ideaId, { isPublic: newIsPublic });
+      setIdea(updatedIdea);
+      toast({
+        title: newIsPublic ? 'Idea Made Public' : 'Idea Made Private',
+        description: newIsPublic 
+          ? 'Your idea is now visible in the marketplace.' 
+          : 'Your idea is now hidden from the marketplace.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Update Failed',
+        description: 'Could not update privacy settings. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTogglingPrivacy(false);
+    }
+  };
 
   const sectionKeyToDbType: Record<string, string> = {
     executiveSummary: 'executive_summary',
@@ -422,9 +470,18 @@ export default function IdeaDetail() {
     const processedContent = preprocessMarkdown(rawContent);
     console.log('[Edit] Processed content length:', processedContent.length);
     
+    // Reset editor state first
+    setEditorReady(false);
     setEditContent(processedContent);
     setPreviewMode(false);
     setEditingSection(sectionId);
+    
+    // Delay editor mounting until content is set and dialog is rendered
+    // The key increment forces MDXEditor to remount with the new content
+    setTimeout(() => {
+      setEditorKey(prev => prev + 1);
+      setEditorReady(true);
+    }, 100);
   };
   
   // Helper function to insert markdown formatting at cursor position
@@ -766,6 +823,21 @@ export default function IdeaDetail() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
+              onClick={handleTogglePrivacy}
+              disabled={togglingPrivacy}
+              data-testid="button-toggle-privacy"
+            >
+              {togglingPrivacy ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : idea.isPublic ? (
+                <Globe className="w-4 h-4 mr-2" />
+              ) : (
+                <Lock className="w-4 h-4 mr-2" />
+              )}
+              {idea.isPublic ? 'Public' : 'Private'}
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => navigate(`/portal/ideas/${ideaId}/edit`)}
               data-testid="button-edit-idea"
             >
@@ -885,6 +957,12 @@ export default function IdeaDetail() {
                   <Badge className={stageColors[idea.stage] || stageColors.concept}>
                     {idea.stage}
                   </Badge>
+                  {!idea.isPublic && (
+                    <Badge variant="outline" className="gap-1">
+                      <Lock className="w-3 h-3" />
+                      Private
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1">
@@ -1270,6 +1348,40 @@ export default function IdeaDetail() {
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {editContent || '*No content yet*'}
                 </ReactMarkdown>
+              </div>
+            ) : editorReady && editContent ? (
+              <MDXEditor
+                key={editorKey}
+                markdown={editContent}
+                onChange={(value) => setEditContent(value || '')}
+                className="min-h-[450px]"
+                contentEditableClassName="p-4 min-h-[400px] outline-none prose prose-sm dark:prose-invert max-w-none"
+                plugins={[
+                  headingsPlugin(),
+                  listsPlugin(),
+                  quotePlugin(),
+                  thematicBreakPlugin(),
+                  markdownShortcutPlugin(),
+                  tablePlugin(),
+                  linkPlugin(),
+                  linkDialogPlugin(),
+                  toolbarPlugin({
+                    toolbarContents: () => (
+                      <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
+                        <UndoRedo />
+                        <BlockTypeSelect />
+                        <BoldItalicUnderlineToggles />
+                        <ListsToggle />
+                        <CreateLink />
+                        <InsertTable />
+                      </div>
+                    ),
+                  }),
+                ]}
+              />
+            ) : !editorReady ? (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <Textarea
