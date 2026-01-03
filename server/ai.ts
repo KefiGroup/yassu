@@ -1,11 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
 import { batchProcess } from "./replit_integrations/batch";
 
+const geminiApiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+
+if (!geminiApiKey) {
+  console.error("[AI] Warning: AI_INTEGRATIONS_GEMINI_API_KEY is not set");
+}
+
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  apiKey: geminiApiKey,
   httpOptions: {
     apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+    baseUrl: geminiBaseUrl,
   },
 });
 

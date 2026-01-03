@@ -607,8 +607,9 @@ export function registerRoutes(app: Express): void {
               }
             }
           })
-          .catch(async (error) => {
-            console.error("AI generation failed:", error);
+          .catch(async (error: any) => {
+            console.error("AI generation failed:", error?.message || error);
+            console.error("Full error:", JSON.stringify(error, null, 2));
             await storage.updateWorkflowRun(run.id, { status: "failed" });
           });
       }
