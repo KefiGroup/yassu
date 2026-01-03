@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { motion } from 'framer-motion';
-import { GraduationCap, MessageSquare, Users } from 'lucide-react';
+import { MessageSquare, Users } from 'lucide-react';
 
 interface Profile {
   id: number;
@@ -116,9 +116,12 @@ export default function Ambassadors() {
               <Card className="h-full" data-testid={`card-ambassador-${ambassador.id}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center shrink-0">
-                      <GraduationCap className="w-5 h-5 text-purple-700 dark:text-purple-300" />
-                    </div>
+                    <Avatar className="w-12 h-12 shrink-0">
+                      <AvatarImage src={ambassador.avatarUrl || undefined} alt={ambassador.fullName || 'Ambassador'} />
+                      <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-sm font-medium">
+                        {getInitials(ambassador.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-base line-clamp-1">{ambassador.fullName || 'Anonymous'}</CardTitle>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">

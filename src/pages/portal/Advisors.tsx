@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
@@ -10,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { motion } from 'framer-motion';
-import { Briefcase, MessageSquare, Users } from 'lucide-react';
+import { MessageSquare, Users } from 'lucide-react';
 
 interface Profile {
   id: number;
@@ -115,9 +116,12 @@ export default function Advisors() {
               <Card className="h-full" data-testid={`card-advisor-${advisor.id}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center shrink-0">
-                      <Briefcase className="w-5 h-5 text-blue-700 dark:text-blue-300" />
-                    </div>
+                    <Avatar className="w-12 h-12 shrink-0">
+                      <AvatarImage src={advisor.avatarUrl || undefined} alt={advisor.fullName || 'Advisor'} />
+                      <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-sm font-medium">
+                        {getInitials(advisor.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-base line-clamp-1">{advisor.fullName || 'Anonymous'}</CardTitle>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
