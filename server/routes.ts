@@ -644,6 +644,70 @@ export function registerRoutes(app: Express): void {
   });
 
   // Editable Workflow Sections for Ideas
+  app.post("/api/ideas/:id/workflows/populate", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const ideaId = req.params.id;
+      
+      // Verify user owns the idea
+      const idea = await storage.getIdea(ideaId);
+      if (!idea || idea.createdBy !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to edit this idea" });
+      }
+
+      // Find the business plan for this idea
+      const workflows = await storage.getWorkflowRuns(req.session.userId);
+      const planWorkflow = workflows.find(
+        (w) => w.ideaId === ideaId && w.workflowType === "business_plan" && w.status === "completed"
+      );
+
+      if (!planWorkflow) {
+        return res.status(404).json({ error: "No completed business plan found for this idea" });
+      }
+
+      // Get the artifacts
+      const artifacts = await storage.getWorkflowArtifacts(planWorkflow.id);
+      if (!artifacts || artifacts.length === 0) {
+        return res.status(404).json({ error: "No business plan content found" });
+      }
+
+      const artifactContent = artifacts[0].content;
+      if (!artifactContent) {
+        return res.status(404).json({ error: "No business plan content found" });
+      }
+      const sections = JSON.parse(artifactContent);
+
+      // Section mapping from business plan keys to workflow section types
+      const sectionMapping: Record<string, string> = {
+        executiveSummary: "executive_summary",
+        founderFit: "founder_fit",
+        competitiveLandscape: "competitive_landscape",
+        riskMoat: "risk_and_moat",
+        mvpDesign: "mvp_design",
+        teamTalent: "team_and_talent",
+        launchPlan: "launch_plan",
+        schoolAdvantage: "school_advantage",
+        fundingPitch: "funding_pitch",
+      };
+
+      // Populate workflow sections
+      for (const [planKey, sectionType] of Object.entries(sectionMapping)) {
+        const content = sections[planKey];
+        if (content) {
+          await storage.upsertIdeaWorkflowSection(ideaId, sectionType, content, true);
+        }
+      }
+
+      res.json({ success: true, message: "Workflow sections populated from business plan" });
+    } catch (error) {
+      console.error("Populate workflow sections error:", error);
+      res.status(500).json({ error: "Failed to populate workflow sections" });
+    }
+  });
+
   app.get("/api/ideas/:id/workflows", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });

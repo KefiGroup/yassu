@@ -1070,6 +1070,7 @@ export default function IdeaDetail() {
             ideaId={ideaId!}
             isOwner={isOwner}
             hasBusinessPlan={!!businessPlan && businessPlan.status === 'completed'}
+            businessPlanSections={businessPlan?.sections}
           />
         </motion.div>
       )}
