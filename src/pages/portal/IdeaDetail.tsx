@@ -967,7 +967,7 @@ export default function IdeaDetail() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    Founder
+                    Creator
                   </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />

@@ -19,6 +19,7 @@ export const workflowTypeEnum = pgEnum("workflow_type", [
 ]);
 export const pipelineStageEnum = pgEnum("pipeline_stage", ["watchlist", "diligence", "pass", "invest"]);
 export const yassuRoleEnum = pgEnum("yassu_role", ["ambassador", "advisor"]);
+export const badgeTypeEnum = pgEnum("badge_type", ["ambassador", "advisor"]);
 
 export const universities = pgTable("universities", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -88,6 +89,14 @@ export const userRoles = pgTable("user_roles", {
   userId: integer("user_id").references(() => users.id).notNull(),
   role: appRoleEnum("role").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const profileBadges = pgTable("profile_badges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  badgeType: badgeTypeEnum("badge_type").notNull(),
+  awardedBy: integer("awarded_by").references(() => users.id).notNull(),
+  awardedAt: timestamp("awarded_at").defaultNow().notNull(),
 });
 
 export const ideas = pgTable("ideas", {
@@ -293,6 +302,7 @@ export type WorkflowRun = typeof workflowRuns.$inferSelect;
 export type WorkflowArtifact = typeof workflowArtifacts.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type UserRole = typeof userRoles.$inferSelect;
+export type ProfileBadge = typeof profileBadges.$inferSelect;
 export type JoinRequest = typeof joinRequests.$inferSelect;
 export type TeamInvite = typeof teamInvites.$inferSelect;
 export type IdeaWorkflowSection = typeof ideaWorkflowSections.$inferSelect;

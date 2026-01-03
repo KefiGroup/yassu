@@ -206,7 +206,7 @@ export default function Ideas() {
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User className="w-3 h-3" />
-                      <span>Founder</span>
+                      <span>Creator</span>
                     </div>
                     {idea.universityId && (
                       <div className="flex items-center gap-1">

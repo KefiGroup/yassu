@@ -17,10 +17,18 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Save, Loader2, Camera } from 'lucide-react';
+import { Save, Loader2, Camera, Award } from 'lucide-react';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 import { AvatarUploadDialog } from '@/components/AvatarUploadDialog';
+import { apiRequest } from '@/lib/api';
+
+interface ProfileBadge {
+  id: string;
+  userId: number;
+  badgeType: 'ambassador' | 'advisor';
+  awardedAt: string;
+}
 
 interface University {
   id: string;
@@ -32,6 +40,7 @@ export default function Profile() {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [universities, setUniversities] = useState<University[]>([]);
+  const [badges, setBadges] = useState<ProfileBadge[]>([]);
   const [saving, setSaving] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
@@ -46,7 +55,6 @@ export default function Profile() {
     linkedinUrl: '',
     skills: [] as string[],
     interests: [] as string[],
-    yassuRole: '' as '' | 'ambassador' | 'advisor',
     clubType: '',
     otherClubType: '',
   });
@@ -64,6 +72,20 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
+    async function fetchBadges() {
+      try {
+        const data = await apiRequest<ProfileBadge[]>('/profile/badges');
+        setBadges(data);
+      } catch {
+        setBadges([]);
+      }
+    }
+    if (user) {
+      fetchBadges();
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (profile && !initialLoadDone) {
       const hasOtherUniversity = !profile.universityId && profile.otherUniversity;
       const clubValue = (profile as any).clubType || '';
@@ -79,7 +101,6 @@ export default function Profile() {
         linkedinUrl: profile.linkedinUrl || '',
         skills: profile.skills || [],
         interests: profile.interests || [],
-        yassuRole: (profile as any).yassuRole || '',
         clubType: isOtherClub ? 'other' : clubValue,
         otherClubType: isOtherClub ? clubValue.replace('Other: ', '') : '',
       });
@@ -112,7 +133,6 @@ export default function Profile() {
         linkedinUrl: formData.linkedinUrl || null,
         skills: formData.skills,
         interests: formData.interests,
-        yassuRole: formData.yassuRole || null,
         clubType: clubTypeToSave,
         onboardingCompleted: true,
       });
@@ -222,9 +242,19 @@ export default function Profile() {
                   <Camera className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <div>
+              <div className="flex-1">
                 <CardTitle>Personal Information</CardTitle>
                 <CardDescription>Update your profile details</CardDescription>
+                {badges.length > 0 && (
+                  <div className="flex gap-2 mt-2">
+                    {badges.map((badge) => (
+                      <Badge key={badge.id} variant="secondary" className="gap-1">
+                        <Award className="w-3 h-3" />
+                        {badge.badgeType === 'ambassador' ? 'Yassu Ambassador' : 'Yassu Advisor'}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -337,26 +367,6 @@ export default function Profile() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="yassuRole">Yassu Role (Optional)</Label>
-              <Select
-                value={formData.yassuRole}
-                onValueChange={(value) => setFormData({ ...formData, yassuRole: value as '' | 'ambassador' | 'advisor' })}
-              >
-                <SelectTrigger data-testid="select-yassu-role">
-                  <SelectValue placeholder="Select if you want to be an Ambassador or Advisor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ambassador">Yassu Ambassador (Undergrad Student)</SelectItem>
-                  <SelectItem value="advisor">Yassu Advisor (Graduated Professional)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Ambassadors are current university students who represent Yassu on campus. 
-                Advisors are graduated professionals who mentor student founders.
-              </p>
             </div>
 
             <div className="space-y-2">

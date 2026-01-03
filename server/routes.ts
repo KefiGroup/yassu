@@ -761,4 +761,102 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to update workflow section" });
     }
   });
+
+  // ============ Admin Routes ============
+
+  // Check if current user is admin
+  app.get("/api/admin/check", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    res.json({ isAdmin });
+  });
+
+  // Get all profiles with badges (admin only)
+  app.get("/api/admin/profiles", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const profiles = await storage.getProfilesWithBadges();
+      res.json(profiles);
+    } catch (error) {
+      console.error("Fetch profiles error:", error);
+      res.status(500).json({ error: "Failed to fetch profiles" });
+    }
+  });
+
+  // Award badge (admin only)
+  app.post("/api/admin/badges", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const { userId, badgeType } = req.body;
+      if (!userId || !badgeType || !["ambassador", "advisor"].includes(badgeType)) {
+        return res.status(400).json({ error: "Invalid userId or badgeType" });
+      }
+      
+      const badge = await storage.awardBadge(userId, badgeType, req.session.userId);
+      res.json(badge);
+    } catch (error) {
+      console.error("Award badge error:", error);
+      res.status(500).json({ error: "Failed to award badge" });
+    }
+  });
+
+  // Revoke badge (admin only)
+  app.delete("/api/admin/badges/:userId/:badgeType", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const userId = parseInt(req.params.userId);
+      const badgeType = req.params.badgeType as "ambassador" | "advisor";
+      
+      if (!["ambassador", "advisor"].includes(badgeType)) {
+        return res.status(400).json({ error: "Invalid badgeType" });
+      }
+      
+      await storage.revokeBadge(userId, badgeType);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Revoke badge error:", error);
+      res.status(500).json({ error: "Failed to revoke badge" });
+    }
+  });
+
+  // Get user's badges (for profile display)
+  app.get("/api/profile/badges", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const badges = await storage.getUserBadges(req.session.userId);
+      res.json(badges);
+    } catch (error) {
+      console.error("Fetch badges error:", error);
+      res.status(500).json({ error: "Failed to fetch badges" });
+    }
+  });
 }

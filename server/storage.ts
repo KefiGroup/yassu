@@ -4,7 +4,7 @@ import * as schema from "../shared/schema";
 import type { 
   User, Profile, Idea, Team, Project, University, 
   WorkflowRun, WorkflowArtifact, Notification, UserRole, InsertUser,
-  JoinRequest, TeamInvite, IdeaWorkflowSection
+  JoinRequest, TeamInvite, IdeaWorkflowSection, ProfileBadge
 } from "../shared/schema";
 
 export interface ProfileWithMatchingSkills extends Profile {
@@ -79,6 +79,16 @@ export interface IStorage {
   getIdeaWorkflowSections(ideaId: string): Promise<IdeaWorkflowSection[]>;
   getIdeaWorkflowSection(ideaId: string, sectionType: string): Promise<IdeaWorkflowSection | undefined>;
   upsertIdeaWorkflowSection(ideaId: string, sectionType: string, content: string, aiGenerated?: boolean): Promise<IdeaWorkflowSection>;
+  
+  // Profile badges (awarded by superadmin)
+  getUserBadges(userId: number): Promise<ProfileBadge[]>;
+  awardBadge(userId: number, badgeType: "ambassador" | "advisor", awardedBy: number): Promise<ProfileBadge>;
+  revokeBadge(userId: number, badgeType: "ambassador" | "advisor"): Promise<void>;
+  getAllProfiles(): Promise<Profile[]>;
+  getProfilesWithBadges(): Promise<(Profile & { badges: ProfileBadge[] })[]>;
+  
+  // Superadmin check
+  isSuperadmin(userId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -161,8 +171,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProfilesByYassuRole(role: "ambassador" | "advisor"): Promise<Profile[]> {
+    // Get profiles that have the specified badge (awarded by superadmin)
+    const badges = await db.select().from(schema.profileBadges)
+      .where(eq(schema.profileBadges.badgeType, role));
+    
+    if (badges.length === 0) return [];
+    
+    const userIds = badges.map(b => b.userId);
     return db.select().from(schema.profiles)
-      .where(eq(schema.profiles.yassuRole, role))
+      .where(inArray(schema.profiles.userId, userIds))
       .orderBy(schema.profiles.fullName);
   }
 
@@ -356,14 +373,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPotentialTeamMembers(excludeUserId: number, ideaId?: string): Promise<Profile[]> {
-    // Get advisors and ambassadors who can be invited
+    // Get profiles who have ambassador or advisor badges (awarded by superadmin)
+    const badges = await db.select().from(schema.profileBadges);
+    const userIdsWithBadges = [...new Set(badges.map(b => b.userId))].filter(id => id !== excludeUserId);
+    
+    if (userIdsWithBadges.length === 0) return [];
+    
     const profiles = await db.select().from(schema.profiles)
-      .where(
-        and(
-          sql`${schema.profiles.yassuRole} IS NOT NULL`,
-          sql`${schema.profiles.userId} != ${excludeUserId}`
-        )
-      )
+      .where(inArray(schema.profiles.userId, userIdsWithBadges))
       .orderBy(schema.profiles.fullName);
     
     if (!ideaId) return profiles;
@@ -413,6 +430,64 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async getUserBadges(userId: number): Promise<ProfileBadge[]> {
+    return db.select().from(schema.profileBadges)
+      .where(eq(schema.profileBadges.userId, userId))
+      .orderBy(schema.profileBadges.awardedAt);
+  }
+
+  async awardBadge(userId: number, badgeType: "ambassador" | "advisor", awardedBy: number): Promise<ProfileBadge> {
+    // Check if badge already exists
+    const [existing] = await db.select().from(schema.profileBadges)
+      .where(and(
+        eq(schema.profileBadges.userId, userId),
+        eq(schema.profileBadges.badgeType, badgeType)
+      ));
+    
+    if (existing) {
+      return existing;
+    }
+    
+    const [badge] = await db.insert(schema.profileBadges)
+      .values({ userId, badgeType, awardedBy })
+      .returning();
+    return badge;
+  }
+
+  async revokeBadge(userId: number, badgeType: "ambassador" | "advisor"): Promise<void> {
+    await db.delete(schema.profileBadges)
+      .where(and(
+        eq(schema.profileBadges.userId, userId),
+        eq(schema.profileBadges.badgeType, badgeType)
+      ));
+  }
+
+  async getAllProfiles(): Promise<Profile[]> {
+    return db.select().from(schema.profiles)
+      .orderBy(schema.profiles.fullName);
+  }
+
+  async getProfilesWithBadges(): Promise<(Profile & { badges: ProfileBadge[] })[]> {
+    const profiles = await db.select().from(schema.profiles)
+      .orderBy(schema.profiles.fullName);
+    
+    const badges = await db.select().from(schema.profileBadges);
+    
+    return profiles.map(profile => ({
+      ...profile,
+      badges: badges.filter(b => b.userId === profile.userId)
+    }));
+  }
+
+  async isSuperadmin(userId: number): Promise<boolean> {
+    const roles = await db.select().from(schema.userRoles)
+      .where(and(
+        eq(schema.userRoles.userId, userId),
+        eq(schema.userRoles.role, 'admin')
+      ));
+    return roles.length > 0;
   }
 }
 
