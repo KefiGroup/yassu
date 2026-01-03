@@ -75,6 +75,7 @@ export const profiles = pgTable("profiles", {
   githubUrl: text("github_url"),
   portfolioUrl: text("portfolio_url"),
   bio: text("bio"),
+  clubType: text("club_type"),
   verificationStatus: verificationStatusEnum("verification_status").default("pending"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
   yassuRole: yassuRoleEnum("yassu_role"),

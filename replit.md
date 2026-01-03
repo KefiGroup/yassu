@@ -45,8 +45,8 @@ The database includes 20+ tables covering:
 
 ### Key Tables
 - `users` - Authentication with email/password (bcrypt hashed)
-- `profiles` - User profiles with skills, interests, university affiliation
-- `ideas` - Startup ideas with stages (concept, validating, building, launched)
+- `profiles` - User profiles with skills, interests, university affiliation, club type
+- `ideas` - Startup ideas with 7-step journey stages (idea_posted, business_plan, find_advisors, form_team, build_mvp, yassu_foundry, launched)
 - `teams` - Teams formed around ideas
 - `workflow_runs` - AI-powered business analysis workflows
 
@@ -94,6 +94,11 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - Club Affiliation Field
+- Added `clubType` field to profiles schema
+- Profile page now includes "Club Affiliation" dropdown with 13 options (alphabetical):
+  - AI / Data Science Clubs, Business School Associations, Computer Science Clubs, Consulting Clubs, Design / UX Clubs, Engineering Societies, Entrepreneurship Clubs, Innovation / Incubator Clubs, Product Management Clubs, Startup / Founder Clubs, Venture Capital Clubs, Others (with text input), None
+
 ### January 2026 - Dashboard Redesign
 - Redesigned Dashboard with three focused sections:
   1. **My Ideas** - Shows user's own ideas with current stage progress
@@ -111,7 +116,7 @@ npm run db:push  # Push database schema changes
 - Added 7-step journey progress tracker to each idea detail page showing:
   1. Post Idea (completed when idea exists)
   2. Business Plan (current/completed based on plan status)
-  3. Find Mentors (next step after plan generation)
+  3. Find Advisors (next step after plan generation)
   4. Form Team
   5. Build MVP
   6. Yassu Foundry

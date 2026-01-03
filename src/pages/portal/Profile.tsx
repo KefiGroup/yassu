@@ -47,6 +47,8 @@ export default function Profile() {
     skills: [] as string[],
     interests: [] as string[],
     yassuRole: '' as '' | 'ambassador' | 'advisor',
+    clubType: '',
+    otherClubType: '',
   });
 
   useEffect(() => {
@@ -64,6 +66,8 @@ export default function Profile() {
   useEffect(() => {
     if (profile && !initialLoadDone) {
       const hasOtherUniversity = !profile.universityId && profile.otherUniversity;
+      const clubValue = (profile as any).clubType || '';
+      const isOtherClub = clubValue.startsWith('Other: ');
       setFormData({
         fullName: profile.fullName || '',
         bio: profile.bio || '',
@@ -76,6 +80,8 @@ export default function Profile() {
         skills: profile.skills || [],
         interests: profile.interests || [],
         yassuRole: (profile as any).yassuRole || '',
+        clubType: isOtherClub ? 'other' : clubValue,
+        otherClubType: isOtherClub ? clubValue.replace('Other: ', '') : '',
       });
       setInitialLoadDone(true);
     }
@@ -91,6 +97,10 @@ export default function Profile() {
     const otherUniversityToSave = isOtherUniversity ? formData.otherUniversity : null;
     
     try {
+      const clubTypeToSave = formData.clubType === 'other' 
+        ? (formData.otherClubType ? `Other: ${formData.otherClubType}` : null)
+        : (formData.clubType || null);
+
       await api.profile.update({
         fullName: formData.fullName,
         bio: formData.bio,
@@ -103,6 +113,7 @@ export default function Profile() {
         skills: formData.skills,
         interests: formData.interests,
         yassuRole: formData.yassuRole || null,
+        clubType: clubTypeToSave,
         onboardingCompleted: true,
       });
 
@@ -346,6 +357,43 @@ export default function Profile() {
                 Ambassadors are current university students who represent Yassu on campus. 
                 Advisors are graduated professionals who mentor student founders.
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="clubType">Club Affiliation</Label>
+              <Select
+                value={formData.clubType}
+                onValueChange={(value) => setFormData({ ...formData, clubType: value, otherClubType: value === 'other' ? formData.otherClubType : '' })}
+              >
+                <SelectTrigger data-testid="select-club-type">
+                  <SelectValue placeholder="Select your club affiliation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ai-data-science">AI / Data Science Clubs</SelectItem>
+                  <SelectItem value="business-school">Business School Associations</SelectItem>
+                  <SelectItem value="computer-science">Computer Science Clubs</SelectItem>
+                  <SelectItem value="consulting">Consulting Clubs</SelectItem>
+                  <SelectItem value="design-ux">Design / UX Clubs</SelectItem>
+                  <SelectItem value="engineering">Engineering Societies</SelectItem>
+                  <SelectItem value="entrepreneurship">Entrepreneurship Clubs</SelectItem>
+                  <SelectItem value="innovation-incubator">Innovation / Incubator Clubs</SelectItem>
+                  <SelectItem value="product-management">Product Management Clubs</SelectItem>
+                  <SelectItem value="startup-founder">Startup / Founder Clubs</SelectItem>
+                  <SelectItem value="venture-capital">Venture Capital Clubs</SelectItem>
+                  <SelectItem value="other">Others (specify)</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
+                </SelectContent>
+              </Select>
+              {formData.clubType === 'other' && (
+                <Input
+                  id="otherClubType"
+                  value={formData.otherClubType}
+                  onChange={(e) => setFormData({ ...formData, otherClubType: e.target.value })}
+                  placeholder="Enter your club name"
+                  className="mt-2"
+                  data-testid="input-other-club-type"
+                />
+              )}
             </div>
 
             <GroupedMultiSelect
