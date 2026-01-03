@@ -262,6 +262,17 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Editable workflow sections for business plans - allows users to customize AI-generated content
+export const ideaWorkflowSections = pgTable("idea_workflow_sections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ideaId: uuid("idea_id").references(() => ideas.id).notNull(),
+  sectionType: workflowTypeEnum("section_type").notNull(),
+  content: text("content").default(""),
+  aiGenerated: boolean("ai_generated").default(true), // tracks if content was auto-populated from AI
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIdeaSchema = createInsertSchema(ideas).omit({ id: true, createdAt: true, updatedAt: true });
@@ -282,6 +293,7 @@ export type Notification = typeof notifications.$inferSelect;
 export type UserRole = typeof userRoles.$inferSelect;
 export type JoinRequest = typeof joinRequests.$inferSelect;
 export type TeamInvite = typeof teamInvites.$inferSelect;
+export type IdeaWorkflowSection = typeof ideaWorkflowSections.$inferSelect;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";
