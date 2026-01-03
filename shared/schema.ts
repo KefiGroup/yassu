@@ -20,6 +20,7 @@ export const workflowTypeEnum = pgEnum("workflow_type", [
 export const pipelineStageEnum = pgEnum("pipeline_stage", ["watchlist", "diligence", "pass", "invest"]);
 export const yassuRoleEnum = pgEnum("yassu_role", ["ambassador", "advisor"]);
 export const badgeTypeEnum = pgEnum("badge_type", ["ambassador", "advisor"]);
+export const connectionStatusEnum = pgEnum("connection_status", ["pending", "accepted", "rejected", "cancelled"]);
 
 export const universities = pgTable("universities", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -284,12 +285,24 @@ export const ideaWorkflowSections = pgTable("idea_workflow_sections", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// User connections - LinkedIn/Facebook style connection requests
+export const connections = pgTable("connections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  requesterId: integer("requester_id").references(() => users.id).notNull(),
+  recipientId: integer("recipient_id").references(() => users.id).notNull(),
+  status: connectionStatusEnum("status").default("pending").notNull(),
+  message: text("message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  respondedAt: timestamp("responded_at"),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIdeaSchema = createInsertSchema(ideas).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUniversitySchema = createInsertSchema(universities).omit({ id: true, createdAt: true });
+export const insertConnectionSchema = createInsertSchema(connections).omit({ id: true, createdAt: true, respondedAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -306,6 +319,8 @@ export type ProfileBadge = typeof profileBadges.$inferSelect;
 export type JoinRequest = typeof joinRequests.$inferSelect;
 export type TeamInvite = typeof teamInvites.$inferSelect;
 export type IdeaWorkflowSection = typeof ideaWorkflowSections.$inferSelect;
+export type Connection = typeof connections.$inferSelect;
+export type InsertConnection = z.infer<typeof insertConnectionSchema>;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";
