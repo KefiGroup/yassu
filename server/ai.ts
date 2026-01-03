@@ -1,13 +1,23 @@
 import OpenAI from "openai";
 import { batchProcess } from "./replit_integrations/batch";
 
+const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+
+console.log("[AI] Initializing OpenAI client...");
+console.log("[AI] Base URL configured:", baseURL ? "Yes" : "No");
+console.log("[AI] API Key configured:", apiKey ? "Yes" : "No");
+
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: apiKey || "dummy-key",
+  baseURL: baseURL,
 });
 
-if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+if (!apiKey) {
   console.error("[AI] Warning: AI_INTEGRATIONS_OPENAI_API_KEY is not set");
+}
+if (!baseURL) {
+  console.error("[AI] Warning: AI_INTEGRATIONS_OPENAI_BASE_URL is not set");
 }
 
 interface IdeaInput {
