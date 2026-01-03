@@ -438,7 +438,6 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
         model: "gpt-5.1",
         messages: [{ role: "user", content: section.prompt }],
         max_completion_tokens: 8192,
-        temperature: 0.7,
       });
       
       const content = response.choices[0]?.message?.content || `## ${section.title}\n\nGeneration failed. Please try again.`;
@@ -528,7 +527,6 @@ Generate an Executive Summary in markdown format covering:
 Keep it to ~400 words. Make it compelling enough to hook an investor or co-founder.`
     }],
     max_completion_tokens: 4096,
-    temperature: 0.7,
   });
 
   return response.choices[0]?.message?.content || "## Executive Summary\n\nGeneration pending...";
