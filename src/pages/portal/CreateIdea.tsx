@@ -53,7 +53,7 @@ export default function CreateIdea() {
         title: formData.title,
         problem: formData.problem,
         solution: formData.idea,
-        stage: 'concept',
+        stage: 'idea_posted',
         isPublic: true,
       });
 
