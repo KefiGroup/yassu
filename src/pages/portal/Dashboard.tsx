@@ -273,7 +273,7 @@ export default function Dashboard() {
               <Users className="w-5 h-5 text-blue-500" />
               Team Join Requests
             </CardTitle>
-            <CardDescription>Advisors and Ambassadors requesting to join your ideas</CardDescription>
+            <CardDescription>Collaborators requesting to join your ideas</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -370,7 +370,7 @@ export default function Dashboard() {
               <UserPlus className="w-5 h-5 text-emerald-500" />
               People to Invite
             </CardTitle>
-            <CardDescription>Suggested Advisors and Ambassadors you may want to invite to your team</CardDescription>
+            <CardDescription>Suggested Collaborators you may want to invite to your team</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
