@@ -99,10 +99,16 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
-### January 2026 - Editable Business Plan Workflows
+### January 2026 - Inline Business Plan Editing
+- Removed separate "My Workflows" component
+- Added inline Edit button to each business plan section (Full Plan + 8 sections)
+- Owners can edit sections directly via modal dialog with Markdown support
+- Changes are saved to `ideaWorkflowSections` table
+- API endpoint: `PATCH /api/ideas/:id/workflows/:sectionType` for saving edits
+
+### January 2026 - Editable Business Plan Workflows (earlier)
 - Added `ideaWorkflowSections` table to store editable versions of business plan sections
 - Founders can now customize and refine AI-generated business plan content
-- New "My Workflows" card appears on idea detail page for idea owners
 - Auto-populates 9 sections from AI when business plan is generated:
   - Executive Summary, Founder Fit, Competitive Landscape, Risk & Moat, MVP Design, Team & Talent, Launch Plan, School Advantage, Funding Pitch
 - New API endpoints:

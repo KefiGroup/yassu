@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
+import { api, apiRequest } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,8 +52,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SKILL_OPTIONS } from '@/lib/profileOptions';
-import MyWorkflows from '@/components/portal/MyWorkflows';
 
 interface Idea {
   id: string;
@@ -142,6 +149,10 @@ export default function IdeaDetail() {
   const [activeTab, setActiveTab] = useState('executiveSummary');
   const [potentialTeamMembers, setPotentialTeamMembers] = useState<PotentialTeamMember[]>([]);
   const [loadingTeamMembers, setLoadingTeamMembers] = useState(false);
+  
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function fetchIdea() {
@@ -383,6 +394,63 @@ export default function IdeaDetail() {
       });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const sectionKeyToDbType: Record<string, string> = {
+    executiveSummary: 'executive_summary',
+    founderFit: 'founder_fit',
+    competitiveLandscape: 'competitive_landscape',
+    riskMoat: 'risk_and_moat',
+    mvpDesign: 'mvp_design',
+    teamTalent: 'team_and_talent',
+    launchPlan: 'launch_plan',
+    schoolAdvantage: 'school_advantage',
+    fundingPitch: 'funding_pitch',
+  };
+
+  const handleEditSection = (sectionId: string) => {
+    if (!businessPlan?.sections) return;
+    const content = businessPlan.sections[sectionId as keyof typeof businessPlan.sections] || '';
+    setEditContent(content);
+    setEditingSection(sectionId);
+  };
+
+  const handleSaveSection = async () => {
+    if (!editingSection || !ideaId) return;
+    
+    setSaving(true);
+    try {
+      const dbSectionType = sectionKeyToDbType[editingSection];
+      await apiRequest(`/ideas/${ideaId}/workflows/${dbSectionType}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content: editContent }),
+      });
+      
+      setBusinessPlan(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: {
+            ...prev.sections,
+            [editingSection]: editContent,
+          },
+        };
+      });
+      
+      toast({
+        title: 'Section Updated',
+        description: 'Your changes have been saved.',
+      });
+      setEditingSection(null);
+    } catch (error) {
+      toast({
+        title: 'Save Failed',
+        description: 'Could not save changes. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -966,11 +1034,24 @@ export default function IdeaDetail() {
                     <TabsContent key={section.id} value={section.id} className="mt-6">
                       <Card className="bg-muted/30">
                         <CardContent className="p-6">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <section.icon className="w-4 h-4 text-primary" />
+                          <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <section.icon className="w-4 h-4 text-primary" />
+                              </div>
+                              <h3 className="font-semibold text-lg">{section.label}</h3>
                             </div>
-                            <h3 className="font-semibold text-lg">{section.label}</h3>
+                            {isOwner && businessPlan.sections[section.id as keyof typeof businessPlan.sections] && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditSection(section.id)}
+                                data-testid={`button-edit-${section.id}`}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </Button>
+                            )}
                           </div>
                           <div className="prose prose-sm dark:prose-invert max-w-none">
                             {businessPlan.sections[section.id as keyof typeof businessPlan.sections] ? (
@@ -1059,21 +1140,52 @@ export default function IdeaDetail() {
         </Card>
       </motion.div>
 
-      {/* My Workflows - Editable Business Plan Sections */}
-      {isOwner && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.35 }}
-        >
-          <MyWorkflows
-            ideaId={ideaId!}
-            isOwner={isOwner}
-            hasBusinessPlan={!!businessPlan && businessPlan.status === 'completed'}
-            businessPlanSections={businessPlan?.sections}
-          />
-        </motion.div>
-      )}
+      <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              Edit {planSections.find(s => s.id === editingSection)?.label || 'Section'}
+            </DialogTitle>
+            <DialogDescription>
+              Edit the content below using Markdown formatting. Changes will be saved when you click Save.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto min-h-0">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="min-h-[400px] font-mono text-sm resize-none"
+              placeholder="Enter content using Markdown..."
+              data-testid="textarea-edit-section"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditingSection(null)}
+              disabled={saving}
+              data-testid="button-cancel-edit"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSection}
+              disabled={saving}
+              data-testid="button-save-section"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
