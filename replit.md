@@ -94,6 +94,16 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - How Yassu Works Section
+- Updated "How Yassu Works" section with 7-step journey:
+  1. Post an Idea (Yassu!)
+  2. Generate Business Plan with Yassu Agent
+  3. Find Advisors & Ambassadors
+  4. Form Your Yassu Team
+  5. Work on MVP
+  6. Present in Yassu Foundry
+  7. Seek Funding / Market Launch
+
 ### January 2026 - Yassu Advisors & Ambassadors
 - Added `yassuRole` field to profiles schema (ambassador, advisor, or null)
 - Ambassadors are undergrad students who represent Yassu on campus

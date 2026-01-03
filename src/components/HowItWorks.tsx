@@ -1,26 +1,41 @@
 import { motion } from "framer-motion";
-import { UserCheck, Lightbulb, Users, Rocket } from "lucide-react";
+import { Lightbulb, FileText, Users, UsersRound, Wrench, Presentation, TrendingUp } from "lucide-react";
 
 const steps = [
   {
-    icon: UserCheck,
-    title: "Join the Network",
-    description: "Free access for members of recognized university clubs. Club-to-club connection with local accountability.",
+    icon: Lightbulb,
+    title: "Post an Idea (Yassu!)",
+    description: "Explain what your idea is and what problem it solves.",
   },
   {
-    icon: Lightbulb,
-    title: "Post or Find Ideas",
-    description: "A two-sided marketplace: Ideas seeking builders, builders seeking meaningful companies.",
+    icon: FileText,
+    title: "Generate Business Plan",
+    description: "Use the Yassu Agent to create a comprehensive business plan with market analysis and strategy.",
   },
   {
     icon: Users,
-    title: "Form Execution-Ready Teams",
-    description: "Cross-university talent liquidity. Match with peers who bring complementary skills and shared ambition.",
+    title: "Find Advisors & Ambassadors",
+    description: "Yassu will find matching Advisors and Ambassadors for your team invites.",
   },
   {
-    icon: Rocket,
-    title: "Build Real Companies",
-    description: "Company formation is the goal. Funding is optional. Let execution determine what survives.",
+    icon: UsersRound,
+    title: "Form Your Yassu Team",
+    description: "Build your founding team with complementary skills and shared vision.",
+  },
+  {
+    icon: Wrench,
+    title: "Work on MVP",
+    description: "Develop your minimum viable product with guidance from your team and advisors.",
+  },
+  {
+    icon: Presentation,
+    title: "Present in Yassu Foundry",
+    description: "Showcase your progress and get feedback from the Yassu community.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Seek Funding / Market Launch",
+    description: "Take your company to market or pursue funding opportunities.",
   },
 ];
 
@@ -38,15 +53,14 @@ const HowItWorks = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            The <span className="text-gradient">Foundry</span> Model
+            How <span className="text-gradient">Yassu</span> Works
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            A foundry accepts many raw inputs, applies shared structure and discipline, 
-            and produces fewer, stronger outcomes. Execution determines what survives.
+            From idea to market launch, Yassu guides you through every step of building your university-native company.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {steps.map((step, index) => (
             <motion.div
               key={step.title}
