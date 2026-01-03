@@ -6,20 +6,23 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
 
+// Readiness flag - server responds OK until fully ready
+let isReady = false;
+
 const app = express();
 const server = createServer(app);
 
-// Health check endpoints - FIRST, plain text OK for all environments
+// Health check endpoints - ALWAYS return OK immediately until ready
+// After ready, browser requests fall through to SPA
 app.head("/", (_req, res) => res.sendStatus(200));
 app.head("/health", (_req, res) => res.sendStatus(200));
 app.get("/health", (_req, res) => res.status(200).type("text/plain").send("OK"));
 app.get("/", (_req, res, next) => {
-  // Health checks don't send Accept: text/html
-  const accept = _req.headers.accept || "";
-  if (!accept.includes("text/html")) {
+  // Until ready, always return plain OK (for health checks during startup)
+  if (!isReady) {
     return res.status(200).type("text/plain").send("OK");
   }
-  // Real browser requests fall through to SPA
+  // Once ready, let browser requests through to SPA
   next();
 });
 
@@ -85,21 +88,29 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   throw err;
 });
 
-// Bootstrap function
+// Bootstrap function - complete all setup before listening
 async function bootstrap() {
-  // Setup static/Vite BEFORE listening
+  // Seed database BEFORE listening
+  try {
+    await seedDatabase();
+  } catch (err) {
+    console.error("Database seeding error (continuing):", err);
+  }
+
+  // Setup static/Vite
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
     await setupVite(app, server);
   }
 
-  // Start listening
+  // Start listening - server is now fully ready
   const port = 5000;
   server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
     log(`serving on port ${port}`);
-    // Seed database asynchronously - don't block
-    void seedDatabase().catch(err => console.error("Database seeding error:", err));
+    // Mark as ready - now SPA requests will be served
+    isReady = true;
+    log("Server is ready");
   });
 }
 
