@@ -1,9 +1,10 @@
 import { db } from "./db";
-import { eq, desc, and, or, sql } from "drizzle-orm";
+import { eq, desc, and, or, sql, inArray } from "drizzle-orm";
 import * as schema from "../shared/schema";
 import type { 
   User, Profile, Idea, Team, Project, University, 
-  WorkflowRun, WorkflowArtifact, Notification, UserRole, InsertUser
+  WorkflowRun, WorkflowArtifact, Notification, UserRole, InsertUser,
+  JoinRequest, TeamInvite
 } from "../shared/schema";
 
 export interface ProfileWithMatchingSkills extends Profile {
@@ -57,6 +58,21 @@ export interface IStorage {
   markNotificationRead(id: string): Promise<void>;
 
   getUniversityResources(universityId: string): Promise<any[]>;
+  
+  // User's own ideas
+  getUserIdeas(userId: number): Promise<Idea[]>;
+  
+  // Join requests for user's ideas
+  getJoinRequestsForUserIdeas(userId: number): Promise<(JoinRequest & { requester: Profile; idea: Idea })[]>;
+  createJoinRequest(data: Partial<JoinRequest>): Promise<JoinRequest>;
+  updateJoinRequest(id: string, data: Partial<JoinRequest>): Promise<JoinRequest | undefined>;
+  
+  // Team invites
+  getTeamInvitesFromUser(userId: number): Promise<TeamInvite[]>;
+  createTeamInvite(data: Partial<TeamInvite>): Promise<TeamInvite>;
+  
+  // Potential team members (advisors/ambassadors for inviting)
+  getPotentialTeamMembers(excludeUserId: number, ideaId?: string): Promise<Profile[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -269,6 +285,93 @@ export class DatabaseStorage implements IStorage {
   async getUniversityResources(universityId: string): Promise<any[]> {
     return db.select().from(schema.universityResources)
       .where(eq(schema.universityResources.universityId, universityId));
+  }
+
+  async getUserIdeas(userId: number): Promise<Idea[]> {
+    return db.select().from(schema.ideas)
+      .where(eq(schema.ideas.createdBy, userId))
+      .orderBy(desc(schema.ideas.createdAt));
+  }
+
+  async getJoinRequestsForUserIdeas(userId: number): Promise<(JoinRequest & { requester: Profile; idea: Idea })[]> {
+    const userIdeas = await this.getUserIdeas(userId);
+    const ideaIds = userIdeas.map(i => i.id);
+    
+    if (ideaIds.length === 0) return [];
+    
+    const requests = await db.select()
+      .from(schema.joinRequests)
+      .where(and(
+        inArray(schema.joinRequests.ideaId, ideaIds),
+        eq(schema.joinRequests.status, "pending")
+      ))
+      .orderBy(desc(schema.joinRequests.createdAt));
+    
+    const results: (JoinRequest & { requester: Profile; idea: Idea })[] = [];
+    
+    for (const request of requests) {
+      const [requester] = await db.select().from(schema.profiles)
+        .where(eq(schema.profiles.userId, request.userId));
+      const idea = userIdeas.find(i => i.id === request.ideaId);
+      
+      if (requester && idea) {
+        results.push({ ...request, requester, idea });
+      }
+    }
+    
+    return results;
+  }
+
+  async createJoinRequest(data: Partial<JoinRequest>): Promise<JoinRequest> {
+    const [request] = await db.insert(schema.joinRequests).values(data as any).returning();
+    return request;
+  }
+
+  async updateJoinRequest(id: string, data: Partial<JoinRequest>): Promise<JoinRequest | undefined> {
+    const [updated] = await db.update(schema.joinRequests)
+      .set(data)
+      .where(eq(schema.joinRequests.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getTeamInvitesFromUser(userId: number): Promise<TeamInvite[]> {
+    return db.select().from(schema.teamInvites)
+      .where(eq(schema.teamInvites.inviterId, userId))
+      .orderBy(desc(schema.teamInvites.createdAt));
+  }
+
+  async createTeamInvite(data: Partial<TeamInvite>): Promise<TeamInvite> {
+    const [invite] = await db.insert(schema.teamInvites).values(data as any).returning();
+    return invite;
+  }
+
+  async getPotentialTeamMembers(excludeUserId: number, ideaId?: string): Promise<Profile[]> {
+    // Get advisors and ambassadors who can be invited
+    const profiles = await db.select().from(schema.profiles)
+      .where(
+        and(
+          sql`${schema.profiles.yassuRole} IS NOT NULL`,
+          sql`${schema.profiles.userId} != ${excludeUserId}`
+        )
+      )
+      .orderBy(schema.profiles.fullName);
+    
+    if (!ideaId) return profiles;
+    
+    // Filter out already invited users for this idea
+    const existingInvites = await db.select().from(schema.teamInvites)
+      .where(eq(schema.teamInvites.ideaId, ideaId));
+    
+    const existingRequests = await db.select().from(schema.joinRequests)
+      .where(eq(schema.joinRequests.ideaId, ideaId));
+    
+    const excludeUserIds = new Set([
+      ...existingInvites.map(i => i.inviteeId),
+      ...existingRequests.map(r => r.userId)
+    ]);
+    
+    return profiles.filter(p => !excludeUserIds.has(p.userId));
   }
 }
 

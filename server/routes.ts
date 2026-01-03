@@ -449,4 +449,108 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to update notification" });
     }
   });
+
+  // Dashboard endpoints
+  app.get("/api/ideas/mine", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const ideas = await storage.getUserIdeas(req.session.userId);
+      res.json(ideas);
+    } catch (error) {
+      console.error("Fetch user ideas error:", error);
+      res.status(500).json({ error: "Failed to fetch ideas" });
+    }
+  });
+
+  app.get("/api/join-requests", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const requests = await storage.getJoinRequestsForUserIdeas(req.session.userId);
+      res.json(requests);
+    } catch (error) {
+      console.error("Fetch join requests error:", error);
+      res.status(500).json({ error: "Failed to fetch join requests" });
+    }
+  });
+
+  app.post("/api/join-requests", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { ideaId, message } = req.body;
+      const request = await storage.createJoinRequest({
+        userId: req.session.userId,
+        ideaId,
+        message,
+        status: "pending"
+      });
+      res.json(request);
+    } catch (error) {
+      console.error("Create join request error:", error);
+      res.status(500).json({ error: "Failed to create join request" });
+    }
+  });
+
+  app.patch("/api/join-requests/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { status } = req.body;
+      if (!["accepted", "rejected"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      
+      const updated = await storage.updateJoinRequest(req.params.id, { status });
+      res.json(updated);
+    } catch (error) {
+      console.error("Update join request error:", error);
+      res.status(500).json({ error: "Failed to update join request" });
+    }
+  });
+
+  app.get("/api/profiles/potential-team", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const ideaId = req.query.ideaId as string | undefined;
+      const profiles = await storage.getPotentialTeamMembers(req.session.userId, ideaId);
+      res.json(profiles);
+    } catch (error) {
+      console.error("Fetch potential team members error:", error);
+      res.status(500).json({ error: "Failed to fetch potential team members" });
+    }
+  });
+
+  app.post("/api/team-invites", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { ideaId, inviteeId, message } = req.body;
+      const invite = await storage.createTeamInvite({
+        ideaId,
+        inviterId: req.session.userId,
+        inviteeId,
+        message,
+        status: "pending"
+      });
+      res.json(invite);
+    } catch (error) {
+      console.error("Create team invite error:", error);
+      res.status(500).json({ error: "Failed to create invite" });
+    }
+  });
 }

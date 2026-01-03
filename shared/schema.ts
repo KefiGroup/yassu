@@ -141,6 +141,16 @@ export const joinRequests = pgTable("join_requests", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const teamInvites = pgTable("team_invites", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ideaId: uuid("idea_id").references(() => ideas.id).notNull(),
+  inviterId: integer("inviter_id").references(() => users.id).notNull(),
+  inviteeId: integer("invitee_id").references(() => users.id).notNull(),
+  message: text("message"),
+  status: text("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey().defaultRandom(),
   teamId: uuid("team_id").references(() => teams.id).notNull(),
@@ -269,6 +279,8 @@ export type WorkflowRun = typeof workflowRuns.$inferSelect;
 export type WorkflowArtifact = typeof workflowArtifacts.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type UserRole = typeof userRoles.$inferSelect;
+export type JoinRequest = typeof joinRequests.$inferSelect;
+export type TeamInvite = typeof teamInvites.$inferSelect;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";
