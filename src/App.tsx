@@ -10,6 +10,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
 import Advisors from "./pages/Advisors";
 import AmbassadorsPage from "./pages/AmbassadorsPage";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { PortalLayout } from "./layouts/PortalLayout";
 import Dashboard from "./pages/portal/Dashboard";
 import Ideas from "./pages/portal/Ideas";
@@ -41,6 +43,8 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/advisors" element={<Advisors />} />
             <Route path="/ambassadors" element={<AmbassadorsPage />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             
             {/* Portal Routes */}
             <Route path="/portal" element={<PortalLayout />}>

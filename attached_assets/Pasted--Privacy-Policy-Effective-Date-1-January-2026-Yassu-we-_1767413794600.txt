@@ -1,0 +1,111 @@
+# Privacy Policy
+
+**Effective Date:** 1 January 2026
+
+Yassu (“we”, “our”, or “us”) respects your privacy. This Privacy Policy explains how we collect, use, and protect information when you use the Yassu platform.
+
+---
+
+## 1. Information We Collect
+
+### Information You Provide
+
+* Name, email address, and profile details
+* University or affiliation information
+* Content you submit (ideas, messages, documents, uploads)
+* Verification materials, where applicable
+
+### Information Collected Automatically
+
+* IP address and device information
+* Browser type and usage data
+* Pages viewed, actions taken, and interaction data
+* Cookies and similar technologies
+
+---
+
+## 2. How We Use Information
+
+We use your information to:
+
+* Operate and improve the Services
+* Verify eligibility and affiliations
+* Enable collaboration and communication
+* Provide support and respond to inquiries
+* Maintain security and prevent misuse
+* Comply with legal and regulatory obligations
+
+---
+
+## 3. AI Processing
+
+Some user content may be processed using AI services to generate summaries, workflows, or recommendations.
+
+We do **not** sell personal data.
+We do **not** use private user content to train public AI models without authorization.
+
+---
+
+## 4. Sharing of Information
+
+We may share information with:
+
+* Service providers (hosting, analytics, AI infrastructure)
+* Legal authorities if required by law
+* Parties necessary to protect Yassu’s rights, users, or platform integrity
+
+We do **not** sell or rent personal information.
+
+---
+
+## 5. Data Retention
+
+We retain personal information only as long as necessary to:
+
+* Provide the Services
+* Meet legal, accounting, or compliance requirements
+
+Users may request account deletion, subject to lawful retention obligations.
+
+---
+
+## 6. Data Security
+
+We use reasonable administrative, technical, and organizational measures to protect information. However, no system is completely secure.
+
+---
+
+## 7. Your Rights
+
+Depending on applicable law, you may have the right to:
+
+* Access your personal data
+* Correct inaccurate information
+* Request deletion of your data
+* Object to certain data processing activities
+
+Requests may be submitted to **[hello@yassu.co](mailto:hello@yassu.co)**
+
+---
+
+## 8. Children’s Privacy
+
+Yassu is not intended for children under the age of 13. We do not knowingly collect personal information from children.
+
+---
+
+## 9. International Users
+
+Your information may be processed in the United States or other jurisdictions. By using Yassu, you consent to such processing.
+
+---
+
+## 10. Changes to This Privacy Policy
+
+We may update this Privacy Policy periodically. Updates will be posted on this page with a revised effective date.
+
+---
+
+## 11. Contact
+
+If you have questions or concerns about this Privacy Policy, contact us at **[hello@yassu.co](mailto:hello@yassu.co)**

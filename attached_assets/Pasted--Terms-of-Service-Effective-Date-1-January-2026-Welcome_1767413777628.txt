@@ -1,0 +1,142 @@
+# Terms of Service
+
+**Effective Date:** 1 January 2026
+
+Welcome to **Yassu** (“Yassu”, “we”, “our”, or “us”). These Terms of Service (“Terms”) govern your access to and use of the Yassu website, platform, and related services (collectively, the “Services”).
+
+By accessing or using Yassu, you agree to be bound by these Terms. If you do not agree, you must not use the Services.
+
+---
+
+## 1. Eligibility
+
+Yassu is intended for users who are at least **18 years old**, or who have legal parental or guardian consent where required by law.
+
+By using Yassu, you represent that you meet these requirements.
+
+---
+
+## 2. Accounts and Verification
+
+You are responsible for:
+
+* Providing accurate and current information
+* Maintaining the confidentiality of your account credentials
+* All activity that occurs under your account
+
+Certain features may require **verification**, including university affiliation or club membership. Verification confirms eligibility only and does **not** constitute endorsement, certification, or validation by Yassu.
+
+We reserve the right to suspend or terminate accounts that provide false, misleading, or incomplete information.
+
+---
+
+## 3. User Content
+
+You retain ownership of all content you submit to Yassu, including profiles, ideas, messages, documents, and uploads (“User Content”).
+
+By submitting User Content, you grant Yassu a **non-exclusive, worldwide, royalty-free license** to host, store, process, display, and use such content solely to operate, improve, and provide the Services.
+
+You represent and warrant that:
+
+* You own or have the necessary rights to your User Content
+* Your User Content does not violate any law or third-party rights
+
+---
+
+## 4. AI-Generated Content
+
+Yassu may provide AI-generated content, insights, workflows, or recommendations.
+
+You acknowledge and agree that:
+
+* AI outputs are provided for **informational purposes only**
+* Outputs may be inaccurate, incomplete, or outdated
+* You are solely responsible for verifying information before relying on it
+
+Yassu does **not** provide legal, medical, financial, or investment advice.
+
+---
+
+## 5. Marketplace, Teams, and Projects
+
+Yassu facilitates discovery, collaboration, and execution but is **not a party** to:
+
+* Agreements between users
+* Team arrangements
+* Equity, compensation, intellectual property, or employment decisions
+
+Users are solely responsible for defining, documenting, and enforcing their own agreements.
+
+---
+
+## 6. No Guarantees
+
+Yassu does not guarantee:
+
+* Funding or investment
+* Employment or hiring outcomes
+* Team formation or project success
+* Acceptance by investors, sponsors, or institutions
+
+Any investor-related features are for **discovery and evaluation only** and do not constitute solicitation or endorsement.
+
+---
+
+## 7. Prohibited Conduct
+
+You agree not to:
+
+* Misrepresent your identity or affiliations
+* Upload malicious software or harmful content
+* Scrape, reverse engineer, or disrupt the platform
+* Harass, spam, or exploit other users
+* Use Yassu for unlawful, deceptive, or abusive activities
+
+---
+
+## 8. Suspension and Termination
+
+We may suspend or terminate your access to Yassu at any time if:
+
+* You violate these Terms
+* Your conduct poses legal, security, or reputational risk
+* Required by law or regulation
+
+You may stop using Yassu at any time.
+
+---
+
+## 9. Intellectual Property
+
+All Yassu trademarks, logos, software, and platform designs are owned by Yassu or its licensors. You may not use them without prior written permission.
+
+---
+
+## 10. Disclaimer of Warranties
+
+Yassu is provided **“as is” and “as available.”**
+We make no warranties of any kind, express or implied, regarding reliability, accuracy, or availability.
+
+---
+
+## 11. Limitation of Liability
+
+To the maximum extent permitted by law, Yassu shall not be liable for any indirect, incidental, consequential, or special damages, including loss of data, profits, or opportunities.
+
+---
+
+## 12. Governing Law
+
+These Terms are governed by and construed in accordance with the laws of the **United States**, without regard to conflict of law principles.
+
+---
+
+## 13. Changes to These Terms
+
+We may update these Terms from time to time. Continued use of Yassu after changes take effect constitutes acceptance of the updated Terms.
+
+---
+
+## 14. Contact
+
+Questions about these Terms may be sent to **[hello@yassu.co](mailto:hello@yassu.co)**

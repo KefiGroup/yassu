@@ -23,9 +23,9 @@ const Footer = () => {
           </p>
 
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-            <a href="#" className="hover:text-foreground transition-colors">Contact</a>
+            <a href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-privacy">Privacy</a>
+            <a href="/terms" className="hover:text-foreground transition-colors" data-testid="link-terms">Terms</a>
+            <a href="mailto:hello@yassu.co" className="hover:text-foreground transition-colors" data-testid="link-contact">Contact</a>
           </div>
         </motion.div>
 
