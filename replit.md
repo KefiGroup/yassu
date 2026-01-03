@@ -99,6 +99,13 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - New User Profile Completion Prompt
+- Added profile completion banner on Dashboard for new users
+- Banner appears when profile is incomplete (missing bio, skills, interests, or university)
+- Prominent card with "Complete Profile" button directs users to profile page
+- Welcome message adjusts based on profile completion status
+- Removed hardcoded notification badge from header
+
 ### January 2026 - Collaborators Marketplace & Profile View
 - Added `/portal/collaborators` page showing all platform users
 - Filter options via slide-out panel (Sheet component):

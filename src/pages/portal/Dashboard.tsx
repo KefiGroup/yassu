@@ -21,6 +21,8 @@ import {
   Briefcase,
   Link2,
   MessageSquare,
+  User,
+  ArrowRight,
 } from 'lucide-react';
 interface Profile {
   id: number;
@@ -195,18 +197,55 @@ export default function Dashboard() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  // Check if profile is incomplete (missing key fields)
+  const isProfileIncomplete = !profile?.bio || 
+    !profile?.skills?.length || 
+    !profile?.interests?.length ||
+    !profile?.universityId;
+
   return (
     <div className="space-y-8">
+      {/* Profile Completion Prompt */}
+      {isProfileIncomplete && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground">Complete Your Profile</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Add your skills, interests, and bio to help others find you and build your team.
+                  </p>
+                </div>
+                <Button onClick={() => navigate('/portal/profile')} data-testid="button-complete-profile">
+                  Complete Profile
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
         <h1 className="text-3xl font-bold text-foreground" data-testid="text-welcome">
-          Welcome back, {profile?.fullName?.split(' ')[0] || 'Founder'}!
+          Welcome{isProfileIncomplete ? '' : ' back'}, {profile?.fullName?.split(' ')[0] || 'Founder'}!
         </h1>
         <p className="text-muted-foreground mt-1">
-          Manage your ideas and build your team.
+          {isProfileIncomplete 
+            ? 'Get started by completing your profile to connect with others.'
+            : 'Manage your ideas and build your team.'}
         </p>
       </motion.div>
 
