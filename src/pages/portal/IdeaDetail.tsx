@@ -13,25 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { 
-  MDXEditor, 
-  headingsPlugin,
-  listsPlugin,
-  quotePlugin,
-  thematicBreakPlugin,
-  markdownShortcutPlugin,
-  tablePlugin,
-  linkPlugin,
-  linkDialogPlugin,
-  toolbarPlugin,
-  BoldItalicUnderlineToggles,
-  BlockTypeSelect,
-  CreateLink,
-  InsertTable,
-  ListsToggle,
-  UndoRedo,
-} from '@mdxeditor/editor';
-import '@mdxeditor/editor/style.css';
+import MDEditor from '@uiw/react-md-editor';
+import '@uiw/react-md-editor/markdown-editor.css';
+import '@uiw/react-markdown-preview/markdown.css';
 import {
   ArrowLeft,
   Calendar,
@@ -171,6 +155,7 @@ export default function IdeaDetail() {
   
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [editorKey, setEditorKey] = useState(0);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -429,11 +414,17 @@ export default function IdeaDetail() {
   };
 
   const handleEditSection = (sectionId: string) => {
-    if (!businessPlan?.sections) return;
+    if (!businessPlan?.sections) {
+      console.log('[Edit] No business plan sections available');
+      return;
+    }
     const rawContent = businessPlan.sections[sectionId as keyof typeof businessPlan.sections] || '';
+    console.log('[Edit] Section:', sectionId, 'Raw content length:', rawContent.length);
     // Preprocess the markdown to fix any formatting issues before loading into editor
     const processedContent = preprocessMarkdown(rawContent);
+    console.log('[Edit] Processed content length:', processedContent.length, 'First 100 chars:', processedContent.substring(0, 100));
     setEditContent(processedContent);
+    setEditorKey(prev => prev + 1); // Force new editor instance
     setEditingSection(sectionId);
   };
 
@@ -1173,36 +1164,15 @@ export default function IdeaDetail() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex-1 overflow-auto min-h-0 border rounded-lg bg-background">
+          <div className="flex-1 overflow-auto min-h-0" data-color-mode="light">
             {editingSection && (
-              <MDXEditor
-                key={editingSection}
-                markdown={editContent}
+              <MDEditor
+                key={editorKey}
+                value={editContent}
                 onChange={(value) => setEditContent(value || '')}
-                className="min-h-[450px] prose prose-sm dark:prose-invert max-w-none"
-                contentEditableClassName="p-4 min-h-[400px] outline-none"
-                plugins={[
-                  headingsPlugin(),
-                  listsPlugin(),
-                  quotePlugin(),
-                  thematicBreakPlugin(),
-                  markdownShortcutPlugin(),
-                  tablePlugin(),
-                  linkPlugin(),
-                  linkDialogPlugin(),
-                  toolbarPlugin({
-                    toolbarContents: () => (
-                      <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
-                        <UndoRedo />
-                        <BlockTypeSelect />
-                        <BoldItalicUnderlineToggles />
-                        <ListsToggle />
-                        <CreateLink />
-                        <InsertTable />
-                      </div>
-                    ),
-                  }),
-                ]}
+                height={500}
+                preview="live"
+                data-testid="md-editor"
               />
             )}
           </div>
