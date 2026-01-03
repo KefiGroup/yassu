@@ -94,6 +94,14 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - Yassu Advisors & Ambassadors
+- Added `yassuRole` field to profiles schema (ambassador, advisor, or null)
+- Ambassadors are undergrad students who represent Yassu on campus
+- Advisors are graduated professionals who mentor student founders
+- New public pages: `/advisors` and `/ambassadors` to showcase members
+- Profile page includes Yassu role selection dropdown
+- API endpoints: `GET /api/advisors` and `GET /api/ambassadors`
+
 ### January 2026 - Team Matching Feature
 - AI outputs required skills between `<!-- SKILLS_JSON_START/END -->` markers in Team & Talent section
 - Backend `/api/profiles/match-skills` endpoint finds profiles with overlapping skills

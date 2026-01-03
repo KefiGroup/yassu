@@ -46,6 +46,7 @@ export default function Profile() {
     linkedinUrl: '',
     skills: [] as string[],
     interests: [] as string[],
+    yassuRole: '' as '' | 'ambassador' | 'advisor',
   });
 
   useEffect(() => {
@@ -74,6 +75,7 @@ export default function Profile() {
         linkedinUrl: profile.linkedinUrl || '',
         skills: profile.skills || [],
         interests: profile.interests || [],
+        yassuRole: (profile as any).yassuRole || '',
       });
       setInitialLoadDone(true);
     }
@@ -100,6 +102,7 @@ export default function Profile() {
         linkedinUrl: formData.linkedinUrl || null,
         skills: formData.skills,
         interests: formData.interests,
+        yassuRole: formData.yassuRole || null,
         onboardingCompleted: true,
       });
 
@@ -323,6 +326,26 @@ export default function Profile() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="yassuRole">Yassu Role (Optional)</Label>
+              <Select
+                value={formData.yassuRole}
+                onValueChange={(value) => setFormData({ ...formData, yassuRole: value as '' | 'ambassador' | 'advisor' })}
+              >
+                <SelectTrigger data-testid="select-yassu-role">
+                  <SelectValue placeholder="Select if you want to be an Ambassador or Advisor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ambassador">Yassu Ambassador (Undergrad Student)</SelectItem>
+                  <SelectItem value="advisor">Yassu Advisor (Graduated Professional)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Ambassadors are current university students who represent Yassu on campus. 
+                Advisors are graduated professionals who mentor student founders.
+              </p>
             </div>
 
             <GroupedMultiSelect

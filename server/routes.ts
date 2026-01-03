@@ -151,7 +151,17 @@ export function registerRoutes(app: Express): void {
     }
 
     try {
-      const profile = await storage.updateProfile(req.session.userId, req.body);
+      const data = { ...req.body };
+      
+      // Validate yassuRole if provided
+      if (data.yassuRole !== undefined) {
+        const validRoles = ['ambassador', 'advisor', null];
+        if (!validRoles.includes(data.yassuRole)) {
+          return res.status(400).json({ error: "Invalid Yassu role" });
+        }
+      }
+      
+      const profile = await storage.updateProfile(req.session.userId, data);
       res.json(profile);
     } catch (error) {
       res.status(500).json({ error: "Failed to update profile" });

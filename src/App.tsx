@@ -7,6 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Advisors from "./pages/Advisors";
+import AmbassadorsPage from "./pages/AmbassadorsPage";
 import { PortalLayout } from "./layouts/PortalLayout";
 import Dashboard from "./pages/portal/Dashboard";
 import Ideas from "./pages/portal/Ideas";
@@ -33,6 +35,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/advisors" element={<Advisors />} />
+            <Route path="/ambassadors" element={<AmbassadorsPage />} />
             
             {/* Portal Routes */}
             <Route path="/portal" element={<PortalLayout />}>

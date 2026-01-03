@@ -60,6 +60,14 @@ export const api = {
       }),
   },
 
+  advisors: {
+    list: () => apiRequest<any[]>("/advisors"),
+  },
+
+  ambassadors: {
+    list: () => apiRequest<any[]>("/ambassadors"),
+  },
+
   universities: {
     list: () => apiRequest<any[]>("/universities"),
     resources: (id: string) => apiRequest<any[]>(`/universities/${id}/resources`),
