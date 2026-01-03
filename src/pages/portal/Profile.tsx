@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Save, Loader2, Camera, Award } from 'lucide-react';
+import { Save, Loader2, Camera, Award, PartyPopper } from 'lucide-react';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 import { AvatarUploadDialog } from '@/components/AvatarUploadDialog';
@@ -39,11 +41,21 @@ interface University {
 export default function Profile() {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showWelcome, setShowWelcome] = useState(false);
   const [universities, setUniversities] = useState<University[]>([]);
   const [badges, setBadges] = useState<ProfileBadge[]>([]);
   const [saving, setSaving] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('welcome') === 'true') {
+      setShowWelcome(true);
+      searchParams.delete('welcome');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [formData, setFormData] = useState({
     fullName: '',
     bio: '',
@@ -227,6 +239,23 @@ export default function Profile() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      {showWelcome && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Alert className="border-primary/20 bg-primary/5" data-testid="alert-welcome">
+            <PartyPopper className="h-5 w-5 text-primary" />
+            <AlertTitle className="text-lg">Welcome to Yassu!</AlertTitle>
+            <AlertDescription>
+              We're excited to have you join our community of university entrepreneurs. 
+              Complete your profile below to connect with co-founders, advisors, and ambassadors who can help bring your ideas to life.
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

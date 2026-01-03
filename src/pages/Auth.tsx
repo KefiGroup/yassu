@@ -134,7 +134,7 @@ const Auth = () => {
         title: 'Account created!',
         description: 'Welcome to Yassu. Let\'s complete your profile first.',
       });
-      navigate('/portal/profile');
+      navigate('/portal/profile?welcome=true');
     }
   };
 
