@@ -292,7 +292,17 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
     if (!content) return '';
     
     // Remove SKILLS_JSON markers and their content (used for programmatic extraction, not display)
-    let processed = content.replace(/<!-- SKILLS_JSON_START -->[\s\S]*?<!-- SKILLS_JSON_END -->/g, '');
+    // Also remove the "Required Skills" heading if it only contains the JSON block
+    let processed = content
+      .replace(/##\s*Required Skills\s*\n+<!-- SKILLS_JSON_START -->[\s\S]*?<!-- SKILLS_JSON_END -->\s*\n*/gi, '')
+      .replace(/<!-- SKILLS_JSON_START -->[\s\S]*?<!-- SKILLS_JSON_END -->/g, '')
+      .replace(/\["[^"]+",\s*(?:"[^"]+",?\s*)*\]/g, (match) => {
+        // Remove raw JSON arrays that look like skill lists
+        if (match.includes('Machine Learning') || match.includes('Python') || match.includes('Product Management')) {
+          return '';
+        }
+        return match;
+      });
     
     const lines = processed.split('\n');
     const processedLines: string[] = [];
