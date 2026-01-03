@@ -4,7 +4,7 @@ import * as schema from "../shared/schema";
 import type { 
   User, Profile, Idea, Team, Project, University, 
   WorkflowRun, WorkflowArtifact, Notification, UserRole, InsertUser,
-  JoinRequest, TeamInvite, IdeaWorkflowSection, ProfileBadge
+  JoinRequest, TeamInvite, IdeaWorkflowSection, ProfileBadge, Connection
 } from "../shared/schema";
 
 export interface ProfileWithMatchingSkills extends Profile {
@@ -93,6 +93,16 @@ export interface IStorage {
   getAdmins(): Promise<{ userId: number; email: string; fullName: string | null }[]>;
   grantAdminRole(userId: number): Promise<void>;
   revokeAdminRole(userId: number): Promise<void>;
+  
+  // Connection system (LinkedIn/Facebook style)
+  sendConnectionRequest(requesterId: number, recipientId: number, message?: string): Promise<Connection>;
+  getConnectionStatus(userId1: number, userId2: number): Promise<{ status: string; connection?: Connection } | null>;
+  getPendingConnectionRequests(userId: number, direction: 'received' | 'sent'): Promise<(Connection & { profile: Profile })[]>;
+  getConnections(userId: number): Promise<(Connection & { profile: Profile })[]>;
+  acceptConnection(connectionId: string, userId: number): Promise<Connection | undefined>;
+  rejectConnection(connectionId: string, userId: number): Promise<Connection | undefined>;
+  cancelConnection(connectionId: string, userId: number): Promise<void>;
+  removeConnection(connectionId: string, userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -534,6 +544,159 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(schema.userRoles.userId, userId),
         eq(schema.userRoles.role, 'admin')
+      ));
+  }
+
+  // Connection system implementation
+  async sendConnectionRequest(requesterId: number, recipientId: number, message?: string): Promise<Connection> {
+    // Check if connection already exists (in either direction)
+    const existing = await db.select().from(schema.connections)
+      .where(or(
+        and(
+          eq(schema.connections.requesterId, requesterId),
+          eq(schema.connections.recipientId, recipientId)
+        ),
+        and(
+          eq(schema.connections.requesterId, recipientId),
+          eq(schema.connections.recipientId, requesterId)
+        )
+      ));
+    
+    if (existing.length > 0) {
+      throw new Error('Connection already exists');
+    }
+    
+    const [connection] = await db.insert(schema.connections)
+      .values({ requesterId, recipientId, message, status: 'pending' })
+      .returning();
+    return connection;
+  }
+
+  async getConnectionStatus(userId1: number, userId2: number): Promise<{ status: string; connection?: Connection } | null> {
+    const [connection] = await db.select().from(schema.connections)
+      .where(or(
+        and(
+          eq(schema.connections.requesterId, userId1),
+          eq(schema.connections.recipientId, userId2)
+        ),
+        and(
+          eq(schema.connections.requesterId, userId2),
+          eq(schema.connections.recipientId, userId1)
+        )
+      ));
+    
+    if (!connection) return null;
+    
+    return { status: connection.status, connection };
+  }
+
+  async getPendingConnectionRequests(userId: number, direction: 'received' | 'sent'): Promise<(Connection & { profile: Profile })[]> {
+    const connections = await db.select().from(schema.connections)
+      .where(and(
+        direction === 'received'
+          ? eq(schema.connections.recipientId, userId)
+          : eq(schema.connections.requesterId, userId),
+        eq(schema.connections.status, 'pending')
+      ))
+      .orderBy(desc(schema.connections.createdAt));
+    
+    const results: (Connection & { profile: Profile })[] = [];
+    
+    for (const conn of connections) {
+      const otherUserId = direction === 'received' ? conn.requesterId : conn.recipientId;
+      const [profile] = await db.select().from(schema.profiles)
+        .where(eq(schema.profiles.userId, otherUserId));
+      
+      if (profile) {
+        results.push({ ...conn, profile });
+      }
+    }
+    
+    return results;
+  }
+
+  async getConnections(userId: number): Promise<(Connection & { profile: Profile })[]> {
+    const connections = await db.select().from(schema.connections)
+      .where(and(
+        or(
+          eq(schema.connections.requesterId, userId),
+          eq(schema.connections.recipientId, userId)
+        ),
+        eq(schema.connections.status, 'accepted')
+      ))
+      .orderBy(desc(schema.connections.respondedAt));
+    
+    const results: (Connection & { profile: Profile })[] = [];
+    
+    for (const conn of connections) {
+      const otherUserId = conn.requesterId === userId ? conn.recipientId : conn.requesterId;
+      const [profile] = await db.select().from(schema.profiles)
+        .where(eq(schema.profiles.userId, otherUserId));
+      
+      if (profile) {
+        results.push({ ...conn, profile });
+      }
+    }
+    
+    return results;
+  }
+
+  async acceptConnection(connectionId: string, userId: number): Promise<Connection | undefined> {
+    // Only the recipient can accept
+    const [connection] = await db.select().from(schema.connections)
+      .where(and(
+        eq(schema.connections.id, connectionId),
+        eq(schema.connections.recipientId, userId),
+        eq(schema.connections.status, 'pending')
+      ));
+    
+    if (!connection) return undefined;
+    
+    const [updated] = await db.update(schema.connections)
+      .set({ status: 'accepted', respondedAt: new Date() })
+      .where(eq(schema.connections.id, connectionId))
+      .returning();
+    return updated;
+  }
+
+  async rejectConnection(connectionId: string, userId: number): Promise<Connection | undefined> {
+    // Only the recipient can reject
+    const [connection] = await db.select().from(schema.connections)
+      .where(and(
+        eq(schema.connections.id, connectionId),
+        eq(schema.connections.recipientId, userId),
+        eq(schema.connections.status, 'pending')
+      ));
+    
+    if (!connection) return undefined;
+    
+    const [updated] = await db.update(schema.connections)
+      .set({ status: 'rejected', respondedAt: new Date() })
+      .where(eq(schema.connections.id, connectionId))
+      .returning();
+    return updated;
+  }
+
+  async cancelConnection(connectionId: string, userId: number): Promise<void> {
+    // Only the requester can cancel a pending request
+    await db.delete(schema.connections)
+      .where(and(
+        eq(schema.connections.id, connectionId),
+        eq(schema.connections.requesterId, userId),
+        eq(schema.connections.status, 'pending')
+      ));
+  }
+
+  async removeConnection(connectionId: string, userId: number): Promise<void> {
+    // Either party can remove an accepted connection
+    await db.delete(schema.connections)
+      .where(and(
+        eq(schema.connections.id, connectionId),
+        or(
+          eq(schema.connections.requesterId, userId),
+          eq(schema.connections.recipientId, userId)
+        ),
+        eq(schema.connections.status, 'accepted')
       ));
   }
 }
