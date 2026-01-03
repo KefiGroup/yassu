@@ -12,17 +12,14 @@ let isReady = false;
 const app = express();
 const server = createServer(app);
 
-// Health check endpoints - ALWAYS return OK immediately until ready
-// After ready, browser requests fall through to SPA
+// Health check endpoints - ALWAYS return OK immediately
 app.head("/", (_req, res) => res.sendStatus(200));
 app.head("/health", (_req, res) => res.sendStatus(200));
 app.get("/health", (_req, res) => res.status(200).type("text/plain").send("OK"));
 app.get("/", (_req, res, next) => {
-  // Until ready, always return plain OK (for health checks during startup)
   if (!isReady) {
     return res.status(200).type("text/plain").send("OK");
   }
-  // Once ready, let browser requests through to SPA
   next();
 });
 
@@ -88,33 +85,29 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   throw err;
 });
 
-// Bootstrap function - complete all setup before listening
-async function bootstrap() {
-  // Seed database BEFORE listening
+// Setup static/Vite BEFORE listening but synchronously
+if (process.env.NODE_ENV === "production") {
+  serveStatic(app);
+}
+
+// Start listening FIRST, then do async initialization
+const port = 5000;
+server.listen({ port, host: "0.0.0.0", reusePort: true }, async () => {
+  log(`listening on port ${port}`);
+  
+  // In development, setup Vite after listening
+  if (process.env.NODE_ENV !== "production") {
+    await setupVite(app, server);
+  }
+  
+  // Seed database after server is listening
   try {
     await seedDatabase();
   } catch (err) {
-    console.error("Database seeding error (continuing):", err);
+    console.error("Database seeding error:", err);
   }
-
-  // Setup static/Vite
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  } else {
-    await setupVite(app, server);
-  }
-
-  // Start listening - server is now fully ready
-  const port = 5000;
-  server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
-    log(`serving on port ${port}`);
-    // Mark as ready - now SPA requests will be served
-    isReady = true;
-    log("Server is ready");
-  });
-}
-
-bootstrap().catch(err => {
-  console.error("Bootstrap failed:", err);
-  process.exit(1);
+  
+  // Mark as ready - now SPA requests will be served
+  isReady = true;
+  log("Server is ready");
 });
