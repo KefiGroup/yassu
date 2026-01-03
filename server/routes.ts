@@ -432,10 +432,21 @@ export function registerRoutes(app: Express): void {
     }
 
     try {
-      const idea = await storage.createIdea({
-        ...req.body,
+      const ideaData = {
+        title: req.body.title,
+        problem: req.body.problem,
+        solution: req.body.solution || null,
+        targetUser: req.body.targetUser || null,
+        whyNow: req.body.whyNow || null,
+        assumptions: req.body.assumptions || null,
+        desiredTeammates: req.body.desiredTeammates || null,
+        expectedTimeline: req.body.expectedTimeline || null,
+        stage: "idea_posted" as const,
+        isPublic: req.body.isPublic !== false,
         createdBy: req.session.userId,
-      });
+      };
+      
+      const idea = await storage.createIdea(ideaData);
       
       if (req.body.tags && Array.isArray(req.body.tags)) {
         for (const tag of req.body.tags) {
@@ -444,9 +455,9 @@ export function registerRoutes(app: Express): void {
       }
       
       res.json(idea);
-    } catch (error) {
-      console.error("Create idea error:", error);
-      res.status(500).json({ error: "Failed to create idea" });
+    } catch (error: any) {
+      console.error("Create idea error:", error?.message || error);
+      res.status(500).json({ error: "Failed to create idea", details: error?.message });
     }
   });
 
