@@ -1,17 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { motion } from 'framer-motion';
-import { MessageSquare, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
+import { ConnectionButton } from '@/components/ConnectionButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Profile {
   id: number;
@@ -24,32 +18,19 @@ interface Profile {
   university?: { name: string; shortName: string | null } | null;
 }
 
-interface University {
-  id: string;
-  name: string;
-  shortName: string | null;
-}
-
 export default function Ambassadors() {
   const [ambassadors, setAmbassadors] = useState<Profile[]>([]);
-  const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
-  const [universityFilter, setUniversityFilter] = useState<string>('all');
+  const { user } = useAuth();
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/ambassadors', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
-      fetch('/api/universities', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
-    ]).then(([ambassadorsData, universitiesData]) => {
-      setAmbassadors(ambassadorsData);
-      setUniversities(universitiesData);
-      setLoading(false);
-    });
+    fetch('/api/ambassadors', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        setAmbassadors(data);
+        setLoading(false);
+      });
   }, []);
-
-  const filteredAmbassadors = universityFilter === 'all'
-    ? ambassadors
-    : ambassadors.filter(a => a.universityId === universityFilter);
 
   const getInitials = (name: string | null) => {
     if (!name) return '?';
@@ -69,27 +50,6 @@ export default function Ambassadors() {
         </p>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="flex flex-col sm:flex-row gap-4"
-      >
-        <Select value={universityFilter} onValueChange={setUniversityFilter}>
-          <SelectTrigger className="w-full sm:w-64" data-testid="select-university-filter">
-            <SelectValue placeholder="Select university" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Universities</SelectItem>
-            {universities.map((uni) => (
-              <SelectItem key={uni.id} value={uni.id}>
-                {uni.shortName || uni.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </motion.div>
-
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -104,9 +64,9 @@ export default function Ambassadors() {
             </Card>
           ))}
         </div>
-      ) : filteredAmbassadors.length > 0 ? (
+      ) : ambassadors.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAmbassadors.map((ambassador, index) => (
+          {ambassadors.map((ambassador, index) => (
             <motion.div
               key={ambassador.id}
               initial={{ opacity: 0, y: 20 }}
@@ -157,10 +117,11 @@ export default function Ambassadors() {
                       )}
                     </div>
                   )}
-                  <Button variant="outline" size="sm" className="w-full" data-testid={`button-connect-${ambassador.id}`}>
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Connect
-                  </Button>
+                  <ConnectionButton
+                    targetUserId={ambassador.userId}
+                    currentUserId={user?.id}
+                    className="w-full"
+                  />
                 </CardContent>
               </Card>
             </motion.div>
@@ -176,7 +137,7 @@ export default function Ambassadors() {
           <Users className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No ambassadors found</h3>
           <p className="text-muted-foreground">
-            Try adjusting your filters or check back later
+            Check back later for new ambassadors
           </p>
         </motion.div>
       )}
