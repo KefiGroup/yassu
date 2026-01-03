@@ -9,15 +9,20 @@ import { seedDatabase } from "./seed";
 
 const app = express();
 
-// Health check endpoints - must respond immediately for VM deployments
-app.get("/health", (_req, res) => {
-  res.status(200).send("OK");
-});
-// Root health check - responds to non-browser requests immediately
-app.get("/", (_req, res, next) => {
-  const accept = _req.headers.accept || "";
-  // If not requesting HTML (likely health check), respond immediately
-  if (!accept.includes("text/html")) {
+// Health check endpoints - must respond immediately for deployments
+// These MUST be before any other middleware
+app.head("/", (_req, res) => res.sendStatus(200));
+app.head("/health", (_req, res) => res.sendStatus(200));
+app.get("/health", (_req, res) => res.status(200).send("OK"));
+// Root health check - only pass through if it's a real browser with cookies/referer
+app.get("/", (req, res, next) => {
+  // Real browsers have cookies, referer, or complex accept headers
+  // Health checks are simple requests without these
+  const hasCookies = req.headers.cookie;
+  const hasReferer = req.headers.referer;
+  const isHealthCheck = !hasCookies && !hasReferer;
+  
+  if (isHealthCheck) {
     return res.status(200).send("OK");
   }
   next();
