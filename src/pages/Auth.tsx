@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Rocket, Mail, Lock, User } from 'lucide-react';
-import { SiGoogle, SiApple } from 'react-icons/si';
 import { z } from 'zod';
-import { useQuery } from '@tanstack/react-query';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -20,7 +18,6 @@ const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
@@ -29,38 +26,11 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
 
-  const { data: providers } = useQuery<{ google: boolean; apple: boolean }>({
-    queryKey: ['/api/auth/providers'],
-  });
-
   useEffect(() => {
     if (!loading && user) {
       navigate('/portal');
     }
   }, [user, loading, navigate]);
-
-  useEffect(() => {
-    const error = searchParams.get('error');
-    if (error) {
-      toast({
-        title: 'Sign in failed',
-        description: error === 'google_failed' 
-          ? 'Google sign-in was not successful. Please try again.'
-          : error === 'apple_not_configured'
-          ? 'Apple sign-in is not yet configured.'
-          : 'An error occurred during sign-in.',
-        variant: 'destructive',
-      });
-    }
-  }, [searchParams, toast]);
-
-  const handleGoogleSignIn = () => {
-    window.location.href = '/api/auth/google';
-  };
-
-  const handleAppleSignIn = () => {
-    window.location.href = '/api/auth/apple';
-  };
 
   const validateLogin = () => {
     const newErrors: typeof errors = {};
@@ -270,46 +240,6 @@ const Auth = () => {
                       Forgot your password?
                     </a>
                   </div>
-
-                  {(providers?.google || providers?.apple) && (
-                    <>
-                      <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        {providers?.google && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={handleGoogleSignIn}
-                            data-testid="button-google-signin"
-                          >
-                            <SiGoogle className="mr-2 h-4 w-4" />
-                            Continue with Google
-                          </Button>
-                        )}
-                        {providers?.apple && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={handleAppleSignIn}
-                            data-testid="button-apple-signin"
-                          >
-                            <SiApple className="mr-2 h-4 w-4" />
-                            Continue with Apple
-                          </Button>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </form>
               </TabsContent>
 
@@ -376,46 +306,6 @@ const Auth = () => {
                   >
                     {isLoading ? 'Creating account...' : 'Create Account'}
                   </Button>
-
-                  {(providers?.google || providers?.apple) && (
-                    <>
-                      <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        {providers?.google && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={handleGoogleSignIn}
-                            data-testid="button-google-signup"
-                          >
-                            <SiGoogle className="mr-2 h-4 w-4" />
-                            Continue with Google
-                          </Button>
-                        )}
-                        {providers?.apple && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={handleAppleSignIn}
-                            data-testid="button-apple-signup"
-                          >
-                            <SiApple className="mr-2 h-4 w-4" />
-                            Continue with Apple
-                          </Button>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </form>
               </TabsContent>
             </Tabs>
