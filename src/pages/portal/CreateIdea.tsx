@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -9,12 +9,34 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Lightbulb, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, Lightbulb, Sparkles, Loader2, User } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function CreateIdea() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+
+  const isProfileIncomplete = !profile?.bio || 
+    !profile?.skills?.length || 
+    !profile?.interests?.length ||
+    !profile?.universityId;
+
+  useEffect(() => {
+    if (profile && isProfileIncomplete) {
+      setShowProfileDialog(true);
+    }
+  }, [profile, isProfileIncomplete]);
 
   const [saving, setSaving] = useState(false);
 
