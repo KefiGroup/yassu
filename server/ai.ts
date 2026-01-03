@@ -1,23 +1,21 @@
 import OpenAI from "openai";
 import { batchProcess } from "./replit_integrations/batch";
 
-const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
-const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
-
-console.log("[AI] Initializing OpenAI client...");
-console.log("[AI] Base URL configured:", baseURL ? "Yes" : "No");
-console.log("[AI] API Key configured:", apiKey ? "Yes" : "No");
-
-const openai = new OpenAI({
-  apiKey: apiKey || "dummy-key",
-  baseURL: baseURL,
-});
-
-if (!apiKey) {
-  console.error("[AI] Warning: AI_INTEGRATIONS_OPENAI_API_KEY is not set");
-}
-if (!baseURL) {
-  console.error("[AI] Warning: AI_INTEGRATIONS_OPENAI_BASE_URL is not set");
+// Create OpenAI client lazily to ensure env vars are read at runtime
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  
+  if (!apiKey || !baseURL) {
+    console.error("[AI] Missing environment variables:");
+    console.error("[AI] API Key:", apiKey ? "Set" : "NOT SET");
+    console.error("[AI] Base URL:", baseURL ? "Set" : "NOT SET");
+  }
+  
+  return new OpenAI({
+    apiKey: apiKey || "missing-key",
+    baseURL: baseURL,
+  });
 }
 
 interface IdeaInput {
@@ -435,7 +433,8 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
     async (section, index) => {
       console.log(`[AI] Generating section ${index + 1}/${sectionPrompts.length}: ${section.title}`);
       
-      const response = await openai.chat.completions.create({
+      const client = getOpenAIClient();
+      const response = await client.chat.completions.create({
         model: "gpt-5.1",
         messages: [{ role: "user", content: section.prompt }],
         max_completion_tokens: 8192,
@@ -488,7 +487,8 @@ async function generateExecutiveSummary(
     .map((r) => `${r.key}: ${r.content.slice(0, 500)}...`)
     .join("\n\n");
 
-  const response = await openai.chat.completions.create({
+  const client = getOpenAIClient();
+  const response = await client.chat.completions.create({
     model: "gpt-5.1",
     messages: [{
       role: "user",
