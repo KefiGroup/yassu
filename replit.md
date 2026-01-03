@@ -99,6 +99,23 @@ npm run db:push  # Push database schema changes
 
 ## Recent Changes
 
+### January 2026 - Connection System (LinkedIn/Facebook Style)
+- Added `connections` table with status workflow (pending, accepted, rejected, cancelled)
+- Users can send, accept, reject, or cancel connection requests
+- Connection button displays contextual states: Connect, Pending, Accept, Connected
+- Removed university filter from Advisors/Ambassadors pages for simpler UX
+- Added "My Connections" section to Dashboard showing all accepted connections
+- ConnectionButton component (`src/components/ConnectionButton.tsx`) handles all connection states
+- New API endpoints:
+  - `POST /api/connections` - Send connection request
+  - `GET /api/connections` - Get all accepted connections
+  - `GET /api/connections/status/:userId` - Check connection status with another user
+  - `GET /api/connections/pending?direction=received|sent` - Get pending requests
+  - `POST /api/connections/:id/accept` - Accept connection request
+  - `POST /api/connections/:id/reject` - Reject connection request
+  - `DELETE /api/connections/:id/cancel` - Cancel pending request (sender only)
+  - `DELETE /api/connections/:id` - Remove accepted connection (either party)
+
 ### January 2026 - Unified Admin Dashboard
 - Created comprehensive admin dashboard at `/admin` with three tabs:
   1. **Badges** - Award/revoke Ambassador and Advisor badges to platform members

@@ -19,6 +19,8 @@ import {
   Plus,
   GraduationCap,
   Briefcase,
+  Link2,
+  MessageSquare,
 } from 'lucide-react';
 interface Profile {
   id: number;
@@ -68,6 +70,17 @@ interface JoinRequest {
   idea: Idea;
 }
 
+interface Connection {
+  id: string;
+  requesterId: number;
+  recipientId: number;
+  status: string;
+  message: string | null;
+  createdAt: string;
+  respondedAt: string | null;
+  profile: Profile;
+}
+
 export default function Dashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -76,6 +89,7 @@ export default function Dashboard() {
   const [myIdeas, setMyIdeas] = useState<Idea[]>([]);
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [potentialMembers, setPotentialMembers] = useState<Profile[]>([]);
+  const [myConnections, setMyConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
@@ -84,15 +98,17 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [ideas, requests, members] = await Promise.all([
+        const [ideas, requests, members, connections] = await Promise.all([
           fetch('/api/ideas/mine', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/join-requests', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/profiles/potential-team', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
+          fetch('/api/connections', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
         ]);
         
         setMyIdeas(ideas);
         setJoinRequests(requests);
         setPotentialMembers(members);
+        setMyConnections(connections);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -463,6 +479,96 @@ export default function Dashboard() {
                     ? 'Post an idea first to start inviting team members' 
                     : 'No advisors or ambassadors available to invite'}
                 </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Section 4: My Connections */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Link2 className="w-5 h-5 text-indigo-500" />
+              My Connections
+            </CardTitle>
+            <CardDescription>People you are connected with</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : myConnections.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {myConnections.map((connection) => (
+                  <div
+                    key={connection.id}
+                    className="p-4 rounded-lg border border-border hover:border-primary/20 transition-colors"
+                    data-testid={`card-connection-${connection.profile.userId}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar 
+                        className="w-10 h-10 cursor-pointer"
+                        onClick={() => setSelectedProfile(connection.profile)}
+                        data-testid={`avatar-connection-${connection.profile.userId}`}
+                      >
+                        <AvatarImage src={connection.profile.avatarUrl || undefined} />
+                        <AvatarFallback>{getInitials(connection.profile.fullName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <span 
+                          className="font-medium cursor-pointer hover:text-primary block truncate"
+                          onClick={() => setSelectedProfile(connection.profile)}
+                          data-testid={`text-connection-name-${connection.profile.userId}`}
+                        >
+                          {connection.profile.fullName || 'Unknown'}
+                        </span>
+                        {connection.profile.yassuRole && (
+                          <Badge variant="secondary" className="text-xs mt-1">
+                            {connection.profile.yassuRole === 'ambassador' ? (
+                              <><GraduationCap className="w-3 h-3 mr-1" /> Ambassador</>
+                            ) : (
+                              <><Briefcase className="w-3 h-3 mr-1" /> Advisor</>
+                            )}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full mt-3"
+                      onClick={() => navigate('/portal/messages')}
+                      data-testid={`button-message-${connection.profile.userId}`}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Message
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Link2 className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-muted-foreground">
+                  No connections yet. Connect with advisors and ambassadors to grow your network.
+                </p>
+                <div className="flex justify-center gap-3 mt-4">
+                  <Button variant="outline" onClick={() => navigate('/portal/advisors')} data-testid="button-find-advisors">
+                    Find Advisors
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate('/portal/ambassadors')} data-testid="button-find-ambassadors">
+                    Find Ambassadors
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

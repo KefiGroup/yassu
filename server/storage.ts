@@ -563,13 +563,40 @@ export class DatabaseStorage implements IStorage {
       ));
     
     if (existing.length > 0) {
-      throw new Error('Connection already exists');
+      const conn = existing[0];
+      // If already accepted or pending, don't allow new request
+      if (conn.status === 'accepted' || conn.status === 'pending') {
+        throw new Error('Connection already exists');
+      }
+      // If rejected, update in-place to allow reconnection (reset to pending with new requester)
+      if (conn.status === 'rejected') {
+        const [updated] = await db.update(schema.connections)
+          .set({ 
+            requesterId, 
+            recipientId, 
+            status: 'pending', 
+            message, 
+            createdAt: new Date(),
+            respondedAt: null 
+          })
+          .where(eq(schema.connections.id, conn.id))
+          .returning();
+        return updated;
+      }
     }
     
-    const [connection] = await db.insert(schema.connections)
-      .values({ requesterId, recipientId, message, status: 'pending' })
-      .returning();
-    return connection;
+    try {
+      const [connection] = await db.insert(schema.connections)
+        .values({ requesterId, recipientId, message, status: 'pending' })
+        .returning();
+      return connection;
+    } catch (error: any) {
+      // Handle unique constraint violation (race condition)
+      if (error.code === '23505') {
+        throw new Error('Connection already exists');
+      }
+      throw error;
+    }
   }
 
   async getConnectionStatus(userId1: number, userId2: number): Promise<{ status: string; connection?: Connection } | null> {
