@@ -167,6 +167,13 @@ export default function Dashboard() {
     launched: 'Launched',
   };
 
+  const stageOrder = ['idea_posted', 'business_plan', 'find_advisors', 'form_team', 'build_mvp', 'yassu_foundry', 'launched'];
+  
+  const getStageNumber = (stage: string | null) => {
+    const index = stageOrder.indexOf(stage || 'idea_posted');
+    return index >= 0 ? index + 1 : 1;
+  };
+
   const getInitials = (name: string | null) => {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -225,9 +232,14 @@ export default function Dashboard() {
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <h4 className="font-medium">{idea.title}</h4>
-                      <Badge className={stageColors[idea.stage || 'idea_posted'] || 'bg-muted'}>
-                        {stageLabels[idea.stage || 'idea_posted'] || 'Post Idea'}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          Stage {getStageNumber(idea.stage)} of 7
+                        </span>
+                        <Badge className={stageColors[idea.stage || 'idea_posted'] || 'bg-muted'}>
+                          {stageLabels[idea.stage || 'idea_posted'] || 'Post Idea'}
+                        </Badge>
+                      </div>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-1">
                       {idea.problem}
