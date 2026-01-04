@@ -47,6 +47,7 @@ export default function IdeaWizard() {
   const [saving, setSaving] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
+  const [listeningQuestionId, setListeningQuestionId] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     if (!rawIdea.trim() || rawIdea.trim().length < 20) {
@@ -147,6 +148,46 @@ export default function IdeaWizard() {
       toast({
         title: '🎤 Listening...',
         description: 'Start speaking your idea naturally. Click the mic again when done.',
+      });
+    }
+  };
+
+  const toggleVoiceForQuestion = (questionId: string) => {
+    if (!recognition) {
+      toast({
+        title: 'Not supported',
+        description: 'Voice input is not supported in your browser. Please use Chrome, Edge, or Safari.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (listeningQuestionId === questionId) {
+      recognition.stop();
+      setListeningQuestionId(null);
+    } else {
+      // Stop any existing recognition
+      if (listeningQuestionId) {
+        recognition.stop();
+      }
+      
+      // Update recognition to append to the specific question
+      recognition.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0].transcript)
+          .join('');
+        
+        setClarifications(prev => ({
+          ...prev,
+          [questionId]: transcript,
+        }));
+      };
+
+      recognition.start();
+      setListeningQuestionId(questionId);
+      toast({
+        title: '🎤 Listening...',
+        description: 'Speak your answer. Click the mic again when done.',
       });
     }
   };
@@ -427,18 +468,33 @@ export default function IdeaWizard() {
                     </Label>
 
                     {question.type === 'text' && (
-                      <Textarea
-                        id={question.id}
-                        value={clarifications[question.id] || ''}
-                        onChange={(e) =>
-                          setClarifications({
-                            ...clarifications,
-                            [question.id]: e.target.value,
-                          })
-                        }
-                        placeholder="Your answer..."
-                        className="min-h-[100px]"
-                      />
+                      <div className="relative">
+                        <Textarea
+                          id={question.id}
+                          value={clarifications[question.id] || ''}
+                          onChange={(e) =>
+                            setClarifications({
+                              ...clarifications,
+                              [question.id]: e.target.value,
+                            })
+                          }
+                          placeholder="Type or click voice button to speak..."
+                          className="min-h-[100px] pr-12"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={listeningQuestionId === question.id ? "destructive" : "outline"}
+                          className="absolute top-2 right-2"
+                          onClick={() => toggleVoiceForQuestion(question.id)}
+                        >
+                          {listeningQuestionId === question.id ? (
+                            <MicOff className="h-4 w-4" />
+                          ) : (
+                            <Mic className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     )}
 
                     {question.type === 'single-choice' && question.options && (
