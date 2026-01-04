@@ -54,7 +54,7 @@ const App = () => (
             <Route path="/portal" element={<PortalLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="ideas" element={<Ideas />} />
-              <Route path="ideas/new" element={<CreateIdea />} />
+              <Route path="ideas/new" element={<IdeaWizard />} />
               <Route path="ideas/wizard" element={<IdeaWizard />} />
               <Route path="ideas/:ideaId" element={<IdeaDetail />} />
               <Route path="teams" element={<Teams />} />

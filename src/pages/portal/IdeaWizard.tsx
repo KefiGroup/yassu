@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Sparkles, Loader2, Lightbulb, MessageSquare, CheckCircle2, Edit3 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, Lightbulb, MessageSquare, CheckCircle2, Edit3, Mic, MicOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 type WizardStage = 'input' | 'analyzing' | 'clarification' | 'refining' | 'review';
@@ -45,6 +45,8 @@ export default function IdeaWizard() {
   const [refinedIdea, setRefinedIdea] = useState<RefinedIdea | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<any>(null);
 
   const handleAnalyze = async () => {
     if (!rawIdea.trim() || rawIdea.trim().length < 20) {
@@ -88,6 +90,64 @@ export default function IdeaWizard() {
         variant: 'destructive',
       });
       setStage('input');
+    }
+  };
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-US';
+
+      recognitionInstance.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0])
+          .map((result: any) => result.transcript)
+          .join('');
+        setRawIdea(transcript);
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        toast({
+          title: 'Voice input error',
+          description: 'Could not access microphone. Please check permissions.',
+          variant: 'destructive',
+        });
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+
+      setRecognition(recognitionInstance);
+    }
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (!recognition) {
+      toast({
+        title: 'Not supported',
+        description: 'Voice input is not supported in your browser. Please use Chrome, Edge, or Safari.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      recognition.start();
+      setIsListening(true);
+      toast({
+        title: '🎤 Listening...',
+        description: 'Start speaking your idea naturally. Click the mic again when done.',
+      });
     }
   };
 
@@ -248,17 +308,45 @@ export default function IdeaWizard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rawIdea">Your Idea</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="rawIdea">Your Idea</Label>
+                    <Button
+                      type="button"
+                      variant={isListening ? "default" : "outline"}
+                      size="sm"
+                      onClick={toggleVoiceInput}
+                      className={isListening ? "bg-red-500 hover:bg-red-600 animate-pulse" : ""}
+                    >
+                      {isListening ? (
+                        <>
+                          <MicOff className="w-4 h-4 mr-2" />
+                          Stop Recording
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-4 h-4 mr-2" />
+                          Voice Input
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   <Textarea
                     id="rawIdea"
                     value={rawIdea}
                     onChange={(e) => setRawIdea(e.target.value)}
-                    placeholder="Examples:&#10;• I notice students waste hours finding study partners who match their learning style...&#10;• Campus food delivery is slow and expensive, and students often miss meals...&#10;• I have an idea for sustainable packaging that could reduce waste in campus cafeterias..."
+                    placeholder="Type or click 'Voice Input' to speak your idea...&#10;&#10;Examples:&#10;• I notice students waste hours finding study partners who match their learning style...&#10;• Campus food delivery is slow and expensive, and students often miss meals...&#10;• I have an idea for sustainable packaging that could reduce waste in campus cafeterias..."
                     className="min-h-[200px] resize-none"
                   />
-                  <p className="text-sm text-muted-foreground">
-                    {rawIdea.length} characters (minimum 20)
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      {rawIdea.length} characters (minimum 20)
+                    </p>
+                    {isListening && (
+                      <Badge variant="destructive" className="animate-pulse">
+                        🎤 Listening...
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
