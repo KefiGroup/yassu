@@ -1,5 +1,13 @@
-import pLimit from "p-limit";
 import pRetry from "p-retry";
+
+// Dynamic import for ESM-only p-limit package
+let pLimit: any;
+const getPLimit = async () => {
+  if (!pLimit) {
+    pLimit = (await import('p-limit')).default;
+  }
+  return pLimit;
+};
 
 /**
  * Batch Processing Utilities
@@ -90,7 +98,8 @@ export async function batchProcess<T, R>(
     onProgress,
   } = options;
 
-  const limit = pLimit(concurrency);
+  const pLimitFn = await getPLimit();
+  const limit = pLimitFn(concurrency);
   let completed = 0;
 
   const promises = items.map((item, index) =>
