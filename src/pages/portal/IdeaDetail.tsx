@@ -1150,7 +1150,7 @@ export default function IdeaDetail() {
       </motion.div>
 
       {/* Business Plan Section - Hidden in marketplace, only visible in My Projects */}
-      {false && user && idea.createdBy === user.id && (
+      {user && idea.createdBy === user.id && (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
