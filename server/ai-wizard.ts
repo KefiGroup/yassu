@@ -112,9 +112,14 @@ Respond in JSON format:
       },
       clarifyingQuestions: questions,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error analyzing raw idea:', error);
-    throw new Error('Failed to analyze idea. Please try again.');
+    console.error('Error details:', {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    });
+    throw new Error(error?.message || 'Failed to analyze idea. Please try again.');
   }
 }
 
@@ -171,8 +176,9 @@ Respond in JSON format:
 
     const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
     return result.questions || [];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating clarifying questions:', error);
+    console.error('Error details:', error?.message);
     // Return default questions if AI fails
     return [
       {
@@ -268,9 +274,14 @@ Respond in JSON format:
         confidence: refinedIdea.confidence || 70,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating refined idea:', error);
-    throw new Error('Failed to refine idea. Please try again.');
+    console.error('Error details:', {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status,
+    });
+    throw new Error(error?.message || 'Failed to refine idea. Please try again.');
   }
 }
 
