@@ -560,7 +560,7 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
       
       const client = getAIClient();
       const response = await client.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: section.prompt }],
         max_completion_tokens: 8192,
       });
@@ -648,7 +648,7 @@ Keep it to ~400 words. Make it compelling enough to hook an investor or co-found
 
   const client = getAIClient();
   const response = await client.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
     max_completion_tokens: 8192,
   });
