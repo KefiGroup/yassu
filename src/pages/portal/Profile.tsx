@@ -23,7 +23,6 @@ import { Save, Loader2, Camera, Award, PartyPopper } from 'lucide-react';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 import { AvatarUploadDialog } from '@/components/AvatarUploadDialog';
-import { LinkedInImport } from '@/components/LinkedInImport';
 import { apiRequest } from '@/lib/api';
 
 interface ProfileBadge {
@@ -457,19 +456,19 @@ export default function Profile() {
             />
 
             <div className="space-y-4">
-              <Label className="text-base">LinkedIn Profile</Label>
-              <LinkedInImport
-                linkedinUrl={formData.linkedinUrl}
-                onLinkedInUrlChange={(url) => setFormData({ ...formData, linkedinUrl: url })}
-                onDataImported={(data) => {
-                  setFormData({
-                    ...formData,
-                    fullName: data.fullName || formData.fullName,
-                    bio: data.bio || formData.bio,
-                    skills: data.skills || formData.skills,
-                  });
-                }}
-              />
+              <Label className="text-base">Links</Label>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="linkedinUrl" className="text-sm text-muted-foreground">LinkedIn</Label>
+                  <Input
+                    id="linkedinUrl"
+                    value={formData.linkedinUrl}
+                    onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                    data-testid="input-linkedin-url"
+                  />
+                </div>
+              </div>
             </div>
 
             <Button onClick={handleSave} disabled={saving} className="w-full" data-testid="button-save-profile">

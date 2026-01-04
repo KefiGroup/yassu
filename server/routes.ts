@@ -11,7 +11,6 @@ import { generateSmartMatches, type MatchingNeeds } from "./smart-matching";
 import { trackReferral, getUserReferrals, getUserReferralStats, getAllReferrals, initReferralsTable } from "./referrals";
 import { getPipelineStats, getPipelineIdeas } from "./pipeline";
 import ideaInterestsRouter from "./idea-interests";
-import linkedinRouter from "./routes/linkedin";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 
 const objectStorageService = new ObjectStorageService();
@@ -60,9 +59,6 @@ export function registerRoutes(app: Express): void {
 
   // Register idea interests routes
   app.use(ideaInterestsRouter);
-  
-  // Register LinkedIn import routes
-  app.use("/api/linkedin", linkedinRouter);
 
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
