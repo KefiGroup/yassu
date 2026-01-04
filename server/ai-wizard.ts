@@ -143,6 +143,8 @@ Focus on:
 3. Current solutions (if any)
 4. Why this matters now
 
+IMPORTANT: All questions should be optional (required: false) so users can skip them if they want.
+
 Respond in JSON format:
 {
   "questions": [
@@ -151,7 +153,7 @@ Respond in JSON format:
       "question": "Question text",
       "type": "single-choice" | "multiple-choice" | "text",
       "options": ["option1", "option2"] (if applicable),
-      "required": boolean
+      "required": false
     }
   ]
 }`;
@@ -183,13 +185,13 @@ Respond in JSON format:
         id: 'target-user',
         question: 'Who specifically faces this problem?',
         type: 'text',
-        required: true,
+        required: false,
       },
       {
         id: 'pain-point',
         question: 'What is the biggest pain point or frustration?',
         type: 'text',
-        required: true,
+        required: false,
       },
     ];
   }
