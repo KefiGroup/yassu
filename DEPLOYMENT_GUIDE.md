@@ -87,7 +87,7 @@ After first deployment, you need to initialize the database:
 
 ```bash
 # Install Railway CLI
-npm install -g @railway/cli
+pnpm install -g @railway/cli
 
 # Login
 railway login
@@ -96,7 +96,7 @@ railway login
 railway link
 
 # Run migrations
-railway run npm run db:push
+railway run pnpm run db:push
 ```
 
 ---
@@ -222,7 +222,7 @@ Change callbacks from localhost to:
 ### Build Fails
 
 **Check build logs in Railway:**
-- Missing dependencies? Run `npm install` locally first
+- Missing dependencies? Run `pnpm install` locally first
 - TypeScript errors? Fix them before deploying
 - Environment variables missing? Add them in Railway
 
