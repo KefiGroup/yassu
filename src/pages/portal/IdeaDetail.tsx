@@ -1360,7 +1360,7 @@ export default function IdeaDetail() {
                             <div className="mt-8 pt-6 border-t">
                               <div className="flex items-center gap-2 mb-4">
                                 <Users className="w-5 h-5 text-primary" />
-                                <h4 className="font-semibold text-lg">Potential Co-Founders on Yassu</h4>
+                                <h4 className="font-semibold text-lg">Potential collaborators on Yassu</h4>
                               </div>
                               
                               {loadingTeamMembers ? (
@@ -1411,7 +1411,7 @@ export default function IdeaDetail() {
                               ) : (
                                 <div className="text-center py-6 text-muted-foreground">
                                   <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                  <p>No matching co-founders found yet.</p>
+                                  <p>No matching collaborators found yet.</p>
                                   <p className="text-sm mt-1">Invite people to join Yassu to grow your network!</p>
                                 </div>
                               )}

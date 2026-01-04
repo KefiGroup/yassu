@@ -144,7 +144,7 @@ export const INTEREST_CATEGORIES: Record<string, string[]> = {
     'Being Mentored',
     'Building Side Projects',
     'Consulting',
-    'Finding Cofounders',
+    'Finding collaborators',
     'Freelancing',
     'Investing',
     'Joining a Startup',

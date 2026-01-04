@@ -87,7 +87,7 @@ export const ONBOARDING_TOURS: Record<string, OnboardingTour> = {
         element: "[data-tour='team-section']",
         popover: {
           title: "👥 Build Your Team",
-          description: "Find potential co-founders and team members who match your needs. You can send join requests and start collaborating.",
+          description: "Find potential collaborators and team members who match your needs. You can send join requests and start collaborating.",
           side: "top",
         },
       },

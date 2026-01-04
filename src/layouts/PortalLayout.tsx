@@ -78,7 +78,7 @@ export function PortalLayout() {
             </div>
             <DialogTitle className="text-center">Complete Your Profile</DialogTitle>
             <DialogDescription className="text-center">
-              Your profile is incomplete. A complete profile helps you connect with co-founders, advisors, and ambassadors more effectively.
+              Your profile is incomplete. A complete profile helps you connect with collaborators, advisors, and ambassadors more effectively.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-center">

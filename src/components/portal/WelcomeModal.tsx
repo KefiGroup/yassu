@@ -66,7 +66,7 @@ export function WelcomeModal() {
         <div className="space-y-6 py-4">
           <p className="text-muted-foreground">
             Yassu helps you turn your startup ideas into reality by connecting you with
-            co-founders, advisors, and AI-powered business planning tools.
+            collaborators, advisors, and AI-powered business planning tools.
           </p>
 
           <div className="space-y-4">
@@ -102,7 +102,7 @@ export function WelcomeModal() {
                   <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Find Co-Founders & Collaborators</h4>
+                  <h4 className="font-medium">Find Collaborators</h4>
                   <p className="text-sm text-muted-foreground">
                     Connect with talented students who share your passion
                   </p>

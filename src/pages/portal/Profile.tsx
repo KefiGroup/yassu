@@ -230,7 +230,7 @@ export default function Profile() {
             <AlertTitle className="text-lg">Welcome to Yassu!</AlertTitle>
             <AlertDescription>
               We're excited to have you join our community of university entrepreneurs. 
-              Complete your profile below to connect with co-founders, advisors, and ambassadors who can help bring your ideas to life.
+              Complete your profile below to connect with collaborators, advisors, and ambassadors who can help bring your ideas to life.
             </AlertDescription>
           </Alert>
         </motion.div>
