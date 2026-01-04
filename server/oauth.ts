@@ -4,8 +4,8 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import bcrypt from "bcryptjs";
 
-const CALLBACK_BASE = process.env.REPLIT_DEV_DOMAIN 
-  ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+const CALLBACK_BASE = process.env.FRONTEND_URL || process.env.REPLIT_DEV_DOMAIN 
+  ? process.env.FRONTEND_URL || `https://${process.env.REPLIT_DEV_DOMAIN}`
   : "http://localhost:5000";
 
 export function setupOAuth(app: Express) {
