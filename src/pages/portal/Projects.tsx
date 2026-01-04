@@ -46,7 +46,7 @@ export default function Projects() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/ideas/mine', { credentials: 'include' })
+    fetch('/api/my-ideas', { credentials: 'include' })
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         setIdeas(data);
