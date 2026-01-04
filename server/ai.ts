@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import { batchProcess } from "./replit_integrations/batch";
 
 // Create AI client using OpenAI API
 function getAIClient(): OpenAI {
@@ -551,13 +550,15 @@ ${outputRules}`,
 export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPlanSections> {
   const sectionPrompts = buildSectionPrompts(idea);
   
-  console.log(`[AI] Starting parallel generation of ${sectionPrompts.length} sections`);
+  console.log(`[AI] Starting sequential generation of ${sectionPrompts.length} sections`);
   
-  const results = await batchProcess(
-    sectionPrompts,
-    async (section, index) => {
-      console.log(`[AI] Generating section ${index + 1}/${sectionPrompts.length}: ${section.title}`);
-      
+  const results: { key: string; content: string }[] = [];
+  
+  for (let index = 0; index < sectionPrompts.length; index++) {
+    const section = sectionPrompts[index];
+    console.log(`[AI] Generating section ${index + 1}/${sectionPrompts.length}: ${section.title}`);
+    
+    try {
       const client = getAIClient();
       const response = await client.chat.completions.create({
         model: "gpt-4o-mini",
@@ -568,18 +569,12 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
       const content = response.choices[0]?.message?.content || `## ${section.title}\n\nGeneration failed. Please try again.`;
       console.log(`[AI] Completed section: ${section.title} (${content.length} chars)`);
       
-      return { key: section.key, content };
-    },
-    {
-      concurrency: 4,
-      retries: 3,
-      minTimeout: 1000,
-      maxTimeout: 30000,
-      onProgress: (completed, total) => {
-        console.log(`[AI] Progress: ${completed}/${total} sections complete`);
-      },
+      results.push({ key: section.key, content });
+    } catch (error) {
+      console.error(`[AI] Error generating section ${section.title}:`, error);
+      results.push({ key: section.key, content: `## ${section.title}\n\nGeneration failed. Please try again.` });
     }
-  );
+  }
   
   const executiveSummary = await generateExecutiveSummary(idea, results);
   
