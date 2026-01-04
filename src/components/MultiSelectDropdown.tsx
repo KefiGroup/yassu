@@ -41,6 +41,16 @@ export function MultiSelectDropdown({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Scroll into view when dropdown opens
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      containerRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [isOpen]);
+
   const filteredOptions = options.filter(
     (option) =>
       option.toLowerCase().includes(searchTerm.toLowerCase()) &&
