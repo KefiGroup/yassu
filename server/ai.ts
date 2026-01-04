@@ -5,7 +5,7 @@ import { batchProcess } from "./replit_integrations/batch";
 function getAIClient(): OpenAI {
   // Use Replit AI Integrations if available, otherwise fall back to standard OpenAI
   const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
   
   if (!apiKey) {
     throw new Error("No OpenAI API key found. Please set OPENAI_API_KEY or AI_INTEGRATIONS_OPENAI_API_KEY environment variable.");
