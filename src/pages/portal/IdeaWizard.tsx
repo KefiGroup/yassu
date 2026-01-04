@@ -210,7 +210,7 @@ export default function IdeaWizard() {
     setStage('refining');
 
     try {
-      const response = await api.post('/api/ideas/ai-refine', {
+      const response = await api.post('/ideas/ai-refine', {
         rawIdea: rawIdea.trim(),
         clarifications,
       });
@@ -531,7 +531,7 @@ export default function IdeaWizard() {
                     onClick={async () => {
                       setStage('refining');
                       try {
-                        const response = await api.post('/api/ideas/ai-refine', {
+                        const response = await api.post('/ideas/ai-refine', {
                           rawIdea: rawIdea.trim(),
                           clarifications: {},
                         });
