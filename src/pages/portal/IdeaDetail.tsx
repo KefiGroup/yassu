@@ -157,7 +157,7 @@ const journeySteps = [
 ];
 
 export default function IdeaDetail() {
-  const { ideaId } = useParams<{ ideaId: string }>();
+  const { id: ideaId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { toast } = useToast();
@@ -178,6 +178,12 @@ export default function IdeaDetail() {
   const [editorKey, setEditorKey] = useState(0);
   const [previewMode, setPreviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Interest tracking
+  const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
+  const [interestStatus, setInterestStatus] = useState<string | null>(null);
+  const [interestCount, setInterestCount] = useState({ total_count: 0, pending_count: 0, accepted_count: 0 });
+  const [expressingInterest, setExpressingInterest] = useState(false);
 
   useEffect(() => {
     async function fetchIdea() {
@@ -186,6 +192,31 @@ export default function IdeaDetail() {
       try {
         const ideaData = await api.ideas.get(ideaId);
         setIdea(ideaData);
+        
+        // Fetch interest count
+        try {
+          const countResponse = await fetch(`/api/ideas/${ideaId}/interest-count`);
+          if (countResponse.ok) {
+            const countData = await countResponse.json();
+            setInterestCount(countData);
+          }
+        } catch (e) {
+          console.error('Failed to fetch interest count:', e);
+        }
+        
+        // Check if user has expressed interest
+        if (user) {
+          try {
+            const interestResponse = await fetch(`/api/ideas/${ideaId}/my-interest`);
+            if (interestResponse.ok) {
+              const interestData = await interestResponse.json();
+              setHasExpressedInterest(interestData.hasInterest);
+              setInterestStatus(interestData.interest?.status || null);
+            }
+          } catch (e) {
+            console.error('Failed to check interest:', e);
+          }
+        }
         
         // Check for existing business plan
         try {
@@ -814,6 +845,11 @@ export default function IdeaDetail() {
   }
 
   const isOwner = user?.id === idea.createdBy;
+  
+  // Debug logging
+  console.log('Debug - User ID:', user?.id, 'Idea Creator:', idea.createdBy, 'Match:', isOwner);
+  console.log('Debug - User object:', user);
+  console.log('Debug - Idea object:', idea);
 
   return (
     <div className="space-y-6">
@@ -943,7 +979,7 @@ export default function IdeaDetail() {
                       </span>
                     </div>
                     {index < journeySteps.length - 1 && (
-                      <div className={`w-6 h-0.5 mx-1 ${
+                      <div className={`w-16 h-1 mx-2 rounded-full ${
                         isCompleted ? 'bg-primary' : 'bg-muted'
                       }`} />
                     )}
@@ -985,8 +1021,96 @@ export default function IdeaDetail() {
                     <Calendar className="w-4 h-4" />
                     {new Date(idea.createdAt).toLocaleDateString()}
                   </span>
+                  {interestCount.total_count > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Users2 className="w-4 h-4" />
+                      {interestCount.total_count} interested
+                    </span>
+                  )}
                 </div>
               </div>
+              
+              {/* Express Interest Button - Only show if not creator */}
+              {user && idea.createdBy !== user.id && (
+                <div>
+                  {!hasExpressedInterest ? (
+                    <Button
+                      onClick={async () => {
+                        setExpressingInterest(true);
+                        try {
+                          const response = await fetch(`/api/ideas/${ideaId}/interest`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: '' })
+                          });
+                          
+                          if (response.ok) {
+                            setHasExpressedInterest(true);
+                            setInterestStatus('pending');
+                            toast({
+                              title: 'Interest Expressed!',
+                              description: 'The creator will review your request.'
+                            });
+                            // Refresh interest count
+                            const countResponse = await fetch(`/api/ideas/${ideaId}/interest-count`);
+                            if (countResponse.ok) {
+                              const countData = await countResponse.json();
+                              setInterestCount(countData);
+                            }
+                          } else {
+                            const error = await response.json();
+                            toast({
+                              title: 'Error',
+                              description: error.error || 'Failed to express interest',
+                              variant: 'destructive'
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Error expressing interest:', error);
+                          toast({
+                            title: 'Error',
+                            description: 'Failed to express interest',
+                            variant: 'destructive'
+                          });
+                        } finally {
+                          setExpressingInterest(false);
+                        }
+                      }}
+                      disabled={expressingInterest}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      {expressingInterest ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Expressing Interest...
+                        </>
+                      ) : (
+                        <>
+                          <Users2 className="w-4 h-4 mr-2" />
+                          Express Interest
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Interest {interestStatus === 'accepted' ? 'Accepted' : interestStatus === 'rejected' ? 'Declined' : 'Pending'}
+                      </Badge>
+                      {interestStatus === 'accepted' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate('/portal/messages')}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Message Creator
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -1025,6 +1149,8 @@ export default function IdeaDetail() {
         </Card>
       </motion.div>
 
+      {/* Business Plan Section - Hidden in marketplace, only visible in My Projects */}
+      {false && user && idea.createdBy === user.id && (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1108,9 +1234,25 @@ export default function IdeaDetail() {
                     Find Team Members
                   </Button>
                   <Button
-                    onClick={() => {
+                    onClick={async () => {
+                      // Track referral in Yassu database
+                      try {
+                        await apiRequest('/api/referrals/track', {
+                          method: 'POST',
+                          body: JSON.stringify({
+                            platform: 'manus',
+                            ideaId: idea.id,
+                            ideaTitle: idea.title,
+                          }),
+                        });
+                      } catch (e) {
+                        console.error('Failed to track referral:', e);
+                      }
+
+                      // Build Manus URL with referral tracking
                       const context = {
                         source: 'yassu',
+                        ref: user?.email || 'yassu-platform', // Your referral ID
                         project: idea.title,
                         problem: idea.problem,
                         solution: idea.solution || '',
@@ -1285,6 +1427,7 @@ export default function IdeaDetail() {
           </CardContent>
         </Card>
       </motion.div>
+      )}
 
       <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">

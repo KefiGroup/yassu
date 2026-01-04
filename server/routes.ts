@@ -1,5 +1,6 @@
-import express, { Express, Request, Response } from "express";
+import express, { Request, Response, Express } from "express";
 import { storage } from "./storage";
+import { pool } from "./db";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
@@ -7,6 +8,9 @@ import fs from "fs";
 import { generateBusinessPlan } from "./ai";
 import { analyzeRawIdea, type RawIdeaInput } from "./ai-wizard";
 import { generateSmartMatches, type MatchingNeeds } from "./smart-matching";
+import { trackReferral, getUserReferrals, getUserReferralStats, getAllReferrals, initReferralsTable } from "./referrals";
+import { getPipelineStats, getPipelineIdeas } from "./pipeline";
+import ideaInterestsRouter from "./idea-interests";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 
 const objectStorageService = new ObjectStorageService();
@@ -47,8 +51,14 @@ declare module "express-session" {
 }
 
 export function registerRoutes(app: Express): void {
+  // Initialize referrals table
+  initReferralsTable().catch(console.error);
+
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
+
+  // Register idea interests routes
+  app.use(ideaInterestsRouter);
 
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
@@ -383,20 +393,60 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Get current user's ideas - must be before /api/ideas/:id
-  app.get("/api/ideas/mine", async (req: Request, res: Response) => {
+  // Get current user's ideas
+  app.get("/api/my-ideas", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const ideas = await storage.getUserIdeas(req.session.userId);
-      res.json(ideas);
+      const ideas = await storage.getIdeas(req.session.userId);
+      // Filter to only show ideas created by the current user
+      const myIdeas = ideas.filter(idea => idea.createdBy === req.session.userId);
+      
+      // Add interest counts for each idea
+      const ideasWithInterests = await Promise.all(myIdeas.map(async (idea) => {
+        const interestResult = await pool.query(
+          'SELECT COUNT(*) as total, SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END) as pending, SUM(CASE WHEN status = $2 THEN 1 ELSE 0 END) as accepted, SUM(CASE WHEN status = $3 THEN 1 ELSE 0 END) as rejected FROM idea_interests WHERE idea_id = $4',
+          ['pending', 'accepted', 'rejected', idea.id]
+        );
+        const counts = interestResult.rows[0];
+        return {
+          ...idea,
+          interestCounts: {
+            total: parseInt(counts.total) || 0,
+            pending: parseInt(counts.pending) || 0,
+            accepted: parseInt(counts.accepted) || 0,
+            rejected: parseInt(counts.rejected) || 0
+          }
+        };
+      }));
+      
+      res.json(ideasWithInterests);
     } catch (error) {
-      console.error("Fetch user ideas error:", error);
-      res.status(500).json({ error: "Failed to fetch user ideas" });
+      console.error("Error fetching user's ideas:", error);
+      res.status(500).json({ error: "Failed to fetch ideas" });
     }
   });
+
+  // Get all referrals (admin only)
+  app.get("/api/referrals/all", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const referrals = await getAllReferrals();
+      res.json(referrals);
+    } catch (error) {
+      console.error("Error fetching all referrals:", error);
+      res.status(500).json({ error: "Failed to fetch referrals" });
+    }
+  });
+
+  // Pipeline routes (admin only)
+  app.get("/api/admin/pipeline/stats", getPipelineStats);
+  app.get("/api/admin/pipeline/ideas", getPipelineIdeas);
 
   app.get("/api/ideas/:id", async (req: Request, res: Response) => {
     try {
@@ -1247,6 +1297,120 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Remove connection error:", error);
       res.status(500).json({ error: "Failed to remove connection" });
+    }
+  });
+
+  // ===== REFERRAL TRACKING ENDPOINTS =====
+
+  // Track a new referral click
+  app.post("/api/referrals/track", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { platform, ideaId, ideaTitle } = req.body;
+      const referral = await trackReferral(
+        req.session.userId,
+        platform,
+        ideaId,
+        ideaTitle
+      );
+      res.json(referral);
+    } catch (error) {
+      console.error("Track referral error:", error);
+      res.status(500).json({ error: "Failed to track referral" });
+    }
+  });
+
+  // Get all referrals (admin only)
+  app.get("/api/referrals/mine", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const referrals = await getAllReferrals();
+      res.json(referrals);
+    } catch (error) {
+      console.error("Get referrals error:", error);
+      res.status(500).json({ error: "Failed to get referrals" });
+    }
+  });
+
+  // Get all referral stats (admin only)
+  app.get("/api/referrals/stats", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Get stats for all users combined
+      const allReferrals = await getAllReferrals();
+      const totalClicks = allReferrals.length;
+      const totalConversions = allReferrals.filter(r => r.status === 'converted').length;
+      const estimatedRevenue = allReferrals
+        .filter(r => r.status === 'converted')
+        .reduce((sum, r) => sum + (r.estimatedRevenue || 0), 0);
+      const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
+
+      // Platform breakdown
+      const platformMap = new Map<string, { clicks: number; conversions: number }>();
+      allReferrals.forEach(r => {
+        const current = platformMap.get(r.platform) || { clicks: 0, conversions: 0 };
+        current.clicks++;
+        if (r.status === 'converted') current.conversions++;
+        platformMap.set(r.platform, current);
+      });
+
+      const platformBreakdown = Array.from(platformMap.entries()).map(([platform, data]) => ({
+        platform,
+        clicks: data.clicks,
+        conversions: data.conversions
+      }));
+
+      const stats = {
+        totalClicks,
+        totalConversions,
+        estimatedRevenue,
+        conversionRate,
+        platformBreakdown
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Get referral stats error:", error);
+      res.status(500).json({ error: "Failed to get stats" });
+    }
+  });
+
+  // Get all referrals (admin only)
+  app.get("/api/referrals/all", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const referrals = await getAllReferrals();
+      res.json(referrals);
+    } catch (error) {
+      console.error("Get all referrals error:", error);
+      res.status(500).json({ error: "Failed to get referrals" });
     }
   });
 }

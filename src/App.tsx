@@ -18,6 +18,7 @@ import Ideas from "./pages/portal/Ideas";
 import CreateIdea from "./pages/portal/CreateIdea";
 import IdeaWizard from "./pages/portal/IdeaWizard";
 import IdeaDetail from "./pages/portal/IdeaDetail";
+import MyIdeas from "./pages/portal/MyIdeas";
 import SmartMatching from "./pages/portal/SmartMatching";
 import Teams from "./pages/portal/Teams";
 import Workflows from "./pages/portal/Workflows";
@@ -31,6 +32,8 @@ import PortalAmbassadors from "./pages/portal/Ambassadors";
 import PortalAdvisors from "./pages/portal/Advisors";
 import Collaborators from "./pages/portal/Collaborators";
 import UserProfile from "./pages/portal/UserProfile";
+import ReferralDashboard from "./pages/portal/ReferralDashboard";
+import Pipeline from "./pages/portal/Pipeline";
 import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
@@ -55,6 +58,7 @@ const App = () => (
             <Route path="/portal" element={<PortalLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="ideas" element={<Ideas />} />
+              <Route path="projects" element={<MyIdeas />} />
               <Route path="ideas/new" element={<IdeaWizard />} />
               <Route path="ideas/wizard" element={<IdeaWizard />} />
                <Route path="ideas/:id" element={<IdeaDetail />} />
@@ -71,6 +75,8 @@ const App = () => (
               <Route path="users/:userId" element={<UserProfile />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="referrals" element={<ReferralDashboard />} />
+              <Route path="pipeline" element={<Pipeline />} />
             </Route>
 
             {/* Admin Route */}

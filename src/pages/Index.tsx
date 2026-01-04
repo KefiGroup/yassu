@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import HowItWorks from "@/components/HowItWorks";
 import Team from "@/components/Team";
-import IdeasSlider from "@/components/IdeasSlider";
+// import IdeasSlider from "@/components/IdeasSlider";
 import Ambassadors from "@/components/Ambassadors";
 import Vision from "@/components/Vision";
 import Footer from "@/components/Footer";
@@ -13,7 +13,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <HowItWorks />
-      <IdeasSlider />
+      {/* <IdeasSlider /> */}
       <Team />
       <Ambassadors />
       <Vision />

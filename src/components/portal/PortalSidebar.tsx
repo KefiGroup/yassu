@@ -30,12 +30,13 @@ import {
   GraduationCap,
   Briefcase,
   Settings,
+  DollarSign,
+  FolderOpen,
 } from 'lucide-react';
 
 const mainNavItems = [
   { title: 'My Dashboard', url: '/portal', icon: LayoutDashboard },
   { title: 'My Projects', url: '/portal/projects', icon: FolderKanban },
-  { title: 'My Workflows', url: '/portal/workflows', icon: Workflow },
   { title: 'My Teams', url: '/portal/teams', icon: Users },
 ];
 
@@ -56,6 +57,7 @@ const accountNavItems = [
 const adminNavItems = [
   { title: 'Admin', url: '/admin', icon: Shield },
   { title: 'Pipeline', url: '/portal/pipeline', icon: TrendingUp },
+  { title: 'Referrals', url: '/portal/referrals', icon: DollarSign },
 ];
 
 const sponsorNavItems = [

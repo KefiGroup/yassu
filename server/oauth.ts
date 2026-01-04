@@ -91,15 +91,79 @@ export function setupOAuth(app: Express) {
     );
   }
 
-  // Apple OAuth routes (placeholder - requires more complex setup)
-  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID) {
-    app.get("/api/auth/apple", (req: Request, res: Response) => {
-      res.redirect("/auth?error=apple_not_configured");
-    });
+  // Apple OAuth Strategy
+  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID && process.env.APPLE_PRIVATE_KEY) {
+    const AppleStrategy = require("passport-apple").Strategy;
+    
+    passport.use(
+      new AppleStrategy(
+        {
+          clientID: process.env.APPLE_CLIENT_ID,
+          teamID: process.env.APPLE_TEAM_ID,
+          keyID: process.env.APPLE_KEY_ID,
+          privateKeyString: process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          callbackURL: `${CALLBACK_BASE}/api/auth/apple/callback`,
+          passReqToCallback: false,
+        },
+        async (accessToken: string, refreshToken: string, idToken: any, profile: any, done: any) => {
+          try {
+            const email = profile.email || idToken?.email;
+            if (!email) {
+              return done(new Error("No email found in Apple profile"), undefined);
+            }
 
-    app.post("/api/auth/apple/callback", (req: Request, res: Response) => {
-      res.redirect("/auth?error=apple_not_configured");
-    });
+            let user = await storage.getUserByEmail(email);
+            
+            if (!user) {
+              // Create new user with random password (they'll use OAuth)
+              const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+              const displayName = profile.name?.firstName && profile.name?.lastName
+                ? `${profile.name.firstName} ${profile.name.lastName}`
+                : email.split("@")[0];
+              
+              user = await storage.createUser({
+                email,
+                password: randomPassword,
+                fullName: displayName,
+              });
+
+              await storage.createProfile(user.id, {
+                email,
+                fullName: displayName,
+                avatarUrl: null,
+                verificationStatus: "verified",
+                onboardingCompleted: false,
+                skills: [],
+                interests: [],
+              });
+              await storage.addUserRole(user.id, "student");
+            }
+
+            done(null, user);
+          } catch (error) {
+            done(error as Error, undefined);
+          }
+        }
+      )
+    );
+
+    // Apple OAuth routes
+    app.post(
+      "/api/auth/apple",
+      passport.authenticate("apple")
+    );
+
+    app.post(
+      "/api/auth/apple/callback",
+      passport.authenticate("apple", { failureRedirect: "/auth?error=apple_failed" }),
+      (req: Request, res: Response) => {
+        // Set session userId for compatibility with existing auth
+        if (req.user) {
+          req.session.userId = (req.user as any).id;
+        }
+        res.redirect("/portal");
+      }
+    );
   }
 
   // Check if OAuth providers are configured

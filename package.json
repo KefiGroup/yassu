@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development npx tsx server/index.ts",
     "build": "vite build && npx esbuild server/index.ts --bundle --platform=node --outfile=dist/index.cjs --format=cjs --packages=external",
+    "start": "NODE_ENV=production node dist/index.cjs",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -65,6 +66,7 @@
     "cmdk": "^1.1.1",
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.3",
     "driver.js": "^1.4.0",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",

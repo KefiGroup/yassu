@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import pgSession from "connect-pg-simple";
@@ -7,6 +8,7 @@ import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
+import { setupOAuth } from "./oauth";
 
 const app = express();
 const server = createServer(app);
@@ -50,6 +52,9 @@ app.use(
     },
   })
 );
+
+// Setup OAuth (Google, Apple)
+setupOAuth(app);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -107,4 +112,8 @@ server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
   
   // Fire-and-forget database seeding - don't block startup
   void seedDatabase().catch(err => console.error("Database seeding error:", err));
+  
+  console.log("OAuth providers configured:");
+  console.log("  Google:", !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET));
+  console.log("  Apple:", !!(process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID));
 });
