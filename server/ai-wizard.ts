@@ -82,7 +82,7 @@ Respond in JSON format:
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful startup advisor. Always respond with valid JSON.',
+          content: 'You are a helpful startup advisor. Always respond with valid JSON only, no markdown formatting.',
         },
         {
           role: 'user',
@@ -90,7 +90,6 @@ Respond in JSON format:
         },
       ],
       temperature: 0.7,
-      response_format: { type: 'json_object' },
     });
 
     const analysis = JSON.parse(response.choices[0].message.content || '{}');
@@ -163,7 +162,7 @@ Respond in JSON format:
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful startup advisor. Always respond with valid JSON.',
+          content: 'You are a helpful startup advisor. Always respond with valid JSON only, no markdown formatting.',
         },
         {
           role: 'user',
@@ -171,7 +170,6 @@ Respond in JSON format:
         },
       ],
       temperature: 0.8,
-      response_format: { type: 'json_object' },
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
@@ -248,7 +246,7 @@ Respond in JSON format:
         {
           role: 'system',
           content:
-            'You are a helpful startup advisor specializing in university entrepreneurship. Always respond with valid JSON.',
+            'You are a helpful startup advisor specializing in university entrepreneurship. Always respond with valid JSON only, no markdown formatting.',
         },
         {
           role: 'user',
@@ -256,7 +254,6 @@ Respond in JSON format:
         },
       ],
       temperature: 0.7,
-      response_format: { type: 'json_object' },
     });
 
     const refinedIdea = JSON.parse(response.choices[0].message.content || '{}');
