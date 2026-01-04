@@ -83,7 +83,7 @@ export function serveStatic(app: Express) {
     }),
   );
 
-  app.use("/{*splat}", (_req, res) => {
+  app.get("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
