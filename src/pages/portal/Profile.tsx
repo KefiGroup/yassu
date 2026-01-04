@@ -333,9 +333,25 @@ export default function Profile() {
               />
               <div className="text-xs text-muted-foreground space-y-1">
                 <p>This will be displayed on your public profile.</p>
-                <p className="text-muted-foreground/80">
-                  Tip: You can copy your bio from LinkedIn by going to your profile, clicking "About", then copying the text.
-                </p>
+                {formData.linkedinUrl && (
+                  <p className="text-muted-foreground/80">
+                    Tip:{' '}
+                    <a
+                      href={formData.linkedinUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Open your LinkedIn profile
+                    </a>
+                    {' '}→ click "About" → copy your bio text and paste it above.
+                  </p>
+                )}
+                {!formData.linkedinUrl && (
+                  <p className="text-muted-foreground/80">
+                    Tip: Add your LinkedIn URL above, then we'll help you copy your bio from there.
+                  </p>
+                )}
               </div>
             </div>
 
