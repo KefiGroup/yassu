@@ -16,6 +16,7 @@ import { PortalLayout } from "./layouts/PortalLayout";
 import Dashboard from "./pages/portal/Dashboard";
 import Ideas from "./pages/portal/Ideas";
 import CreateIdea from "./pages/portal/CreateIdea";
+import IdeaWizard from "./pages/portal/IdeaWizard";
 import IdeaDetail from "./pages/portal/IdeaDetail";
 import Teams from "./pages/portal/Teams";
 import Workflows from "./pages/portal/Workflows";
@@ -54,6 +55,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="ideas" element={<Ideas />} />
               <Route path="ideas/new" element={<CreateIdea />} />
+              <Route path="ideas/wizard" element={<IdeaWizard />} />
               <Route path="ideas/:ideaId" element={<IdeaDetail />} />
               <Route path="teams" element={<Teams />} />
               <Route path="workflows" element={<Workflows />} />

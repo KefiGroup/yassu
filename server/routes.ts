@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { generateBusinessPlan } from "./ai";
+import { analyzeRawIdea, type RawIdeaInput } from "./ai-wizard";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 
 const objectStorageService = new ObjectStorageService();
@@ -406,6 +407,35 @@ export function registerRoutes(app: Express): void {
       res.json({ ...idea, tags: tags.map(t => t.tag) });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch idea" });
+    }
+  });
+
+  // AI Idea Wizard endpoints
+  app.post("/api/ideas/ai-refine", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const input: RawIdeaInput = {
+        rawIdea: req.body.rawIdea,
+        clarifications: req.body.clarifications,
+      };
+
+      if (!input.rawIdea || input.rawIdea.trim().length < 20) {
+        return res.status(400).json({ 
+          error: "Please provide a more detailed description of your idea (at least 20 characters)" 
+        });
+      }
+
+      const result = await analyzeRawIdea(input);
+      res.json(result);
+    } catch (error: any) {
+      console.error("AI refine error:", error?.message || error);
+      res.status(500).json({ 
+        error: "Failed to refine idea", 
+        details: error?.message || "An unexpected error occurred" 
+      });
     }
   });
 

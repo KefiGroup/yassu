@@ -24,6 +24,7 @@ import {
   MessageSquare,
   User,
   ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 interface Profile {
   id: number;
@@ -267,10 +268,25 @@ export default function Dashboard() {
               </CardTitle>
               <CardDescription>Your startup ideas and their current stage</CardDescription>
             </div>
-            <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-new-idea" data-tour="new-idea-button">
-              <Plus className="w-4 h-4 mr-2" />
-              New Idea
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => navigate('/portal/ideas/wizard')} 
+                data-testid="button-ai-wizard"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Wizard
+              </Button>
+              <Button 
+                onClick={() => navigate('/portal/ideas/new')} 
+                data-testid="button-new-idea" 
+                data-tour="new-idea-button"
+                variant="outline"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Manual
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
