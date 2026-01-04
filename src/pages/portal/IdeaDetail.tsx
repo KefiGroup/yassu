@@ -1102,10 +1102,27 @@ export default function IdeaDetail() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => navigate(`/portal/ideas/${id}/smart-match`)}
+                    onClick={() => navigate(`/portal/ideas/${ideaId}/smart-match`)}
                   >
                     <Users2 className="w-4 h-4 mr-2" />
                     Find Team Members
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const context = {
+                        source: 'yassu',
+                        project: idea.title,
+                        problem: idea.problem,
+                        solution: idea.solution || '',
+                        users: idea.targetUser || '',
+                      };
+                      const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+                      window.open(manusUrl, '_blank');
+                    }}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    <Code className="w-4 h-4 mr-2" />
+                    Build MVP with Manus AI
                   </Button>
                 </div>
               </div>
