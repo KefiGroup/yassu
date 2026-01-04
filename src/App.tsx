@@ -18,6 +18,7 @@ import Ideas from "./pages/portal/Ideas";
 import CreateIdea from "./pages/portal/CreateIdea";
 import IdeaWizard from "./pages/portal/IdeaWizard";
 import IdeaDetail from "./pages/portal/IdeaDetail";
+import SmartMatching from "./pages/portal/SmartMatching";
 import Teams from "./pages/portal/Teams";
 import Workflows from "./pages/portal/Workflows";
 import WorkflowRun from "./pages/portal/WorkflowRun";
@@ -56,7 +57,8 @@ const App = () => (
               <Route path="ideas" element={<Ideas />} />
               <Route path="ideas/new" element={<IdeaWizard />} />
               <Route path="ideas/wizard" element={<IdeaWizard />} />
-              <Route path="ideas/:ideaId" element={<IdeaDetail />} />
+               <Route path="ideas/:id" element={<IdeaDetail />} />
+              <Route path="ideas/:id/smart-match" element={<SmartMatching />} />
               <Route path="teams" element={<Teams />} />
               <Route path="workflows" element={<Workflows />} />
               <Route path="workflows/run/:workflowType" element={<WorkflowRun />} />

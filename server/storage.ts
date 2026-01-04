@@ -23,6 +23,7 @@ export interface IStorage {
   createProfile(userId: number, data: Partial<Profile>): Promise<Profile>;
   findProfilesBySkills(skills: string[], excludeUserId?: number): Promise<ProfileWithMatchingSkills[]>;
   getProfilesByYassuRole(role: "ambassador" | "advisor"): Promise<Profile[]>;
+  getAllUsersForMatching(): Promise<any[]>;
   
   getUserRoles(userId: number): Promise<UserRole[]>;
   addUserRole(userId: number, role: string): Promise<void>;
@@ -203,6 +204,29 @@ export class DatabaseStorage implements IStorage {
     matchedProfiles.sort((a, b) => b.matchCount - a.matchCount);
     
     return matchedProfiles.slice(0, 10);
+  }
+
+  async getAllUsersForMatching(): Promise<any[]> {
+    // Get all users with their profiles and idea counts for matching
+    const users = await db.select({
+      id: schema.users.id,
+      email: schema.users.email,
+      name: schema.profiles.fullName,
+      bio: schema.profiles.bio,
+      skills: schema.profiles.skills,
+      university_id: schema.profiles.universityId,
+      university_name: schema.universities.name,
+      idea_count: sql<number>`(
+        SELECT COUNT(*) 
+        FROM ${schema.ideas} 
+        WHERE ${schema.ideas.creatorId} = ${schema.users.id}
+      )`,
+    })
+    .from(schema.users)
+    .leftJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+    .leftJoin(schema.universities, eq(schema.profiles.universityId, schema.universities.id));
+    
+    return users;
   }
 
   async getProfilesByYassuRole(role: "ambassador" | "advisor"): Promise<Profile[]> {

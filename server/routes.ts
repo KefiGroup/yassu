@@ -6,6 +6,7 @@ import path from "path";
 import fs from "fs";
 import { generateBusinessPlan } from "./ai";
 import { analyzeRawIdea, type RawIdeaInput } from "./ai-wizard";
+import { generateSmartMatches, type MatchingNeeds } from "./smart-matching";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 
 const objectStorageService = new ObjectStorageService();
@@ -435,6 +436,49 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ 
         error: "Failed to refine idea", 
         details: error?.message || "An unexpected error occurred" 
+      });
+    }
+  });
+
+  // Smart Matching endpoint
+  app.post("/api/ideas/:id/smart-match", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      // Check if user owns this idea
+      if (idea.creator_id !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      // Get all users for matching
+      const allUsers = await storage.getAllUsersForMatching();
+      
+      // Prepare matching needs
+      const needs: MatchingNeeds = {
+        ideaTitle: idea.title,
+        ideaProblem: idea.problem,
+        ideaSolution: idea.solution,
+        targetUser: idea.target_user || '',
+        stage: idea.stage || 'idea',
+        rolesNeeded: [],
+      };
+
+      // Generate matches
+      const matches = await generateSmartMatches(needs, allUsers);
+
+      return res.json(matches);
+    } catch (error) {
+      console.error('Smart matching error:', error);
+      return res.status(500).json({ 
+        error: 'Failed to generate matches',
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
