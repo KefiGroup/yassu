@@ -38,10 +38,18 @@ export const ONBOARDING_TOURS: Record<string, OnboardingTour> = {
         },
       },
       {
+        element: "[data-tour='profile']",
+        popover: {
+          title: "👤 Complete Your Profile First",
+          description: "Start by completing your profile! Add your skills, interests, and experience to get matched with the right collaborators and advisors.",
+          side: "left",
+        },
+      },
+      {
         element: "[data-tour='new-idea-button']",
         popover: {
           title: "🚀 Post Your First Idea",
-          description: "Click here to share your startup idea. This is where your entrepreneurial journey begins!",
+          description: "Now you're ready to share your startup idea! This is where your entrepreneurial journey begins.",
           side: "bottom",
         },
       },
@@ -59,14 +67,6 @@ export const ONBOARDING_TOURS: Record<string, OnboardingTour> = {
           title: "🌟 Marketplace",
           description: "Explore ideas from other students, find collaborators, connect with ambassadors and advisors.",
           side: "right",
-        },
-      },
-      {
-        element: "[data-tour='profile']",
-        popover: {
-          title: "👤 Your Profile",
-          description: "Complete your profile to get matched with the right collaborators and advisors. Add your skills, interests, and experience.",
-          side: "left",
         },
       },
     ],
