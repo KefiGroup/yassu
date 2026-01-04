@@ -83,7 +83,8 @@ export function serveStatic(app: Express) {
     }),
   );
 
-  app.get("*", (_req, res) => {
+  // Catch-all: serve index.html for any route not matched above
+  app.use((_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
