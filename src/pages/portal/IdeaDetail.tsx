@@ -338,16 +338,18 @@ export default function IdeaDetail() {
       });
       
       toast({
-        title: 'Generating Business Plan',
-        description: 'AI is analyzing your idea. This may take 1-2 minutes.',
+        title: '🚀 Generating Business Plan',
+        description: 'AI is analyzing your idea and creating a comprehensive plan. This typically takes 1-2 minutes.',
       });
       
       // Poll for completion
       pollForCompletion(result.id);
     } catch (error) {
+      console.error('Business plan generation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: 'Generation Failed',
-        description: 'Could not start business plan generation.',
+        description: `Could not start business plan generation: ${errorMessage}. Please check your internet connection and try again.`,
         variant: 'destructive',
       });
     } finally {
@@ -383,7 +385,7 @@ export default function IdeaDetail() {
           setBusinessPlan(prev => prev ? { ...prev, status: 'failed' } : null);
           toast({
             title: 'Generation Failed',
-            description: 'Could not generate business plan. Please try again.',
+            description: 'The AI encountered an issue while generating your business plan. This might be due to high demand or a temporary error. Please try again in a moment.',
             variant: 'destructive',
           });
           return;
@@ -394,6 +396,14 @@ export default function IdeaDetail() {
         }
       } catch (error) {
         console.error('Poll error:', error);
+        if (attempts >= maxAttempts) {
+          setBusinessPlan(prev => prev ? { ...prev, status: 'failed' } : null);
+          toast({
+            title: 'Generation Timeout',
+            description: 'Business plan generation is taking longer than expected. Please try again or contact support if the issue persists.',
+            variant: 'destructive',
+          });
+        }
       }
     };
     
@@ -412,9 +422,11 @@ export default function IdeaDetail() {
       });
       navigate('/portal/ideas');
     } catch (error) {
+      console.error('Delete idea error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: 'Delete Failed',
-        description: 'Could not delete the idea. Please try again.',
+        description: `Could not delete the idea: ${errorMessage}. Please try again or contact support if the issue persists.`,
         variant: 'destructive',
       });
     } finally {

@@ -1,11 +1,19 @@
 import OpenAI from "openai";
 import { batchProcess } from "./replit_integrations/batch";
 
-// Create AI client using Replit's AI Integrations (OpenAI-compatible endpoint)
+// Create AI client using OpenAI API
 function getAIClient(): OpenAI {
+  // Use Replit AI Integrations if available, otherwise fall back to standard OpenAI
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  
+  if (!apiKey) {
+    throw new Error("No OpenAI API key found. Please set OPENAI_API_KEY or AI_INTEGRATIONS_OPENAI_API_KEY environment variable.");
+  }
+  
   return new OpenAI({
-    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    apiKey,
+    baseURL, // undefined is fine, will use default OpenAI endpoint
   });
 }
 
@@ -426,7 +434,7 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
       
       const client = getAIClient();
       const response = await client.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-4.1-mini",
         messages: [{ role: "user", content: section.prompt }],
         max_completion_tokens: 8192,
       });
@@ -514,7 +522,7 @@ Keep it to ~400 words. Make it compelling enough to hook an investor or co-found
 
   const client = getAIClient();
   const response = await client.chat.completions.create({
-    model: "gpt-5.1",
+    model: "gpt-4.1-mini",
     messages: [{ role: "user", content: prompt }],
     max_completion_tokens: 8192,
   });

@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import express, { Express, Request, Response } from "express";
 import { storage } from "./storage";
 import bcrypt from "bcryptjs";
 import multer from "multer";
@@ -236,49 +236,32 @@ export function registerRoutes(app: Express): void {
     }
   });
 
-  // Get presigned URL for avatar upload
-  app.post("/api/profile/avatar/request-url", async (req: Request, res: Response) => {
+  // Upload avatar directly using multer
+  app.post("/api/profile/avatar/upload", avatarUpload.single("avatar"), async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-
-      res.json({ uploadURL, objectPath });
-    } catch (error) {
-      console.error("Avatar upload URL error:", error);
-      res.status(500).json({ error: "Failed to generate upload URL" });
-    }
-  });
-
-  // Save avatar path after upload
-  app.post("/api/profile/avatar", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      const { objectPath } = req.body;
-      if (!objectPath) {
-        return res.status(400).json({ error: "Object path is required" });
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
       }
 
-      // Set ACL policy to make avatar public
-      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(objectPath, {
-        owner: req.session.userId.toString(),
-        visibility: "public",
-      });
+      // Generate avatar URL path
+      const avatarUrl = `/uploads/${req.file.filename}`;
+      
+      // Update profile with new avatar URL
+      await storage.updateProfile(req.session.userId, { avatarUrl });
 
-      await storage.updateProfile(req.session.userId, { avatarUrl: normalizedPath });
-
-      res.json({ avatarUrl: normalizedPath });
+      res.json({ avatarUrl });
     } catch (error) {
-      console.error("Avatar save error:", error);
-      res.status(500).json({ error: "Failed to save avatar" });
+      console.error("Avatar upload error:", error);
+      res.status(500).json({ error: "Failed to upload avatar" });
     }
   });
+
+  // Serve uploaded files
+  app.use("/uploads", express.static(uploadDir));
 
   app.post("/api/profiles/match-skills", async (req: Request, res: Response) => {
     if (!req.session.userId) {

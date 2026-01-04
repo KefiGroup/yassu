@@ -1,0 +1,146 @@
+/**
+ * Custom Onboarding Tour Styles
+ * Overrides and extends driver.js default styles to match Yassu branding
+ */
+
+/* Override driver.js default colors to match Yassu theme */
+.driver-popover {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  border-radius: 0.75rem;
+  max-width: 400px;
+}
+
+.driver-popover-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.5rem;
+}
+
+.driver-popover-description {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+
+.driver-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+.driver-popover-close-btn {
+  color: hsl(var(--muted-foreground));
+  transition: color 0.2s;
+}
+
+.driver-popover-close-btn:hover {
+  color: hsl(var(--foreground));
+}
+
+.driver-popover-prev-btn,
+.driver-popover-next-btn {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.driver-popover-prev-btn:hover,
+.driver-popover-next-btn:hover {
+  opacity: 0.9;
+}
+
+.driver-popover-prev-btn {
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+}
+
+.driver-popover-prev-btn:disabled,
+.driver-popover-next-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Highlighted element styles */
+.driver-active-element {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 4px;
+  border-radius: 0.5rem;
+}
+
+/* Overlay styles */
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+/* Arrow styles */
+.driver-popover-arrow {
+  display: none; /* Hide arrow for cleaner look */
+}
+
+/* Animation for popover */
+.driver-popover {
+  animation: driver-popover-fade-in 0.3s ease-out;
+}
+
+@keyframes driver-popover-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Progress bar */
+.driver-popover-progress-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .driver-overlay {
+    background: rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .driver-popover {
+    max-width: calc(100vw - 2rem);
+    margin: 1rem;
+  }
+  
+  .driver-popover-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .driver-popover-prev-btn,
+  .driver-popover-next-btn {
+    width: 100%;
+  }
+}

@@ -187,39 +187,19 @@ export default function Profile() {
 
   const handleAvatarSave = async (croppedImageBlob: Blob) => {
     try {
-      // Step 1: Get presigned URL from backend
-      const urlResponse = await fetch('/api/profile/avatar/request-url', {
+      // Create form data with the image
+      const formData = new FormData();
+      formData.append('avatar', croppedImageBlob, 'avatar.png');
+
+      // Upload directly to server
+      const uploadResponse = await fetch('/api/profile/avatar/upload', {
         method: 'POST',
         credentials: 'include',
-      });
-
-      if (!urlResponse.ok) {
-        throw new Error('Failed to get upload URL');
-      }
-
-      const { uploadURL, objectPath } = await urlResponse.json();
-
-      // Step 2: Upload directly to object storage
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'PUT',
-        body: croppedImageBlob,
-        headers: { 'Content-Type': 'image/png' },
+        body: formData,
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload to storage');
-      }
-
-      // Step 3: Save avatar path to profile
-      const saveResponse = await fetch('/api/profile/avatar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ objectPath }),
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save avatar');
+        throw new Error('Failed to upload avatar');
       }
 
       await refreshProfile();

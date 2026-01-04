@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { WelcomeModal } from '@/components/portal/WelcomeModal';
 import {
   Lightbulb,
   Users,
@@ -204,7 +205,9 @@ export default function Dashboard() {
     !profile?.universityId;
 
   return (
-    <div className="space-y-8">
+    <>
+      <WelcomeModal />
+      <div className="space-y-8" data-tour="welcome">
       {/* Profile Completion Prompt */}
       {isProfileIncomplete && (
         <motion.div
@@ -239,7 +242,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-3xl font-bold text-foreground" data-testid="text-welcome">
+        <h1 className="text-3xl font-bold text-foreground" data-testid="text-welcome" data-tour="dashboard-header">
           Welcome{isProfileIncomplete ? '' : ' back'}, {profile?.fullName?.split(' ')[0] || 'Founder'}!
         </h1>
         <p className="text-muted-foreground mt-1">
@@ -258,13 +261,13 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
             <div>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-lg flex items-center gap-2" data-tour="my-ideas">
                 <Lightbulb className="w-5 h-5 text-amber-500" />
                 My Ideas
               </CardTitle>
               <CardDescription>Your startup ideas and their current stage</CardDescription>
             </div>
-            <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-new-idea">
+            <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-new-idea" data-tour="new-idea-button">
               <Plus className="w-4 h-4 mr-2" />
               New Idea
             </Button>
@@ -705,5 +708,6 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
