@@ -199,6 +199,28 @@ Include 6-8 features with real names, clearly marking MVP vs. post-MVP.
 | 3-4 | Core Features | Main functionality |
 | 5-6 | Polish | Testing, fixes |
 | 7-8 | Launch | MVP live |
+
+## Figma Design Prompt
+
+Generate a detailed design brief for creating the MVP in Figma:
+
+**Design System:**
+- Color palette: [Primary, Secondary, Accent colors with hex codes]
+- Typography: [Font families for headings, body, buttons]
+- Component library needs: [Buttons, forms, cards, etc.]
+
+**Key Screens to Design:**
+1. [Screen 1 name] - Purpose, key elements, user actions
+2. [Screen 2 name] - Purpose, key elements, user actions
+3. [Screen 3 name] - Purpose, key elements, user actions
+
+**User Flow Diagram:**
+[Describe the main user journey from entry to key action]
+
+**Design Priorities:**
+- Mobile-first or desktop-first?
+- Accessibility requirements
+- Brand personality (e.g., professional, playful, minimal)
 ${outputRules}`,
     },
     {
@@ -253,10 +275,55 @@ Include 6-8 skills using EXACT names from the list above.
 2. [Role 2] - Dependencies
 3. [Role 3] - Growth stage
 
+## Personality & Working Style Preferences
+
+For optimal team matching, define the ideal co-founder/team member traits:
+
+**Work Style:**
+- Pace: Fast-moving / Methodical / Balanced
+- Decision-making: Data-driven / Intuition-based / Collaborative
+- Communication: Frequent check-ins / Async updates / Weekly syncs
+
+**Personality Traits (Rank top 3):**
+- [ ] Ambitious & competitive
+- [ ] Detail-oriented & thorough
+- [ ] Creative & innovative
+- [ ] Analytical & logical
+- [ ] Empathetic & people-focused
+- [ ] Resilient & adaptable
+
+**Cultural Fit:**
+- Work hours expectations (flexible / structured)
+- Equity vs. salary preferences
+- Long-term commitment level
+
+## Suggested Invite List
+
+Based on the required skills and personality profile, here are the types of people to invite:
+
+### Priority 1: Technical Co-Founder
+- **Profile**: [Specific major, year, background]
+- **Skills needed**: [List exact skills from the skill matrix]
+- **Where to find**: [Specific clubs, classes, events]
+- **Matching criteria**: [Personality traits, availability, interests]
+
+### Priority 2: Business/Growth Lead
+- **Profile**: [Specific major, year, background]
+- **Skills needed**: [List exact skills from the skill matrix]
+- **Where to find**: [Specific clubs, classes, events]
+- **Matching criteria**: [Personality traits, availability, interests]
+
+### Priority 3: Designer/Product Person
+- **Profile**: [Specific major, year, background]
+- **Skills needed**: [List exact skills from the skill matrix]
+- **Where to find**: [Specific clubs, classes, events]
+- **Matching criteria**: [Personality traits, availability, interests]
+
 ## Campus Recruiting Strategy
 - Student orgs to partner with
 - Classes with relevant talent
 - Events to attend
+- LinkedIn/network search keywords
 ${outputRules}`,
     },
     {
@@ -417,6 +484,65 @@ List 4-6 relevant opportunities with real names if possible.
 | Series A | $3-5M | Month 36 | $1M ARR |
 
 Customize based on the specific startup.
+
+## Investor Intro Templates
+
+### Cold Email Template
+```
+Subject: [University] student building [solution] for [target market]
+
+Hi [Investor Name],
+
+I'm a [year] at [University] building [product name] — [one-line description].
+
+The problem: [2 sentences on the problem]
+
+Our solution: [2 sentences on your approach]
+
+We've [traction metric] and are raising [amount] to [key milestone].
+
+Would you be open to a 15-minute call next week?
+
+Best,
+[Your name]
+[LinkedIn]
+```
+
+### Warm Intro Request Template
+```
+Hi [Connector],
+
+Hope you're doing well! I'm reaching out because I'm raising [amount] for [company name], and I noticed you're connected to [Investor Name] on LinkedIn.
+
+Quick context:
+- [One-line description]
+- [Key traction metric]
+- [Why this investor is a fit]
+
+Would you be comfortable making an intro? Happy to send a forwardable email.
+
+Thanks!
+[Your name]
+```
+
+### Forwardable Intro Email
+```
+[Connector name], thanks for offering to intro me to [Investor]!
+
+Here's a forwardable blurb:
+
+---
+
+[Investor name],
+
+I'd like to introduce you to [Founder name], a [year] at [University] who's building [product name].
+
+[Product name] helps [target users] [solve problem] by [solution approach]. They've [traction metric] and are raising [amount].
+
+I think this could be interesting for [reason related to investor's thesis].
+
+[Founder], meet [Investor].
+```
 ${outputRules}`,
     },
   ];
