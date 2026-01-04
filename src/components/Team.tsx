@@ -7,7 +7,7 @@ const teamMembers = [
   {
     name: "Bob Battista",
     role: "Founder / Northwestern University",
-    image: "https://yassu.co/wp-content/uploads/2024/03/pic_bob_battista.png",
+    image: "/team/bob_battista.png",
     linkedin: "https://www.linkedin.com/in/bob-battista-ceo/",
     quote: "I believe that anything could be accomplished with will, determination and some form of talent.",
     superpower: "Passion and rigor for strategy",
@@ -16,7 +16,7 @@ const teamMembers = [
   {
     name: "Kloey Battista",
     role: "Founder / UC Berkeley",
-    image: "https://yassu.co/wp-content/uploads/2024/03/pic_kloey_battista-e1711734781360.jpeg",
+    image: "/team/kloey_battista.png",
     linkedin: "https://www.linkedin.com/in/kloeybattista/",
     quote: "I believe that we all deserve to accomplish our big dreams, and if you dream it, you can create it.",
     superpower: "Building products and pushing the status quo",
@@ -25,7 +25,7 @@ const teamMembers = [
   {
     name: "Hae Yung Kim",
     role: "Founder / UCLA",
-    image: "https://yassu.co/wp-content/uploads/2024/03/pci_hae_3.jpg",
+    image: "/team/hae_yung_kim.png",
     linkedin: "https://www.linkedin.com/in/hae-yung-kim-37952a3/",
     quote: "I believe everyone deserves the chance to be their best self and achieve their dreams.",
     superpower: "Seeing big opportunities and bringing them to life",
@@ -34,7 +34,7 @@ const teamMembers = [
   {
     name: "Michael Stamatinos",
     role: "Chief Access Officer",
-    image: "https://yassu.co/wp-content/uploads/2024/03/pic_michael_stamatinos_greece.jpg",
+    image: "/team/michael_stamatinos.png",
     linkedin: "https://www.linkedin.com/in/michaelstamo/",
     quote: "I believe you're one relationship away from changing the trajectory of your destiny.",
     superpower: "Being a connector and bridge-builder",
@@ -43,7 +43,7 @@ const teamMembers = [
   {
     name: "Mark Wilson",
     role: "Chief Financial Officer",
-    image: "https://yassu.co/wp-content/uploads/2024/04/pic_mark_wilson.jpg",
+    image: "/team/mark_wilson.png",
     linkedin: "https://www.linkedin.com/in/mark-wilson-cpa/",
     quote: "I believe that new business ventures are the purest expression of American meritocracy.",
     superpower: "Supporting future Captains of Industry keep their ships on a steady course",
