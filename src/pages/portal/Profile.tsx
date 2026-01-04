@@ -308,6 +308,20 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="linkedinUrl">LinkedIn Profile</Label>
+              <Input
+                id="linkedinUrl"
+                value={formData.linkedinUrl}
+                onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                placeholder="https://www.linkedin.com/in/yourprofile"
+                data-testid="input-linkedin-url"
+              />
+              <p className="text-xs text-muted-foreground">
+                Add your LinkedIn profile URL to showcase your professional background
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="bio">Bio / Summary</Label>
               <Textarea
                 id="bio"
@@ -454,22 +468,6 @@ export default function Profile() {
               placeholder="Select or add interests..."
               badgeVariant="outline"
             />
-
-            <div className="space-y-4">
-              <Label className="text-base">Links</Label>
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label htmlFor="linkedinUrl" className="text-sm text-muted-foreground">LinkedIn</Label>
-                  <Input
-                    id="linkedinUrl"
-                    value={formData.linkedinUrl}
-                    onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
-                    placeholder="https://linkedin.com/in/yourprofile"
-                    data-testid="input-linkedin-url"
-                  />
-                </div>
-              </div>
-            </div>
 
             <Button onClick={handleSave} disabled={saving} className="w-full" data-testid="button-save-profile">
               {saving ? (
