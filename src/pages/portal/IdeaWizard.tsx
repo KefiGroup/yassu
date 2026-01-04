@@ -528,22 +528,26 @@ export default function IdeaWizard() {
                 <div className="flex gap-3 pt-4">
                   <Button
                     variant="outline"
-                    onClick={() => {
+                    onClick={async () => {
                       setStage('refining');
-                      setTimeout(async () => {
-                        try {
-                          const response = await api.post('/api/ideas/ai-refine', {
-                            rawIdea: rawIdea.trim(),
-                            clarifications: {},
-                          });
-                          if (response.stage === 'refined') {
-                            setRefinedIdea(response.refinedIdea);
-                            setStage('review');
-                          }
-                        } catch (error) {
-                          setStage('clarification');
+                      try {
+                        const response = await api.post('/api/ideas/ai-refine', {
+                          rawIdea: rawIdea.trim(),
+                          clarifications: {},
+                        });
+                        if (response.stage === 'refined') {
+                          setRefinedIdea(response.refinedIdea);
+                          setStage('review');
                         }
-                      }, 100);
+                      } catch (error) {
+                        console.error('Error skipping to refinement:', error);
+                        toast({
+                          title: 'Refinement failed',
+                          description: error instanceof Error ? error.message : 'Failed to refine your idea. Please try again.',
+                          variant: 'destructive',
+                        });
+                        setStage('clarification');
+                      }
                     }}
                   >
                     Skip - Generate Now

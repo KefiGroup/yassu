@@ -175,7 +175,9 @@ Respond in JSON format:
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
-    return result.questions || [];
+    const questions = result.questions || [];
+    // Force all questions to be optional
+    return questions.map((q: any) => ({ ...q, required: false }));
   } catch (error: any) {
     console.error('Error generating clarifying questions:', error);
     console.error('Error details:', error?.message);
