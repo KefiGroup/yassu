@@ -22,6 +22,26 @@ export async function apiRequest<T>(
 }
 
 export const api = {
+  // Generic HTTP methods
+  get: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: "GET" }),
+  post: <T>(endpoint: string, data?: any) =>
+    apiRequest<T>(endpoint, {
+      method: "POST",
+      body: data ? JSON.stringify(data) : undefined,
+    }),
+  patch: <T>(endpoint: string, data?: any) =>
+    apiRequest<T>(endpoint, {
+      method: "PATCH",
+      body: data ? JSON.stringify(data) : undefined,
+    }),
+  delete: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: "DELETE" }),
+  put: <T>(endpoint: string, data?: any) =>
+    apiRequest<T>(endpoint, {
+      method: "PUT",
+      body: data ? JSON.stringify(data) : undefined,
+    }),
+
+  // Resource-specific methods
   auth: {
     register: (email: string, password: string, fullName: string) =>
       apiRequest<{ user: { id: number; email: string; fullName: string } }>("/auth/register", {
