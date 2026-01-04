@@ -484,8 +484,7 @@ export function registerRoutes(app: Express): void {
     } catch (error: any) {
       console.error("AI refine error:", error?.message || error);
       res.status(500).json({ 
-        error: "Failed to refine idea", 
-        details: error?.message || "An unexpected error occurred" 
+        error: error?.message || "Failed to refine idea. Please try again."
       });
     }
   });
