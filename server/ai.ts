@@ -488,7 +488,7 @@ Customize based on the specific startup.
 ## Investor Intro Templates
 
 ### Cold Email Template
-```
+
 Subject: [University] student building [solution] for [target market]
 
 Hi [Investor Name],
@@ -506,10 +506,9 @@ Would you be open to a 15-minute call next week?
 Best,
 [Your name]
 [LinkedIn]
-```
 
 ### Warm Intro Request Template
-```
+
 Hi [Connector],
 
 Hope you're doing well! I'm reaching out because I'm raising [amount] for [company name], and I noticed you're connected to [Investor Name] on LinkedIn.
@@ -523,10 +522,9 @@ Would you be comfortable making an intro? Happy to send a forwardable email.
 
 Thanks!
 [Your name]
-```
 
 ### Forwardable Intro Email
-```
+
 [Connector name], thanks for offering to intro me to [Investor]!
 
 Here's a forwardable blurb:
@@ -542,7 +540,6 @@ I'd like to introduce you to [Founder name], a [year] at [University] who's buil
 I think this could be interesting for [reason related to investor's thesis].
 
 [Founder], meet [Investor].
-```
 ${outputRules}`,
     },
   ];
