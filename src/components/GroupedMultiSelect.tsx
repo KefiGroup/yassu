@@ -41,29 +41,13 @@ export function GroupedMultiSelect({
       }
     };
 
-    const handleScroll = () => {
-      if (isOpen) {
-        setIsOpen(false);
-      }
-    };
-
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [isOpen]);
 
-  // Scroll into view when dropdown opens
-  useEffect(() => {
-    if (isOpen && containerRef.current) {
-      containerRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
-  }, [isOpen]);
+  // Dropdown opens in place without auto-scrolling
 
   const allOptions = Object.values(categories).flat();
 
