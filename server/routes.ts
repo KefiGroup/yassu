@@ -404,25 +404,7 @@ export function registerRoutes(app: Express): void {
       // Filter to only show ideas created by the current user
       const myIdeas = ideas.filter(idea => idea.createdBy === req.session.userId);
       
-      // Add interest counts for each idea
-      const ideasWithInterests = await Promise.all(myIdeas.map(async (idea) => {
-        const interestResult = await pool.query(
-          'SELECT COUNT(*) as total, SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END) as pending, SUM(CASE WHEN status = $2 THEN 1 ELSE 0 END) as accepted, SUM(CASE WHEN status = $3 THEN 1 ELSE 0 END) as rejected FROM idea_interests WHERE idea_id = $4',
-          ['pending', 'accepted', 'rejected', idea.id]
-        );
-        const counts = interestResult.rows[0];
-        return {
-          ...idea,
-          interestCounts: {
-            total: parseInt(counts.total) || 0,
-            pending: parseInt(counts.pending) || 0,
-            accepted: parseInt(counts.accepted) || 0,
-            rejected: parseInt(counts.rejected) || 0
-          }
-        };
-      }));
-      
-      res.json(ideasWithInterests);
+      res.json(myIdeas);
     } catch (error) {
       console.error("Error fetching user's ideas:", error);
       res.status(500).json({ error: "Failed to fetch ideas" });
