@@ -193,18 +193,34 @@ export function registerRoutes(app: Express): void {
     }
 
     try {
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
+      // Optimized: Single query instead of 3 separate queries
+      const result = await pool.query(`
+        SELECT 
+          u.id, u.email, u."fullName",
+          p.university, p.major, p."graduationYear", p."linkedinUrl", p.bio, p.skills, p."avatarUrl",
+          u.roles
+        FROM users u
+        LEFT JOIN profiles p ON u.id = p."userId"
+        WHERE u.id = $1
+      `, [req.session.userId]);
+
+      if (result.rows.length === 0) {
         return res.status(401).json({ error: "User not found" });
       }
 
-      const profile = await storage.getProfile(user.id);
-      const roles = await storage.getUserRoles(user.id);
-
+      const row = result.rows[0];
       res.json({
-        user: { id: user.id, email: user.email, fullName: user.fullName },
-        profile,
-        roles,
+        user: { id: row.id, email: row.email, fullName: row.fullName },
+        profile: {
+          university: row.university,
+          major: row.major,
+          graduationYear: row.graduationYear,
+          linkedinUrl: row.linkedinUrl,
+          bio: row.bio,
+          skills: row.skills,
+          avatarUrl: row.avatarUrl,
+        },
+        roles: row.roles || [],
       });
     } catch (error) {
       console.error("Auth check error:", error);
