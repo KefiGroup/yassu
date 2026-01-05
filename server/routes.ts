@@ -213,7 +213,7 @@ export function registerRoutes(app: Express): void {
       const result = await pool.query(`
         SELECT 
           u.id, u.email, u.full_name as "fullName",
-          p.university, p.major, p.graduation_year as "graduationYear", p.linkedin_url as "linkedinUrl", p.bio, p.skills, p.avatar_url as "avatarUrl",
+          p.university_id as "universityId", p.major, p.graduation_year as "graduationYear", p.linkedin_url as "linkedinUrl", p.bio, p.skills, p.avatar_url as "avatarUrl",
           p.headline, p.looking_for as "lookingFor", p.portfolio_url as "portfolioUrl", p.github_url as "githubUrl", p.reputation_score as "reputationScore",
           u.roles
         FROM users u
@@ -229,7 +229,7 @@ export function registerRoutes(app: Express): void {
       res.json({
         user: { id: row.id, email: row.email, fullName: row.fullName },
         profile: {
-          university: row.university,
+          universityId: row.universityId,
           major: row.major,
           graduationYear: row.graduationYear,
           linkedinUrl: row.linkedinUrl,
