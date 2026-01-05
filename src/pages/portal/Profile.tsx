@@ -69,6 +69,11 @@ export default function Profile() {
     interests: [] as string[],
     clubType: '',
     otherClubType: '',
+    // Enhanced Profile 2.0 fields (optional)
+    headline: '',
+    lookingFor: [] as string[],
+    portfolioUrl: '',
+    githubUrl: '',
   });
 
   useEffect(() => {
@@ -115,6 +120,11 @@ export default function Profile() {
         interests: profile.interests || [],
         clubType: isOtherClub ? 'other' : clubValue,
         otherClubType: isOtherClub ? clubValue.replace('Other: ', '') : '',
+        // Enhanced Profile 2.0 fields
+        headline: (profile as any).headline || '',
+        lookingFor: (profile as any).lookingFor || [],
+        portfolioUrl: profile.portfolioUrl || '',
+        githubUrl: profile.githubUrl || '',
       });
       setInitialLoadDone(true);
     }
@@ -146,6 +156,11 @@ export default function Profile() {
         skills: formData.skills,
         interests: formData.interests,
         clubType: clubTypeToSave,
+        // Enhanced Profile 2.0 fields (optional)
+        headline: formData.headline || null,
+        lookingFor: formData.lookingFor,
+        portfolioUrl: formData.portfolioUrl || null,
+        githubUrl: formData.githubUrl || null,
         onboardingCompleted: true,
       });
 
@@ -322,6 +337,20 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="headline">Professional Headline <span className="text-xs text-muted-foreground">(Optional)</span></Label>
+              <Input
+                id="headline"
+                value={formData.headline}
+                onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
+                placeholder="e.g., Product Designer | Ex-Google Intern | Stanford CS"
+                data-testid="input-headline"
+              />
+              <p className="text-xs text-muted-foreground">
+                A short, punchy description that appears next to your name
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="bio">Bio / Summary</Label>
               <Textarea
                 id="bio"
@@ -484,6 +513,52 @@ export default function Profile() {
               placeholder="Select or add interests..."
               badgeVariant="outline"
             />
+
+            <div className="space-y-2">
+              <Label>Looking For <span className="text-xs text-muted-foreground">(Optional)</span></Label>
+              <div className="flex flex-wrap gap-2">
+                {['Full-time', 'Part-time', 'Advisor', 'Co-founder'].map((option) => (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant={formData.lookingFor.includes(option) ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const newLookingFor = formData.lookingFor.includes(option)
+                        ? formData.lookingFor.filter(item => item !== option)
+                        : [...formData.lookingFor, option];
+                      setFormData({ ...formData, lookingFor: newLookingFor });
+                    }}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Let others know what kind of opportunities you're open to
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="portfolioUrl">Portfolio URL <span className="text-xs text-muted-foreground">(Optional)</span></Label>
+                <Input
+                  id="portfolioUrl"
+                  value={formData.portfolioUrl}
+                  onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
+                  placeholder="https://yourportfolio.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="githubUrl">GitHub URL <span className="text-xs text-muted-foreground">(Optional)</span></Label>
+                <Input
+                  id="githubUrl"
+                  value={formData.githubUrl}
+                  onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                  placeholder="https://github.com/yourusername"
+                />
+              </div>
+            </div>
 
             <Button onClick={handleSave} disabled={saving} className="w-full" data-testid="button-save-profile">
               {saving ? (
