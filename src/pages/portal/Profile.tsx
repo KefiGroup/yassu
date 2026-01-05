@@ -103,12 +103,12 @@ export default function Profile() {
   }, [user]);
 
   useEffect(() => {
-    if (profile && !initialLoadDone) {
+    if (profile && user && !initialLoadDone) {
       const hasOtherUniversity = !profile.universityId && profile.otherUniversity;
       const clubValue = (profile as any).clubType || '';
       const isOtherClub = clubValue.startsWith('Other: ');
       setFormData({
-        fullName: profile.fullName || '',
+        fullName: user.fullName || '',
         bio: profile.bio || '',
         major: profile.major || '',
         graduationYear: profile.graduationYear?.toString() || '',
@@ -128,7 +128,7 @@ export default function Profile() {
       });
       setInitialLoadDone(true);
     }
-  }, [profile, initialLoadDone]);
+  }, [profile, user, initialLoadDone]);
 
   const handleSave = async () => {
     if (!user) return;
