@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, apiRequest } from '@/lib/api';
 import { AINextSteps } from '@/components/portal/AINextSteps';
+import { AITeamRoleSuggester } from '@/components/portal/AITeamRoleSuggester';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -185,6 +186,9 @@ export default function IdeaDetail() {
   const [interestStatus, setInterestStatus] = useState<string | null>(null);
   const [interestCount, setInterestCount] = useState({ total_count: 0, pending_count: 0, accepted_count: 0 });
   const [expressingInterest, setExpressingInterest] = useState(false);
+  
+  // AI Team Role Suggester
+  const [showRoleSuggester, setShowRoleSuggester] = useState(false);
 
   useEffect(() => {
     async function fetchIdea() {
@@ -1250,7 +1254,7 @@ export default function IdeaDetail() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => navigate(`/portal/ideas/${ideaId}/smart-match`)}
+                    onClick={() => setShowRoleSuggester(true)}
                   >
                     <Users2 className="w-4 h-4 mr-2" />
                     Find Team Members
@@ -1628,6 +1632,26 @@ export default function IdeaDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* AI Team Role Suggester Modal */}
+      {idea && (
+        <AITeamRoleSuggester
+          open={showRoleSuggester}
+          onOpenChange={setShowRoleSuggester}
+          ideaData={{
+            title: idea.title,
+            problem: idea.problem,
+            solution: idea.solution,
+            targetUser: idea.targetUser,
+            stage: idea.stage,
+            desiredTeammates: idea.desiredTeammates,
+          }}
+          onRoleSelected={(role) => {
+            // Navigate to collaborators marketplace with role filter
+            navigate(`/portal/collaborators?role=${encodeURIComponent(role)}`);
+          }}
+        />
+      )}
     </div>
   );
 }
