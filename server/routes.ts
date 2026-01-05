@@ -616,6 +616,56 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // AI Next Steps routes
+  app.get("/api/ideas/:id/next-steps", async (req: Request, res: Response) => {
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      const steps = await storage.getNextSteps(req.params.id);
+      res.json({ steps });
+    } catch (error) {
+      console.error("Get next steps error:", error);
+      res.status(500).json({ error: "Failed to fetch next steps" });
+    }
+  });
+
+  app.post("/api/ideas/:id/next-steps/refresh", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      // Generate new AI recommendations
+      const steps = await storage.generateNextSteps(req.params.id, idea);
+      res.json({ steps });
+    } catch (error) {
+      console.error("Refresh next steps error:", error);
+      res.status(500).json({ error: "Failed to refresh next steps" });
+    }
+  });
+
+  app.patch("/api/ideas/:id/next-steps/:stepId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      await storage.updateNextStep(req.params.id, req.params.stepId, req.body.completed);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update next step error:", error);
+      res.status(500).json({ error: "Failed to update next step" });
+    }
+  });
+
   app.get("/api/teams", async (req: Request, res: Response) => {
     try {
       const teams = await storage.getTeams(req.session.userId);

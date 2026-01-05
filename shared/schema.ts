@@ -124,6 +124,19 @@ export const ideaTags = pgTable("idea_tags", {
   tag: text("tag").notNull(),
 });
 
+export const ideaNextSteps = pgTable("idea_next_steps", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // validation, team, product, market, funding
+  priority: text("priority").notNull(), // high, medium, low
+  completed: boolean("completed").default(false),
+  estimatedTime: text("estimated_time"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const teams = pgTable("teams", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),

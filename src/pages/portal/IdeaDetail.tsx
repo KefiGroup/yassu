@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, apiRequest } from '@/lib/api';
+import { AINextSteps } from '@/components/portal/AINextSteps';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -991,10 +992,31 @@ export default function IdeaDetail() {
         </Card>
       </motion.div>
 
+      {/* AI Next Steps - Only show to owner */}
+      {isOwner && idea && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          <AINextSteps
+            ideaId={ideaId!}
+            ideaData={{
+              title: idea.title,
+              problem: idea.problem,
+              solution: idea.solution,
+              targetUser: idea.targetUser,
+              stage: idea.stage,
+              desiredTeammates: idea.desiredTeammates,
+            }}
+          />
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.15 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
       >
         <Card>
           <CardHeader>
