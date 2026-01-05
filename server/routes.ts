@@ -259,10 +259,16 @@ export function registerRoutes(app: Express): void {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      // Generate avatar URL path
-      const avatarUrl = `/uploads/${req.file.filename}`;
+      // Convert image to base64 data URL for database storage
+      // This persists across Railway deployments (ephemeral filesystem issue)
+      const imageBuffer = fs.readFileSync(req.file.path);
+      const base64Image = imageBuffer.toString('base64');
+      const avatarUrl = `data:${req.file.mimetype};base64,${base64Image}`;
       
-      // Update profile with new avatar URL
+      // Clean up temporary file
+      fs.unlinkSync(req.file.path);
+      
+      // Update profile with base64 avatar URL
       await storage.updateProfile(req.session.userId, { avatarUrl });
 
       res.json({ avatarUrl });
