@@ -8,6 +8,7 @@ import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
+import { ensureTables } from "./ensure-tables";
 import { setupOAuth } from "./oauth";
 
 const app = express();
@@ -111,8 +112,10 @@ server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
     setupVite(app, server).catch(err => console.error("Vite setup error:", err));
   }
   
-  // Fire-and-forget database seeding - don't block startup
-  void seedDatabase().catch(err => console.error("Database seeding error:", err));
+  // Ensure tables exist before seeding
+  void ensureTables()
+    .then(() => seedDatabase())
+    .catch(err => console.error("Database setup error:", err));
   
   console.log("OAuth providers configured:");
   console.log("  Google:", !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET));
