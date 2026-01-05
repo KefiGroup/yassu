@@ -1149,8 +1149,8 @@ export default function IdeaDetail() {
         </Card>
       </motion.div>
 
-      {/* Business Plan Section - Hidden in marketplace, only visible in My Projects */}
-      {user && idea.createdBy === user.id && (
+      {/* Business Plan Section - Show Executive Summary for public ideas, full tabs for owners */}
+      {(businessPlan && (isOwner || idea.isPublic)) && (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
