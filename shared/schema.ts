@@ -120,7 +120,7 @@ export const ideas = pgTable("ideas", {
   expectedTimeline: text("expected_timeline"),
   stage: ideaStageEnum("stage").default("idea_posted"),
   universityId: uuid("university_id").references(() => universities.id),
-  isPublic: boolean("is_public").default(true),
+  isPublic: boolean("is_public").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

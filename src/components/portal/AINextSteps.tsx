@@ -76,7 +76,7 @@ export function AINextSteps({ ideaId, ideaData }: AINextStepsProps) {
   const loadNextSteps = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/ideas/${ideaId}/next-steps`);
+      const response = await api.get(`/ideas/${ideaId}/next-steps`);
       setSteps(response.data.steps);
     } catch (error) {
       console.error('Failed to load next steps:', error);
@@ -90,7 +90,7 @@ export function AINextSteps({ ideaId, ideaData }: AINextStepsProps) {
   const refreshSteps = async () => {
     try {
       setRefreshing(true);
-      const response = await api.post(`/api/ideas/${ideaId}/next-steps/refresh`);
+      const response = await api.post(`/ideas/${ideaId}/next-steps/refresh`);
       setSteps(response.data.steps);
       toast({
         title: 'Next steps refreshed',
@@ -119,7 +119,7 @@ export function AINextSteps({ ideaId, ideaData }: AINextStepsProps) {
     ));
 
     try {
-      await api.patch(`/api/ideas/${ideaId}/next-steps/${stepId}`, {
+      await api.patch(`/ideas/${ideaId}/next-steps/${stepId}`, {
         completed: newCompleted,
       });
       
