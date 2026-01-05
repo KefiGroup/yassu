@@ -87,7 +87,14 @@ export function registerRoutes(app: Express): void {
       await storage.addUserRole(user.id, "student");
 
       req.session.userId = user.id;
-      res.json({ user: { id: user.id, email: user.email, fullName: user.fullName } });
+      // Explicitly save session before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ error: 'Failed to save session' });
+        }
+        res.json({ user: { id: user.id, email: user.email, fullName: user.fullName } });
+      });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ error: "Failed to register" });
@@ -109,7 +116,14 @@ export function registerRoutes(app: Express): void {
       }
 
       req.session.userId = user.id;
-      res.json({ user: { id: user.id, email: user.email, fullName: user.fullName } });
+      // Explicitly save session before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ error: 'Failed to save session' });
+        }
+        res.json({ user: { id: user.id, email: user.email, fullName: user.fullName } });
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Failed to login" });
@@ -188,7 +202,9 @@ export function registerRoutes(app: Express): void {
   });
 
   app.get("/api/auth/me", async (req: Request, res: Response) => {
+    console.log('Auth check - Session ID:', req.sessionID, 'User ID:', req.session.userId);
     if (!req.session.userId) {
+      console.log('No userId in session, returning 401');
       return res.status(401).json({ error: "Not authenticated" });
     }
 
