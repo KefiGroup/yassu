@@ -406,9 +406,13 @@ export function registerRoutes(app: Express): void {
     }
 
     try {
+      console.log(`[my-ideas] Fetching ideas for user ${req.session.userId}`);
       const ideas = await storage.getIdeas(req.session.userId);
+      console.log(`[my-ideas] Found ${ideas.length} total ideas`);
+      
       // Filter to only show ideas created by the current user
       const myIdeas = ideas.filter(idea => idea.createdBy === req.session.userId);
+      console.log(`[my-ideas] Filtered to ${myIdeas.length} user's ideas`);
       
       res.json(myIdeas);
     } catch (error) {

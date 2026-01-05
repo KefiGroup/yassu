@@ -265,8 +265,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getIdeas(userId?: number): Promise<Idea[]> {
-    // Marketplace should only show public ideas
-    // Users can see their own private ideas in the Dashboard "My Ideas" section
+    // If userId is provided, include their private ideas
+    // Otherwise, only show public ideas (for marketplace)
+    if (userId) {
+      return db.select().from(schema.ideas)
+        .where(
+          or(
+            eq(schema.ideas.isPublic, true),
+            eq(schema.ideas.createdBy, userId)
+          )
+        )
+        .orderBy(desc(schema.ideas.createdAt));
+    }
+    
+    // Marketplace: only show public ideas
     return db.select().from(schema.ideas)
       .where(eq(schema.ideas.isPublic, true))
       .orderBy(desc(schema.ideas.createdAt));
