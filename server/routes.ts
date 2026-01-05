@@ -214,8 +214,7 @@ export function registerRoutes(app: Express): void {
         SELECT 
           u.id, u.email, u.full_name as "fullName",
           p.university_id as "universityId", p.major, p.graduation_year as "graduationYear", p.linkedin_url as "linkedinUrl", p.bio, p.skills, p.avatar_url as "avatarUrl",
-          p.headline, p.looking_for as "lookingFor", p.portfolio_url as "portfolioUrl", p.github_url as "githubUrl", p.reputation_score as "reputationScore",
-          u.roles
+          p.headline, p.looking_for as "lookingFor", p.portfolio_url as "portfolioUrl", p.github_url as "githubUrl", p.reputation_score as "reputationScore"
         FROM users u
         LEFT JOIN profiles p ON u.id = p.user_id
         WHERE u.id = $1
@@ -226,6 +225,13 @@ export function registerRoutes(app: Express): void {
       }
 
       const row = result.rows[0];
+      
+      // Fetch user roles from user_roles table
+      const rolesResult = await pool.query(`
+        SELECT role FROM user_roles WHERE user_id = $1
+      `, [req.session.userId]);
+      const roles = rolesResult.rows.map(r => r.role);
+      
       res.json({
         user: { id: row.id, email: row.email, fullName: row.fullName },
         profile: {
@@ -242,7 +248,7 @@ export function registerRoutes(app: Express): void {
           githubUrl: row.githubUrl,
           reputationScore: row.reputationScore,
         },
-        roles: row.roles || [],
+        roles: roles,
       });
     } catch (error) {
       console.error("Auth check error:", error);
