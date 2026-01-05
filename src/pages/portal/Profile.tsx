@@ -307,7 +307,7 @@ export default function Profile() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">Full Name <span className="text-destructive">*</span></Label>
                 <Input
                   id="fullName"
                   value={formData.fullName}
@@ -337,7 +337,7 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="headline">Professional Headline <span className="text-xs text-muted-foreground">(Optional)</span></Label>
+              <Label htmlFor="headline">Professional Headline</Label>
               <Input
                 id="headline"
                 value={formData.headline}
@@ -515,7 +515,7 @@ export default function Profile() {
             />
 
             <div className="space-y-2">
-              <Label>Looking For <span className="text-xs text-muted-foreground">(Optional)</span></Label>
+              <Label>Looking For</Label>
               <div className="flex flex-wrap gap-2">
                 {['Full-time', 'Part-time', 'Advisor', 'Co-founder'].map((option) => (
                   <Button
@@ -541,7 +541,7 @@ export default function Profile() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="portfolioUrl">Portfolio URL <span className="text-xs text-muted-foreground">(Optional)</span></Label>
+                <Label htmlFor="portfolioUrl">Portfolio URL</Label>
                 <Input
                   id="portfolioUrl"
                   value={formData.portfolioUrl}
@@ -550,7 +550,7 @@ export default function Profile() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="githubUrl">GitHub URL <span className="text-xs text-muted-foreground">(Optional)</span></Label>
+                <Label htmlFor="githubUrl">GitHub URL</Label>
                 <Input
                   id="githubUrl"
                   value={formData.githubUrl}
