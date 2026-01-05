@@ -76,8 +76,8 @@ export function AINextSteps({ ideaId, ideaData }: AINextStepsProps) {
   const loadNextSteps = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/ideas/${ideaId}/next-steps`);
-      setSteps(response.data.steps);
+      const response = await api.get<{ steps: any[] }>(`/ideas/${ideaId}/next-steps`);
+      setSteps(response.steps);
     } catch (error) {
       console.error('Failed to load next steps:', error);
       // Fallback to client-side generation if API fails
@@ -90,8 +90,8 @@ export function AINextSteps({ ideaId, ideaData }: AINextStepsProps) {
   const refreshSteps = async () => {
     try {
       setRefreshing(true);
-      const response = await api.post(`/ideas/${ideaId}/next-steps/refresh`);
-      setSteps(response.data.steps);
+      const response = await api.post<{ steps: any[] }>(`/ideas/${ideaId}/next-steps/refresh`);
+      setSteps(response.steps);
       toast({
         title: 'Next steps refreshed',
         description: 'AI has generated new recommendations based on your progress.',
