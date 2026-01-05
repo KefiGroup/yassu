@@ -40,9 +40,8 @@ import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
-// Maintenance mode flag - check both env var and file
-const MAINTENANCE_MODE = import.meta.env.VITE_MAINTENANCE_MODE === 'true' || 
-  import.meta.env.MODE === 'production'; // Always show maintenance in production for now
+// Maintenance mode flag - only enabled if explicitly set
+const MAINTENANCE_MODE = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
 
 const App = () => {
   // If maintenance mode is enabled, show maintenance page
