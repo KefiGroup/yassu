@@ -158,7 +158,7 @@ export function GroupedMultiSelect({
         </button>
 
         {isOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden">
+          <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden max-h-[400px] flex flex-col">
             <div className="p-2 border-b">
               <Input
                 placeholder="Search or type to add..."
@@ -177,7 +177,7 @@ export function GroupedMultiSelect({
               />
             </div>
 
-            <div className="max-h-64 overflow-y-auto p-1">
+            <div className="flex-1 overflow-y-auto p-1">
                 {showAddCustom && (
                   <button
                     type="button"
