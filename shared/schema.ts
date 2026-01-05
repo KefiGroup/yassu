@@ -81,6 +81,13 @@ export const profiles = pgTable("profiles", {
   verificationStatus: verificationStatusEnum("verification_status").default("pending"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
   yassuRole: yassuRoleEnum("yassu_role"),
+  // Enhanced Profile 2.0 fields
+  headline: text("headline"), // e.g., "Product Designer | Ex-Google Intern"
+  lookingFor: text("looking_for").array().default([]), // ["Full-time", "Part-time", "Advisor", "Co-founder"]
+  experience: text("experience"), // JSON string of work/project history
+  reputationScore: integer("reputation_score").default(0), // Calculated reputation score
+  projectsCompleted: integer("projects_completed").default(0), // Number of completed projects
+  endorsements: integer("endorsements").default(0), // Number of endorsements received
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

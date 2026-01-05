@@ -1,9 +1,11 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import Maintenance from "./pages/Maintenance";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -38,55 +40,65 @@ import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/advisors" element={<Advisors />} />
-            <Route path="/ambassadors" element={<AmbassadorsPage />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            
-            {/* Portal Routes */}
-            <Route path="/portal" element={<PortalLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="ideas" element={<Ideas />} />
-              <Route path="ideas/new" element={<IdeaWizard />} />
-              <Route path="ideas/wizard" element={<IdeaWizard />} />
-               <Route path="ideas/:id" element={<IdeaDetail />} />
-              <Route path="ideas/:id/smart-match" element={<SmartMatching />} />
-              <Route path="teams" element={<Teams />} />
-              <Route path="workflows" element={<Workflows />} />
-              <Route path="workflows/run/:workflowType" element={<WorkflowRun />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="resources" element={<Resources />} />
-              <Route path="messages" element={<Messages />} />
-              <Route path="ambassadors" element={<PortalAmbassadors />} />
-              <Route path="advisors" element={<PortalAdvisors />} />
-              <Route path="collaborators" element={<Collaborators />} />
-              <Route path="users/:userId" element={<UserProfile />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="referrals" element={<ReferralDashboard />} />
-              <Route path="pipeline" element={<Pipeline />} />
-            </Route>
+// Maintenance mode flag
+const MAINTENANCE_MODE = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
 
-            {/* Admin Route */}
-            <Route path="/admin" element={<Admin />} />
+const App = () => {
+  // If maintenance mode is enabled, show maintenance page
+  if (MAINTENANCE_MODE) {
+    return <Maintenance />;
+  }
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/advisors" element={<Advisors />} />
+              <Route path="/ambassadors" element={<AmbassadorsPage />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              
+              {/* Portal Routes */}
+              <Route path="/portal" element={<PortalLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="ideas" element={<Ideas />} />
+                <Route path="ideas/new" element={<CreateIdea />} />
+                <Route path="ideas/wizard" element={<IdeaWizard />} />
+                <Route path="ideas/:id" element={<IdeaDetail />} />
+                <Route path="ideas/:id/edit" element={<CreateIdea />} />
+                <Route path="ideas/:id/smart-match" element={<SmartMatching />} />
+                <Route path="my-ideas" element={<MyIdeas />} />
+                <Route path="projects" element={<Projects />} />
+                <Route path="teams" element={<Teams />} />
+                <Route path="workflows" element={<Workflows />} />
+                <Route path="workflows/:id" element={<WorkflowRun />} />
+                <Route path="resources" element={<Resources />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="ambassadors" element={<PortalAmbassadors />} />
+                <Route path="advisors" element={<PortalAdvisors />} />
+                <Route path="collaborators" element={<Collaborators />} />
+                <Route path="users/:userId" element={<UserProfile />} />
+                <Route path="referral-dashboard" element={<ReferralDashboard />} />
+                <Route path="pipeline" element={<Pipeline />} />
+                <Route path="admin" element={<Admin />} />
+              </Route>
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
