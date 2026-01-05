@@ -574,9 +574,24 @@ export function registerRoutes(app: Express): void {
     }
 
     try {
+      // Check if user is admin or owns the idea
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      const isOwner = idea.createdBy === req.session.userId;
+
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ error: "Not authorized to delete this idea" });
+      }
+
       await storage.deleteIdea(req.params.id);
       res.json({ success: true });
     } catch (error) {
+      console.error("Delete idea error:", error);
       res.status(500).json({ error: "Failed to delete idea" });
     }
   });
@@ -1398,6 +1413,128 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Get all referrals error:", error);
       res.status(500).json({ error: "Failed to get referrals" });
+    }
+  });
+
+  // ===== ADMIN MANAGEMENT ENDPOINTS =====
+
+  // Get all users (admin only)
+  app.get("/api/admin/users", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Get all users error:", error);
+      res.status(500).json({ error: "Failed to get users" });
+    }
+  });
+
+  // Delete user (admin only)
+  app.delete("/api/admin/users/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      // Don't allow deleting yourself
+      if (userId === req.session.userId) {
+        return res.status(400).json({ error: "Cannot delete your own account" });
+      }
+
+      await storage.deleteUser(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete user error:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Delete team member (admin only)
+  app.delete("/api/admin/team-members/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      await storage.deleteTeamMember(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete team member error:", error);
+      res.status(500).json({ error: "Failed to delete team member" });
+    }
+  });
+
+  // Get all team members (admin only)
+  app.get("/api/admin/team-members", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const teamMembers = await storage.getAllTeamMembers();
+      res.json(teamMembers);
+    } catch (error) {
+      console.error("Get all team members error:", error);
+      res.status(500).json({ error: "Failed to get team members" });
+    }
+  });
+
+  // Get all ideas (admin only)
+  app.get("/api/admin/ideas", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const ideas = await storage.getAllIdeas();
+      res.json(ideas);
+    } catch (error) {
+      console.error("Get all ideas error:", error);
+      res.status(500).json({ error: "Failed to get ideas" });
     }
   });
 }

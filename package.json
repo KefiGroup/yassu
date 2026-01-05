@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:admin": "npx tsx server/db-admin.ts"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.18.0",
@@ -88,6 +89,7 @@
     "passport-apple": "^2.0.2",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.16.3",
+    "postgres": "^3.4.7",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",

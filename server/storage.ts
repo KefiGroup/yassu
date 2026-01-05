@@ -94,6 +94,11 @@ export interface IStorage {
   getAdmins(): Promise<{ userId: number; email: string; fullName: string | null }[]>;
   grantAdminRole(userId: number): Promise<void>;
   revokeAdminRole(userId: number): Promise<void>;
+  getAllUsers(): Promise<(User & { profile?: Profile; roles: string[] })[]>;
+  getAllIdeas(): Promise<Idea[]>;
+  getAllTeamMembers(): Promise<any[]>;
+  deleteUser(userId: number): Promise<void>;
+  deleteTeamMember(memberId: string): Promise<void>;
   
   // Connection system (LinkedIn/Facebook style)
   sendConnectionRequest(requesterId: number, recipientId: number, message?: string): Promise<Connection>;
@@ -912,6 +917,77 @@ export class DatabaseStorage implements IStorage {
       badges,
       ideas,
     };
+  }
+
+  // Admin methods
+  async getAllUsers(): Promise<(User & { profile?: Profile; roles: string[] })[]> {
+    const users = await db.select().from(schema.users);
+    
+    const usersWithData = await Promise.all(users.map(async (user) => {
+      const [profile] = await db.select().from(schema.profiles).where(eq(schema.profiles.userId, user.id));
+      const roles = await db.select().from(schema.userRoles).where(eq(schema.userRoles.userId, user.id));
+      
+      return {
+        ...user,
+        profile,
+        roles: roles.map(r => r.role)
+      };
+    }));
+    
+    return usersWithData;
+  }
+
+  async getAllIdeas(): Promise<Idea[]> {
+    return await db.select().from(schema.ideas).orderBy(desc(schema.ideas.createdAt));
+  }
+
+  async getAllTeamMembers(): Promise<any[]> {
+    const members = await db.select({
+      member: schema.teamMembers,
+      user: schema.users,
+      profile: schema.profiles,
+      team: schema.teams,
+    })
+    .from(schema.teamMembers)
+    .leftJoin(schema.users, eq(schema.teamMembers.userId, schema.users.id))
+    .leftJoin(schema.profiles, eq(schema.teamMembers.userId, schema.profiles.userId))
+    .leftJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id));
+    
+    return members;
+  }
+
+  async deleteUser(userId: number): Promise<void> {
+    // Delete all related data first
+    await db.delete(schema.profileBadges).where(eq(schema.profileBadges.userId, userId));
+    await db.delete(schema.userRoles).where(eq(schema.userRoles.userId, userId));
+    await db.delete(schema.profiles).where(eq(schema.profiles.userId, userId));
+    
+    // Delete user's ideas and related data
+    const userIdeas = await db.select().from(schema.ideas).where(eq(schema.ideas.createdBy, userId));
+    for (const idea of userIdeas) {
+      await this.deleteIdea(idea.id);
+    }
+    
+    // Delete team memberships
+    await db.delete(schema.teamMembers).where(eq(schema.teamMembers.userId, userId));
+    
+    // Delete join requests
+    await db.delete(schema.joinRequests).where(eq(schema.joinRequests.userId, userId));
+    
+    // Delete connections
+    await db.delete(schema.connections).where(
+      or(
+        eq(schema.connections.requesterId, userId),
+        eq(schema.connections.recipientId, userId)
+      )
+    );
+    
+    // Finally delete the user
+    await db.delete(schema.users).where(eq(schema.users.id, userId));
+  }
+
+  async deleteTeamMember(memberId: string): Promise<void> {
+    await db.delete(schema.teamMembers).where(eq(schema.teamMembers.id, memberId));
   }
 }
 
