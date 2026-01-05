@@ -31,7 +31,7 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
 
     // Check if already expressed interest
     const existingInterest = await pool.query(
-      'SELECT id, status FROM idea_interests WHERE idea_id = $1 AND user_id = $2',
+      'SELECT id, status FROM join_requests WHERE idea_id = $1 AND user_id = $2',
       [ideaId, userId]
     );
 
@@ -44,7 +44,7 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
 
     // Create interest record with application details
     const result = await pool.query(
-      `INSERT INTO idea_interests (idea_id, user_id, message, motivation, role, time_commitment, experience, status)
+      `INSERT INTO join_requests (idea_id, user_id, message, motivation, role, time_commitment, experience, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
        RETURNING *`,
       [ideaId, userId, message || null, motivation || null, role || null, timeCommitment || null, experience || null]
@@ -108,7 +108,7 @@ router.get('/api/ideas/:ideaId/interests', requireAuth, async (req, res) => {
         u.linkedin_url,
         u.github_url,
         u.portfolio_url
-      FROM idea_interests ii
+      FROM join_requests ii
       JOIN users u ON ii.user_id = u.id
       WHERE ii.idea_id = $1
       ORDER BY 
@@ -148,7 +148,7 @@ router.get('/api/my-interests', requireAuth, async (req, res) => {
         i.tags,
         creator.full_name as creator_name,
         creator.email as creator_email
-      FROM idea_interests ii
+      FROM join_requests ii
       JOIN ideas i ON ii.idea_id = i.id
       JOIN users creator ON i.created_by = creator.id
       WHERE ii.user_id = $1
@@ -194,7 +194,7 @@ router.patch('/api/ideas/:ideaId/interests/:interestId', requireAuth, async (req
 
     // Update interest status
     const result = await pool.query(
-      `UPDATE idea_interests 
+      `UPDATE join_requests 
        SET status = $1, updated_at = NOW()
        WHERE id = $2 AND idea_id = $3
        RETURNING *`,
@@ -235,7 +235,7 @@ router.get('/api/ideas/:ideaId/interest-count', async (req, res) => {
         COUNT(*) as total_count,
         COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
         COUNT(*) FILTER (WHERE status = 'accepted') as accepted_count
-      FROM idea_interests
+      FROM join_requests
       WHERE idea_id = $1`,
       [ideaId]
     );
@@ -258,7 +258,7 @@ router.get('/api/ideas/:ideaId/my-interest', requireAuth, async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT * FROM idea_interests WHERE idea_id = $1 AND user_id = $2',
+      'SELECT * FROM join_requests WHERE idea_id = $1 AND user_id = $2',
       [ideaId, userId]
     );
 
