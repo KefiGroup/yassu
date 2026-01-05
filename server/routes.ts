@@ -214,6 +214,7 @@ export function registerRoutes(app: Express): void {
         SELECT 
           u.id, u.email, u."fullName",
           p.university, p.major, p."graduationYear", p."linkedinUrl", p.bio, p.skills, p."avatarUrl",
+          p.headline, p."lookingFor", p."portfolioUrl", p."githubUrl", p."reputationScore",
           u.roles
         FROM users u
         LEFT JOIN profiles p ON u.id = p."userId"
@@ -235,6 +236,11 @@ export function registerRoutes(app: Express): void {
           bio: row.bio,
           skills: row.skills,
           avatarUrl: row.avatarUrl,
+          headline: row.headline,
+          lookingFor: row.lookingFor,
+          portfolioUrl: row.portfolioUrl,
+          githubUrl: row.githubUrl,
+          reputationScore: row.reputationScore,
         },
         roles: row.roles || [],
       });
