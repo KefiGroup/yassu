@@ -1286,39 +1286,43 @@ export default function IdeaDetail() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadWord}
-                    data-testid="button-download-plan"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Word Document
-                  </Button>
-                </div>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <div className="bg-muted/50 p-2 rounded-lg mb-4">
-                    <div className="flex flex-wrap gap-1">
-                      {planSections.map((section) => (
-                        <button
-                          key={section.id}
-                          onClick={() => setActiveTab(section.id)}
-                          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs sm:text-sm font-medium transition-all ${
-                            activeTab === section.id
-                              ? 'bg-background text-foreground shadow-sm'
-                              : 'text-muted-foreground hover:bg-background/50'
-                          }`}
-                          data-testid={`tab-${section.id}`}
-                        >
-                          <section.icon className="w-4 h-4 mr-1.5" />
-                          {section.label}
-                        </button>
-                      ))}
-                    </div>
+                {isOwner && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadWord}
+                      data-testid="button-download-plan"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Word Document
+                    </Button>
                   </div>
+                )}
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  {isOwner && (
+                    <div className="bg-muted/50 p-2 rounded-lg mb-4">
+                      <div className="flex flex-wrap gap-1">
+                        {planSections.map((section) => (
+                          <button
+                            key={section.id}
+                            onClick={() => setActiveTab(section.id)}
+                            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs sm:text-sm font-medium transition-all ${
+                              activeTab === section.id
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-background/50'
+                            }`}
+                            data-testid={`tab-${section.id}`}
+                          >
+                            <section.icon className="w-4 h-4 mr-1.5" />
+                            {section.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
-                  {planSections.map((section) => (
+                  {(isOwner ? planSections : planSections.filter(s => s.id === 'executiveSummary')).map((section) => (
                     <TabsContent key={section.id} value={section.id} className="mt-6">
                       <Card className="bg-muted/30">
                         <CardContent className="p-6">
