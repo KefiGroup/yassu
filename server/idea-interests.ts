@@ -9,7 +9,7 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
   try {
     const { ideaId } = req.params;
     const userId = req.user?.id;
-    const { message } = req.body;
+    const { message, motivation, role, timeCommitment, experience } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -42,12 +42,12 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
       });
     }
 
-    // Create interest record
+    // Create interest record with application details
     const result = await pool.query(
-      `INSERT INTO idea_interests (idea_id, user_id, message, status)
-       VALUES ($1, $2, $3, 'pending')
+      `INSERT INTO idea_interests (idea_id, user_id, message, motivation, role, time_commitment, experience, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
        RETURNING *`,
-      [ideaId, userId, message || null]
+      [ideaId, userId, message || null, motivation || null, role || null, timeCommitment || null, experience || null]
     );
 
     // TODO: Send notification to idea creator

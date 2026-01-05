@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api, apiRequest } from '@/lib/api';
 import { AINextSteps } from '@/components/portal/AINextSteps';
 import { AITeamRoleSuggester } from '@/components/portal/AITeamRoleSuggester';
+import { ApplicationForm } from '@/components/portal/ApplicationForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -186,6 +187,7 @@ export default function IdeaDetail() {
   const [interestStatus, setInterestStatus] = useState<string | null>(null);
   const [interestCount, setInterestCount] = useState({ total_count: 0, pending_count: 0, accepted_count: 0 });
   const [expressingInterest, setExpressingInterest] = useState(false);
+  const [applicationFormOpen, setApplicationFormOpen] = useState(false);
   
   // AI Team Role Suggester
   const [showRoleSuggester, setShowRoleSuggester] = useState(false);
@@ -1060,63 +1062,56 @@ export default function IdeaDetail() {
               {user && idea.createdBy !== user.id && (
                 <div>
                   {!hasExpressedInterest ? (
-                    <Button
-                      onClick={async () => {
-                        setExpressingInterest(true);
-                        try {
-                          const response = await fetch(`/api/ideas/${ideaId}/interest`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: '' })
-                          });
-                          
-                          if (response.ok) {
-                            setHasExpressedInterest(true);
-                            setInterestStatus('pending');
-                            toast({
-                              title: 'Interest Expressed!',
-                              description: 'The creator will review your request.'
+                    <>
+                      <Button
+                        onClick={() => setApplicationFormOpen(true)}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      >
+                        <Users2 className="w-4 h-4 mr-2" />
+                        Express Interest
+                      </Button>
+                      
+                      <ApplicationForm
+                        open={applicationFormOpen}
+                        onOpenChange={setApplicationFormOpen}
+                        ideaTitle={idea.title}
+                        onSubmit={async (application) => {
+                          try {
+                            const response = await fetch(`/api/ideas/${ideaId}/interest`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(application)
                             });
-                            // Refresh interest count
-                            const countResponse = await fetch(`/api/ideas/${ideaId}/interest-count`);
-                            if (countResponse.ok) {
-                              const countData = await countResponse.json();
-                              setInterestCount(countData);
+                            
+                            if (response.ok) {
+                              setHasExpressedInterest(true);
+                              setInterestStatus('pending');
+                              toast({
+                                title: 'Application Submitted!',
+                                description: 'The creator will review your application.'
+                              });
+                              // Refresh interest count
+                              const countResponse = await fetch(`/api/ideas/${ideaId}/interest-count`);
+                              if (countResponse.ok) {
+                                const countData = await countResponse.json();
+                                setInterestCount(countData);
+                              }
+                            } else {
+                              const error = await response.json();
+                              toast({
+                                title: 'Error',
+                                description: error.error || 'Failed to submit application',
+                                variant: 'destructive'
+                              });
+                              throw new Error(error.error);
                             }
-                          } else {
-                            const error = await response.json();
-                            toast({
-                              title: 'Error',
-                              description: error.error || 'Failed to express interest',
-                              variant: 'destructive'
-                            });
+                          } catch (error) {
+                            console.error('Error submitting application:', error);
+                            throw error;
                           }
-                        } catch (error) {
-                          console.error('Error expressing interest:', error);
-                          toast({
-                            title: 'Error',
-                            description: 'Failed to express interest',
-                            variant: 'destructive'
-                          });
-                        } finally {
-                          setExpressingInterest(false);
-                        }
-                      }}
-                      disabled={expressingInterest}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      {expressingInterest ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Expressing Interest...
-                        </>
-                      ) : (
-                        <>
-                          <Users2 className="w-4 h-4 mr-2" />
-                          Express Interest
-                        </>
-                      )}
-                    </Button>
+                        }}
+                      />
+                    </>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="gap-1">

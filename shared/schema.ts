@@ -169,6 +169,11 @@ export const joinRequests = pgTable("join_requests", {
   teamId: uuid("team_id").references(() => teams.id),
   message: text("message"),
   status: text("status").default("pending"),
+  // Structured Application fields
+  motivation: text("motivation"), // Why interested
+  role: text("role"), // Desired role
+  timeCommitment: text("time_commitment"), // Hours/week
+  experience: text("experience"), // Relevant experience
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
