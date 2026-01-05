@@ -56,15 +56,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserData = async () => {
     try {
-      const data = await api.auth.me();
+      console.log('[AuthContext] Fetching user data...');
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auth timeout')), 10000)
+      );
+      const data = await Promise.race([
+        api.auth.me(),
+        timeoutPromise
+      ]) as any;
+      console.log('[AuthContext] User data fetched:', data);
       setUser(data.user);
       setProfile(data.profile);
       setRoles(data.roles as UserRole[]);
-    } catch {
+    } catch (error) {
+      console.log('[AuthContext] Auth failed:', error);
       setUser(null);
       setProfile(null);
       setRoles([]);
     } finally {
+      console.log('[AuthContext] Setting loading to false');
       setLoading(false);
     }
   };
