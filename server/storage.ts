@@ -304,12 +304,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteIdea(id: string): Promise<void> {
+    // Get workflow runs for this idea
+    const runs = await db.select().from(schema.workflowRuns).where(eq(schema.workflowRuns.ideaId, id));
+    
+    // Delete workflow artifacts for each run (must be deleted before workflow_runs)
+    for (const run of runs) {
+      await db.delete(schema.workflowArtifacts).where(eq(schema.workflowArtifacts.workflowRunId, run.id));
+    }
+    
+    // Delete related records (order matters for foreign key constraints)
     await db.delete(schema.ideaWorkflowSections).where(eq(schema.ideaWorkflowSections.ideaId, id));
     await db.delete(schema.ideaTags).where(eq(schema.ideaTags.ideaId, id));
     await db.delete(schema.teamInvites).where(eq(schema.teamInvites.ideaId, id));
     await db.delete(schema.joinRequests).where(eq(schema.joinRequests.ideaId, id));
     await db.delete(schema.workflowRuns).where(eq(schema.workflowRuns.ideaId, id));
     await db.delete(schema.teams).where(eq(schema.teams.ideaId, id));
+    
+    // Finally delete the idea itself
     await db.delete(schema.ideas).where(eq(schema.ideas.id, id));
   }
 

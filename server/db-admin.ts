@@ -3,6 +3,7 @@ dotenv.config();
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import * as schema from "../shared/schema";
 import { users, profiles, userRoles, ideas, teamMembers, joinRequests } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -169,6 +170,63 @@ async function listUserData(email: string) {
   }
 }
 
+async function deleteAllIdeas(email: string) {
+  console.log(`\n🗑️  Deleting all ideas for: ${email}`);
+  
+  try {
+    // Find user
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    
+    if (!user) {
+      console.log(`❌ User not found: ${email}`);
+      return;
+    }
+    
+    // Get all user's ideas
+    const userIdeas = await db.select().from(ideas).where(eq(ideas.createdBy, user.id));
+    console.log(`\n📊 Found ${userIdeas.length} ideas to delete`);
+    
+    if (userIdeas.length === 0) {
+      console.log(`✅ No ideas to delete`);
+      return;
+    }
+    
+    // Import schema tables
+    const { ideaWorkflowSections, ideaTags, teamInvites, workflowRuns, workflowArtifacts, teams } = schema;
+    
+    // Delete each idea with all related records
+    for (const idea of userIdeas) {
+      console.log(`   Deleting: ${idea.title} (${idea.id})`);
+      
+      // Get workflow runs for this idea first
+      const runs = await db.select().from(workflowRuns).where(eq(workflowRuns.ideaId, idea.id));
+      
+      // Delete workflow artifacts for each run
+      for (const run of runs) {
+        await db.delete(workflowArtifacts).where(eq(workflowArtifacts.workflowRunId, run.id));
+      }
+      
+      // Delete related records (foreign key constraints order matters)
+      await db.delete(ideaWorkflowSections).where(eq(ideaWorkflowSections.ideaId, idea.id));
+      await db.delete(ideaTags).where(eq(ideaTags.ideaId, idea.id));
+      await db.delete(teamInvites).where(eq(teamInvites.ideaId, idea.id));
+      await db.delete(joinRequests).where(eq(joinRequests.ideaId, idea.id));
+      await db.delete(workflowRuns).where(eq(workflowRuns.ideaId, idea.id));
+      await db.delete(teams).where(eq(teams.ideaId, idea.id));
+      
+      // Finally delete the idea itself
+      await db.delete(ideas).where(eq(ideas.id, idea.id));
+      
+      console.log(`   ✅ Deleted ${idea.title}`);
+    }
+    
+    console.log(`\n✅ Successfully deleted ${userIdeas.length} ideas!`);
+    
+  } catch (error) {
+    console.error("❌ Error deleting ideas:", error);
+  }
+}
+
 async function main() {
   const command = process.argv[2];
   const email = process.argv[3] || "paulinet77@gmail.com";
@@ -186,6 +244,9 @@ async function main() {
     case "list":
       await listUserData(email);
       break;
+    case "delete-ideas":
+      await deleteAllIdeas(email);
+      break;
     case "full":
       await resetAccount(email);
       await grantSuperadmin(email);
@@ -196,6 +257,7 @@ async function main() {
       console.log(`  npm run db-admin reset [email]       - Reset account password`);
       console.log(`  npm run db-admin superadmin [email]  - Grant superadmin permissions`);
       console.log(`  npm run db-admin list [email]        - List user data`);
+      console.log(`  npm run db-admin delete-ideas [email] - Delete all user's ideas`);
       console.log(`  npm run db-admin full [email]        - Do all of the above`);
       console.log(`\nDefault email: paulinet77@gmail.com`);
       break;
