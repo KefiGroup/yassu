@@ -1,4 +1,5 @@
 # Use Node.js 22 base image
+# Rebuild triggered: Jan 5 2026 - Interests removal
 FROM node:22-alpine
 
 # Enable corepack and prepare pnpm
