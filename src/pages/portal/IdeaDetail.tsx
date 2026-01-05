@@ -690,6 +690,43 @@ export default function IdeaDetail() {
     });
   };
 
+  const handleToggleVisibility = async () => {
+    if (!ideaId || !idea) return;
+    
+    setTogglingPrivacy(true);
+    try {
+      const response = await fetch(`/api/ideas/${ideaId}/visibility`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isPublic: !idea.isPublic })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update visibility');
+      }
+      
+      const updatedIdea = await response.json();
+      setIdea(updatedIdea);
+      
+      toast({
+        title: updatedIdea.isPublic ? '🌍 Idea is now Public' : '🔒 Idea is now Private',
+        description: updatedIdea.isPublic 
+          ? 'Your idea is now visible in the marketplace to all users.'
+          : 'Your idea is now private and only visible to you.',
+      });
+    } catch (error) {
+      console.error('Toggle visibility error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update idea visibility. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTogglingPrivacy(false);
+    }
+  };
+
   const markdownComponents = {
     table: ({ children }: any) => (
       <div className="overflow-x-auto my-4">
@@ -1033,7 +1070,25 @@ export default function IdeaDetail() {
                   <Badge className={stageColors[idea.stage] || stageColors.concept}>
                     {idea.stage}
                   </Badge>
-                  {!idea.isPublic && (
+                  {isOwner && (
+                    <Button
+                      variant={idea.isPublic ? "outline" : "default"}
+                      size="sm"
+                      onClick={handleToggleVisibility}
+                      disabled={togglingPrivacy}
+                      className={`gap-2 ${idea.isPublic ? '' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    >
+                      {togglingPrivacy ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : idea.isPublic ? (
+                        <Globe className="w-3 h-3" />
+                      ) : (
+                        <Lock className="w-3 h-3" />
+                      )}
+                      {idea.isPublic ? 'Public' : 'Private'}
+                    </Button>
+                  )}
+                  {!isOwner && !idea.isPublic && (
                     <Badge variant="outline" className="gap-1">
                       <Lock className="w-3 h-3" />
                       Private
