@@ -617,6 +617,32 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Toggle idea visibility (public/private)
+  app.patch("/api/ideas/:id/visibility", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      // Verify user owns the idea
+      if (idea.createdBy !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to modify this idea" });
+      }
+
+      const { isPublic } = req.body;
+      const updatedIdea = await storage.updateIdea(req.params.id, { isPublic });
+      res.json(updatedIdea);
+    } catch (error) {
+      console.error("Toggle visibility error:", error);
+      res.status(500).json({ error: "Failed to update idea visibility" });
+    }
+  });
+
   app.delete("/api/ideas/:id", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
