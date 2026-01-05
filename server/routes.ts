@@ -212,12 +212,12 @@ export function registerRoutes(app: Express): void {
       // Optimized: Single query instead of 3 separate queries
       const result = await pool.query(`
         SELECT 
-          u.id, u.email, u."fullName",
-          p.university, p.major, p."graduationYear", p."linkedinUrl", p.bio, p.skills, p."avatarUrl",
-          p.headline, p."lookingFor", p."portfolioUrl", p."githubUrl", p."reputationScore",
+          u.id, u.email, u.full_name as "fullName",
+          p.university, p.major, p.graduation_year as "graduationYear", p.linkedin_url as "linkedinUrl", p.bio, p.skills, p.avatar_url as "avatarUrl",
+          p.headline, p.looking_for as "lookingFor", p.portfolio_url as "portfolioUrl", p.github_url as "githubUrl", p.reputation_score as "reputationScore",
           u.roles
         FROM users u
-        LEFT JOIN profiles p ON u.id = p."userId"
+        LEFT JOIN profiles p ON u.id = p.user_id
         WHERE u.id = $1
       `, [req.session.userId]);
 
