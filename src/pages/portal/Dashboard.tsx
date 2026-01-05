@@ -103,7 +103,7 @@ export default function Dashboard() {
     async function fetchData() {
       try {
         const [ideas, requests, members, connections] = await Promise.all([
-          fetch('/api/ideas/mine', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
+          fetch('/api/my-ideas', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/join-requests', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/profiles/potential-team', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/connections', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
