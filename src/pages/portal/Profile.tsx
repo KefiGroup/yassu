@@ -1,4 +1,3 @@
-// Profile page - Interests field removed Jan 5 2026
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,7 +66,8 @@ export default function Profile() {
     availability: '',
     linkedinUrl: '',
     skills: [] as string[],
-    clubType: ''
+    interests: [] as string[],
+    clubType: '',
     otherClubType: '',
     // Enhanced Profile 2.0 fields (optional)
     headline: '',
@@ -117,6 +117,7 @@ export default function Profile() {
         availability: profile.availability || '',
         linkedinUrl: profile.linkedinUrl || '',
         skills: profile.skills || [],
+        interests: profile.interests || [],
         clubType: isOtherClub ? 'other' : clubValue,
         otherClubType: isOtherClub ? clubValue.replace('Other: ', '') : '',
         // Enhanced Profile 2.0 fields
@@ -153,6 +154,7 @@ export default function Profile() {
         availability: formData.availability || null,
         linkedinUrl: formData.linkedinUrl || null,
         skills: formData.skills,
+        interests: formData.interests,
         clubType: clubTypeToSave,
         // Enhanced Profile 2.0 fields (optional)
         headline: formData.headline || null,
@@ -182,7 +184,9 @@ export default function Profile() {
     setFormData({ ...formData, skills });
   };
 
-
+  const handleInterestsChange = (interests: string[]) => {
+    setFormData({ ...formData, interests });
+  };
 
   const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -499,6 +503,15 @@ export default function Profile() {
               onChange={handleSkillsChange}
               placeholder="Select or add skills..."
               badgeVariant="secondary"
+            />
+
+            <GroupedMultiSelect
+              label="Interests (Coming Soon)"
+              categories={INTEREST_CATEGORIES}
+              selected={formData.interests}
+              onChange={handleInterestsChange}
+              placeholder="Select or add interests..."
+              badgeVariant="outline"
             />
 
             <div className="space-y-2">
