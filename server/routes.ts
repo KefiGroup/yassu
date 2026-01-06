@@ -235,6 +235,7 @@ export function registerRoutes(app: Express): void {
       res.json({
         user: { id: row.id, email: row.email, fullName: row.fullName },
         profile: {
+          fullName: row.fullName,
           universityId: row.universityId,
           major: row.major,
           graduationYear: row.graduationYear,
