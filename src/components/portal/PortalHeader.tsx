@@ -137,7 +137,7 @@ export function PortalHeader() {
               Settings
             </DropdownMenuItem>
             {isAdmin && (
-              <DropdownMenuItem onClick={() => navigate('/admin')}>
+              <DropdownMenuItem onClick={() => navigate('/portal/admin')}>
                 <Shield className="mr-2 h-4 w-4" />
                 Admin
               </DropdownMenuItem>

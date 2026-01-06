@@ -55,7 +55,7 @@ const accountNavItems = [
 ];
 
 const adminNavItems = [
-  { title: 'Admin', url: '/admin', icon: Shield },
+  { title: 'Admin', url: '/portal/admin', icon: Shield },
   { title: 'Pipeline', url: '/portal/pipeline', icon: TrendingUp },
   { title: 'Referrals', url: '/portal/referrals', icon: DollarSign },
 ];
