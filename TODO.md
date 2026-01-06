@@ -218,7 +218,7 @@ Max Score: 100
 - 61-80: Strong 🟢
 - 81-100: Investment Ready 🟢⭐
 
-#### Feature 3.3: One-Click Pitch Deck
+#### Feature 3.3: One-Click Pitch Deck (Basic PDF)
 - [ ] Install PDF generation library (fpdf2 or reportlab)
 - [ ] Design 10-slide pitch deck template
 - [ ] Implement backend PDF generation endpoint
@@ -228,7 +228,7 @@ Max Score: 100
 - [ ] Add Yassu branding to template
 - [ ] Test PDF generation with various ideas
 
-**Pitch Deck Slides:**
+**Basic Pitch Deck Slides:**
 1. Cover (Idea name, tagline, logo)
 2. Problem Statement
 3. Solution
@@ -240,7 +240,127 @@ Max Score: 100
 9. Financial Projections
 10. Ask (Funding amount, use of funds)
 
-**Week 3 Outcome:** Complete flywheel from idea to investment. Investors have curated deal flow. Creators have clear fundraising path.
+#### Feature 3.4: Manus MVP Builder Integration 🆕
+- [ ] Set up Manus API integration (REST/GraphQL)
+- [ ] Implement OAuth 2.0 authentication flow
+- [ ] Create "Build MVP with Manus" button on idea detail page
+- [ ] Build business plan → Manus project mapping logic
+- [ ] Implement automatic project creation in Manus
+- [ ] Add `manus_project_id` and `manus_project_url` to ideas table
+- [ ] Add `mvp_status` enum field (not_started, in_progress, completed, failed)
+- [ ] Create `manus_integrations` table for tracking
+- [ ] Build MVP status badge and progress indicator
+- [ ] Implement webhook endpoint for Manus status updates
+- [ ] Add error handling and retry logic
+- [ ] Create integration settings page
+- [ ] Test end-to-end flow with real business plans
+
+**User Flow:**
+1. Creator completes business plan on Yassu
+2. Clicks "Build MVP with Manus" button
+3. Yassu sends business plan to Manus via API
+4. Manus creates new project with requirements
+5. Creator redirected to Manus (or embedded iframe)
+6. Manus builds MVP using AI
+7. Progress updates sent back to Yassu via webhook
+8. MVP link displayed on Yassu idea page when complete
+
+**Database Schema:**
+```sql
+ALTER TABLE ideas ADD COLUMN manus_project_id VARCHAR(255);
+ALTER TABLE ideas ADD COLUMN manus_project_url TEXT;
+ALTER TABLE ideas ADD COLUMN mvp_status VARCHAR(50) DEFAULT 'not_started';
+
+CREATE TABLE manus_integrations (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  idea_id UUID REFERENCES ideas(id),
+  manus_project_id VARCHAR(255),
+  manus_project_url TEXT,
+  status VARCHAR(50),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### Feature 3.5: AI Pitch Deck Designer (Manus Integration) 🆕
+- [ ] Integrate Manus Slides API
+- [ ] Create "Design Pitch Deck" button on idea detail page
+- [ ] Build business plan → slide content mapping
+- [ ] Implement AI-powered slide generation (10-15 slides)
+- [ ] Add professional VC pitch deck templates
+- [ ] Create slide preview component
+- [ ] Add `pitch_deck_id` and `pitch_deck_url` to ideas table
+- [ ] Create `pitch_decks` table (id, idea_id, manus_slides_uri, version, created_at)
+- [ ] Implement version history tracking
+- [ ] Add export functionality (PDF, PPT, Google Slides)
+- [ ] Build share link generation
+- [ ] Add download options UI
+- [ ] Test with various business plans
+- [ ] Deploy to production
+
+**Professional Pitch Deck Structure (15 slides):**
+1. **Cover** - Company name, tagline, logo, contact
+2. **Problem** - The pain point (from business plan)
+3. **Solution** - Your product/service overview
+4. **Market Opportunity** - TAM, SAM, SOM analysis
+5. **Product Demo** - Screenshots, mockups, or prototype
+6. **Business Model** - How you make money
+7. **Traction** - Metrics, milestones, achievements
+8. **Competition** - Competitive landscape and positioning
+9. **Competitive Advantage** - Your moat and differentiation
+10. **Go-to-Market Strategy** - Customer acquisition plan
+11. **Team** - Founders, advisors, key team members
+12. **Financial Projections** - 3-5 year revenue forecast
+13. **Use of Funds** - How investment will be allocated
+14. **Vision** - Long-term goals and impact
+15. **Ask & Contact** - Funding amount, terms, how to reach you
+
+**Manus Slides Integration:**
+```typescript
+// Send business plan to Manus Slides API
+const response = await fetch('/api/manus/generate-pitch-deck', {
+  method: 'POST',
+  body: JSON.stringify({
+    ideaId: idea.id,
+    businessPlan: idea.businessPlan,
+    template: 'vc-standard'
+  })
+});
+
+const { slidesUri, previewUrl } = await response.json();
+// slidesUri: manus-slides://abc123
+// previewUrl: https://manus.computer/slides/abc123
+```
+
+**Database Schema:**
+```sql
+ALTER TABLE ideas ADD COLUMN pitch_deck_id VARCHAR(255);
+ALTER TABLE ideas ADD COLUMN pitch_deck_url TEXT;
+
+CREATE TABLE pitch_decks (
+  id SERIAL PRIMARY KEY,
+  idea_id UUID REFERENCES ideas(id),
+  manus_slides_uri VARCHAR(255),
+  preview_url TEXT,
+  version INTEGER DEFAULT 1,
+  template VARCHAR(100),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### Feature 3.6: Integration Dashboard 🆕
+- [ ] Create integration status dashboard
+- [ ] Display MVP development progress
+- [ ] Show pitch deck versions and history
+- [ ] Add link to Manus projects
+- [ ] Implement integration health monitoring
+- [ ] Add error logs and debugging info
+- [ ] Create admin view for all integrations
+- [ ] Build analytics for integration usage
+
+**Week 3 Outcome:** Complete ecosystem from idea to investment with automation. Investors have curated deal flow. Creators can build MVPs and create professional pitch decks seamlessly with Manus integration.
 
 ---
 
