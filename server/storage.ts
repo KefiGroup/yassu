@@ -1344,9 +1344,11 @@ export class DatabaseStorage implements IStorage {
         idea: schema.ideas,
         role: schema.teamMembers.role,
         joinedAt: schema.teamMembers.joinedAt,
+        teamId: schema.teamMembers.teamId,
       })
       .from(schema.teamMembers)
-      .innerJoin(schema.ideas, eq(schema.teamMembers.ideaId, schema.ideas.id))
+      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+      .innerJoin(schema.ideas, eq(schema.teams.ideaId, schema.ideas.id))
       .where(eq(schema.teamMembers.userId, userId))
       .orderBy(desc(schema.teamMembers.joinedAt));
 
@@ -1356,7 +1358,7 @@ export class DatabaseStorage implements IStorage {
         const teamMembers = await db
           .select()
           .from(schema.teamMembers)
-          .where(eq(schema.teamMembers.ideaId, membership.idea.id));
+          .where(eq(schema.teamMembers.teamId, membership.teamId));
         return {
           ...membership.idea,
           role: membership.role,
