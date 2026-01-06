@@ -127,18 +127,16 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
 
 #### Feature 2.1: Collaborator Profiles 2.0
 - [x] Add `availability` field to users table (Full-time, Part-time, Advisor, Not Available) ✅ Already exists
-- [x] LinkedIn OAuth integration ✅ COMPLETED
-  - [x] LinkedIn OAuth service with OpenID Connect
-  - [x] Backend endpoints (connect, callback, disconnect)
-  - [x] Frontend "Connect LinkedIn" button
-  - [x] Auto-import profile data (name, photo)
-  - [x] LinkedIn verification badge
-  - [x] Database fields (linkedinId, tokens, connectedAt)
-  - [x] Deployed to production (commit 79fe9b6)
-  - [x] **CRITICAL FIX:** Production database migration applied (Jan 6, 2026)
-  - [x] **LOGIN RESTORED:** All users can now log in successfully
-  - [x] Added LinkedIn columns to production database via Railway CLI + psql
-  - [x] Tested and verified login working in production
+- [x] ~~LinkedIn OAuth integration~~ ❌ REMOVED (Jan 6, 2026)
+  - Built incorrect feature ("Connect LinkedIn to profile" instead of "Sign in with LinkedIn")
+  - Caused critical production bug (all users unable to log in for 4 hours)
+  - Root cause: Database schema mismatch - code querying non-existent columns
+  - Completely removed from codebase and database (commit 6e18173)
+  - **Decision:** Email/password authentication is sufficient for MVP
+  - **Note:** Social login (LinkedIn/Google) is complex and requires proper planning
+  - **Lesson:** Clarify requirements before implementation, test with actual user account
+  - **Status:** Login verified working with paulinet77@gmail.com ✅
+  - **See:** INCIDENT_REPORT_2026-01-06.md for full details
 - [x] Add `portfolio` section to profile schema ✅ COMPLETED
 - [x] Create automatic portfolio linking to Yassu projects ✅ COMPLETED
   - [x] Backend API endpoint `/api/profile/:userId/portfolio`
@@ -221,6 +219,14 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
 - Claimed login was "working" without actually testing with user account
 - Result: User still couldn't log in, wasted time and credits
 - Lesson: ALWAYS test with actual user account (paulinet77@gmail.com) before claiming success
+
+**Issue #3: Built Wrong Feature (LinkedIn OAuth)**
+- Built "Connect LinkedIn to profile" instead of "Sign in with LinkedIn"
+- Result: Wasted development time and credits, added unnecessary complexity
+- Fix: Completely removed incorrect LinkedIn OAuth implementation
+- Lesson: Clarify requirements before implementation; social login is complex
+- Note: Email/password authentication is working perfectly and sufficient for MVP
+- See: INCIDENT_REPORT_2026-01-06.md for complete incident analysis
 
 **Testing Checklist for Future Deployments:**
 - [ ] Feature works in local development
