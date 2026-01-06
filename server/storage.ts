@@ -1321,7 +1321,7 @@ export class DatabaseStorage implements IStorage {
     const createdIdeas = await db
       .select()
       .from(schema.ideas)
-      .where(eq(schema.ideas.creatorId, userId))
+      .where(eq(schema.ideas.createdBy, userId))
       .orderBy(desc(schema.ideas.createdAt));
 
     // Get team sizes for created ideas
