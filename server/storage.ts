@@ -1327,10 +1327,25 @@ export class DatabaseStorage implements IStorage {
     // Get team sizes for created ideas
     const createdIdeasWithTeamSize = await Promise.all(
       createdIdeas.map(async (idea) => {
+        // First get the team for this idea
+        const teams = await db
+          .select()
+          .from(schema.teams)
+          .where(eq(schema.teams.ideaId, idea.id));
+        
+        if (teams.length === 0) {
+          return {
+            ...idea,
+            teamSize: 1, // Just the creator
+          };
+        }
+        
+        // Then get team members for this team
         const teamMembers = await db
           .select()
           .from(schema.teamMembers)
-          .where(eq(schema.teamMembers.ideaId, idea.id));
+          .where(eq(schema.teamMembers.teamId, teams[0].id));
+        
         return {
           ...idea,
           teamSize: teamMembers.length + 1, // +1 for creator
