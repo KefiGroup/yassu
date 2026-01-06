@@ -47,7 +47,6 @@ const avatarUpload = multer({
 declare module "express-session" {
   interface SessionData {
     userId?: number;
-    linkedinState?: string;
   }
 }
 
@@ -146,100 +145,7 @@ export function registerRoutes(app: Express): void {
     });
   });
 
-  // LinkedIn OAuth routes
-  app.get("/api/auth/linkedin/connect", async (req: Request, res: Response) => {
-    try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
 
-      const { getLinkedInAuthUrl } = await import('./linkedin');
-      const state = `${req.session.userId}-${Date.now()}`;
-      req.session.linkedinState = state;
-      
-      const authUrl = await getLinkedInAuthUrl(state);
-      res.json({ authUrl });
-    } catch (error) {
-      console.error("LinkedIn connect error:", error);
-      res.status(500).json({ error: "Failed to initiate LinkedIn connection" });
-    }
-  });
-
-  app.get("/api/auth/linkedin/callback", async (req: Request, res: Response) => {
-    try {
-      const { code, state, error } = req.query;
-
-      if (error) {
-        return res.redirect(`/portal/profile?linkedin_error=${error}`);
-      }
-
-      if (!code || !state) {
-        return res.redirect("/portal/profile?linkedin_error=missing_params");
-      }
-
-      // Verify state to prevent CSRF
-      const expectedState = req.session.linkedinState;
-      if (!expectedState || state !== expectedState) {
-        return res.redirect("/portal/profile?linkedin_error=invalid_state");
-      }
-
-      const userId = parseInt(expectedState.split('-')[0]);
-      if (!userId || userId !== req.session.userId) {
-        return res.redirect("/portal/profile?linkedin_error=user_mismatch");
-      }
-
-      const { exchangeCodeForTokens, getLinkedInProfile } = await import('./linkedin');
-      
-      // Exchange code for tokens
-      const tokens = await exchangeCodeForTokens(code as string);
-      
-      // Get LinkedIn profile
-      const linkedinProfile = await getLinkedInProfile(tokens.access_token);
-
-      // Update user with LinkedIn data
-      await storage.updateUserLinkedIn(userId, {
-        linkedinId: linkedinProfile.id,
-        linkedinAccessToken: tokens.access_token,
-        linkedinRefreshToken: tokens.refresh_token,
-      });
-
-      // Update profile with LinkedIn data
-      const profile = await storage.getProfile(userId);
-      if (profile) {
-        await storage.updateProfile(userId, {
-          fullName: profile.fullName || `${linkedinProfile.firstName} ${linkedinProfile.lastName}`,
-          avatarUrl: profile.avatarUrl || linkedinProfile.profilePicture,
-        });
-      }
-
-      // Clean up state
-      delete req.session.linkedinState;
-
-      res.redirect("/portal/profile?linkedin_success=true");
-    } catch (error) {
-      console.error("LinkedIn callback error:", error);
-      res.redirect("/portal/profile?linkedin_error=connection_failed");
-    }
-  });
-
-  app.post("/api/auth/linkedin/disconnect", async (req: Request, res: Response) => {
-    try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      await storage.updateUserLinkedIn(req.session.userId, {
-        linkedinId: null,
-        linkedinAccessToken: null,
-        linkedinRefreshToken: null,
-      });
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("LinkedIn disconnect error:", error);
-      res.status(500).json({ error: "Failed to disconnect LinkedIn" });
-    }
-  });
 
   app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
     try {
