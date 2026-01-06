@@ -135,6 +135,10 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
   - [x] LinkedIn verification badge
   - [x] Database fields (linkedinId, tokens, connectedAt)
   - [x] Deployed to production (commit 79fe9b6)
+  - [x] **CRITICAL FIX:** Production database migration applied (Jan 6, 2026)
+  - [x] **LOGIN RESTORED:** All users can now log in successfully
+  - [x] Added LinkedIn columns to production database via Railway CLI + psql
+  - [x] Tested and verified login working in production
 - [x] Add `portfolio` section to profile schema ✅ COMPLETED
 - [x] Create automatic portfolio linking to Yassu projects ✅ COMPLETED
   - [x] Backend API endpoint `/api/profile/:userId/portfolio`
@@ -189,6 +193,35 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
 - Relevant experience (text area)
 
 **Week 2 Outcome:** Marketplace becomes active and reputation-driven. Creators get high-quality, contextual applications.
+
+---
+
+## ⚠️ MANDATORY TESTING REQUIREMENT
+
+**CRITICAL RULE:** Before deploying ANY feature to production:
+
+1. ✅ **Test locally first** - Verify feature works in development
+2. ✅ **Check database schema** - Ensure all migrations are applied
+3. ✅ **Test in production** - Log in and verify feature works live
+4. ✅ **Monitor for errors** - Check browser console and server logs
+5. ✅ **Verify user flow** - Complete the full user journey
+
+**Recent Issue (Jan 6, 2026):**
+- LinkedIn OAuth was deployed but database migration was not applied to production
+- Result: ALL users unable to log in ("column linkedin_id does not exist")
+- Fix: Manually applied migration via Railway CLI + PostgreSQL
+- Lesson: ALWAYS verify database schema matches code in production
+
+**Testing Checklist for Future Deployments:**
+- [ ] Feature works in local development
+- [ ] Database migrations run successfully locally
+- [ ] Code committed and pushed to GitHub
+- [ ] Railway deployment completes without errors
+- [ ] Database migrations applied to production database
+- [ ] Login/authentication still works
+- [ ] New feature accessible and functional
+- [ ] No console errors in browser
+- [ ] No server errors in Railway logs
 
 ---
 
