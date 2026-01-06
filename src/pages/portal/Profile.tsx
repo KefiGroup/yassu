@@ -323,17 +323,81 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="linkedinUrl">LinkedIn Profile</Label>
-              <Input
-                id="linkedinUrl"
-                value={formData.linkedinUrl}
-                onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
-                placeholder="https://www.linkedin.com/in/yourprofile"
-                data-testid="input-linkedin-url"
-              />
-              <p className="text-xs text-muted-foreground">
-                Add your LinkedIn profile URL to showcase your professional background
-              </p>
+              <Label>LinkedIn Profile</Label>
+              {user?.linkedinId ? (
+                <div className="flex items-center gap-3 p-4 border rounded-lg bg-green-50 dark:bg-green-950/20">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                      ✓ LinkedIn Connected
+                    </p>
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      Your LinkedIn profile is connected and verified
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await apiRequest('/auth/linkedin/disconnect', { method: 'POST' });
+                        toast({
+                          title: 'LinkedIn Disconnected',
+                          description: 'Your LinkedIn account has been disconnected.',
+                        });
+                        await refreshProfile();
+                      } catch (error: any) {
+                        toast({
+                          title: 'Error',
+                          description: error.message || 'Failed to disconnect LinkedIn',
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-center gap-2"
+                    onClick={async () => {
+                      try {
+                        const response = await apiRequest<{ authUrl: string }>('/auth/linkedin/connect');
+                        window.location.href = response.authUrl;
+                      } catch (error: any) {
+                        toast({
+                          title: 'Error',
+                          description: error.message || 'Failed to connect LinkedIn',
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    </svg>
+                    Connect LinkedIn
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Connect your LinkedIn to auto-import your professional profile and verify your identity
+                  </p>
+                  <div className="pt-2 border-t">
+                    <Label htmlFor="linkedinUrl" className="text-xs text-muted-foreground">Or manually enter LinkedIn URL</Label>
+                    <Input
+                      id="linkedinUrl"
+                      value={formData.linkedinUrl}
+                      onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                      placeholder="https://www.linkedin.com/in/yourprofile"
+                      className="mt-1"
+                      data-testid="input-linkedin-url"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

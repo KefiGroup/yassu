@@ -5,6 +5,7 @@ interface User {
   id: number;
   email: string;
   fullName: string | null;
+  linkedinId?: string | null;
 }
 
 interface Profile {

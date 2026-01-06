@@ -152,6 +152,9 @@ export interface IStorage {
   }>>;
   logDigestEmailSent(userId: number, weekStart: Date, weekEnd: Date, ideasCount: number, matchesCount: number): Promise<void>;
   getUsersForDigest(): Promise<(User & { profile: Profile | null })[]>;
+  
+  // LinkedIn OAuth
+  updateUserLinkedIn(userId: number, data: { linkedinId: string | null; linkedinAccessToken: string | null; linkedinRefreshToken?: string | null }): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1291,6 +1294,17 @@ export class DatabaseStorage implements IStorage {
 
     // Filter out users without email
     return usersWithProfiles.filter(u => u.email);
+  }
+
+  async updateUserLinkedIn(userId: number, data: { linkedinId: string | null; linkedinAccessToken: string | null; linkedinRefreshToken?: string | null }): Promise<void> {
+    await db.update(schema.users)
+      .set({
+        linkedinId: data.linkedinId,
+        linkedinAccessToken: data.linkedinAccessToken,
+        linkedinRefreshToken: data.linkedinRefreshToken,
+        linkedinConnectedAt: data.linkedinId ? new Date() : null,
+      })
+      .where(eq(schema.users.id, userId));
   }
 
 }

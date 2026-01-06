@@ -15,6 +15,13 @@
       "when": 1767667241265,
       "tag": "0001_first_bug",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767722282624,
+      "tag": "0002_eminent_invisible_woman",
+      "breakpoints": true
     }
   ]
 }
