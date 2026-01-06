@@ -1773,4 +1773,216 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to delete idea" });
     }
   });
+
+  // ============ Weekly Digest Routes ============
+  
+  // Manual trigger for weekly digest (admin only)
+  app.post("/api/admin/send-weekly-digest", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Calculate date range (last 7 days)
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+
+      // Get all users for digest
+      const users = await storage.getUsersForDigest();
+      
+      // Get platform stats (same for all users)
+      const platformStats = await storage.getPlatformStats();
+      
+      // Get new ideas for the week
+      const newIdeas = await storage.getNewIdeasForWeek(startDate, endDate);
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Send digest to each user
+      for (const user of users) {
+        try {
+          if (!user.profile) continue;
+
+          // Get user activity
+          const userActivity = await storage.getUserActivitySummary(
+            user.id,
+            startDate,
+            endDate
+          );
+
+          // Get skill matches
+          const skillMatches = await storage.getSkillMatchesForUser(
+            user.id,
+            startDate,
+            endDate
+          );
+
+          // Prepare digest data
+          const digestData = {
+            userName: user.profile.fullName || 'there',
+            weekStart: startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            weekEnd: endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            newIdeas: newIdeas.slice(0, 10).map(idea => ({
+              id: idea.id,
+              title: idea.title,
+              creatorName: 'Founder', // We'd need to join with profiles for actual names
+              stage: idea.stage || 'idea_posted',
+              skills: idea.skills || [],
+            })),
+            skillMatches: skillMatches.map(match => ({
+              id: match.idea.id,
+              title: match.idea.title,
+              creatorName: 'Founder',
+              matchingSkills: match.matchingSkills,
+            })),
+            userActivity,
+            platformStats,
+          };
+
+          // Send email
+          const { sendWeeklyDigestEmail } = await import('./email');
+          await sendWeeklyDigestEmail(user.email, digestData);
+
+          // Log digest sent
+          await storage.logDigestEmailSent(
+            user.id,
+            startDate,
+            endDate,
+            newIdeas.length,
+            skillMatches.length
+          );
+
+          successCount++;
+
+          // Add small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error(`Failed to send digest to user ${user.id}:`, error);
+          errorCount++;
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Digest sent to ${successCount} users, ${errorCount} errors`,
+        stats: {
+          totalUsers: users.length,
+          successCount,
+          errorCount,
+        },
+      });
+    } catch (error) {
+      console.error("Send weekly digest error:", error);
+      res.status(500).json({ error: "Failed to send weekly digest" });
+    }
+  });
+
+  // Cron endpoint for automated weekly digest
+  app.get("/api/cron/weekly-digest", async (req: Request, res: Response) => {
+    try {
+      // Simple authentication with a secret token
+      const cronSecret = process.env.CRON_SECRET || 'change-me-in-production';
+      const providedSecret = req.headers['x-cron-secret'];
+
+      if (providedSecret !== cronSecret) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Calculate date range (last 7 days)
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+
+      // Get all users for digest
+      const users = await storage.getUsersForDigest();
+      
+      // Get platform stats
+      const platformStats = await storage.getPlatformStats();
+      
+      // Get new ideas
+      const newIdeas = await storage.getNewIdeasForWeek(startDate, endDate);
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Send digest to each user
+      for (const user of users) {
+        try {
+          if (!user.profile) continue;
+
+          const userActivity = await storage.getUserActivitySummary(
+            user.id,
+            startDate,
+            endDate
+          );
+
+          const skillMatches = await storage.getSkillMatchesForUser(
+            user.id,
+            startDate,
+            endDate
+          );
+
+          const digestData = {
+            userName: user.profile.fullName || 'there',
+            weekStart: startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            weekEnd: endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            newIdeas: newIdeas.slice(0, 10).map(idea => ({
+              id: idea.id,
+              title: idea.title,
+              creatorName: 'Founder',
+              stage: idea.stage || 'idea_posted',
+              skills: idea.skills || [],
+            })),
+            skillMatches: skillMatches.map(match => ({
+              id: match.idea.id,
+              title: match.idea.title,
+              creatorName: 'Founder',
+              matchingSkills: match.matchingSkills,
+            })),
+            userActivity,
+            platformStats,
+          };
+
+          const { sendWeeklyDigestEmail } = await import('./email');
+          await sendWeeklyDigestEmail(user.email, digestData);
+
+          await storage.logDigestEmailSent(
+            user.id,
+            startDate,
+            endDate,
+            newIdeas.length,
+            skillMatches.length
+          );
+
+          successCount++;
+
+          // Delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error(`Failed to send digest to user ${user.id}:`, error);
+          errorCount++;
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Digest sent to ${successCount} users, ${errorCount} errors`,
+        stats: {
+          totalUsers: users.length,
+          successCount,
+          errorCount,
+        },
+      });
+    } catch (error) {
+      console.error("Cron weekly digest error:", error);
+      res.status(500).json({ error: "Failed to send weekly digest" });
+    }
+  });
 }

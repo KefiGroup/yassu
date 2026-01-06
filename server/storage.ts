@@ -133,6 +133,25 @@ export interface IStorage {
     badges: ProfileBadge[];
     ideas: Idea[];
   } | null>;
+  
+  // Weekly digest methods
+  getNewIdeasForWeek(startDate: Date, endDate: Date): Promise<Idea[]>;
+  getUserActivitySummary(userId: number, startDate: Date, endDate: Date): Promise<{
+    ideasCreated: number;
+    invitesReceived: number;
+    teamsJoined: number;
+  }>;
+  getPlatformStats(): Promise<{
+    totalIdeas: number;
+    totalUsers: number;
+    newUsersThisWeek: number;
+  }>;
+  getSkillMatchesForUser(userId: number, startDate: Date, endDate: Date): Promise<Array<{
+    idea: Idea;
+    matchingSkills: string[];
+  }>>;
+  logDigestEmailSent(userId: number, weekStart: Date, weekEnd: Date, ideasCount: number, matchesCount: number): Promise<void>;
+  getUsersForDigest(): Promise<(User & { profile: Profile | null })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1110,6 +1129,169 @@ export class DatabaseStorage implements IStorage {
     await db.delete(schema.teamMembers).where(eq(schema.teamMembers.id, memberId));
   }
 
+  // Weekly digest methods implementation
+  async getNewIdeasForWeek(startDate: Date, endDate: Date): Promise<Idea[]> {
+    const ideas = await db
+      .select()
+      .from(schema.ideas)
+      .where(
+        and(
+          sql`${schema.ideas.createdAt} >= ${startDate}`,
+          sql`${schema.ideas.createdAt} <= ${endDate}`,
+          eq(schema.ideas.isPublic, true)
+        )
+      )
+      .orderBy(desc(schema.ideas.createdAt))
+      .limit(50);
+    return ideas;
+  }
+
+  async getUserActivitySummary(
+    userId: number,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{ ideasCreated: number; invitesReceived: number; teamsJoined: number }> {
+    // Count ideas created by user in date range
+    const ideasCreated = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.ideas)
+      .where(
+        and(
+          eq(schema.ideas.creatorId, userId),
+          sql`${schema.ideas.createdAt} >= ${startDate}`,
+          sql`${schema.ideas.createdAt} <= ${endDate}`
+        )
+      );
+
+    // Count team invites received in date range
+    const invitesReceived = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.teamInvites)
+      .where(
+        and(
+          eq(schema.teamInvites.inviteeId, userId),
+          sql`${schema.teamInvites.createdAt} >= ${startDate}`,
+          sql`${schema.teamInvites.createdAt} <= ${endDate}`
+        )
+      );
+
+    // Count teams joined in date range
+    const teamsJoined = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.teamMembers)
+      .where(
+        and(
+          eq(schema.teamMembers.userId, userId),
+          sql`${schema.teamMembers.joinedAt} >= ${startDate}`,
+          sql`${schema.teamMembers.joinedAt} <= ${endDate}`
+        )
+      );
+
+    return {
+      ideasCreated: Number(ideasCreated[0]?.count || 0),
+      invitesReceived: Number(invitesReceived[0]?.count || 0),
+      teamsJoined: Number(teamsJoined[0]?.count || 0),
+    };
+  }
+
+  async getPlatformStats(): Promise<{
+    totalIdeas: number;
+    totalUsers: number;
+    newUsersThisWeek: number;
+  }> {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const totalIdeas = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.ideas);
+
+    const totalUsers = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.users);
+
+    const newUsersThisWeek = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.users)
+      .where(sql`${schema.users.createdAt} >= ${weekAgo}`);
+
+    return {
+      totalIdeas: Number(totalIdeas[0]?.count || 0),
+      totalUsers: Number(totalUsers[0]?.count || 0),
+      newUsersThisWeek: Number(newUsersThisWeek[0]?.count || 0),
+    };
+  }
+
+  async getSkillMatchesForUser(
+    userId: number,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Array<{ idea: Idea; matchingSkills: string[] }>> {
+    // Get user's skills
+    const userProfile = await this.getProfile(userId);
+    if (!userProfile || !userProfile.skills || userProfile.skills.length === 0) {
+      return [];
+    }
+
+    const userSkills = userProfile.skills;
+
+    // Get new ideas from this week
+    const newIdeas = await this.getNewIdeasForWeek(startDate, endDate);
+
+    // Calculate skill matches
+    const matches: Array<{ idea: Idea; matchingSkills: string[] }> = [];
+
+    for (const idea of newIdeas) {
+      if (idea.creatorId === userId) continue; // Skip user's own ideas
+      if (!idea.skills || idea.skills.length === 0) continue;
+
+      const matchingSkills = userSkills.filter(skill =>
+        idea.skills?.includes(skill)
+      );
+
+      if (matchingSkills.length > 0) {
+        matches.push({ idea, matchingSkills });
+      }
+    }
+
+    // Sort by number of matching skills (descending)
+    matches.sort((a, b) => b.matchingSkills.length - a.matchingSkills.length);
+
+    // Return top 5 matches
+    return matches.slice(0, 5);
+  }
+
+  async logDigestEmailSent(
+    userId: number,
+    weekStart: Date,
+    weekEnd: Date,
+    ideasCount: number,
+    matchesCount: number
+  ): Promise<void> {
+    await db.insert(schema.digestEmailLog).values({
+      userId,
+      weekStart,
+      weekEnd,
+      ideasCount,
+      matchesCount,
+    });
+  }
+
+  async getUsersForDigest(): Promise<(User & { profile: Profile | null })[]> {
+    // Get all users
+    const users = await db.select().from(schema.users);
+
+    // Get profiles for all users
+    const usersWithProfiles = await Promise.all(
+      users.map(async (user) => {
+        const profile = await this.getProfile(user.id);
+        return { ...user, profile };
+      })
+    );
+
+    // Filter out users without email
+    return usersWithProfiles.filter(u => u.email);
+  }
 
 }
 

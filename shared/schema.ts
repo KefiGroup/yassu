@@ -68,6 +68,16 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const digestEmailLog = pgTable("digest_email_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  weekStart: timestamp("week_start").notNull(),
+  weekEnd: timestamp("week_end").notNull(),
+  ideasCount: integer("ideas_count").default(0).notNull(),
+  matchesCount: integer("matches_count").default(0).notNull(),
+});
+
 export const profiles = pgTable("profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull().unique(),
@@ -341,6 +351,7 @@ export const insertConnectionSchema = createInsertSchema(connections).omit({ id:
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type DigestEmailLog = typeof digestEmailLog.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type Idea = typeof ideas.$inferSelect;
 export type Team = typeof teams.$inferSelect;
