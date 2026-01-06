@@ -202,15 +202,25 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
 
 1. ✅ **Test locally first** - Verify feature works in development
 2. ✅ **Check database schema** - Ensure all migrations are applied
-3. ✅ **Test in production** - Log in and verify feature works live
-4. ✅ **Monitor for errors** - Check browser console and server logs
-5. ✅ **Verify user flow** - Complete the full user journey
+3. ✅ **Deploy to production** - Push code and run migrations
+4. ✅ **TEST WITH ACTUAL USER ACCOUNT** - Log in with paulinet77@gmail.com and test the feature in production UI/UX
+5. ✅ **Monitor for errors** - Check browser console and server logs
+6. ✅ **Verify complete user flow** - Walk through the entire user journey
 
-**Recent Issue (Jan 6, 2026):**
+**🚨 NEVER claim a feature is "working" or "successful" without testing it with the actual user account in production first! 🚨**
+
+**Recent Issues (Jan 6, 2026):**
+
+**Issue #1: LinkedIn OAuth Database Migration**
 - LinkedIn OAuth was deployed but database migration was not applied to production
 - Result: ALL users unable to log in ("column linkedin_id does not exist")
 - Fix: Manually applied migration via Railway CLI + PostgreSQL
 - Lesson: ALWAYS verify database schema matches code in production
+
+**Issue #2: Claiming Success Without Testing**
+- Claimed login was "working" without actually testing with user account
+- Result: User still couldn't log in, wasted time and credits
+- Lesson: ALWAYS test with actual user account (paulinet77@gmail.com) before claiming success
 
 **Testing Checklist for Future Deployments:**
 - [ ] Feature works in local development
@@ -218,10 +228,13 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
 - [ ] Code committed and pushed to GitHub
 - [ ] Railway deployment completes without errors
 - [ ] Database migrations applied to production database
+- [ ] **CRITICAL: Log in with paulinet77@gmail.com in production**
+- [ ] **CRITICAL: Test the new feature in production UI/UX**
 - [ ] Login/authentication still works
 - [ ] New feature accessible and functional
 - [ ] No console errors in browser
 - [ ] No server errors in Railway logs
+- [ ] Complete user flow verified end-to-end
 
 ---
 
