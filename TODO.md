@@ -135,8 +135,16 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
   - [x] LinkedIn verification badge
   - [x] Database fields (linkedinId, tokens, connectedAt)
   - [x] Deployed to production (commit 79fe9b6)
-- [ ] Add `portfolio` section to profile schema ← **WE ARE HERE**
-- [ ] Create automatic portfolio linking to Yassu projects
+- [x] Add `portfolio` section to profile schema ✅ COMPLETED
+- [x] Create automatic portfolio linking to Yassu projects ✅ COMPLETED
+  - [x] Backend API endpoint `/api/profile/:userId/portfolio`
+  - [x] getUserPortfolio method in storage.ts
+  - [x] PortfolioSection component created
+  - [x] Integrated into Profile page
+  - [x] Shows created ideas and collaborating ideas
+  - [x] Team size calculation
+  - [x] Clickable project cards
+  - [x] Deployed and tested (commit 6a48fe0)
 - [ ] Design enhanced profile UI layout
 - [ ] Implement profile editing for new fields
 - [ ] Add availability badge to profile cards
