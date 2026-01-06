@@ -86,6 +86,12 @@ export function registerRoutes(app: Express): void {
       });
       await storage.addUserRole(user.id, "student");
 
+      // Send welcome email (don't wait for it to avoid blocking)
+      const { sendWelcomeEmail } = await import('./email');
+      sendWelcomeEmail(user.email, fullName || 'there').catch(err => {
+        console.error('Failed to send welcome email:', err);
+      });
+
       req.session.userId = user.id;
       // Explicitly save session before responding
       req.session.save((err) => {
@@ -150,11 +156,12 @@ export function registerRoutes(app: Express): void {
       // Check if user exists (but don't reveal this to prevent email enumeration)
       const user = await storage.getUserByEmail(email);
       
-      // TODO: In production, integrate with an email service to send reset link
-      // For now, we just log and return success regardless
       if (user) {
-        console.log(`Password reset requested for user: ${user.email}`);
-        // In production: generate reset token, save to DB, send email
+        // Generate reset token and send email
+        const resetToken = await storage.createPasswordResetToken(user.id);
+        const { sendPasswordResetEmail } = await import('./email');
+        await sendPasswordResetEmail(user.email, resetToken);
+        console.log(`Password reset email sent to: ${user.email}`);
       }
 
       // Always return success to prevent email enumeration attacks
@@ -162,6 +169,52 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Forgot password error:", error);
       res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
+  app.get("/api/auth/verify-reset-token/:token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      if (!token) {
+        return res.status(400).json({ error: "Token is required" });
+      }
+
+      const user = await storage.validateResetToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      console.error("Verify reset token error:", error);
+      res.status(500).json({ error: "Failed to verify token" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+
+      const success = await storage.resetPassword(token, newPassword);
+      
+      if (!success) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      res.json({ success: true, message: "Password has been reset successfully" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
     }
   });
 
@@ -598,6 +651,40 @@ export function registerRoutes(app: Express): void {
         }
       }
       
+      // Send skill match notifications if idea is public
+      if (ideaData.isPublic && req.body.desiredTeammates) {
+        // Extract skills from desiredTeammates text
+        const desiredSkills = req.body.desiredTeammates
+          .toLowerCase()
+          .split(/[,;\n]+/)
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0);
+        
+        if (desiredSkills.length > 0) {
+          // Find users with matching skills
+          const matchingProfiles = await storage.findProfilesBySkills(desiredSkills, req.session.userId);
+          
+          // Send emails to top matches (limit to 10 to avoid spam)
+          const { sendSkillMatchEmail } = await import('./email');
+          const topMatches = matchingProfiles.slice(0, 10);
+          
+          for (const profile of topMatches) {
+            if (profile.email && profile.matchingSkills && profile.matchingSkills.length > 0) {
+              sendSkillMatchEmail(
+                profile.email,
+                profile.fullName || 'there',
+                idea.title,
+                idea.problem || 'No description provided',
+                idea.id,
+                profile.matchingSkills
+              ).catch(err => {
+                console.error('Failed to send skill match email:', err);
+              });
+            }
+          }
+        }
+      }
+      
       res.json(idea);
     } catch (error: any) {
       console.error("Create idea error:", error?.message || error);
@@ -883,6 +970,29 @@ export function registerRoutes(app: Express): void {
       }
       
       const updated = await storage.updateJoinRequest(req.params.id, { status });
+      
+      // Send acceptance email if accepted
+      if (status === 'accepted' && updated) {
+        const [accepter, idea, ideaCreator] = await Promise.all([
+          storage.getProfile(updated.userId),
+          storage.getIdea(updated.ideaId),
+          storage.getIdea(updated.ideaId).then(i => i ? storage.getProfile(i.createdBy) : null)
+        ]);
+        
+        if (accepter && idea && ideaCreator && ideaCreator.email) {
+          const { sendInviteAcceptedEmail } = await import('./email');
+          sendInviteAcceptedEmail(
+            ideaCreator.email,
+            ideaCreator.fullName || 'there',
+            accepter.fullName || 'Someone',
+            idea.title,
+            updated.ideaId
+          ).catch(err => {
+            console.error('Failed to send invite accepted email:', err);
+          });
+        }
+      }
+      
       res.json(updated);
     } catch (error) {
       console.error("Update join request error:", error);
@@ -919,6 +1029,27 @@ export function registerRoutes(app: Express): void {
         message,
         status: "pending"
       });
+      
+      // Send invitation email
+      const [inviter, invitee, idea] = await Promise.all([
+        storage.getProfile(req.session.userId),
+        storage.getProfile(inviteeId),
+        storage.getIdea(ideaId)
+      ]);
+      
+      if (inviter && invitee && idea && invitee.email) {
+        const { sendTeamInvitationEmail } = await import('./email');
+        sendTeamInvitationEmail(
+          invitee.email,
+          invitee.fullName || 'there',
+          inviter.fullName || 'Someone',
+          idea.title,
+          ideaId
+        ).catch(err => {
+          console.error('Failed to send team invitation email:', err);
+        });
+      }
+      
       res.json(invite);
     } catch (error) {
       console.error("Create team invite error:", error);
@@ -1613,6 +1744,33 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Get all ideas error:", error);
       res.status(500).json({ error: "Failed to get ideas" });
+    }
+  });
+
+  // Delete idea (admin only)
+  app.delete("/api/admin/ideas/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const ideaId = req.params.id;
+      if (!ideaId) {
+        return res.status(400).json({ error: "Invalid idea ID" });
+      }
+
+      await storage.deleteIdea(ideaId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete idea error:", error);
+      res.status(500).json({ error: "Failed to delete idea" });
     }
   });
 }

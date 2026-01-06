@@ -17,6 +17,9 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(userId: number, hashedPassword: string): Promise<void>;
+  createPasswordResetToken(userId: number): Promise<string>;
+  validateResetToken(token: string): Promise<User | null>;
+  resetPassword(token: string, newPassword: string): Promise<boolean>;
   
   getProfile(userId: number): Promise<Profile | undefined>;
   updateProfile(userId: number, data: Partial<Profile>): Promise<Profile | undefined>;
@@ -152,6 +155,86 @@ export class DatabaseStorage implements IStorage {
     await db.update(schema.users)
       .set({ password: hashedPassword })
       .where(eq(schema.users.id, userId));
+  }
+
+  async createPasswordResetToken(userId: number): Promise<string> {
+    // Generate a cryptographically secure random token
+    const crypto = await import('crypto');
+    const tokenBytes = crypto.randomBytes(32);
+    const token = tokenBytes.toString('hex');
+    
+    // Hash the token before storing (security best practice)
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Token expires in 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    
+    // Store hashed token in database
+    await db.insert(schema.passwordResetTokens).values({
+      userId,
+      token: hashedToken,
+      expiresAt,
+      used: false,
+    });
+    
+    // Return the unhashed token to send in email
+    return token;
+  }
+
+  async validateResetToken(token: string): Promise<User | null> {
+    const crypto = await import('crypto');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Find token in database
+    const [resetToken] = await db.select()
+      .from(schema.passwordResetTokens)
+      .where(eq(schema.passwordResetTokens.token, hashedToken));
+    
+    if (!resetToken) {
+      return null;
+    }
+    
+    // Check if token is expired
+    if (new Date() > resetToken.expiresAt) {
+      return null;
+    }
+    
+    // Check if token has been used
+    if (resetToken.used) {
+      return null;
+    }
+    
+    // Get user
+    const user = await this.getUser(resetToken.userId);
+    return user || null;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const crypto = await import('crypto');
+    const bcrypt = await import('bcryptjs');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Find and validate token
+    const [resetToken] = await db.select()
+      .from(schema.passwordResetTokens)
+      .where(eq(schema.passwordResetTokens.token, hashedToken));
+    
+    if (!resetToken || new Date() > resetToken.expiresAt || resetToken.used) {
+      return false;
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update user password
+    await this.updateUserPassword(resetToken.userId, hashedPassword);
+    
+    // Mark token as used
+    await db.update(schema.passwordResetTokens)
+      .set({ used: true })
+      .where(eq(schema.passwordResetTokens.id, resetToken.id));
+    
+    return true;
   }
 
   async getProfile(userId: number): Promise<Profile | undefined> {

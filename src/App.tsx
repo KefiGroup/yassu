@@ -9,6 +9,7 @@ import Maintenance from "./pages/Maintenance";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Advisors from "./pages/Advisors";
 import AmbassadorsPage from "./pages/AmbassadorsPage";
@@ -60,6 +61,7 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/advisors" element={<Advisors />} />
               <Route path="/ambassadors" element={<AmbassadorsPage />} />
               <Route path="/terms" element={<TermsOfService />} />

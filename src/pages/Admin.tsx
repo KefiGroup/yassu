@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -194,6 +194,69 @@ export default function Admin() {
     }
   };
 
+  const handleDeleteIdea = async (ideaId: string, ideaTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${ideaTitle}"? This action cannot be undone and will delete all related data (team members, invites, etc.).`)) {
+      return;
+    }
+
+    setActionLoading(`delete-idea-${ideaId}`);
+    try {
+      await apiRequest(`/admin/ideas/${ideaId}`, {
+        method: 'DELETE',
+      });
+      
+      const ideasData = await apiRequest<Idea[]>('/admin/ideas');
+      setIdeas(ideasData);
+      
+      toast({
+        title: 'Idea Deleted',
+        description: `"${ideaTitle}" has been permanently deleted.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete idea.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: number, userName: string) => {
+    if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone and will delete:
+- User account and profile
+- All their ideas
+- Team memberships
+- Connections
+- All related data`)) {
+      return;
+    }
+
+    setActionLoading(`delete-user-${userId}`);
+    try {
+      await apiRequest(`/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+      
+      const profilesData = await apiRequest<ProfileWithBadges[]>('/admin/profiles');
+      setProfiles(profilesData);
+      
+      toast({
+        title: 'User Deleted',
+        description: `${userName} has been permanently deleted.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete user.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const filteredProfiles = profiles.filter((profile) =>
     (profile.fullName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (profile.email?.toLowerCase() || '').includes(searchQuery.toLowerCase())
@@ -323,7 +386,20 @@ export default function Admin() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap items-center">
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteUser(profile.userId, profile.fullName || profile.email || 'this user')}
+                            disabled={actionLoading === `delete-user-${profile.userId}`}
+                            data-testid={`button-delete-user-${profile.userId}`}
+                          >
+                            {actionLoading === `delete-user-${profile.userId}` ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
                           {hasBadge(profile, 'ambassador') ? (
                             <Button
                               variant="outline"
@@ -460,12 +536,27 @@ export default function Admin() {
                             Created: {new Date(idea.createdAt).toLocaleDateString()}
                           </p>
                         </div>
-                        <Link to={`/portal/ideas/${idea.id}`}>
-                          <Button variant="ghost" size="sm" data-testid={`button-view-idea-${idea.id}`}>
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
+                        <div className="flex items-center gap-2">
+                          <Link to={`/portal/ideas/${idea.id}`}>
+                            <Button variant="ghost" size="sm" data-testid={`button-view-idea-${idea.id}`}>
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteIdea(idea.id, idea.title)}
+                            disabled={actionLoading === `delete-idea-${idea.id}`}
+                            data-testid={`button-delete-idea-${idea.id}`}
+                          >
+                            {actionLoading === `delete-idea-${idea.id}` ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </Button>
-                        </Link>
+                        </div>
                       </div>
                     </motion.div>
                   ))
