@@ -155,6 +155,12 @@ export interface IStorage {
   
   // LinkedIn OAuth
   updateUserLinkedIn(userId: number, data: { linkedinId: string | null; linkedinAccessToken: string | null; linkedinRefreshToken?: string | null }): Promise<void>;
+  
+  // Portfolio
+  getUserPortfolio(userId: number): Promise<{
+    createdIdeas: (Idea & { teamSize: number })[];
+    collaboratingIdeas: (Idea & { role: string | null; joinedAt: Date | null; teamSize: number })[];
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1305,6 +1311,65 @@ export class DatabaseStorage implements IStorage {
         linkedinConnectedAt: data.linkedinId ? new Date() : null,
       })
       .where(eq(schema.users.id, userId));
+  }
+
+  async getUserPortfolio(userId: number): Promise<{
+    createdIdeas: (Idea & { teamSize: number })[];
+    collaboratingIdeas: (Idea & { role: string | null; joinedAt: Date | null; teamSize: number })[];
+  }> {
+    // Get ideas created by user
+    const createdIdeas = await db
+      .select()
+      .from(schema.ideas)
+      .where(eq(schema.ideas.creatorId, userId))
+      .orderBy(desc(schema.ideas.createdAt));
+
+    // Get team sizes for created ideas
+    const createdIdeasWithTeamSize = await Promise.all(
+      createdIdeas.map(async (idea) => {
+        const teamMembers = await db
+          .select()
+          .from(schema.teamMembers)
+          .where(eq(schema.teamMembers.ideaId, idea.id));
+        return {
+          ...idea,
+          teamSize: teamMembers.length + 1, // +1 for creator
+        };
+      })
+    );
+
+    // Get ideas where user is a team member
+    const teamMemberships = await db
+      .select({
+        idea: schema.ideas,
+        role: schema.teamMembers.role,
+        joinedAt: schema.teamMembers.joinedAt,
+      })
+      .from(schema.teamMembers)
+      .innerJoin(schema.ideas, eq(schema.teamMembers.ideaId, schema.ideas.id))
+      .where(eq(schema.teamMembers.userId, userId))
+      .orderBy(desc(schema.teamMembers.joinedAt));
+
+    // Get team sizes for collaborating ideas
+    const collaboratingIdeasWithTeamSize = await Promise.all(
+      teamMemberships.map(async (membership) => {
+        const teamMembers = await db
+          .select()
+          .from(schema.teamMembers)
+          .where(eq(schema.teamMembers.ideaId, membership.idea.id));
+        return {
+          ...membership.idea,
+          role: membership.role,
+          joinedAt: membership.joinedAt,
+          teamSize: teamMembers.length + 1, // +1 for creator
+        };
+      })
+    );
+
+    return {
+      createdIdeas: createdIdeasWithTeamSize,
+      collaboratingIdeas: collaboratingIdeasWithTeamSize,
+    };
   }
 
 }

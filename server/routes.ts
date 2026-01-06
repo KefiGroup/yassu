@@ -1370,6 +1370,22 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Get user's portfolio (created ideas and collaborations)
+  app.get("/api/profile/:userId/portfolio", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const portfolio = await storage.getUserPortfolio(userId);
+      res.json(portfolio);
+    } catch (error) {
+      console.error("Fetch portfolio error:", error);
+      res.status(500).json({ error: "Failed to fetch portfolio" });
+    }
+  });
+
   // Get all ideas (admin only - includes private ideas)
   app.get("/api/admin/ideas", async (req: Request, res: Response) => {
     if (!req.session.userId) {

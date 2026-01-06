@@ -23,6 +23,7 @@ import { Save, Loader2, Camera, Award, PartyPopper } from 'lucide-react';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 import { AvatarUploadDialog } from '@/components/AvatarUploadDialog';
+import { PortfolioSection } from '@/components/PortfolioSection';
 import { apiRequest } from '@/lib/api';
 
 interface ProfileBadge {
@@ -640,6 +641,16 @@ export default function Profile() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {user && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <PortfolioSection userId={user.id} />
+        </motion.div>
+      )}
 
       <AvatarUploadDialog
         open={avatarDialogOpen}
