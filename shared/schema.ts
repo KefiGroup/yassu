@@ -56,10 +56,6 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name"),
-  linkedinId: text("linkedin_id").unique(),
-  linkedinAccessToken: text("linkedin_access_token"),
-  linkedinRefreshToken: text("linkedin_refresh_token"),
-  linkedinConnectedAt: timestamp("linkedin_connected_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
