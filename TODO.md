@@ -126,8 +126,16 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
 **Goal:** Make Yassu the best place for students to find their next big thing
 
 #### Feature 2.1: Collaborator Profiles 2.0
-- [ ] Add `availability` field to users table (Full-time, Part-time, Advisor, Not Available)
-- [ ] Add `portfolio` section to profile schema
+- [x] Add `availability` field to users table (Full-time, Part-time, Advisor, Not Available) ✅ Already exists
+- [x] LinkedIn OAuth integration ✅ COMPLETED
+  - [x] LinkedIn OAuth service with OpenID Connect
+  - [x] Backend endpoints (connect, callback, disconnect)
+  - [x] Frontend "Connect LinkedIn" button
+  - [x] Auto-import profile data (name, photo)
+  - [x] LinkedIn verification badge
+  - [x] Database fields (linkedinId, tokens, connectedAt)
+  - [x] Deployed to production (commit 79fe9b6)
+- [ ] Add `portfolio` section to profile schema ← **WE ARE HERE**
 - [ ] Create automatic portfolio linking to Yassu projects
 - [ ] Design enhanced profile UI layout
 - [ ] Implement profile editing for new fields
