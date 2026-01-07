@@ -18,13 +18,13 @@ const Navbar = () => {
         </a>
 
         <div className="hidden md:flex items-center gap-8">
-          <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">
+          <a href="/#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">
             How Yassu Works
           </a>
-          <a href="#team" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
+          <a href="/#team" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
             Yassu Team
           </a>
-          <a href="#ideas" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ideas">
+          <a href="/#ideas" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ideas">
             Yassu Ideas
           </a>
           <a href="/ambassadors" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ambassadors">
