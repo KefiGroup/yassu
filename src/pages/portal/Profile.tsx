@@ -504,7 +504,7 @@ export default function Profile() {
             />
 
             <GroupedMultiSelect
-              label="Interests (Coming Soon)"
+              label="Interests"
               categories={INTEREST_CATEGORIES}
               selected={formData.interests}
               onChange={handleInterestsChange}
