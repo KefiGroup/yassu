@@ -174,6 +174,9 @@ export default function IdeaDetail() {
   const [activeTab, setActiveTab] = useState('executiveSummary');
   const [potentialTeamMembers, setPotentialTeamMembers] = useState<PotentialTeamMember[]>([]);
   const [loadingTeamMembers, setLoadingTeamMembers] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<PotentialTeamMember | null>(null);
+  const [passedMembers, setPassedMembers] = useState<Set<string>>(new Set());
+  const [invitingMember, setInvitingMember] = useState<string | null>(null);
   
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
@@ -551,6 +554,52 @@ export default function IdeaDetail() {
       const newCursorPos = start + before.length + selectedText.length + after.length;
       textarea.setSelectionRange(newCursorPos, newCursorPos);
     }, 0);
+  };
+
+  const handleInviteMember = async (member: PotentialTeamMember) => {
+    if (!ideaId || !idea) return;
+    
+    setInvitingMember(member.id);
+    try {
+      await apiRequest(`/api/team-invites`, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          ideaId, 
+          inviteeId: member.userId,
+          message: `I'd like to invite you to join my project: ${idea.title}`
+        }),
+      });
+      
+      toast({
+        title: 'Invitation Sent',
+        description: `An invitation has been sent to ${member.fullName || 'the collaborator'}.`,
+      });
+      
+      // Close dialog if open
+      setSelectedMember(null);
+      
+      // Add to passed members so they don't show up in the list anymore
+      setPassedMembers(prev => new Set([...prev, member.id]));
+    } catch (error) {
+      console.error('Invite error:', error);
+      toast({
+        title: 'Invitation Failed',
+        description: 'Could not send invitation. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setInvitingMember(null);
+    }
+  };
+
+  const handlePassMember = (memberId: string) => {
+    setPassedMembers(prev => new Set([...prev, memberId]));
+    if (selectedMember?.id === memberId) {
+      setSelectedMember(null);
+    }
+    toast({
+      description: 'Collaborator removed from suggestions.',
+    });
   };
 
   const handleSaveSection = async () => {
@@ -1429,10 +1478,15 @@ export default function IdeaDetail() {
                                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                                   <span className="ml-2 text-muted-foreground">Finding matches...</span>
                                 </div>
-                              ) : potentialTeamMembers.length > 0 ? (
+                              ) : potentialTeamMembers.filter(m => !passedMembers.has(m.id)).length > 0 ? (
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                  {potentialTeamMembers.map((member) => (
-                                    <Card key={member.id} className="hover-elevate" data-testid={`card-team-member-${member.id}`}>
+                                  {potentialTeamMembers.filter(m => !passedMembers.has(m.id)).map((member) => (
+                                    <Card 
+                                      key={member.id} 
+                                      className="hover-elevate cursor-pointer group relative" 
+                                      data-testid={`card-team-member-${member.id}`}
+                                      onClick={() => setSelectedMember(member)}
+                                    >
                                       <CardContent className="p-4">
                                         <div className="flex items-start gap-3">
                                           <Avatar className="w-12 h-12">
@@ -1442,7 +1496,25 @@ export default function IdeaDetail() {
                                             </AvatarFallback>
                                           </Avatar>
                                           <div className="flex-1 min-w-0">
-                                            <p className="font-medium truncate">{member.fullName || 'Anonymous'}</p>
+                                            <div className="flex items-center justify-between gap-2">
+                                              <p className="font-medium truncate group-hover:text-primary transition-colors">
+                                                {member.fullName || 'Anonymous'}
+                                              </p>
+                                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button
+                                                  size="icon"
+                                                  variant="ghost"
+                                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePassMember(member.id);
+                                                  }}
+                                                  title="Pass"
+                                                >
+                                                  <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                              </div>
+                                            </div>
                                             {member.headline && (
                                               <p className="text-sm text-muted-foreground truncate">{member.headline}</p>
                                             )}
@@ -1462,6 +1534,26 @@ export default function IdeaDetail() {
                                                   +{member.matchingSkills.length - 3} more
                                                 </Badge>
                                               )}
+                                            </div>
+                                            <div className="mt-3 flex gap-2">
+                                              <Button 
+                                                size="sm" 
+                                                className="w-full h-8 text-xs"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleInviteMember(member);
+                                                }}
+                                                disabled={invitingMember === member.id}
+                                              >
+                                                {invitingMember === member.id ? (
+                                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                                ) : (
+                                                  <>
+                                                    <Send className="w-3 h-3 mr-1" />
+                                                    Invite
+                                                  </>
+                                                )}
+                                              </Button>
                                             </div>
                                           </div>
                                         </div>
@@ -1661,6 +1753,89 @@ export default function IdeaDetail() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Detail Dialog */}
+      <Dialog open={!!selectedMember} onOpenChange={(open) => !open && setSelectedMember(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Collaborator Profile</DialogTitle>
+          </DialogHeader>
+          {selectedMember && (
+            <div className="space-y-6 py-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="w-20 h-20">
+                  <AvatarImage src={selectedMember.avatarUrl || undefined} />
+                  <AvatarFallback className="text-2xl">
+                    {selectedMember.fullName?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-bold">{selectedMember.fullName || 'Anonymous'}</h3>
+                  <p className="text-muted-foreground">{selectedMember.headline || 'Yassu Collaborator'}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="secondary">
+                      {selectedMember.matchCount} skill{selectedMember.matchCount !== 1 ? 's' : ''} match
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  Matching Skills
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedMember.matchingSkills.map((skill) => (
+                    <Badge key={skill} variant="outline" className="bg-primary/5">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-primary" />
+                  All Skills
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedMember.skills.map((skill) => (
+                    <Badge key={skill} variant="ghost" className="bg-muted">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => handlePassMember(selectedMember.id)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Pass
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={() => handleInviteMember(selectedMember)}
+                  disabled={invitingMember === selectedMember.id}
+                >
+                  {invitingMember === selectedMember.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Invite to Project
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
