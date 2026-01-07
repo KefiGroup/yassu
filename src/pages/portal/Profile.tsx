@@ -72,9 +72,8 @@ export default function Profile() {
     otherClubType: '',
     // Enhanced Profile 2.0 fields (optional)
     headline: '',
-    lookingFor: [] as string[],
     portfolioUrl: '',
-    githubUrl: '',
+    githubUrl: ''
   });
 
   useEffect(() => {
@@ -123,9 +122,8 @@ export default function Profile() {
         otherClubType: isOtherClub ? clubValue.replace('Other: ', '') : '',
         // Enhanced Profile 2.0 fields
         headline: (profile as any).headline || '',
-        lookingFor: (profile as any).lookingFor || [],
         portfolioUrl: profile.portfolioUrl || '',
-        githubUrl: profile.githubUrl || '',
+        githubUrl: profile.githubUrl || ''
       });
       setInitialLoadDone(true);
     }
@@ -159,7 +157,6 @@ export default function Profile() {
         clubType: clubTypeToSave,
         // Enhanced Profile 2.0 fields (optional)
         headline: formData.headline || null,
-        lookingFor: formData.lookingFor,
         portfolioUrl: formData.portfolioUrl || null,
         githubUrl: formData.githubUrl || null,
         onboardingCompleted: true,
@@ -511,31 +508,6 @@ export default function Profile() {
               placeholder="Select or add interests..."
               badgeVariant="outline"
             />
-
-            <div className="space-y-2">
-              <Label>Looking For</Label>
-              <div className="flex flex-wrap gap-2">
-                {['Full-time', 'Part-time', 'Advisor', 'Co-founder'].map((option) => (
-                  <Button
-                    key={option}
-                    type="button"
-                    variant={formData.lookingFor.includes(option) ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      const newLookingFor = formData.lookingFor.includes(option)
-                        ? formData.lookingFor.filter(item => item !== option)
-                        : [...formData.lookingFor, option];
-                      setFormData({ ...formData, lookingFor: newLookingFor });
-                    }}
-                  >
-                    {option}
-                  </Button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Let others know what kind of opportunities you're open to
-              </p>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
