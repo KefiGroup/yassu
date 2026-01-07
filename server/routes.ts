@@ -342,6 +342,35 @@ export function registerRoutes(app: Express): void {
       }
       
       const profile = await storage.updateProfile(req.session.userId, data);
+      
+      // Send skill match notifications if skills were updated
+      if (data.skills && data.skills.length > 0 && profile.email) {
+        // Find public ideas that match the user's skills
+        const matchingIdeas = await storage.findIdeasBySkills(data.skills, req.session.userId);
+        
+        if (matchingIdeas.length > 0) {
+          const { sendSkillMatchEmail } = await import('./email');
+          
+          // Send email about top 5 matching ideas
+          const topMatches = matchingIdeas.slice(0, 5);
+          
+          for (const match of topMatches) {
+            if (match.idea && match.matchingSkills && match.matchingSkills.length > 0) {
+              sendSkillMatchEmail(
+                profile.email,
+                profile.fullName || 'there',
+                match.idea.title,
+                match.idea.problem || 'No description provided',
+                match.idea.id,
+                match.matchingSkills
+              ).catch(err => {
+                console.error('Failed to send skill match email:', err);
+              });
+            }
+          }
+        }
+      }
+      
       res.json(profile);
     } catch (error) {
       res.status(500).json({ error: "Failed to update profile" });

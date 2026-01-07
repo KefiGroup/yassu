@@ -12,6 +12,12 @@ export interface ProfileWithMatchingSkills extends Profile {
   matchCount: number;
 }
 
+export interface IdeaWithMatchingSkills {
+  idea: Idea;
+  matchingSkills: string[];
+  matchCount: number;
+}
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -25,6 +31,7 @@ export interface IStorage {
   updateProfile(userId: number, data: Partial<Profile>): Promise<Profile | undefined>;
   createProfile(userId: number, data: Partial<Profile>): Promise<Profile>;
   findProfilesBySkills(skills: string[], excludeUserId?: number): Promise<ProfileWithMatchingSkills[]>;
+  findIdeasBySkills(skills: string[], excludeUserId?: number): Promise<IdeaWithMatchingSkills[]>;
   getProfilesByYassuRole(role: "ambassador" | "advisor"): Promise<Profile[]>;
   getAllUsersForMatching(): Promise<any[]>;
   
@@ -332,6 +339,58 @@ export class DatabaseStorage implements IStorage {
     matchedProfiles.sort((a, b) => b.matchCount - a.matchCount);
     
     return matchedProfiles.slice(0, 10);
+  }
+
+  async findIdeasBySkills(skills: string[], excludeUserId?: number): Promise<IdeaWithMatchingSkills[]> {
+    if (!skills || skills.length === 0) {
+      return [];
+    }
+
+    const normalizedSkills = skills.map(s => s.trim().toLowerCase());
+    
+    // Get all public ideas
+    const ideas = await db.select().from(schema.ideas).where(eq(schema.ideas.isPublic, true));
+    
+    const matchedIdeas: IdeaWithMatchingSkills[] = [];
+    
+    for (const idea of ideas) {
+      if (excludeUserId && idea.creatorId === excludeUserId) {
+        continue;
+      }
+      
+      // Check if idea has skills array or extract from desiredTeammates text
+      let ideaSkills: string[] = [];
+      
+      if (idea.skills && Array.isArray(idea.skills)) {
+        ideaSkills = idea.skills.map(s => s.toLowerCase());
+      } else if (idea.desiredTeammates) {
+        // Extract skills from desiredTeammates text
+        ideaSkills = idea.desiredTeammates
+          .toLowerCase()
+          .split(/[,;\n]+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+      }
+      
+      const matchingSkills = skills.filter(skill => 
+        ideaSkills.some(ideaSkill => 
+          ideaSkill.includes(skill.toLowerCase()) || 
+          skill.toLowerCase().includes(ideaSkill)
+        )
+      );
+      
+      if (matchingSkills.length > 0) {
+        matchedIdeas.push({
+          idea,
+          matchingSkills,
+          matchCount: matchingSkills.length,
+        });
+      }
+    }
+    
+    matchedIdeas.sort((a, b) => b.matchCount - a.matchCount);
+    
+    return matchedIdeas;
   }
 
   async getAllUsersForMatching(): Promise<any[]> {
