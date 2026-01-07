@@ -136,31 +136,29 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
           <!-- Content -->
           <tr>
             <td style="padding: 0 40px 40px;">
-              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Welcome to Yassu, ${fullName}! 🎉</h2>
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${fullName},</h2>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                We're thrilled to have you join our community of university entrepreneurs and builders!
+                Welcome to Yassu! We're thrilled to have you join our community of elite university talent.
               </p>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Yassu is where elite university talent uses AI, shared structure, and cross-campus collaboration to build real companies, before capital decides who matters.
+                Yassu is where your ideas find the right team to become reality. Whether you're here to launch your own project or join a groundbreaking startup, you're in the right place.
               </p>
               
-              <h3 style="margin: 30px 0 15px; color: #1a1a1a; font-size: 18px; font-weight: 600;">Get Started:</h3>
+              <h3 style="margin: 30px 0 15px; color: #1a1a1a; font-size: 18px; font-weight: 600;">Next Steps:</h3>
               
-              <ul style="margin: 0 0 20px; padding-left: 20px; color: #4a4a4a; font-size: 16px; line-height: 1.8;">
-                <li><strong>Complete your profile</strong> to help others find you</li>
-                <li><strong>Post your idea</strong> and generate an AI-powered business plan</li>
-                <li><strong>Find advisors and ambassadors</strong> to guide your journey</li>
-                <li><strong>Form your team</strong> with complementary skills</li>
-                <li><strong>Build your MVP</strong> and launch your company</li>
-              </ul>
+              <ol style="margin: 0 0 20px; padding-left: 20px; color: #4a4a4a; font-size: 16px; line-height: 1.8;">
+                <li><strong>Complete your profile:</strong> Add your skills and interests so our matching engine can find the right opportunities for you.</li>
+                <li><strong>Explore Ideas:</strong> Browse the marketplace to see what others are building.</li>
+                <li><strong>Post an Idea:</strong> Have a vision? Share it and start building your dream team.</li>
+              </ol>
               
               <table role="presentation" style="margin: 30px 0;">
                 <tr>
                   <td style="border-radius: 6px; background-color: #7c3aed;">
-                    <a href="${APP_URL}/portal" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
-                      Go to Dashboard
+                    <a href="${APP_URL}/portal/profile" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      Complete Your Profile
                     </a>
                   </td>
                 </tr>
@@ -168,6 +166,11 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
               
               <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
                 Need help? Reply to this email.
+              </p>
+              
+              <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Best,<br>
+                The Yassu Team
               </p>
             </td>
           </tr>
@@ -203,7 +206,8 @@ export async function sendTeamInvitationEmail(
   inviteeName: string,
   inviterName: string,
   ideaTitle: string,
-  ideaId: string
+  ideaId: string,
+  personalMessage?: string
 ): Promise<void> {
   const ideaLink = `${APP_URL}/portal/ideas/${ideaId}`;
   
@@ -230,39 +234,41 @@ export async function sendTeamInvitationEmail(
           <!-- Content -->
           <tr>
             <td style="padding: 0 40px 40px;">
-              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">You've Been Invited! 🎉</h2>
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${inviteeName},</h2>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Hi ${inviteeName},
+                ${inviterName} has invited you to join the team for <strong>${ideaTitle}</strong> on Yassu!
               </p>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                <strong>${inviterName}</strong> has invited you to join their team for the idea:
+                ${inviterName} saw your profile and thinks your skills would be a perfect fit for their vision. This is a great opportunity to collaborate with fellow elite talent on a high-potential project.
               </p>
               
+              ${personalMessage ? `
               <div style="margin: 20px 0; padding: 20px; background-color: #f9fafb; border-left: 4px solid #7c3aed; border-radius: 4px;">
-                <h3 style="margin: 0 0 10px; color: #1a1a1a; font-size: 18px; font-weight: 600;">${ideaTitle}</h3>
+                <p style="margin: 0; color: #4a4a4a; font-size: 16px; font-style: italic; line-height: 1.6;">
+                  "${personalMessage}"
+                </p>
               </div>
-              
-              <p style="margin: 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                This is a great opportunity to collaborate with talented university entrepreneurs and build something amazing together!
-              </p>
+              ` : ''}
               
               <table role="presentation" style="margin: 30px 0;">
                 <tr>
                   <td style="border-radius: 6px; background-color: #7c3aed;">
                     <a href="${ideaLink}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
-                      View Idea & Respond
+                      View Invitation
                     </a>
                   </td>
                 </tr>
               </table>
               
               <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                Or copy and paste this link into your browser:
+                Need help? Reply to this email.
               </p>
-              <p style="margin: 8px 0 0; color: #7c3aed; font-size: 14px; word-break: break-all;">
-                ${ideaLink}
+              
+              <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Best,<br>
+                The Yassu Team
               </p>
             </td>
           </tr>
@@ -309,7 +315,7 @@ export async function sendSkillMatchEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Idea Matches Your Skills - Yassu</title>
+  <title>New Opportunity Matches Your Skills - Yassu</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -326,45 +332,38 @@ export async function sendSkillMatchEmail(
           <!-- Content -->
           <tr>
             <td style="padding: 0 40px 40px;">
-              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">New Idea Matches Your Skills! 💡</h2>
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${userName},</h2>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Hi ${userName},
-              </p>
-              
-              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                A new idea has been posted on Yassu that matches your skills:
+                Great news! A new project has just been posted on Yassu that perfectly matches your expertise in <strong>${matchingSkills.join(', ')}</strong>.
               </p>
               
               <div style="margin: 20px 0; padding: 20px; background-color: #f9fafb; border-left: 4px solid #7c3aed; border-radius: 4px;">
-                <h3 style="margin: 0 0 10px; color: #1a1a1a; font-size: 18px; font-weight: 600;">${ideaTitle}</h3>
-                <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">${ideaProblem}</p>
-              </div>
-              
-              <div style="margin: 20px 0; padding: 15px; background-color: #ede9fe; border-radius: 4px;">
-                <p style="margin: 0 0 8px; color: #5b21b6; font-size: 14px; font-weight: 600;">Matching Skills:</p>
-                <p style="margin: 0; color: #6b21a8; font-size: 14px;">${matchingSkills.join(', ')}</p>
+                <p style="margin: 0 0 10px; color: #1a1a1a; font-size: 16px;"><strong>Project:</strong> ${ideaTitle}</p>
+                <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;"><strong>Description:</strong> ${ideaProblem}</p>
               </div>
               
               <p style="margin: 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                This could be a great opportunity to apply your expertise and collaborate with fellow university entrepreneurs!
+                The project creator is looking for someone with your specific background to help take this idea to the next level. Indicate your interest to join the Team. The Creator will let you know in due course if you are accepted.
               </p>
               
               <table role="presentation" style="margin: 30px 0;">
                 <tr>
                   <td style="border-radius: 6px; background-color: #7c3aed;">
                     <a href="${ideaLink}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
-                      View Idea
+                      View Project Details
                     </a>
                   </td>
                 </tr>
               </table>
               
               <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                Or copy and paste this link into your browser:
+                Need help? Reply to this email.
               </p>
-              <p style="margin: 8px 0 0; color: #7c3aed; font-size: 14px; word-break: break-all;">
-                ${ideaLink}
+              
+              <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Best,<br>
+                The Yassu Team
               </p>
             </td>
           </tr>
@@ -390,27 +389,27 @@ export async function sendSkillMatchEmail(
 
   await sendEmail({
     to: userEmail,
-    subject: `New idea matches your skills: ${ideaTitle}`,
+    subject: `New Opportunity Matches Your Skills - ${ideaTitle}`,
     html,
   });
 }
 
-export async function sendInviteAcceptedEmail(
-  inviterEmail: string,
-  inviterName: string,
-  accepterName: string,
+export async function sendJoinRequestEmail(
+  ownerEmail: string,
+  ownerName: string,
+  applicantName: string,
   ideaTitle: string,
-  ideaId: string
+  role: string,
+  skills: string[],
+  motivation: string
 ): Promise<void> {
-  const ideaLink = `${APP_URL}/portal/ideas/${ideaId}`;
-  
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invitation Accepted - Yassu</title>
+  <title>New Join Request - Yassu</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -427,39 +426,45 @@ export async function sendInviteAcceptedEmail(
           <!-- Content -->
           <tr>
             <td style="padding: 0 40px 40px;">
-              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Great News! 🎉</h2>
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${ownerName},</h2>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Hi ${inviterName},
+                Exciting news! <strong>${applicantName}</strong> has expressed interest in joining your project, <strong>${ideaTitle}</strong>.
               </p>
               
-              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                <strong>${accepterName}</strong> has accepted your invitation to join:
-              </p>
-              
-              <div style="margin: 20px 0; padding: 20px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px;">
-                <h3 style="margin: 0; color: #065f46; font-size: 18px; font-weight: 600;">${ideaTitle}</h3>
+              <div style="margin: 20px 0; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+                <h3 style="margin: 0 0 15px; color: #1a1a1a; font-size: 18px; font-weight: 600;">Applicant Details:</h3>
+                <ul style="margin: 0; padding: 0; list-style: none; color: #4a4a4a; font-size: 16px; line-height: 1.8;">
+                  <li><strong>Name:</strong> ${applicantName}</li>
+                  <li><strong>Role Interested In:</strong> ${role}</li>
+                  <li><strong>Matching Skills:</strong> ${skills.join(', ')}</li>
+                </ul>
+                <p style="margin: 15px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                  <strong>Motivation:</strong> "${motivation}"
+                </p>
               </div>
               
               <p style="margin: 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Your team is growing! Time to start building something amazing together.
+                Review their full profile and application on your project dashboard to decide if they're the right fit for your team.
               </p>
               
               <table role="presentation" style="margin: 30px 0;">
                 <tr>
                   <td style="border-radius: 6px; background-color: #7c3aed;">
-                    <a href="${ideaLink}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
-                      View Your Team
+                    <a href="${APP_URL}/portal" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      Review Application
                     </a>
                   </td>
                 </tr>
               </table>
               
               <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                Or copy and paste this link into your browser:
+                Need help? Reply to this email.
               </p>
-              <p style="margin: 8px 0 0; color: #7c3aed; font-size: 14px; word-break: break-all;">
-                ${ideaLink}
+              
+              <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Best,<br>
+                The Yassu Team
               </p>
             </td>
           </tr>
@@ -484,8 +489,191 @@ export async function sendInviteAcceptedEmail(
   `;
 
   await sendEmail({
-    to: inviterEmail,
-    subject: `${accepterName} accepted your invitation to ${ideaTitle}!`,
+    to: ownerEmail,
+    subject: `${applicantName} wants to join ${ideaTitle}`,
+    html,
+  });
+}
+
+export async function sendRequestAcceptedEmail(
+  applicantEmail: string,
+  applicantName: string,
+  ownerName: string,
+  ideaTitle: string,
+  ideaId: string
+): Promise<void> {
+  const ideaLink = `${APP_URL}/portal/ideas/${ideaId}`;
+  
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to the team! - Yassu</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${applicantName},</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Congratulations! <strong>${ownerName}</strong> has accepted your request to join the team for <strong>${ideaTitle}</strong>.
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                You are now an official collaborator on the project. You can now access the project workspace, communicate with your new teammates, and start building together.
+              </p>
+              
+              <table role="presentation" style="margin: 30px 0;">
+                <tr>
+                  <td style="border-radius: 6px; background-color: #7c3aed;">
+                    <a href="${ideaLink}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      Go to Project Workspace
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                Need help? Reply to this email.
+              </p>
+              
+              <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Best,<br>
+                The Yassu Team
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                © ${new Date().getFullYear()} Yassu. All rights reserved.
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                Where Elite University Talent Builds Together
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await sendEmail({
+    to: applicantEmail,
+    subject: `Welcome to the team! Your request for ${ideaTitle} was accepted`,
+    html,
+  });
+}
+
+export async function sendConnectionRequestEmail(
+  recipientEmail: string,
+  recipientName: string,
+  senderName: string,
+  personalMessage?: string
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Connection Request - Yassu</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${recipientName},</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Great news! <strong>${senderName}</strong> wants to connect with you on Yassu!
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Connecting Yassu community is the first step toward building something amazing together.
+              </p>
+              
+              ${personalMessage ? `
+              <div style="margin: 20px 0; padding: 20px; background-color: #f9fafb; border-left: 4px solid #7c3aed; border-radius: 4px;">
+                <p style="margin: 0; color: #4a4a4a; font-size: 16px; font-style: italic; line-height: 1.6;">
+                  "${personalMessage}"
+                </p>
+              </div>
+              ` : ''}
+              
+              <table role="presentation" style="margin: 30px 0;">
+                <tr>
+                  <td style="border-radius: 6px; background-color: #7c3aed;">
+                    <a href="${APP_URL}/portal/messages" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      View Request
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                Need help? Reply to this email.
+              </p>
+              
+              <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Best,<br>
+                The Yassu Team
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                © ${new Date().getFullYear()} Yassu. All rights reserved.
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                Where Elite University Talent Builds Together
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await sendEmail({
+    to: recipientEmail,
+    subject: `${senderName} wants to connect on Yassu`,
     html,
   });
 }
@@ -712,99 +900,6 @@ export async function sendWeeklyDigestEmail(
   await sendEmail({
     to: email,
     subject: `Your Weekly Yassu Digest - ${weekStart} to ${weekEnd}`,
-    html,
-  });
-}
-
-export async function sendConnectionRequestEmail(
-  recipientEmail: string,
-  recipientName: string,
-  senderName: string,
-  personalMessage?: string
-): Promise<void> {
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Connection Request - Yassu</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-    <tr>
-      <td align="center" style="padding: 40px 0;">
-        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <!-- Header -->
-          <tr>
-            <td style="padding: 40px 40px 20px; text-align: center;">
-              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
-            </td>
-          </tr>
-          
-          <!-- Content -->
-          <tr>
-            <td style="padding: 0 40px 40px;">
-              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">New Connection Request! 🤝</h2>
-              
-              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Hi ${recipientName},
-              </p>
-              
-              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                <strong>${senderName}</strong> wants to connect with you on Yassu!
-              </p>
-              
-              ${personalMessage ? `
-              <div style="margin: 20px 0; padding: 20px; background-color: #f9fafb; border-left: 4px solid #7c3aed; border-radius: 4px;">
-                <p style="margin: 0; color: #4a4a4a; font-size: 16px; font-style: italic; line-height: 1.6;">
-                  "${personalMessage}"
-                </p>
-              </div>
-              ` : ''}
-              
-              <p style="margin: 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Connecting with other elite university talent is the first step toward building something amazing together.
-              </p>
-              
-              <table role="presentation" style="margin: 30px 0;">
-                <tr>
-                  <td style="border-radius: 6px; background-color: #7c3aed;">
-                    <a href="${APP_URL}/portal/messages" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
-                      View Request
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              
-              <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                Need help? Reply to this email.
-              </p>
-            </td>
-          </tr>
-          
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
-              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
-                © ${new Date().getFullYear()} Yassu. All rights reserved.
-              </p>
-              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-  `;
-
-  await sendEmail({
-    to: recipientEmail,
-    subject: `${senderName} wants to connect on Yassu`,
     html,
   });
 }

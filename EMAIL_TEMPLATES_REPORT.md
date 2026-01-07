@@ -120,3 +120,26 @@ Need help? Reply to this email.
 
 Best,
 The Yassu Team
+
+---
+
+## 6. Connection Request
+**Recipient:** Recipient  
+**Subject:** {{sender_name}} wants to connect on Yassu
+
+**Message:**
+Hi {{name}},
+
+Great news! **{{sender_name}}** wants to connect with you on Yassu!
+
+Connecting with other elite university talent is the first step toward building something amazing together.
+
+**Message from {{sender_name}}:**
+"{{personal_message}}"
+
+[Button: View Request]
+
+Need help? Reply to this email.
+
+Best,
+The Yassu Team
