@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@yassu.ai';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'hello@yassu.ai';
 const APP_URL = process.env.APP_URL || 'https://www.yassu.ai';
 
 export interface SendEmailOptions {
