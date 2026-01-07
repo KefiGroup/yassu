@@ -167,7 +167,7 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
               </table>
               
               <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                Need help? Reply to this email or visit our help center.
+                Need help? Send us a note to hello@yassu.ai
               </p>
             </td>
           </tr>
