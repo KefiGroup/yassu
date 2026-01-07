@@ -1467,6 +1467,25 @@ export function registerRoutes(app: Express): void {
       }
 
       const connection = await storage.sendConnectionRequest(req.session.userId, recipientId, message);
+      
+      // Send connection request email
+      const [sender, recipient] = await Promise.all([
+        storage.getProfile(req.session.userId),
+        storage.getProfile(recipientId)
+      ]);
+      
+      if (sender && recipient && recipient.email) {
+        const { sendConnectionRequestEmail } = await import('./email');
+        sendConnectionRequestEmail(
+          recipient.email,
+          recipient.fullName || 'there',
+          sender.fullName || 'Someone',
+          message
+        ).catch(err => {
+          console.error('Failed to send connection request email:', err);
+        });
+      }
+      
       res.json(connection);
     } catch (error: any) {
       console.error("Send connection error:", error);
