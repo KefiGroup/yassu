@@ -1276,6 +1276,38 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // TEMPORARY: Admin endpoint to update profile by email (for data migration)
+  app.patch("/api/admin/profile-by-email", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const { email, profileData } = req.body;
+      if (!email || !profileData) {
+        return res.status(400).json({ error: "Email and profileData required" });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Update their profile
+      const profile = await storage.updateProfile(user.id, profileData);
+      res.json({ success: true, profile });
+    } catch (error) {
+      console.error("Admin profile update error:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
   // Get user's portfolio (created ideas and collaborations)
   app.get("/api/profile/:userId/portfolio", async (req: Request, res: Response) => {
     try {
