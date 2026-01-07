@@ -884,36 +884,43 @@ export function registerRoutes(app: Express): void {
               workflowRunId: run.id,
               content: JSON.stringify(sections),
             });
-            await storage.updateWorkflowRun(run.id, { status: "completed" });
-            
-            // Update idea stage to "find_advisors" after business plan is generated
-            if (ideaId) {
-              await storage.updateIdea(ideaId, { stage: "find_advisors" });
-              
-              // Auto-populate editable workflow sections with AI-generated content
-              // Keys must match the actual AI output fields from generateBusinessPlan
-              const sectionMapping: Record<string, string> = {
-                executiveSummary: "executive_summary",
-                founderFit: "founder_fit",
-                competitiveLandscape: "competitive_landscape",
-                riskMoat: "risk_and_moat",
-                mvpDesign: "mvp_design",
-                teamTalent: "team_and_talent",
-                launchPlan: "launch_plan",
-                schoolAdvantage: "school_advantage",
-                fundingPitch: "funding_pitch",
-              };
-              
-              for (const [key, sectionType] of Object.entries(sectionMapping)) {
-                const content = (sections as any)[key];
-                if (content) {
-                  await storage.upsertIdeaWorkflowSection(ideaId, sectionType, content, true);
-                }
-              }
-            }
-          })
-          .catch(async (error: any) => {
-            console.error("AI generation failed:");
+            await storage.updateWorkflowRun(run.id, { 	            // Update idea stage to "find_advisors" after business plan is generated
+914	            if (ideaId) {
+915	              await storage.updateIdea(ideaId, { stage: "find_advisors" });
+916	              
+917	              // Auto-populate editable workflow sections with AI-generated content
+918	              // Keys must match the actual AI output fields from generateBusinessPlan
+919	              const sectionMapping: Record<string, string> = {
+920	                executiveSummary: "executive_summary",
+921	                founderFit: "founder_fit",
+922	                competitiveLandscape: "competitive_landscape",
+923	                riskMoat: "risk_and_moat",
+924	                mvpDesign: "mvp_design",
+925	                teamTalent: "team_and_talent",
+926	                launchPlan: "launch_plan",
+927	                schoolAdvantage: "school_advantage",
+928	                fundingPitch: "funding_pitch",
+929	              };
+930	              
+931	              for (const [key, sectionType] of Object.entries(sectionMapping)) {
+932	                const content = (sections as any)[key];
+933	                if (content) {
+934	                  await storage.upsertIdeaWorkflowSection(ideaId, sectionType, content, true);
+935	                  
+936	                  // Extract skills from team_and_talent section
+937	                  if (sectionType === "team_and_talent") {
+938	                    const skillsMatch = content.match(/<!-- SKILLS_JSON_START -->\s*([\s\S]*?)\s*<!-- SKILLS_JSON_END -->/);
+939	                    if (skillsMatch && skillsMatch[1]) {
+940	                      const skillsList = skillsMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean);
+941	                      if (skillsList.length > 0) {
+942	                        console.log(`[AI] Extracted skills for idea ${ideaId}:`, skillsList);
+943	                        await storage.updateIdea(ideaId, { skills: skillsList });
+944	                      }
+945	                    }
+946	                  }
+947	                }
+948	              }
+949	            }       console.error("AI generation failed:");
             console.error("Error message:", error?.message || "No message");
             console.error("Error name:", error?.name || "No name");
             console.error("Error status:", error?.status || "No status");

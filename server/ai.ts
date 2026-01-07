@@ -68,6 +68,20 @@ CRITICAL OUTPUT RULES:
 5. Use clear section headings but skip the main title (it's already shown in the UI).
 6. Be concise and actionable.`;
 
+  const officialSkills = [
+    "Django", "Express.js", "FastAPI", "GraphQL", "Microservices", "Node.js", "REST APIs", "Spring Boot",
+    "Business Development", "Content Marketing", "Copywriting", "Growth Hacking", "Marketing", "Product Management", "Project Management", "Public Relations", "Sales", "SEO/SEM", "Social Media Marketing",
+    "AWS", "Azure", "CI/CD", "DevOps", "Docker", "Google Cloud", "Kubernetes", "Linux",
+    "Computer Vision", "Data Analysis", "Data Science", "Deep Learning", "LLMs/GenAI", "Machine Learning", "NLP", "PyTorch", "TensorFlow",
+    "Firebase", "MongoDB", "MySQL", "PostgreSQL", "Redis", "Supabase",
+    "Brand Design", "Figma", "Graphic Design", "Motion Design", "Product Design", "Prototyping", "UI/UX Design", "User Research",
+    "3D Printing", "AR/VR", "Blockchain", "Cybersecurity", "Hardware", "IoT", "Robotics", "Smart Contracts", "Web3",
+    "Accounting", "Financial Modeling", "Fundraising", "Investor Relations", "Legal", "Operations", "Supply Chain",
+    "Angular", "Flutter", "HTML/CSS", "Next.js", "React", "React Native", "Svelte", "Tailwind CSS", "Vue.js",
+    "Agile/Scrum", "Negotiation", "People Management", "Public Speaking", "Strategic Planning", "Team Leadership",
+    "C#", "C++", "Go", "Java", "JavaScript", "Kotlin", "MATLAB", "PHP", "Python", "R", "Ruby", "Rust", "SQL", "Swift", "TypeScript"
+  ].join(", ");
+
   return [
     {
       key: "founderFit",
@@ -232,15 +246,10 @@ ${outputRules}`,
 
 ${ideaContext}
 
-IMPORTANT: For the Skill Matrix, you MUST use skills from this exact list (pick the most relevant 6-8 skills):
+IMPORTANT: For the Skill Matrix and Required Skills, you MUST use skills from this exact list (pick the most relevant 6-8 skills):
 
-Technical Skills: JavaScript, TypeScript, Python, Java, C++, React, Vue.js, Angular, Node.js, Django, FastAPI, Machine Learning, Deep Learning, Data Science, TensorFlow, PyTorch, AWS, Google Cloud, Docker, Kubernetes, PostgreSQL, MongoDB
-
-Design Skills: UI/UX Design, Figma, Product Design, Graphic Design, User Research, Prototyping
-
-Business Skills: Product Management, Project Management, Business Development, Sales, Marketing, Growth Hacking, SEO/SEM, Content Marketing, Financial Modeling, Fundraising
-
-Leadership Skills: Team Leadership, Strategic Planning, People Management, Agile/Scrum, Public Speaking
+OFFICIAL SKILLS LIST:
+${officialSkills}
 
 Generate the following sections in clean markdown format:
 
@@ -320,65 +329,42 @@ Based on the required skills and personality profile, here are the types of peop
 - **Skills needed**: [List exact skills from the skill matrix]
 - **Where to find**: [Specific clubs, classes, events]
 - **Matching criteria**: [Personality traits, availability, interests]
-
-## Campus Recruiting Strategy
-- Student orgs to partner with
-- Classes with relevant talent
-- Events to attend
-- LinkedIn/network search keywords
 ${outputRules}`,
     },
     {
       key: "launchPlan",
-      title: "Go-to-Market Launch",
-      prompt: `Analyze this startup idea and generate GO-TO-MARKET content.
+      title: "Launch & Growth Plan",
+      prompt: `Analyze this startup idea and generate LAUNCH & GROWTH content.
 
 ${ideaContext}
 
 Generate the following sections in clean markdown format:
 
-## Marketing Calendar (12 Weeks)
+## Pre-Launch Checklist
+- Beta user recruitment strategy
+- Landing page essentials
+- Analytics setup
+- Legal/compliance basics
 
-| Week | Phase | Activities | Goals |
-|------|-------|------------|-------|
-| 1-2 | Pre-launch | Build landing page, email list | 100 signups |
-| 3-4 | Pre-launch | Content creation, outreach | 500 signups |
-| 5-6 | Soft launch | Beta with early users | 50 active users |
-| 7-8 | Launch | Public launch | 200 users |
-| 9-10 | Growth | Paid ads, partnerships | 500 users |
-| 11-12 | Optimize | A/B testing, retention | 1000 users |
+## Go-To-Market Strategy
+- Primary acquisition channel
+- Secondary acquisition channel
+- Referral/viral loops
+- Content strategy
 
-Fill in with specific activities and realistic goals.
+## 12-Month Growth Roadmap
 
-## Channel Strategy
+| Month | Focus | Key Metric | Target |
+|-------|-------|------------|--------|
+| 1-3 | Beta / MVP | Active Users | [Number] |
+| 4-6 | Retention | Churn Rate | <[X]% |
+| 7-9 | Monetization | Revenue | $[Amount] |
+| 10-12 | Scaling | Growth Rate | [X]% MoM |
 
-### Organic Social (Priority: X/5)
-- Platforms to focus on
-- Content themes
-- Posting cadence
-
-### Campus Marketing (Priority: X/5)
-- Specific tactics
-- Events and partnerships
-
-### Referral Program (Priority: X/5)
-- Referral mechanism
-- Incentive structure
-
-## Launch Checklist
-**Week before:** Key preparation tasks
-**Launch day:** Critical actions
-**Week after:** Follow-up tasks
-
-## Success Metrics
-
-| Metric | Week 4 | Week 8 | Week 12 |
-|--------|--------|--------|---------|
-| Users | 200 | 500 | 1000 |
-| Engagement | 30% | 40% | 50% |
-| Revenue | $0 | $500 | $2000 |
-
-Fill in with realistic targets.
+## Marketing Asset Briefs
+- Social media ad copy (3 variations)
+- Email sequence (Subject lines for 3 emails)
+- One-sentence pitch for different platforms
 ${outputRules}`,
     },
     {
@@ -390,114 +376,62 @@ ${ideaContext}
 
 Generate the following sections in clean markdown format:
 
-## School Resources Inventory
+## Campus Resources
+- Relevant labs/research centers
+- Specific professors/mentors to approach
+- University-specific grants/funding
+- Incubators/accelerators on campus
 
-| Resource Type | Examples | How to Access | Value |
-|---------------|----------|---------------|-------|
-| Entrepreneurship Centers | Incubators, accelerators | Apply online | High |
-| Grants/Competitions | Pitch competitions | Application deadlines | High |
-| Faculty Expertise | Professors in domain | Office hours, email | Medium |
-| Labs/Equipment | Relevant facilities | Course enrollment | Medium |
-| Student Talent | CS, Design, Business | Student orgs, classes | High |
+## Student Network Wedge
+- Ideal student clubs for early adopters
+- Campus events for launch
+- How to leverage alumni network
+- Student-specific distribution channels
 
-Fill in with specific resources relevant to this startup.
-
-## Key Contacts to Make
-
-### Entrepreneurship Director
-- Why: Access to resources, mentorship
-- How to connect: Email, office hours
-- Ask: Incubator application, introductions
-
-### Faculty Advisor
-- Why: Domain expertise, credibility
-- How to connect: Course enrollment, research
-- Ask: Feedback, introductions
-
-### Student Org Leaders
-- Why: Access to talent, early users
-- How to connect: Events, LinkedIn
-- Ask: Speaking opportunities, partnerships
-
-## Competition & Grant Roadmap
-
-| Opportunity | Award | Deadline | Prep Required |
-|-------------|-------|----------|---------------|
-| [Competition 1] | $5K | Spring | Pitch deck |
-| [Competition 2] | $10K | Fall | Business plan |
-| [Grant 1] | $2K | Rolling | Application |
-
-List 4-5 relevant opportunities.
-
-## Campus as Testing Ground
-- Pilot opportunities on campus
-- Student segments to target first
-- Feedback collection methods
+## Academic Integration
+- Relevant courses for project credit
+- Potential research collaboration
+- Internship/hiring pipeline from specific majors
 ${outputRules}`,
     },
     {
       key: "fundingPitch",
-      title: "Funding & Pitch Strategy",
+      title: "Funding & Pitch Deck",
       prompt: `Analyze this startup idea and generate FUNDING & PITCH content.
 
 ${ideaContext}
 
 Generate the following sections in clean markdown format:
 
-## One-Page Pitch Summary
+## Pitch Deck Outline
+1. Title & Hook
+2. Problem (The Pain)
+3. Solution (The Gain)
+4. Market Opportunity
+5. Product/MVP
+6. Traction/Milestones
+7. Team (Why us?)
+8. The Ask (Funding/Resources)
 
-**THE PROBLEM**
-[2-3 sentences describing the problem]
+## Financial Projections (Year 1-3)
+- Revenue model (SaaS, Transactional, etc.)
+- Key cost drivers
+- Break-even analysis
+- Funding requirements
 
-**THE SOLUTION**
-[2-3 sentences describing your solution]
+## Investor Outreach Strategy
+- Ideal investor profile
+- Target VC firms/Angel groups
+- Pitching timeline
 
-**MARKET OPPORTUNITY**
-- TAM: $X billion
-- SAM: $X million
-- SOM: $X million (Year 1 target)
+## Outreach Templates
 
-**BUSINESS MODEL**
-[How you make money - pricing, revenue streams]
-
-**TRACTION TARGETS**
-[Key metrics to hit before fundraising]
-
-**THE ASK**
-[Amount seeking and use of funds]
-
-## Grant & Competition List
-
-| Name | Amount | Deadline | Fit |
-|------|--------|----------|-----|
-| [Grant/Competition 1] | $5,000 | March | High |
-| [Grant/Competition 2] | $10,000 | June | High |
-| [Grant/Competition 3] | $2,500 | Rolling | Medium |
-| [Grant/Competition 4] | $25,000 | September | High |
-
-List 4-6 relevant opportunities with real names if possible.
-
-## Funding Roadmap
-
-| Stage | Amount | Timeline | Milestones First |
-|-------|--------|----------|------------------|
-| Pre-seed | $50-100K | Month 6 | MVP, 100 users |
-| Seed | $500K-1M | Month 18 | PMF, 10K users |
-| Series A | $3-5M | Month 36 | $1M ARR |
-
-Customize based on the specific startup.
-
-## Investor Intro Templates
-
-### Cold Email Template
-
-Subject: [University] student building [solution] for [target market]
+### Cold Outreach Email
+Subject: [Product Name] - Solving [Problem] for [Target Users]
 
 Hi [Investor Name],
 
-I'm a [year] at [University] building [product name] — [one-line description].
-
-The problem: [2 sentences on the problem]
+I'm [Founder Name], building [Product Name] at [University]. We help [target users] [solve problem] by [solution approach].
 
 Our solution: [2 sentences on your approach]
 
