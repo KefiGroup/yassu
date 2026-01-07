@@ -152,8 +152,8 @@ const Team = () => {
           </h3>
           <p className="text-muted-foreground">
             Contact us at{" "}
-            <a href="mailto:hello@yassu.co" className="text-primary hover:underline">
-              hello@yassu.co
+            <a href="mailto:hello@yassu.ai" className="text-primary hover:underline">
+              hello@yassu.ai
             </a>
           </p>
         </motion.div>

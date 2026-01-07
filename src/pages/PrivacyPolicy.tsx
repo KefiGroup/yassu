@@ -96,7 +96,7 @@ export default function PrivacyPolicy() {
               <li>Object to certain data processing activities</li>
             </ul>
             <p className="mt-4">
-              Requests may be submitted to <a href="mailto:hello@yassu.co" className="text-primary hover:underline">hello@yassu.co</a>
+              Requests may be submitted to <a href="mailto:hello@yassu.ai" className="text-primary hover:underline">hello@yassu.ai</a>
             </p>
           </section>
 
@@ -124,7 +124,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">11. Contact</h2>
             <p>
-              If you have questions or concerns about this Privacy Policy, contact us at <a href="mailto:hello@yassu.co" className="text-primary hover:underline">hello@yassu.co</a>
+              If you have questions or concerns about this Privacy Policy, contact us at <a href="mailto:hello@yassu.ai" className="text-primary hover:underline">hello@yassu.ai</a>
             </p>
           </section>
         </div>

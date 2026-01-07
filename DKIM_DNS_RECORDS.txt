@@ -1,0 +1,41 @@
+DNS Records for yassu.ai Domain Verification
+=============================================
+
+1. DKIM (Domain Verification)
+------------------------------
+Type: TXT
+Name: resend._domainkey
+Value: p=MIGfMA0GCSqGSIb3DQEB...
+TTL: Auto
+Status: Not Started
+
+Note: The full DKIM value is truncated in the UI. Let me click on it to get the complete value.
+
+
+2. SPF (Enable Sending)
+-----------------------
+
+Record 1 - MX:
+Type: MX
+Name: send
+Value: feedback-smtp.ap-north...
+TTL: Auto
+Priority: 10
+Status: Not Started
+
+Record 2 - TXT:
+Type: TXT
+Name: send
+Value: v=spf1 include:amazons...
+TTL: Auto
+Status: Not Started
+
+
+3. MX (Enable Receiving)
+------------------------
+Type: MX
+Name: @
+Value: inbound-smtp.ap-northe...
+TTL: Auto
+Priority: 0
+Status: Not Started
