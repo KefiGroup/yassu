@@ -589,31 +589,103 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPotentialTeamMembers(excludeUserId: number, ideaId?: string): Promise<Profile[]> {
-    // Get profiles who have ambassador or advisor badges (awarded by superadmin)
-    const badges = await db.select().from(schema.profileBadges);
-    const userIdsWithBadges = [...new Set(badges.map(b => b.userId))].filter(id => id !== excludeUserId);
+    // Get all active profiles (excluding the current user)
+    const allProfiles = await db.select().from(schema.profiles)
+      .where(sql`${schema.profiles.userId} != ${excludeUserId}`);
     
-    if (userIdsWithBadges.length === 0) return [];
+    if (!ideaId) {
+      // If no ideaId provided, return all profiles (for general browsing)
+      return allProfiles.slice(0, 10);
+    }
     
-    const profiles = await db.select().from(schema.profiles)
-      .where(inArray(schema.profiles.userId, userIdsWithBadges))
-      .orderBy(schema.profiles.fullName);
+    // Get the idea details including tags
+    const [idea] = await db.select().from(schema.ideas)
+      .where(eq(schema.ideas.id, ideaId));
     
-    if (!ideaId) return profiles;
+    if (!idea) return [];
     
-    // Filter out already invited users for this idea
+    // Get idea tags
+    const ideaTags = await db.select().from(schema.ideaTags)
+      .where(eq(schema.ideaTags.ideaId, ideaId));
+    const tags = ideaTags.map(t => t.tag.toLowerCase());
+    
+    // Filter out already invited users and team members for this idea
     const existingInvites = await db.select().from(schema.teamInvites)
       .where(eq(schema.teamInvites.ideaId, ideaId));
     
     const existingRequests = await db.select().from(schema.joinRequests)
       .where(eq(schema.joinRequests.ideaId, ideaId));
     
+    const teamMembers = await db.select().from(schema.teamMembers)
+      .innerJoin(schema.teams, eq(schema.teams.id, schema.teamMembers.teamId))
+      .where(eq(schema.teams.ideaId, ideaId));
+    
     const excludeUserIds = new Set([
       ...existingInvites.map(i => i.inviteeId),
-      ...existingRequests.map(r => r.userId)
+      ...existingRequests.map(r => r.userId),
+      ...teamMembers.map(tm => tm.team_members.userId),
+      idea.createdBy // Exclude idea creator
     ]);
     
-    return profiles.filter(p => !excludeUserIds.has(p.userId));
+    // Calculate relevance score for each profile
+    const scoredProfiles = allProfiles
+      .filter(p => !excludeUserIds.has(p.userId))
+      .map(profile => {
+        let score = 0;
+        
+        // Skills matching (highest weight)
+        if (profile.skills && profile.skills.length > 0) {
+          const profileSkills = profile.skills.map(s => s.toLowerCase());
+          const skillMatches = tags.filter(tag => 
+            profileSkills.some(skill => skill.includes(tag) || tag.includes(skill))
+          ).length;
+          score += skillMatches * 10; // 10 points per skill match
+        }
+        
+        // Interests matching (medium weight)
+        if (profile.interests && profile.interests.length > 0) {
+          const profileInterests = profile.interests.map(i => i.toLowerCase());
+          const interestMatches = tags.filter(tag => 
+            profileInterests.some(interest => interest.includes(tag) || tag.includes(interest))
+          ).length;
+          score += interestMatches * 5; // 5 points per interest match
+        }
+        
+        // Problem/solution keyword matching (low weight)
+        const ideaText = `${idea.title} ${idea.problem} ${idea.solution || ''}`.toLowerCase();
+        if (profile.skills) {
+          profile.skills.forEach(skill => {
+            if (ideaText.includes(skill.toLowerCase())) {
+              score += 3; // 3 points per keyword match
+            }
+          });
+        }
+        
+        // Availability bonus (prefer available people)
+        if (profile.availability && profile.availability !== 'Not Available') {
+          score += 2;
+        }
+        
+        // Same university bonus (prefer same school)
+        if (profile.universityId && profile.universityId === idea.universityId) {
+          score += 5;
+        }
+        
+        return { profile, score };
+      })
+      .filter(item => item.score > 0) // Only include profiles with some relevance
+      .sort((a, b) => b.score - a.score) // Sort by score descending
+      .slice(0, 10) // Top 10 matches
+      .map(item => item.profile);
+    
+    // If no matches found, return some random active profiles as fallback
+    if (scoredProfiles.length === 0) {
+      return allProfiles
+        .filter(p => !excludeUserIds.has(p.userId))
+        .slice(0, 5);
+    }
+    
+    return scoredProfiles;
   }
 
   async getIdeaWorkflowSections(ideaId: string): Promise<IdeaWorkflowSection[]> {

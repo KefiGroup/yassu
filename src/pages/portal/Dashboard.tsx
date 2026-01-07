@@ -102,14 +102,21 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [ideas, requests, members, connections] = await Promise.all([
-          fetch('/api/my-ideas', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
+        // First fetch ideas
+        const ideas = await fetch('/api/my-ideas', { credentials: 'include' }).then(r => r.ok ? r.json() : []);
+        setMyIdeas(ideas);
+        
+        // Get the most recent idea for intelligent matching
+        const mostRecentIdea = ideas.length > 0 ? ideas[0] : null;
+        const ideaIdParam = mostRecentIdea ? `?ideaId=${mostRecentIdea.id}` : '';
+        
+        // Fetch other data with intelligent matching based on most recent idea
+        const [requests, members, connections] = await Promise.all([
           fetch('/api/join-requests', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
-          fetch('/api/profiles/potential-team', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
+          fetch(`/api/profiles/potential-team${ideaIdParam}`, { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/connections', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
         ]);
         
-        setMyIdeas(ideas);
         setJoinRequests(requests);
         setPotentialMembers(members);
         setMyConnections(connections);
@@ -434,7 +441,7 @@ export default function Dashboard() {
               <UserPlus className="w-5 h-5 text-emerald-500" />
               People to Invite
             </CardTitle>
-            <CardDescription>Suggested Collaborators you may want to invite to your team</CardDescription>
+            <CardDescription>Smart matches based on skills and interests relevant to your ideas</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
