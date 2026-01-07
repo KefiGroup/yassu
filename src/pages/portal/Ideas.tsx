@@ -36,7 +36,7 @@ const stageOptions = [
   { value: 'all', label: 'All Stages' },
   { value: 'idea_posted', label: 'Post Idea' },
   { value: 'business_plan', label: 'Business Plan' },
-  { value: 'find_advisors', label: 'Find Advisors' },
+  { value: 'find_advisors', label: 'Find Advisors and Collaborators' },
   { value: 'form_team', label: 'Form Team' },
   { value: 'build_mvp', label: 'Build MVP' },
   { value: 'yassu_foundry', label: 'Yassu Foundry' },
@@ -46,7 +46,7 @@ const stageOptions = [
 const stageLabels: Record<string, string> = {
   idea_posted: 'Post Idea',
   business_plan: 'Business Plan',
-  find_advisors: 'Find Advisors',
+  find_advisors: 'Find Advisors and Collaborators',
   form_team: 'Form Team',
   build_mvp: 'Build MVP',
   yassu_foundry: 'Yassu Foundry',

@@ -187,7 +187,7 @@ export default function Dashboard() {
   const stageLabels: Record<string, string> = {
     idea_posted: 'Post Idea',
     business_plan: 'Business Plan',
-    find_advisors: 'Find Advisors',
+    find_advisors: 'Find Advisors and Collaborators',
     form_team: 'Form Team',
     build_mvp: 'Build MVP',
     yassu_foundry: 'Yassu Foundry',

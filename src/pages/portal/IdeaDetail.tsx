@@ -152,7 +152,7 @@ const planSections = [
 const journeySteps = [
   { id: 1, title: 'Post Idea', icon: PenLine, description: 'Share your startup idea' },
   { id: 2, title: 'Business Plan', icon: Brain, description: 'Generate with Yassu AI' },
-  { id: 3, title: 'Find Advisors', icon: UserCheck, description: 'Connect with advisors & ambassadors' },
+  { id: 3, title: 'Find Advisors and Collaborators', icon: UserCheck, description: 'Connect with advisors, ambassadors & collaborators' },
   { id: 4, title: 'Form Team', icon: Users2, description: 'Build your founding team' },
   { id: 5, title: 'Build MVP', icon: Wrench, description: 'Develop your product' },
   { id: 6, title: 'Yassu Foundry', icon: Presentation, description: 'Present your progress' },
