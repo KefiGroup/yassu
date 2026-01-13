@@ -42,6 +42,7 @@ export interface IStorage {
   getUniversity(id: string): Promise<University | undefined>;
   
   getIdeas(userId?: number): Promise<Idea[]>;
+  getIdeasWithCreators(): Promise<(Idea & { creatorName: string | null; creatorAvatarUrl: string | null })[]>;
   getIdea(id: string): Promise<Idea | undefined>;
   createIdea(data: Partial<Idea>): Promise<Idea>;
   updateIdea(id: string, data: Partial<Idea>): Promise<Idea | undefined>;
@@ -464,6 +465,26 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(schema.ideas)
       .where(eq(schema.ideas.isPublic, true))
       .orderBy(desc(schema.ideas.createdAt));
+  }
+
+  async getIdeasWithCreators(): Promise<(Idea & { creatorName: string | null; creatorAvatarUrl: string | null })[]> {
+    const ideas = await db.select().from(schema.ideas)
+      .where(eq(schema.ideas.isPublic, true))
+      .orderBy(desc(schema.ideas.createdAt));
+    
+    // Get creator profiles for all ideas
+    const creatorIds = [...new Set(ideas.map(i => i.createdBy).filter(Boolean))];
+    const profiles = creatorIds.length > 0 
+      ? await db.select().from(schema.profiles).where(inArray(schema.profiles.userId, creatorIds as number[]))
+      : [];
+    
+    const profileMap = new Map(profiles.map(p => [p.userId, p]));
+    
+    return ideas.map(idea => ({
+      ...idea,
+      creatorName: idea.createdBy ? profileMap.get(idea.createdBy)?.fullName || null : null,
+      creatorAvatarUrl: idea.createdBy ? profileMap.get(idea.createdBy)?.avatarUrl || null : null,
+    }));
   }
 
   async getIdea(id: string): Promise<Idea | undefined> {

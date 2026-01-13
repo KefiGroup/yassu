@@ -530,7 +530,7 @@ export function registerRoutes(app: Express): void {
   app.get("/api/ideas", async (req: Request, res: Response) => {
     try {
       // Marketplace: only show public ideas (don't pass userId)
-      const ideas = await storage.getIdeas();
+      const ideas = await storage.getIdeasWithCreators();
       res.json(ideas);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch ideas" });

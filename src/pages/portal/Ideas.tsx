@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
@@ -13,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { motion } from 'framer-motion';
-import { Lightbulb, Plus, Search, User, Calendar, Building } from 'lucide-react';
+import { Lightbulb, Plus, Search, Calendar, Building } from 'lucide-react';
 
 interface Idea {
   id: string;
@@ -24,6 +25,8 @@ interface Idea {
   createdAt: string;
   createdBy: number;
   universityId: string | null;
+  creatorName: string | null;
+  creatorAvatarUrl: string | null;
 }
 
 interface University {
@@ -204,9 +207,21 @@ export default function Ideas() {
                     {idea.problem}
                   </p>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      <span>Creator</span>
+                    <div 
+                      className="flex items-center gap-2 cursor-pointer hover:text-foreground transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/portal/profile/${idea.createdBy}`);
+                      }}
+                      data-testid={`link-creator-${idea.id}`}
+                    >
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={idea.creatorAvatarUrl || undefined} />
+                        <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+                          {idea.creatorName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hover:underline">{idea.creatorName || 'Creator'}</span>
                     </div>
                     {idea.universityId && (
                       <div className="flex items-center gap-1">
