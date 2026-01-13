@@ -332,6 +332,7 @@ export function registerRoutes(app: Express): void {
 
     try {
       const data = { ...req.body };
+      console.log('[profile-update] Received data:', JSON.stringify(data, null, 2));
       
       // Validate yassuRole if provided
       if (data.yassuRole !== undefined) {
