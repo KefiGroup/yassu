@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +26,7 @@ interface Profile {
 }
 
 export default function Advisors() {
+  const navigate = useNavigate();
   const [advisors, setAdvisors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -164,7 +166,11 @@ export default function Advisors() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.1 * index }}
                 >
-                  <Card className="h-full" data-testid={`card-advisor-${advisor.id}`}>
+                  <Card 
+                    className="h-full cursor-pointer hover:shadow-md hover:border-primary/20 transition-all" 
+                    onClick={() => navigate(`/portal/profile/${advisor.userId}`)}
+                    data-testid={`card-advisor-${advisor.id}`}
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-4 mb-4">
                         <Avatar className="h-16 w-16">
@@ -175,8 +181,9 @@ export default function Advisors() {
                         </Avatar>
                         <div>
                           <h3 className="font-semibold text-foreground">{advisor.fullName || 'Anonymous'}</h3>
+                          <Badge variant="secondary" className="mt-1">Advisor</Badge>
                           {advisor.major && (
-                            <p className="text-sm text-muted-foreground">{advisor.major}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{advisor.major}</p>
                           )}
                         </div>
                       </div>
@@ -187,25 +194,32 @@ export default function Advisors() {
                       
                       {advisor.skills && advisor.skills.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-4">
-                          {advisor.skills.slice(0, 4).map((skill) => (
-                            <Badge key={skill} variant="secondary" className="text-xs">
+                          {advisor.skills.slice(0, 3).map((skill) => (
+                            <Badge key={skill} variant="outline" className="text-xs">
                               {skill}
                             </Badge>
                           ))}
-                          {advisor.skills.length > 4 && (
+                          {advisor.skills.length > 3 && (
                             <Badge variant="outline" className="text-xs">
-                              +{advisor.skills.length - 4}
+                              +{advisor.skills.length - 3}
                             </Badge>
                           )}
                         </div>
                       )}
                       
                       {advisor.linkedinUrl && (
-                        <Button variant="outline" size="sm" asChild className="w-full" data-testid={`button-linkedin-advisor-${advisor.id}`}>
-                          <a href={advisor.linkedinUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-linkedin-advisor-${advisor.id}`}>
-                            <Linkedin className="w-4 h-4 mr-2" />
-                            Connect on LinkedIn
-                          </a>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(advisor.linkedinUrl!, '_blank');
+                          }}
+                          data-testid={`button-linkedin-advisor-${advisor.id}`}
+                        >
+                          <Linkedin className="w-4 h-4 mr-2" />
+                          Connect on LinkedIn
                         </Button>
                       )}
                     </CardContent>

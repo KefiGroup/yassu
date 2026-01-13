@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +26,7 @@ interface Profile {
 }
 
 export default function AmbassadorsPage() {
+  const navigate = useNavigate();
   const [ambassadors, setAmbassadors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -164,7 +166,11 @@ export default function AmbassadorsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.1 * index }}
                 >
-                  <Card className="h-full" data-testid={`card-ambassador-${ambassador.id}`}>
+                  <Card 
+                    className="h-full cursor-pointer hover:shadow-md hover:border-primary/20 transition-all" 
+                    onClick={() => navigate(`/portal/profile/${ambassador.userId}`)}
+                    data-testid={`card-ambassador-${ambassador.id}`}
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-4 mb-4">
                         <Avatar className="h-16 w-16">
@@ -175,8 +181,9 @@ export default function AmbassadorsPage() {
                         </Avatar>
                         <div>
                           <h3 className="font-semibold text-foreground">{ambassador.fullName || 'Anonymous'}</h3>
+                          <Badge variant="secondary" className="mt-1">Ambassador</Badge>
                           {ambassador.major && (
-                            <p className="text-sm text-muted-foreground">{ambassador.major}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{ambassador.major}</p>
                           )}
                           {ambassador.graduationYear && (
                             <p className="text-xs text-muted-foreground">Class of {ambassador.graduationYear}</p>
@@ -190,25 +197,32 @@ export default function AmbassadorsPage() {
                       
                       {ambassador.skills && ambassador.skills.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-4">
-                          {ambassador.skills.slice(0, 4).map((skill) => (
-                            <Badge key={skill} variant="secondary" className="text-xs">
+                          {ambassador.skills.slice(0, 3).map((skill) => (
+                            <Badge key={skill} variant="outline" className="text-xs">
                               {skill}
                             </Badge>
                           ))}
-                          {ambassador.skills.length > 4 && (
+                          {ambassador.skills.length > 3 && (
                             <Badge variant="outline" className="text-xs">
-                              +{ambassador.skills.length - 4}
+                              +{ambassador.skills.length - 3}
                             </Badge>
                           )}
                         </div>
                       )}
                       
                       {ambassador.linkedinUrl && (
-                        <Button variant="outline" size="sm" asChild className="w-full" data-testid={`button-linkedin-ambassador-${ambassador.id}`}>
-                          <a href={ambassador.linkedinUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-linkedin-ambassador-${ambassador.id}`}>
-                            <Linkedin className="w-4 h-4 mr-2" />
-                            Connect on LinkedIn
-                          </a>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(ambassador.linkedinUrl!, '_blank');
+                          }}
+                          data-testid={`button-linkedin-ambassador-${ambassador.id}`}
+                        >
+                          <Linkedin className="w-4 h-4 mr-2" />
+                          Connect on LinkedIn
                         </Button>
                       )}
                     </CardContent>
