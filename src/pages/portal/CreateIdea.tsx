@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Lightbulb, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, Lightbulb, Sparkles, Loader2, Mic, Square } from 'lucide-react';
 
 export default function CreateIdea() {
   const navigate = useNavigate();
@@ -17,16 +17,105 @@ export default function CreateIdea() {
   const { toast } = useToast();
 
   const [saving, setSaving] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
-    idea: '',
-    problem: '',
-    description: '',
+    narration: '',
   });
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setSpeechSupported(true);
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          setFormData(prev => ({
+            ...prev,
+            narration: prev.narration + finalTranscript
+          }));
+        }
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        if (event.error === 'not-allowed') {
+          toast({
+            title: 'Microphone access denied',
+            description: 'Please allow microphone access to use voice input.',
+            variant: 'destructive',
+          });
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        if (isRecording) {
+          recognitionRef.current?.start();
+        }
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [isRecording, toast]);
+
+  const toggleRecording = () => {
+    if (!speechSupported) {
+      toast({
+        title: 'Voice input not supported',
+        description: 'Your browser does not support voice input. Please use Chrome or Safari.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      toast({
+        title: 'Recording stopped',
+        description: 'Voice input has been stopped.',
+      });
+    } else {
+      recognitionRef.current?.start();
+      setIsRecording(true);
+      toast({
+        title: 'Recording started',
+        description: 'Start speaking to narrate your idea...',
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    }
 
     if (!user?.id) {
       toast({
@@ -37,10 +126,10 @@ export default function CreateIdea() {
       return;
     }
 
-    if (!formData.title.trim() || !formData.idea.trim() || !formData.problem.trim()) {
+    if (!formData.title.trim() || !formData.narration.trim()) {
       toast({
         title: 'Missing required fields',
-        description: 'Please fill in the idea name, what your idea is, and what problem it solves.',
+        description: 'Please provide a name and narrate your idea.',
         variant: 'destructive',
       });
       return;
@@ -51,8 +140,8 @@ export default function CreateIdea() {
     try {
       const idea = await api.ideas.create({
         title: formData.title,
-        problem: formData.problem,
-        solution: formData.idea,
+        problem: formData.narration,
+        solution: formData.narration,
         stage: 'idea_posted',
         isPublic: true,
       });
@@ -90,7 +179,7 @@ export default function CreateIdea() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Post an Idea</h1>
-            <p className="text-muted-foreground">Share your startup concept with the community</p>
+            <p className="text-muted-foreground">Share your startup concept anytime, anywhere</p>
           </div>
         </div>
       </motion.div>
@@ -108,12 +197,12 @@ export default function CreateIdea() {
                 New Idea
               </CardTitle>
               <CardDescription>
-                Describe your idea to share it with other founders and potential teammates.
+                Give your idea a name and tell us all about it. Use the microphone to narrate your idea with your voice!
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="title">Give your idea a name *</Label>
+                <Label htmlFor="title">Idea Name *</Label>
                 <Input
                   id="title"
                   placeholder="e.g., Campus Food Delivery, Student Tutoring Marketplace"
@@ -125,46 +214,53 @@ export default function CreateIdea() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="idea">What is your idea? *</Label>
-                <Textarea
-                  id="idea"
-                  placeholder="e.g., An app that helps students find study groups based on their schedule and courses"
-                  value={formData.idea}
-                  onChange={(e) => setFormData({ ...formData, idea: e.target.value })}
-                  rows={3}
-                  required
-                  className="resize-none"
-                  data-testid="input-idea-solution"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="problem">What problem does it solve? *</Label>
-                <Textarea
-                  id="problem"
-                  placeholder="e.g., Students struggle to find others to study with, especially in large classes where they don't know anyone"
-                  value={formData.problem}
-                  onChange={(e) => setFormData({ ...formData, problem: e.target.value })}
-                  rows={3}
-                  required
-                  className="resize-none"
-                  data-testid="input-idea-problem"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Describe your idea (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Add any additional details, context, or thoughts about your idea..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
-                  className="resize-none"
-                  data-testid="input-idea-description"
-                />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="narration">Narrate Your Idea *</Label>
+                  <Button
+                    type="button"
+                    variant={isRecording ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={toggleRecording}
+                    className="gap-2"
+                    data-testid="button-voice-input"
+                  >
+                    {isRecording ? (
+                      <>
+                        <Square className="w-4 h-4" />
+                        Stop Recording
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-4 h-4" />
+                        Voice Input
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Textarea
+                    id="narration"
+                    placeholder="Tell us about your idea... What is it? What problem does it solve? Who is it for? What makes it unique? Share as much as you'd like - you can type or use your voice!"
+                    value={formData.narration}
+                    onChange={(e) => setFormData({ ...formData, narration: e.target.value })}
+                    rows={12}
+                    required
+                    className={`resize-none text-base ${isRecording ? 'border-red-500 border-2' : ''}`}
+                    data-testid="input-idea-narration"
+                  />
+                  {isRecording && (
+                    <div className="absolute top-3 right-3 flex items-center gap-2 text-red-500">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      </span>
+                      <span className="text-sm font-medium">Recording...</span>
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  The more context you provide, the better for potential teammates.
+                  Share your complete idea - the problem, your solution, target audience, and what makes it special. 
+                  {speechSupported && " Tap the microphone button to speak your idea!"}
                 </p>
               </div>
 
