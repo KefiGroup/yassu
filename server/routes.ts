@@ -268,8 +268,10 @@ export function registerRoutes(app: Express): void {
       const result = await pool.query(`
         SELECT 
           u.id, u.email, u.full_name as "fullName",
-          p.university_id as "universityId", p.major, p.graduation_year as "graduationYear", p.linkedin_url as "linkedinUrl", p.bio, p.skills, p.avatar_url as "avatarUrl",
-          p.headline, p.looking_for as "lookingFor", p.portfolio_url as "portfolioUrl", p.github_url as "githubUrl", p.reputation_score as "reputationScore"
+          p.university_id as "universityId", p.other_university as "otherUniversity", p.major, p.graduation_year as "graduationYear", 
+          p.linkedin_url as "linkedinUrl", p.bio, p.skills, p.interests, p.availability, p.avatar_url as "avatarUrl",
+          p.headline, p.looking_for as "lookingFor", p.portfolio_url as "portfolioUrl", p.github_url as "githubUrl", 
+          p.reputation_score as "reputationScore", p.club_type as "clubType", p.onboarding_completed as "onboardingCompleted"
         FROM users u
         LEFT JOIN profiles p ON u.id = p.user_id
         WHERE u.id = $1
@@ -292,17 +294,22 @@ export function registerRoutes(app: Express): void {
         profile: {
           fullName: row.fullName,
           universityId: row.universityId,
+          otherUniversity: row.otherUniversity,
           major: row.major,
           graduationYear: row.graduationYear,
           linkedinUrl: row.linkedinUrl,
           bio: row.bio,
           skills: row.skills,
+          interests: row.interests,
+          availability: row.availability,
           avatarUrl: row.avatarUrl,
           headline: row.headline,
           lookingFor: row.lookingFor,
           portfolioUrl: row.portfolioUrl,
           githubUrl: row.githubUrl,
           reputationScore: row.reputationScore,
+          clubType: row.clubType,
+          onboardingCompleted: row.onboardingCompleted,
         },
         roles: roles,
       });
