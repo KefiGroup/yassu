@@ -624,7 +624,7 @@ export function registerRoutes(app: Express): void {
       }
 
       // Check if user owns this idea
-      if (idea.creator_id !== req.session.userId) {
+      if (idea.createdBy !== req.session.userId) {
         return res.status(403).json({ error: "Not authorized" });
       }
 
@@ -635,9 +635,9 @@ export function registerRoutes(app: Express): void {
       const needs: MatchingNeeds = {
         ideaTitle: idea.title,
         ideaProblem: idea.problem,
-        ideaSolution: idea.solution,
-        targetUser: idea.target_user || '',
-        stage: idea.stage || 'idea',
+        ideaSolution: idea.solution || '',
+        targetUser: idea.targetUser || '',
+        stage: idea.stage || 'idea_posted',
         rolesNeeded: [],
       };
 
@@ -884,43 +884,47 @@ export function registerRoutes(app: Express): void {
               workflowRunId: run.id,
               content: JSON.stringify(sections),
             });
-            await storage.updateWorkflowRun(run.id, { 	            // Update idea stage to "find_advisors" after business plan is generated
-914	            if (ideaId) {
-915	              await storage.updateIdea(ideaId, { stage: "find_advisors" });
-916	              
-917	              // Auto-populate editable workflow sections with AI-generated content
-918	              // Keys must match the actual AI output fields from generateBusinessPlan
-919	              const sectionMapping: Record<string, string> = {
-920	                executiveSummary: "executive_summary",
-921	                founderFit: "founder_fit",
-922	                competitiveLandscape: "competitive_landscape",
-923	                riskMoat: "risk_and_moat",
-924	                mvpDesign: "mvp_design",
-925	                teamTalent: "team_and_talent",
-926	                launchPlan: "launch_plan",
-927	                schoolAdvantage: "school_advantage",
-928	                fundingPitch: "funding_pitch",
-929	              };
-930	              
-931	              for (const [key, sectionType] of Object.entries(sectionMapping)) {
-932	                const content = (sections as any)[key];
-933	                if (content) {
-934	                  await storage.upsertIdeaWorkflowSection(ideaId, sectionType, content, true);
-935	                  
-936	                  // Extract skills from team_and_talent section
-937	                  if (sectionType === "team_and_talent") {
-938	                    const skillsMatch = content.match(/<!-- SKILLS_JSON_START -->\s*([\s\S]*?)\s*<!-- SKILLS_JSON_END -->/);
-939	                    if (skillsMatch && skillsMatch[1]) {
-940	                      const skillsList = skillsMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean);
-941	                      if (skillsList.length > 0) {
-942	                        console.log(`[AI] Extracted skills for idea ${ideaId}:`, skillsList);
-943	                        await storage.updateIdea(ideaId, { skills: skillsList });
-944	                      }
-945	                    }
-946	                  }
-947	                }
-948	              }
-949	            }       console.error("AI generation failed:");
+            await storage.updateWorkflowRun(run.id, { status: "completed" });
+            
+            // Update idea stage to "find_advisors" after business plan is generated
+            if (ideaId) {
+              await storage.updateIdea(ideaId, { stage: "find_advisors" });
+              
+              // Auto-populate editable workflow sections with AI-generated content
+              const sectionMapping: Record<string, string> = {
+                executiveSummary: "executive_summary",
+                founderFit: "founder_fit",
+                competitiveLandscape: "competitive_landscape",
+                riskMoat: "risk_and_moat",
+                mvpDesign: "mvp_design",
+                teamTalent: "team_and_talent",
+                launchPlan: "launch_plan",
+                schoolAdvantage: "school_advantage",
+                fundingPitch: "funding_pitch",
+              };
+              
+              for (const [key, sectionType] of Object.entries(sectionMapping)) {
+                const content = (sections as any)[key];
+                if (content) {
+                  await storage.upsertIdeaWorkflowSection(ideaId, sectionType, content, true);
+                  
+                  // Extract skills from team_and_talent section (logged for future use)
+                  if (sectionType === "team_and_talent") {
+                    const skillsMatch = content.match(/<!-- SKILLS_JSON_START -->\s*([\s\S]*?)\s*<!-- SKILLS_JSON_END -->/);
+                    if (skillsMatch && skillsMatch[1]) {
+                      const skillsList = skillsMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean);
+                      if (skillsList.length > 0) {
+                        console.log(`[AI] Extracted skills for idea ${ideaId}:`, skillsList);
+                        // Skills are extracted and logged for potential future use
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          })
+          .catch(async (error: any) => {
+            console.error("AI generation failed:");
             console.error("Error message:", error?.message || "No message");
             console.error("Error name:", error?.name || "No name");
             console.error("Error status:", error?.status || "No status");
@@ -1018,15 +1022,15 @@ export function registerRoutes(app: Express): void {
         ]);
         
         if (accepter && idea && ideaCreator && ideaCreator.email) {
-          const { sendInviteAcceptedEmail } = await import('./email');
-          sendInviteAcceptedEmail(
+          const { sendRequestAcceptedEmail } = await import('./email');
+          sendRequestAcceptedEmail(
             ideaCreator.email,
             ideaCreator.fullName || 'there',
             accepter.fullName || 'Someone',
             idea.title,
             updated.ideaId
           ).catch(err => {
-            console.error('Failed to send invite accepted email:', err);
+            console.error('Failed to send request accepted email:', err);
           });
         }
       }
@@ -1677,7 +1681,7 @@ export function registerRoutes(app: Express): void {
       const totalConversions = allReferrals.filter(r => r.status === 'converted').length;
       const estimatedRevenue = allReferrals
         .filter(r => r.status === 'converted')
-        .reduce((sum, r) => sum + (r.estimatedRevenue || 0), 0);
+        .reduce((sum, r) => sum + ((r as any).estimatedRevenue || 0), 0);
       const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
 
       // Platform breakdown
@@ -1939,7 +1943,7 @@ export function registerRoutes(app: Express): void {
               title: idea.title,
               creatorName: 'Founder', // We'd need to join with profiles for actual names
               stage: idea.stage || 'idea_posted',
-              skills: idea.skills || [],
+              skills: (idea as any).skills || [],
             })),
             skillMatches: skillMatches.map(match => ({
               id: match.idea.id,
@@ -2043,7 +2047,7 @@ export function registerRoutes(app: Express): void {
               title: idea.title,
               creatorName: 'Founder',
               stage: idea.stage || 'idea_posted',
-              skills: idea.skills || [],
+              skills: (idea as any).skills || [],
             })),
             skillMatches: skillMatches.map(match => ({
               id: match.idea.id,
