@@ -79,9 +79,9 @@ export function PortalSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <NavLink to="/portal" className="flex items-center">
           <img 
-            src="/yassu-logo-new.jpg" 
+            src="/yassu-logo.png" 
             alt="Yassu" 
-            className={collapsed ? "h-10 w-auto rounded-md" : "h-12 w-auto rounded-md"}
+            className={collapsed ? "h-14 w-auto" : "h-20 w-auto"}
           />
         </NavLink>
       </SidebarHeader>
