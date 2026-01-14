@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
-import { Users, Plus, Search, User, Building, Briefcase } from 'lucide-react';
+import { Users, Plus, Search, User, Building, Briefcase, Mail, Check, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
   id: number;
@@ -30,14 +31,52 @@ interface Team {
   memberCount: number;
 }
 
+interface TeamInvite {
+  id: string;
+  ideaId: string;
+  inviterId: number;
+  message: string | null;
+  status: string;
+  createdAt: string;
+  ideaTitle: string | null;
+  inviterName: string | null;
+  inviterAvatar: string | null;
+}
+
 export default function Teams() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [people, setPeople] = useState<Profile[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [myTeams, setMyTeams] = useState<Team[]>([]);
+  const [receivedInvites, setReceivedInvites] = useState<TeamInvite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [respondingToInvite, setRespondingToInvite] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchMyTeamsAndInvites = async () => {
+    if (!user) return;
+    
+    try {
+      const [myTeamsResponse, invitesResponse] = await Promise.all([
+        fetch('/api/teams/my', { credentials: 'include' }),
+        fetch('/api/team-invites/received', { credentials: 'include' })
+      ]);
+      
+      if (myTeamsResponse.ok) {
+        const myTeamsData = await myTeamsResponse.json();
+        setMyTeams(myTeamsData);
+      }
+      
+      if (invitesResponse.ok) {
+        const invitesData = await invitesResponse.json();
+        setReceivedInvites(invitesData.filter((i: TeamInvite) => i.status === 'pending'));
+      }
+    } catch (error) {
+      console.error('Failed to fetch my teams/invites:', error);
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -53,14 +92,9 @@ export default function Teams() {
         if (teamsResponse.ok) {
           const teamsData = await teamsResponse.json();
           setTeams(teamsData);
-          if (user) {
-            const myTeamsResponse = await fetch('/api/teams/my', { credentials: 'include' });
-            if (myTeamsResponse.ok) {
-              const myTeamsData = await myTeamsResponse.json();
-              setMyTeams(myTeamsData);
-            }
-          }
         }
+        
+        await fetchMyTeamsAndInvites();
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -70,6 +104,40 @@ export default function Teams() {
 
     fetchData();
   }, [user]);
+
+  const handleInviteResponse = async (inviteId: string, status: 'accepted' | 'declined') => {
+    setRespondingToInvite(inviteId);
+    try {
+      const response = await fetch(`/api/team-invites/${inviteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: status === 'accepted' ? 'Invitation accepted!' : 'Invitation declined',
+          description: status === 'accepted' 
+            ? 'You have joined the team. Welcome aboard!' 
+            : 'The invitation has been declined.',
+        });
+        
+        // Refresh data
+        await fetchMyTeamsAndInvites();
+      } else {
+        throw new Error('Failed to respond to invite');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to respond to invitation. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRespondingToInvite(null);
+    }
+  };
 
   const filteredPeople = people.filter(
     (person) =>
@@ -250,38 +318,118 @@ export default function Teams() {
           )}
         </TabsContent>
 
-        <TabsContent value="my-teams" className="mt-6">
-          {myTeams.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myTeams.map((team, index) => (
-                <motion.div
-                  key={team.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.05 * index }}
-                >
-                  <Card
-                    className="hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
-                    onClick={() => navigate(`/portal/teams/${team.id}`)}
-                    data-testid={`card-my-team-${team.id}`}
+        <TabsContent value="my-teams" className="mt-6 space-y-8">
+          {receivedInvites.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Mail className="w-5 h-5 text-primary" />
+                Pending Invitations ({receivedInvites.length})
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {receivedInvites.map((invite, index) => (
+                  <motion.div
+                    key={invite.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.05 * index }}
                   >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{team.name}</CardTitle>
-                      <CardDescription className="line-clamp-2">
-                        {team.description || 'No description'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        <span>{team.memberCount || 0} members</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                    <Card className="border-primary/30 bg-primary/5">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={invite.inviterAvatar || undefined} />
+                            <AvatarFallback>{getInitials(invite.inviterName)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-base">{invite.ideaTitle || 'Unknown Project'}</CardTitle>
+                            <CardDescription className="text-sm">
+                              Invited by {invite.inviterName || 'Unknown'}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {invite.message && (
+                          <p className="text-sm text-muted-foreground mb-4 italic">
+                            "{invite.message}"
+                          </p>
+                        )}
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm"
+                            onClick={() => handleInviteResponse(invite.id, 'accepted')}
+                            disabled={respondingToInvite === invite.id}
+                            data-testid={`button-accept-invite-${invite.id}`}
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Accept
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleInviteResponse(invite.id, 'declined')}
+                            disabled={respondingToInvite === invite.id}
+                            data-testid={`button-decline-invite-${invite.id}`}
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Decline
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => navigate(`/portal/ideas/${invite.ideaId}`)}
+                            data-testid={`button-view-idea-${invite.id}`}
+                          >
+                            View Project
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          ) : (
+          )}
+          
+          {myTeams.length > 0 ? (
+            <div>
+              {receivedInvites.length > 0 && (
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  My Teams
+                </h3>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {myTeams.map((team, index) => (
+                  <motion.div
+                    key={team.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.05 * index }}
+                  >
+                    <Card
+                      className="hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
+                      onClick={() => navigate(`/portal/teams/${team.id}`)}
+                      data-testid={`card-my-team-${team.id}`}
+                    >
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">{team.name}</CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {team.description || 'No description'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="w-4 h-4" />
+                          <span>{team.memberCount || 0} members</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          ) : receivedInvites.length === 0 ? (
             <div className="text-center py-16">
               <Users className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No teams yet</h3>
@@ -293,7 +441,7 @@ export default function Teams() {
                 Create Team
               </Button>
             </div>
-          )}
+          ) : null}
         </TabsContent>
       </Tabs>
     </div>

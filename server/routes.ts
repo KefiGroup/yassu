@@ -686,6 +686,14 @@ export function registerRoutes(app: Express): void {
       
       const idea = await storage.createIdea(ideaData);
       
+      // Auto-create a team for this idea
+      await storage.createTeam({
+        name: `${idea.title} Team`,
+        description: `Team for ${idea.title}`,
+        ideaId: idea.id,
+        createdBy: req.session.userId,
+      });
+      
       if (req.body.tags && Array.isArray(req.body.tags)) {
         for (const tag of req.body.tags) {
           await storage.addIdeaTag(idea.id, tag);
@@ -1133,6 +1141,127 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Create team invite error:", error);
       res.status(500).json({ error: "Failed to create invite" });
+    }
+  });
+
+  // Get team invites received by the current user
+  app.get("/api/team-invites/received", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const invites = await db.select({
+        id: schema.teamInvites.id,
+        ideaId: schema.teamInvites.ideaId,
+        inviterId: schema.teamInvites.inviterId,
+        message: schema.teamInvites.message,
+        status: schema.teamInvites.status,
+        createdAt: schema.teamInvites.createdAt,
+        ideaTitle: schema.ideas.title,
+        inviterName: schema.profiles.fullName,
+        inviterAvatar: schema.profiles.avatarUrl,
+      })
+        .from(schema.teamInvites)
+        .leftJoin(schema.ideas, eq(schema.teamInvites.ideaId, schema.ideas.id))
+        .leftJoin(schema.profiles, eq(schema.teamInvites.inviterId, schema.profiles.userId))
+        .where(eq(schema.teamInvites.inviteeId, req.session.userId))
+        .orderBy(schema.teamInvites.createdAt);
+      
+      res.json(invites);
+    } catch (error) {
+      console.error("Get team invites error:", error);
+      res.status(500).json({ error: "Failed to fetch team invites" });
+    }
+  });
+
+  // Respond to a team invite (accept or decline)
+  app.patch("/api/team-invites/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { status } = req.body;
+      if (!["accepted", "declined"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      // Get the invite first
+      const [invite] = await db.select()
+        .from(schema.teamInvites)
+        .where(eq(schema.teamInvites.id, req.params.id));
+      
+      if (!invite) {
+        return res.status(404).json({ error: "Invite not found" });
+      }
+
+      if (invite.inviteeId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to respond to this invite" });
+      }
+
+      // Update invite status
+      await db.update(schema.teamInvites)
+        .set({ status })
+        .where(eq(schema.teamInvites.id, req.params.id));
+
+      // If accepted, add user to team
+      if (status === "accepted") {
+        // Find or create team for this idea
+        let [team] = await db.select()
+          .from(schema.teams)
+          .where(eq(schema.teams.ideaId, invite.ideaId));
+        
+        if (!team) {
+          // Create team if it doesn't exist
+          const idea = await storage.getIdea(invite.ideaId);
+          if (idea) {
+            [team] = await db.insert(schema.teams)
+              .values({
+                name: `${idea.title} Team`,
+                description: `Team for ${idea.title}`,
+                ideaId: invite.ideaId,
+                createdBy: invite.inviterId,
+              })
+              .returning();
+          }
+        }
+
+        if (team) {
+          // Add user to team
+          await db.insert(schema.teamMembers)
+            .values({
+              teamId: team.id,
+              userId: req.session.userId,
+              role: "member",
+            })
+            .onConflictDoNothing();
+        }
+
+        // Send email notification to inviter
+        const [inviter, invitee, idea] = await Promise.all([
+          storage.getProfile(invite.inviterId),
+          storage.getProfile(req.session.userId),
+          storage.getIdea(invite.ideaId)
+        ]);
+
+        if (inviter && invitee && idea && inviter.email) {
+          const { sendInviteAcceptedEmail } = await import('./email');
+          sendInviteAcceptedEmail(
+            inviter.email,
+            inviter.fullName || 'there',
+            invitee.fullName || 'Someone',
+            idea.title
+          ).catch(err => {
+            console.error('Failed to send invite accepted email:', err);
+          });
+        }
+      }
+
+      res.json({ success: true, status });
+    } catch (error) {
+      console.error("Update team invite error:", error);
+      res.status(500).json({ error: "Failed to update invite" });
     }
   });
 
