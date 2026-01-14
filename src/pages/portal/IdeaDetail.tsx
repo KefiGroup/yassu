@@ -854,8 +854,13 @@ export default function IdeaDetail() {
   const preprocessMarkdown = (content: string): string => {
     if (!content) return '';
     
-    // Remove SKILLS_JSON markers and the entire Required Skills section (used for programmatic extraction, not display)
+    // Strip code fence wrappers that AI might add (```markdown or ``` at start/end)
     let processed = content
+      .replace(/^```(?:markdown|md)?\s*\n?/i, '') // Remove opening code fence
+      .replace(/\n?```\s*$/i, ''); // Remove closing code fence
+    
+    // Remove SKILLS_JSON markers and the entire Required Skills section (used for programmatic extraction, not display)
+    processed = processed
       .replace(/##\s*Required Skills[\s\S]*?(?=##|$)/gi, '') // Remove entire Required Skills section
       .replace(/<!-- SKILLS_JSON_START -->[\s\S]*?<!-- SKILLS_JSON_END -->/g, '')
       .replace(/\["[^"]*(?:Machine Learning|Data Science|Python|Product Management)[^"]*"[^\]]*\]/g, ''); // Remove stray JSON arrays
