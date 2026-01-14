@@ -429,14 +429,14 @@ export default function Messages() {
                         className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors"
                         data-testid={`connection-${connection.profile.userId}`}
                       >
-                        <Avatar className="w-10 h-10">
+                        <Avatar className="w-10 h-10 flex-shrink-0">
                           <AvatarImage src={connection.profile.avatarUrl || undefined} />
                           <AvatarFallback>{getInitials(connection.profile.fullName)}</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 overflow-hidden">
                           <p className="font-medium truncate">{connection.profile.fullName}</p>
                           {connection.profile.headline && (
-                            <p className="text-sm text-muted-foreground truncate">
+                            <p className="text-sm text-muted-foreground truncate max-w-full">
                               {connection.profile.headline}
                             </p>
                           )}
