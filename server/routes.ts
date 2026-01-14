@@ -2418,10 +2418,17 @@ export function registerRoutes(app: Express): void {
       const userId = req.session.userId;
       const searchQuery = (req.query.q as string || '').toLowerCase().trim();
       
+      console.log(`[search-users] User ${userId} searching for: "${searchQuery}"`);
+      
       // Get all profiles except current user
       const profiles = await db.select()
         .from(schema.profiles)
         .where(sql`${schema.profiles.userId} != ${userId}`);
+      
+      console.log(`[search-users] Found ${profiles.length} profiles (excluding current user)`);
+      if (profiles.length > 0) {
+        console.log(`[search-users] Sample profiles:`, profiles.slice(0, 3).map(p => p.fullName));
+      }
       
       // Get all connections for current user
       const connections = await db.select()
@@ -2458,6 +2465,7 @@ export function registerRoutes(app: Express): void {
         }))
         .slice(0, 20); // Limit results
       
+      console.log(`[search-users] Returning ${results.length} results`);
       res.json(results);
     } catch (error) {
       console.error("Search users error:", error);
