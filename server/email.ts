@@ -209,7 +209,8 @@ export async function sendTeamInvitationEmail(
   ideaId: string,
   personalMessage?: string
 ): Promise<void> {
-  const ideaLink = `${APP_URL}/portal/ideas/${ideaId}`;
+  // Link to Teams page where they can see and accept/decline invites
+  const teamsLink = `${APP_URL}/portal/teams?tab=my-teams`;
   
   const html = `
 <!DOCTYPE html>
@@ -255,7 +256,7 @@ export async function sendTeamInvitationEmail(
               <table role="presentation" style="margin: 30px 0;">
                 <tr>
                   <td style="border-radius: 6px; background-color: #7c3aed;">
-                    <a href="${ideaLink}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                    <a href="${teamsLink}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
                       View Invitation
                     </a>
                   </td>

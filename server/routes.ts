@@ -1276,7 +1276,16 @@ export function registerRoutes(app: Express): void {
     }
 
     try {
-      const { ideaId, inviteeId, message } = req.body;
+      const { ideaId, inviteeId, message, role } = req.body;
+      
+      // Validate required fields
+      if (!ideaId || !inviteeId) {
+        console.error("Missing required fields:", { ideaId, inviteeId });
+        return res.status(400).json({ error: "Missing required fields: ideaId and inviteeId are required" });
+      }
+      
+      console.log("Creating team invite:", { ideaId, inviterId: req.session.userId, inviteeId, role });
+      
       const invite = await storage.createTeamInvite({
         ideaId,
         inviterId: req.session.userId,
@@ -1284,6 +1293,8 @@ export function registerRoutes(app: Express): void {
         message,
         status: "pending"
       });
+      
+      console.log("Team invite created successfully:", invite.id);
       
       // Send invitation email
       const [inviter, invitee, idea] = await Promise.all([
@@ -1299,9 +1310,18 @@ export function registerRoutes(app: Express): void {
           invitee.fullName || 'there',
           inviter.fullName || 'Someone',
           idea.title,
-          ideaId
+          ideaId,
+          message
         ).catch(err => {
           console.error('Failed to send team invitation email:', err);
+        });
+        console.log("Team invitation email sent to:", invitee.email);
+      } else {
+        console.log("Could not send email - missing data:", { 
+          hasInviter: !!inviter, 
+          hasInvitee: !!invitee, 
+          hasIdea: !!idea, 
+          hasEmail: !!invitee?.email 
         });
       }
       
@@ -1309,6 +1329,40 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Create team invite error:", error);
       res.status(500).json({ error: "Failed to create invite" });
+    }
+  });
+
+  // Get team invites sent by the current user for a specific idea
+  app.get("/api/team-invites/sent", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const ideaId = req.query.ideaId as string | undefined;
+      
+      // Build where condition based on whether ideaId is provided
+      const whereCondition = ideaId 
+        ? and(eq(schema.teamInvites.inviterId, req.session.userId), eq(schema.teamInvites.ideaId, ideaId))
+        : eq(schema.teamInvites.inviterId, req.session.userId);
+      
+      const invites = await db.select({
+        id: schema.teamInvites.id,
+        ideaId: schema.teamInvites.ideaId,
+        inviteeId: schema.teamInvites.inviteeId,
+        status: schema.teamInvites.status,
+        createdAt: schema.teamInvites.createdAt,
+        inviteeName: schema.profiles.fullName,
+      })
+        .from(schema.teamInvites)
+        .leftJoin(schema.profiles, eq(schema.teamInvites.inviteeId, schema.profiles.userId))
+        .where(whereCondition)
+        .orderBy(desc(schema.teamInvites.createdAt));
+      
+      res.json(invites);
+    } catch (error) {
+      console.error("Get sent team invites error:", error);
+      res.status(500).json({ error: "Failed to fetch sent team invites" });
     }
   });
 

@@ -210,6 +210,7 @@ export default function TeamDetail() {
   const [inviteTarget, setInviteTarget] = useState<{ userId: number; fullName: string | null; role: 'advisor' | 'collaborator'; skills?: string[] | null } | null>(null);
   const [inviteMessage, setInviteMessage] = useState('');
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [sentInvites, setSentInvites] = useState<Set<number>>(new Set());
 
   const getInviteMessageTemplate = (role: 'advisor' | 'collaborator', name: string | null, skills?: string[] | null) => {
     const displayName = name || 'there';
@@ -271,6 +272,8 @@ Let me know if you'd like to learn more about the project!`;
           title: 'Invitation sent!',
           description: `Your invitation has been sent to ${inviteTarget.fullName || 'the user'}.`,
         });
+        // Add to sent invites set to update UI immediately
+        setSentInvites(prev => new Set([...prev, inviteTarget.userId]));
         setInviteDialogOpen(false);
         setInviteTarget(null);
         setInviteMessage('');
@@ -309,6 +312,20 @@ Let me know if you'd like to learn more about the project!`;
           setRecommendedAdvisors(data.recommendedAdvisors || []);
           setRecommendedCollaborators(data.recommendedCollaborators || []);
           setJoinRequests(data.joinRequests || []);
+          
+          // Fetch sent invites for this idea to show "Invited" status
+          if (data.team?.ideaId) {
+            try {
+              const sentResponse = await fetch(`/api/team-invites/sent?ideaId=${data.team.ideaId}`, { credentials: 'include' });
+              if (sentResponse.ok) {
+                const sentData = await sentResponse.json();
+                const invitedUserIds = new Set<number>(sentData.map((invite: any) => invite.inviteeId));
+                setSentInvites(invitedUserIds);
+              }
+            } catch (e) {
+              console.error('Failed to fetch sent invites:', e);
+            }
+          }
         } else if (response.status === 404) {
           setError('Team not found');
           toast({
@@ -588,15 +605,27 @@ Let me know if you'd like to learn more about the project!`;
                             )}
                           </div>
                           <div className="flex flex-col gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="default"
-                              onClick={() => handleOpenInviteDialog(person, 'advisor')}
-                              data-testid={`button-invite-advisor-${person.userId}`}
-                            >
-                              <Send className="w-3 h-3 mr-1" />
-                              Invite
-                            </Button>
+                            {sentInvites.has(person.userId) ? (
+                              <Button 
+                                size="sm" 
+                                variant="secondary"
+                                disabled
+                                data-testid={`button-invited-advisor-${person.userId}`}
+                              >
+                                <Check className="w-3 h-3 mr-1" />
+                                Invited
+                              </Button>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                variant="default"
+                                onClick={() => handleOpenInviteDialog(person, 'advisor')}
+                                data-testid={`button-invite-advisor-${person.userId}`}
+                              >
+                                <Send className="w-3 h-3 mr-1" />
+                                Invite
+                              </Button>
+                            )}
                             <Button 
                               size="sm" 
                               variant="outline"
@@ -694,15 +723,27 @@ Let me know if you'd like to learn more about the project!`;
                             )}
                           </div>
                           <div className="flex flex-col gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="default"
-                              onClick={() => handleOpenInviteDialog(person, 'collaborator')}
-                              data-testid={`button-invite-collaborator-${person.userId}`}
-                            >
-                              <Send className="w-3 h-3 mr-1" />
-                              Invite
-                            </Button>
+                            {sentInvites.has(person.userId) ? (
+                              <Button 
+                                size="sm" 
+                                variant="secondary"
+                                disabled
+                                data-testid={`button-invited-collaborator-${person.userId}`}
+                              >
+                                <Check className="w-3 h-3 mr-1" />
+                                Invited
+                              </Button>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                variant="default"
+                                onClick={() => handleOpenInviteDialog(person, 'collaborator')}
+                                data-testid={`button-invite-collaborator-${person.userId}`}
+                              >
+                                <Send className="w-3 h-3 mr-1" />
+                                Invite
+                              </Button>
+                            )}
                             <Button 
                               size="sm" 
                               variant="outline"
