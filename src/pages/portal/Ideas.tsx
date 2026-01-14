@@ -211,7 +211,7 @@ export default function Ideas() {
                       className="flex items-center gap-2 cursor-pointer hover:text-foreground transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/portal/profile/${idea.createdBy}`);
+                        navigate(`/portal/users/${idea.createdBy}`);
                       }}
                       data-testid={`link-creator-${idea.id}`}
                     >

@@ -148,7 +148,7 @@ export default function Teams() {
                 >
                   <Card 
                     className="hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
-                    onClick={() => navigate(`/portal/profile/${person.userId}`)}
+                    onClick={() => navigate(`/portal/users/${person.userId}`)}
                     data-testid={`card-person-${person.id}`}
                   >
                     <CardContent className="p-4">

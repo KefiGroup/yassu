@@ -168,7 +168,7 @@ export default function Advisors() {
                 >
                   <Card 
                     className="h-full cursor-pointer hover:shadow-md hover:border-primary/20 transition-all" 
-                    onClick={() => navigate(`/portal/profile/${advisor.userId}`)}
+                    onClick={() => navigate(`/portal/users/${advisor.userId}`)}
                     data-testid={`card-advisor-${advisor.id}`}
                   >
                     <CardContent className="pt-6">

@@ -249,7 +249,7 @@ export default function SmartMatching() {
                   <div className="flex gap-2">
                     <Button
                       className="flex-1"
-                      onClick={() => navigate(`/portal/profile/${match.userId}`)}
+                      onClick={() => navigate(`/portal/users/${match.userId}`)}
                     >
                       View Profile
                     </Button>

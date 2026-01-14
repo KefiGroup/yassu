@@ -168,7 +168,7 @@ export default function AmbassadorsPage() {
                 >
                   <Card 
                     className="h-full cursor-pointer hover:shadow-md hover:border-primary/20 transition-all" 
-                    onClick={() => navigate(`/portal/profile/${ambassador.userId}`)}
+                    onClick={() => navigate(`/portal/users/${ambassador.userId}`)}
                     data-testid={`card-ambassador-${ambassador.id}`}
                   >
                     <CardContent className="pt-6">
