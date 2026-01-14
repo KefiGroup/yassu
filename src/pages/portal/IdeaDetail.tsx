@@ -1442,47 +1442,6 @@ export default function IdeaDetail() {
                     <Users2 className="w-4 h-4 mr-2" />
                     Find Team Members
                   </Button>
-                  <Button
-                    onClick={() => navigate(`/portal/mvp-builder?ideaId=${idea.id}`)}
-                    variant="outline"
-                    data-testid="button-mvp-builder"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    MVP Builder
-                  </Button>
-                  <Button
-                    onClick={async () => {
-                      // Track referral in Yassu database
-                      try {
-                        await apiRequest('/api/referrals/track', {
-                          method: 'POST',
-                          body: JSON.stringify({
-                            platform: 'manus',
-                            ideaId: idea.id,
-                            ideaTitle: idea.title,
-                          }),
-                        });
-                      } catch (e) {
-                        console.error('Failed to track referral:', e);
-                      }
-
-                      // Build Manus URL with referral tracking
-                      const context = {
-                        source: 'yassu',
-                        ref: user?.email || 'yassu-platform', // Your referral ID
-                        project: idea.title,
-                        problem: idea.problem,
-                        solution: idea.solution || '',
-                        users: idea.targetUser || '',
-                      };
-                      const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
-                      window.open(manusUrl, '_blank');
-                    }}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                  >
-                    <Code className="w-4 h-4 mr-2" />
-                    Build MVP with Manus AI
-                  </Button>
                 </div>
               </div>
             ) : businessPlan.status === 'running' || businessPlan.status === 'pending' ? (
