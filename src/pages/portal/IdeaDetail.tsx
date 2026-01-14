@@ -1071,14 +1071,14 @@ export default function IdeaDetail() {
                             <StepIcon className="w-5 h-5" />
                           )}
                         </div>
-                        <span className={`text-xs text-center w-16 ${
+                        <span className={`text-xs text-center w-20 ${
                           isCompleted || isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground'
                         }`}>
                           {step.title}
                         </span>
                       </div>
                       {index < journeySteps.length - 1 && (
-                        <div className={`w-8 h-1 mx-1 rounded-full flex-shrink-0 ${
+                        <div className={`w-12 h-1 mx-3 rounded-full flex-shrink-0 ${
                           isCompleted ? 'bg-primary' : 'bg-muted'
                         }`} />
                       )}
