@@ -150,11 +150,13 @@ const planSections = [
 ];
 
 const journeySteps = [
-  { id: 1, title: 'Idea', icon: PenLine, description: 'Share your startup idea', segment: 'idea' },
+  { id: 1, title: 'Post Idea', icon: PenLine, description: 'Share your startup idea', segment: 'idea' },
   { id: 2, title: 'Business Plan', icon: Brain, description: 'Generate with Yassu AI', segment: 'businessPlan' },
-  { id: 3, title: 'Team', icon: Users2, description: 'Build your founding team', segment: 'team' },
-  { id: 4, title: 'MVP', icon: Wrench, description: 'Develop your product', segment: 'mvp' },
-  { id: 5, title: 'Funding', icon: DollarSign, description: 'Pitch & funding strategy', segment: 'funding' },
+  { id: 3, title: 'Find Advisors', icon: Users, description: 'Get expert guidance', segment: 'team' },
+  { id: 4, title: 'Form Team', icon: Users2, description: 'Build your founding team', segment: 'team' },
+  { id: 5, title: 'Build MVP', icon: Wrench, description: 'Develop your product', segment: 'mvp' },
+  { id: 6, title: 'Yassu Foundry', icon: Rocket, description: 'Accelerate growth', segment: 'foundry' },
+  { id: 7, title: 'Launch', icon: DollarSign, description: 'Go to market', segment: 'funding' },
 ];
 
 export default function IdeaDetail() {
@@ -168,6 +170,7 @@ export default function IdeaDetail() {
   const businessPlanRef = useRef<HTMLDivElement>(null);
   const teamRef = useRef<HTMLDivElement>(null);
   const mvpRef = useRef<HTMLDivElement>(null);
+  const foundryRef = useRef<HTMLDivElement>(null);
   const fundingRef = useRef<HTMLDivElement>(null);
   
   const segmentRefs: Record<string, React.RefObject<HTMLDivElement>> = {
@@ -175,6 +178,7 @@ export default function IdeaDetail() {
     businessPlan: businessPlanRef,
     team: teamRef,
     mvp: mvpRef,
+    foundry: foundryRef,
     funding: fundingRef,
   };
 
@@ -1745,7 +1749,41 @@ export default function IdeaDetail() {
         </Card>
       </motion.div>
 
-      {/* SEGMENT: Funding */}
+      {/* SEGMENT: Yassu Foundry - Placeholder for future */}
+      <motion.div
+        ref={foundryRef}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.38 }}
+        className="scroll-mt-4"
+      >
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle>Yassu Foundry</CardTitle>
+                <p className="text-sm text-muted-foreground">Accelerate your startup growth</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                <Rocket className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Coming Soon</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                The Yassu Foundry program will provide mentorship, resources, and support to help you scale your startup.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* SEGMENT: Launch / Funding */}
       <motion.div
         ref={fundingRef}
         initial={{ opacity: 0, y: 20 }}
