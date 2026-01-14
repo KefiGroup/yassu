@@ -1038,47 +1038,49 @@ export default function IdeaDetail() {
             <CardTitle className="text-lg">Your Yassu Journey</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
-              {journeySteps.map((step, index) => {
-                const StepIcon = step.icon;
-                const isCompleted = step.id === 1 || (step.id === 2 && businessPlan?.status === 'completed');
-                const isCurrent = (step.id === 2 && !businessPlan) || 
-                  (step.id === 2 && businessPlan?.status === 'running') ||
-                  (step.id === 3 && businessPlan?.status === 'completed');
-                
-                return (
-                  <div key={step.id} className="flex items-center flex-shrink-0">
-                    <div className="flex flex-col items-center gap-1">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                          isCompleted
-                            ? 'bg-primary text-primary-foreground'
-                            : isCurrent
-                            ? 'bg-primary/20 text-primary ring-2 ring-primary'
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                        data-testid={`journey-step-${step.id}`}
-                      >
-                        {isCompleted ? (
-                          <CheckCircle className="w-5 h-5" />
-                        ) : (
-                          <StepIcon className="w-5 h-5" />
-                        )}
+            <div className="overflow-x-auto pb-2">
+              <div className="flex items-center justify-center min-w-max">
+                {journeySteps.map((step, index) => {
+                  const StepIcon = step.icon;
+                  const isCompleted = step.id === 1 || (step.id === 2 && businessPlan?.status === 'completed');
+                  const isCurrent = (step.id === 2 && !businessPlan) || 
+                    (step.id === 2 && businessPlan?.status === 'running') ||
+                    (step.id === 3 && businessPlan?.status === 'completed');
+                  
+                  return (
+                    <div key={step.id} className="flex items-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                            isCompleted
+                              ? 'bg-primary text-primary-foreground'
+                              : isCurrent
+                              ? 'bg-primary/20 text-primary ring-2 ring-primary'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                          data-testid={`journey-step-${step.id}`}
+                        >
+                          {isCompleted ? (
+                            <CheckCircle className="w-5 h-5" />
+                          ) : (
+                            <StepIcon className="w-5 h-5" />
+                          )}
+                        </div>
+                        <span className={`text-xs text-center w-16 ${
+                          isCompleted || isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground'
+                        }`}>
+                          {step.title}
+                        </span>
                       </div>
-                      <span className={`text-xs text-center max-w-[70px] ${
-                        isCompleted || isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground'
-                      }`}>
-                        {step.title}
-                      </span>
+                      {index < journeySteps.length - 1 && (
+                        <div className={`w-8 h-1 mx-1 rounded-full flex-shrink-0 ${
+                          isCompleted ? 'bg-primary' : 'bg-muted'
+                        }`} />
+                      )}
                     </div>
-                    {index < journeySteps.length - 1 && (
-                      <div className={`w-16 h-1 mx-2 rounded-full ${
-                        isCompleted ? 'bg-primary' : 'bg-muted'
-                      }`} />
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </CardContent>
         </Card>
