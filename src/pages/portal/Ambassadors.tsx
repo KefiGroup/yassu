@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -73,50 +74,54 @@ export default function Ambassadors() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.05 * index }}
             >
-              <Card className="h-full" data-testid={`card-ambassador-${ambassador.id}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-12 h-12 shrink-0">
-                      <AvatarImage src={ambassador.avatarUrl || undefined} alt={ambassador.fullName || 'Ambassador'} />
-                      <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-sm font-medium">
-                        {getInitials(ambassador.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-base line-clamp-1">{ambassador.fullName || 'Anonymous'}</CardTitle>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <Badge variant="outline" className="text-xs">
-                          Ambassador
-                        </Badge>
-                        {ambassador.university?.shortName && (
+              <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-ambassador-${ambassador.id}`}>
+                <Link to={`/portal/users/${ambassador.userId}`} className="block">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-12 h-12 shrink-0">
+                        <AvatarImage src={ambassador.avatarUrl || undefined} alt={ambassador.fullName || 'Ambassador'} />
+                        <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-sm font-medium">
+                          {getInitials(ambassador.fullName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base line-clamp-1">{ambassador.fullName || 'Anonymous'}</CardTitle>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge variant="outline" className="text-xs">
+                            Ambassador
+                          </Badge>
+                          {ambassador.university?.shortName && (
+                            <Badge variant="secondary" className="text-xs">
+                              {ambassador.university.shortName}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    {ambassador.bio && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {ambassador.bio}
+                      </p>
+                    )}
+                    {ambassador.skills && ambassador.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {ambassador.skills.slice(0, 3).map((skill, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {skill}
+                          </Badge>
+                        ))}
+                        {ambassador.skills.length > 3 && (
                           <Badge variant="secondary" className="text-xs">
-                            {ambassador.university.shortName}
+                            +{ambassador.skills.length - 3}
                           </Badge>
                         )}
                       </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {ambassador.bio && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {ambassador.bio}
-                    </p>
-                  )}
-                  {ambassador.skills && ambassador.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {ambassador.skills.slice(0, 3).map((skill, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          {skill}
-                        </Badge>
-                      ))}
-                      {ambassador.skills.length > 3 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{ambassador.skills.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </CardContent>
+                </Link>
+                <CardContent className="pt-0">
                   <ConnectionButton
                     targetUserId={ambassador.userId}
                     currentUserId={user?.id}
