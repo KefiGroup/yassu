@@ -1838,12 +1838,58 @@ export default function IdeaDetail() {
             </div>
           </CardHeader>
           <CardContent>
-            {businessPlan?.sections?.fundingPitch ? (
-              <div className="space-y-4">
+            <div className="text-center py-8">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-4">
+                <Presentation className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Build Your Pitch Deck</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Create a professional pitch deck to present your startup to investors.
+              </p>
+              <Button
+                onClick={async () => {
+                  if (!idea) return;
+                  try {
+                    await apiRequest('/api/referrals/track', {
+                      method: 'POST',
+                      body: JSON.stringify({
+                        platform: 'manus',
+                        ideaId: idea.id,
+                        ideaTitle: idea.title,
+                        actionType: 'pitch_deck',
+                      }),
+                    });
+                  } catch (e) {
+                    console.error('Failed to track referral:', e);
+                  }
+                  const fundingPitch = businessPlan?.sections?.fundingPitch || '';
+                  const context = {
+                    source: 'yassu',
+                    ref: user?.email || 'yassu-platform',
+                    project: idea.title,
+                    task: 'Create a professional pitch deck presentation',
+                    problem: idea.problem,
+                    solution: idea.solution || '',
+                    users: idea.targetUser || '',
+                    funding_strategy: fundingPitch.substring(0, 500),
+                  };
+                  const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+                  window.open(manusUrl, '_blank');
+                }}
+                className="bg-gradient-to-r from-amber-500 to-orange-500"
+                data-testid="button-build-pitch-deck-manus"
+              >
+                <Presentation className="w-4 h-4 mr-2" />
+                Build Pitch Deck with Manus AI
+              </Button>
+            </div>
+            
+            {businessPlan?.sections?.fundingPitch && (
+              <div className="mt-6 pt-6 border-t space-y-4">
                 <div className="flex items-center justify-between">
                   <Badge className="bg-emerald-500 text-white">
                     <CheckCircle className="w-3 h-3 mr-1" />
-                    Pitch Strategy Ready
+                    Funding Strategy Ready
                   </Badge>
                   <Button
                     variant="outline"
@@ -1863,29 +1909,6 @@ export default function IdeaDetail() {
                   </ReactMarkdown>
                   <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-muted/80 to-transparent pointer-events-none" />
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Click "View in Business Plan" to see the full funding strategy
-                </p>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                  <Presentation className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Pitch Deck & Funding Strategy</h3>
-                <p className="text-muted-foreground mb-4">
-                  Generate your business plan first to unlock the AI-powered funding pitch and investor strategy section.
-                </p>
-                {!businessPlan && isOwner && (
-                  <Button 
-                    onClick={handleGeneratePlan} 
-                    disabled={generating}
-                    data-testid="button-generate-plan-funding"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Business Plan
-                  </Button>
-                )}
               </div>
             )}
           </CardContent>
