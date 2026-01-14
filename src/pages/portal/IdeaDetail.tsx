@@ -156,7 +156,7 @@ const journeySteps = [
   { id: 4, title: 'Form Team', icon: Users2, description: 'Build your founding team', segment: 'team' },
   { id: 5, title: 'Build MVP', icon: Wrench, description: 'Develop your product', segment: 'mvp' },
   { id: 6, title: 'Yassu Foundry', icon: Rocket, description: 'Accelerate growth', segment: 'foundry' },
-  { id: 7, title: 'Launch', icon: DollarSign, description: 'Go to market', segment: 'funding' },
+  { id: 7, title: 'Seek Funding / Market Launch', icon: DollarSign, description: 'Go to market', segment: 'funding' },
 ];
 
 export default function IdeaDetail() {
