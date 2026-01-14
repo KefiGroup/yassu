@@ -293,14 +293,24 @@ export default function TeamDetail() {
                   </Button>
                 )}
                 {isCreator && (
-                  <Button
-                    variant="default"
-                    onClick={() => navigate(`/portal/ideas/${team.ideaId}/smart-match`)}
-                    data-testid="button-invite-members"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Invite Members
-                  </Button>
+                  <>
+                    <Button
+                      variant="default"
+                      onClick={() => navigate('/portal/collaborators')}
+                      data-testid="button-find-collaborators"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Find Collaborators
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/portal/advisors')}
+                      data-testid="button-find-advisors"
+                    >
+                      <Star className="w-4 h-4 mr-2" />
+                      Find Advisors
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -394,14 +404,24 @@ export default function TeamDetail() {
                   ? 'Invite collaborators and advisors to grow your team!'
                   : 'The founder hasn\'t added any team members yet.'}
               </p>
-              {isCreator && team.ideaId && (
-                <Button
-                  onClick={() => navigate(`/portal/ideas/${team.ideaId}/smart-match`)}
-                  data-testid="button-find-collaborators"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Find Collaborators
-                </Button>
+              {isCreator && (
+                <div className="flex items-center justify-center gap-3">
+                  <Button
+                    onClick={() => navigate('/portal/collaborators')}
+                    data-testid="button-find-collaborators-empty"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Find Collaborators
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/portal/advisors')}
+                    data-testid="button-find-advisors-empty"
+                  >
+                    <Star className="w-4 h-4 mr-2" />
+                    Find Advisors
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
