@@ -574,7 +574,11 @@ export default function Messages() {
                   <div className="text-center py-8">
                     <User className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-muted-foreground text-sm">
-                      {userSearchQuery ? 'No people found' : 'Start typing to search...'}
+                      {userSearchQuery 
+                        ? `No people found matching "${userSearchQuery}"` 
+                        : loadingSearchUsers 
+                          ? 'Loading...' 
+                          : 'No other users on the platform yet'}
                     </p>
                   </div>
                 )}
