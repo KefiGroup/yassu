@@ -61,16 +61,13 @@ interface TeamMessage {
   senderAvatar: string | null;
 }
 
-interface Connection {
-  id: string;
-  recipientId?: number;
-  requesterId?: number;
-  profile: {
-    userId: number;
-    fullName: string;
-    avatarUrl: string | null;
-    headline: string | null;
-  };
+interface SearchUser {
+  userId: number;
+  fullName: string;
+  avatarUrl: string | null;
+  headline: string | null;
+  connectionStatus: 'none' | 'pending' | 'accepted';
+  connectionId: string | null;
 }
 
 function getInitials(name: string | null | undefined): string {
@@ -125,9 +122,18 @@ export default function Messages() {
   
   // New message dialog state
   const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [loadingConnections, setLoadingConnections] = useState(false);
-  const [connectionSearch, setConnectionSearch] = useState('');
+  const [searchUsers, setSearchUsers] = useState<SearchUser[]>([]);
+  const [loadingSearchUsers, setLoadingSearchUsers] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  
+  // Connection confirmation dialog state
+  const [showConnectionConfirm, setShowConnectionConfirm] = useState(false);
+  const [pendingMessageUser, setPendingMessageUser] = useState<SearchUser | null>(null);
+  const [connectionMessage, setConnectionMessage] = useState('');
+  const [sendingConnectionRequest, setSendingConnectionRequest] = useState(false);
+  
+  // Track connection status for current conversation partner
+  const [partnerConnectionStatus, setPartnerConnectionStatus] = useState<'none' | 'pending' | 'accepted'>('accepted');
 
   useEffect(() => {
     fetchConversations();
@@ -168,20 +174,29 @@ export default function Messages() {
     }
   };
 
-  const fetchConnections = async () => {
-    setLoadingConnections(true);
+  const fetchSearchUsers = async (query: string = '') => {
+    setLoadingSearchUsers(true);
     try {
-      const response = await fetch('/api/connections', { credentials: 'include' });
+      const response = await fetch(`/api/messages/search-users?q=${encodeURIComponent(query)}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        setConnections(data.filter((c: Connection) => c.profile));
+        setSearchUsers(data);
       }
     } catch (error) {
-      console.error('Failed to fetch connections:', error);
+      console.error('Failed to search users:', error);
     } finally {
-      setLoadingConnections(false);
+      setLoadingSearchUsers(false);
     }
   };
+
+  // Debounce search
+  useEffect(() => {
+    if (!showNewMessageDialog) return;
+    const timer = setTimeout(() => {
+      fetchSearchUsers(userSearchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [userSearchQuery, showNewMessageDialog]);
 
   const selectConversation = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
@@ -189,13 +204,25 @@ export default function Messages() {
     setLoadingMessages(true);
     
     try {
-      const response = await fetch(`/api/messages/${conversation.partnerId}`, { credentials: 'include' });
-      if (response.ok) {
-        const data = await response.json();
+      // Fetch messages and connection status in parallel
+      const [msgResponse, connResponse] = await Promise.all([
+        fetch(`/api/messages/${conversation.partnerId}`, { credentials: 'include' }),
+        fetch(`/api/connections/status/${conversation.partnerId}`, { credentials: 'include' }),
+      ]);
+      
+      if (msgResponse.ok) {
+        const data = await msgResponse.json();
         setMessages(data);
         setConversations(prev => prev.map(c => 
           c.partnerId === conversation.partnerId ? { ...c, unreadCount: 0 } : c
         ));
+      }
+      
+      if (connResponse.ok) {
+        const connData = await connResponse.json();
+        setPartnerConnectionStatus(connData.status || 'none');
+      } else {
+        setPartnerConnectionStatus('none');
       }
     } catch (error) {
       console.error('Failed to fetch messages:', error);
@@ -312,22 +339,35 @@ export default function Messages() {
     }
   };
 
-  const startNewConversation = async (connection: Connection) => {
-    const partnerId = connection.profile.userId;
+  const handleUserSelect = (selectedUser: SearchUser) => {
+    // Check if already connected
+    if (selectedUser.connectionStatus === 'accepted') {
+      startConversationWithUser(selectedUser);
+    } else {
+      // Show confirmation dialog for non-connected users
+      setPendingMessageUser(selectedUser);
+      setConnectionMessage('');
+      setShowConnectionConfirm(true);
+    }
+  };
+
+  const startConversationWithUser = (selectedUser: SearchUser) => {
+    const partnerId = selectedUser.userId;
     
     const existingConv = conversations.find(c => c.partnerId === partnerId);
     if (existingConv) {
       selectConversation(existingConv);
       setShowNewMessageDialog(false);
       setActiveTab('dms');
+      setPartnerConnectionStatus(selectedUser.connectionStatus);
       return;
     }
     
     const newConv: Conversation = {
       partnerId,
-      partnerName: connection.profile.fullName,
-      partnerAvatar: connection.profile.avatarUrl,
-      partnerHeadline: connection.profile.headline,
+      partnerName: selectedUser.fullName || 'Unknown',
+      partnerAvatar: selectedUser.avatarUrl,
+      partnerHeadline: selectedUser.headline,
       lastMessage: '',
       lastMessageAt: null,
       unreadCount: 0,
@@ -339,6 +379,86 @@ export default function Messages() {
     setMessages([]);
     setShowNewMessageDialog(false);
     setActiveTab('dms');
+    setPartnerConnectionStatus(selectedUser.connectionStatus);
+  };
+
+  const handleSendConnectionAndMessage = async () => {
+    if (!pendingMessageUser) return;
+    
+    setSendingConnectionRequest(true);
+    try {
+      // Send connection request
+      const connResponse = await fetch('/api/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          recipientId: pendingMessageUser.userId,
+          message: connectionMessage || 'I would like to connect with you.',
+        }),
+      });
+      
+      if (!connResponse.ok) {
+        const error = await connResponse.json();
+        throw new Error(error.error || 'Failed to send connection request');
+      }
+      
+      toast({
+        title: 'Connection Request Sent',
+        description: `A connection request has been sent to ${pendingMessageUser.fullName}. They will need to accept it to connect.`,
+      });
+      
+      // Start conversation
+      startConversationWithUser({ ...pendingMessageUser, connectionStatus: 'pending' });
+      setShowConnectionConfirm(false);
+      setPendingMessageUser(null);
+      setConnectionMessage('');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send connection request',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingConnectionRequest(false);
+    }
+  };
+
+  const handleConnectFromChat = async () => {
+    if (!selectedConversation) return;
+    
+    setSendingConnectionRequest(true);
+    try {
+      const connResponse = await fetch('/api/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          recipientId: selectedConversation.partnerId,
+          message: 'I would like to connect with you.',
+        }),
+      });
+      
+      if (!connResponse.ok) {
+        const error = await connResponse.json();
+        throw new Error(error.error || 'Failed to send connection request');
+      }
+      
+      toast({
+        title: 'Connection Request Sent',
+        description: `A connection request has been sent to ${selectedConversation.partnerName}.`,
+      });
+      
+      setPartnerConnectionStatus('pending');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send connection request',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingConnectionRequest(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -354,10 +474,6 @@ export default function Messages() {
 
   const filteredTeamChats = teamChats.filter(c =>
     c.teamName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredConnections = connections.filter(c =>
-    c.profile.fullName.toLowerCase().includes(connectionSearch.toLowerCase())
   );
 
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0) + 
@@ -387,13 +503,15 @@ export default function Messages() {
             Communicate with your teammates and collaborators
           </p>
         </div>
-        <Dialog open={showNewMessageDialog} onOpenChange={setShowNewMessageDialog}>
+        <Dialog open={showNewMessageDialog} onOpenChange={(open) => {
+          setShowNewMessageDialog(open);
+          if (open) {
+            setUserSearchQuery('');
+            fetchSearchUsers('');
+          }
+        }}>
           <DialogTrigger asChild>
             <Button 
-              onClick={() => {
-                setShowNewMessageDialog(true);
-                fetchConnections();
-              }}
               data-testid="button-new-message"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -408,36 +526,44 @@ export default function Messages() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search connections..."
-                  value={connectionSearch}
-                  onChange={(e) => setConnectionSearch(e.target.value)}
+                  placeholder="Search people..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
                   className="pl-9"
-                  data-testid="input-search-connections"
+                  data-testid="input-search-users"
                 />
               </div>
               <ScrollArea className="h-[300px]">
-                {loadingConnections ? (
+                {loadingSearchUsers ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                   </div>
-                ) : filteredConnections.length > 0 ? (
+                ) : searchUsers.length > 0 ? (
                   <div className="space-y-2">
-                    {filteredConnections.map((connection) => (
+                    {searchUsers.map((userItem) => (
                       <div
-                        key={connection.id}
-                        onClick={() => startNewConversation(connection)}
+                        key={userItem.userId}
+                        onClick={() => handleUserSelect(userItem)}
                         className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors"
-                        data-testid={`connection-${connection.profile.userId}`}
+                        data-testid={`user-${userItem.userId}`}
                       >
                         <Avatar className="w-10 h-10 flex-shrink-0">
-                          <AvatarImage src={connection.profile.avatarUrl || undefined} />
-                          <AvatarFallback>{getInitials(connection.profile.fullName)}</AvatarFallback>
+                          <AvatarImage src={userItem.avatarUrl || undefined} />
+                          <AvatarFallback>{getInitials(userItem.fullName)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0 overflow-hidden">
-                          <p className="font-medium truncate">{connection.profile.fullName}</p>
-                          {connection.profile.headline && (
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{userItem.fullName}</p>
+                            {userItem.connectionStatus === 'accepted' && (
+                              <Badge variant="secondary" className="text-xs flex-shrink-0">Connected</Badge>
+                            )}
+                            {userItem.connectionStatus === 'pending' && (
+                              <Badge variant="outline" className="text-xs flex-shrink-0">Pending</Badge>
+                            )}
+                          </div>
+                          {userItem.headline && (
                             <p className="text-sm text-muted-foreground truncate max-w-full">
-                              {connection.profile.headline}
+                              {userItem.headline}
                             </p>
                           )}
                         </div>
@@ -448,22 +574,59 @@ export default function Messages() {
                   <div className="text-center py-8">
                     <User className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-muted-foreground text-sm">
-                      {connectionSearch ? 'No connections found' : 'No connections yet'}
+                      {userSearchQuery ? 'No people found' : 'Start typing to search...'}
                     </p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => {
-                        setShowNewMessageDialog(false);
-                        navigate('/portal/collaborators');
-                      }}
-                      data-testid="button-find-people"
-                    >
-                      Find People
-                    </Button>
                   </div>
                 )}
               </ScrollArea>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Connection confirmation dialog */}
+        <Dialog open={showConnectionConfirm} onOpenChange={setShowConnectionConfirm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send Connection Request</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-muted-foreground">
+                You are not connected with <strong>{pendingMessageUser?.fullName}</strong>. 
+                A connection request will be sent along with your message.
+              </p>
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Add a message (optional)
+                </label>
+                <Input
+                  placeholder="Hi, I'd like to connect..."
+                  value={connectionMessage}
+                  onChange={(e) => setConnectionMessage(e.target.value)}
+                  data-testid="input-connection-message"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowConnectionConfirm(false);
+                    setPendingMessageUser(null);
+                  }}
+                  data-testid="button-cancel-connection"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSendConnectionAndMessage}
+                  disabled={sendingConnectionRequest}
+                  data-testid="button-send-connection"
+                >
+                  {sendingConnectionRequest ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : null}
+                  Send Request & Message
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -662,18 +825,36 @@ export default function Messages() {
                           <AvatarFallback>{getInitials(selectedConversation.partnerName)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p 
-                            className="font-medium cursor-pointer hover:underline"
-                            onClick={() => navigate(`/portal/users/${selectedConversation.partnerId}`)}
-                          >
-                            {selectedConversation.partnerName}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p 
+                              className="font-medium cursor-pointer hover:underline"
+                              onClick={() => navigate(`/portal/users/${selectedConversation.partnerId}`)}
+                            >
+                              {selectedConversation.partnerName}
+                            </p>
+                            {partnerConnectionStatus === 'pending' && (
+                              <Badge variant="outline" className="text-xs">Pending</Badge>
+                            )}
+                          </div>
                           {selectedConversation.partnerHeadline && (
                             <p className="text-sm text-muted-foreground truncate">
                               {selectedConversation.partnerHeadline}
                             </p>
                           )}
                         </div>
+                        {partnerConnectionStatus === 'none' && (
+                          <Button 
+                            size="sm"
+                            onClick={handleConnectFromChat}
+                            disabled={sendingConnectionRequest}
+                            data-testid="button-connect-from-chat"
+                          >
+                            {sendingConnectionRequest ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : null}
+                            Connect
+                          </Button>
+                        )}
                       </>
                     )}
                     

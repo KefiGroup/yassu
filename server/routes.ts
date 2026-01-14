@@ -2408,6 +2408,63 @@ export function registerRoutes(app: Express): void {
 
   // Direct Messages API
   
+  // Search users for messaging (returns all users with connection status)
+  app.get("/api/messages/search-users", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const userId = req.session.userId;
+      const searchQuery = (req.query.q as string || '').toLowerCase().trim();
+      
+      // Get all profiles except current user
+      const profiles = await db.select()
+        .from(schema.profiles)
+        .where(sql`${schema.profiles.userId} != ${userId}`);
+      
+      // Get all connections for current user
+      const connections = await db.select()
+        .from(schema.connections)
+        .where(
+          or(
+            eq(schema.connections.requesterId, userId),
+            eq(schema.connections.recipientId, userId)
+          )
+        );
+      
+      // Build connection status map
+      const connectionMap = new Map<number, { status: string; connectionId: string }>();
+      connections.forEach(conn => {
+        const otherUserId = conn.requesterId === userId ? conn.recipientId : conn.requesterId;
+        connectionMap.set(otherUserId, { status: conn.status, connectionId: conn.id });
+      });
+      
+      // Filter and map profiles
+      let results = profiles
+        .filter(p => {
+          if (!searchQuery) return true;
+          const name = (p.fullName || '').toLowerCase();
+          const headline = (p.headline || '').toLowerCase();
+          return name.includes(searchQuery) || headline.includes(searchQuery);
+        })
+        .map(p => ({
+          userId: p.userId,
+          fullName: p.fullName,
+          avatarUrl: p.avatarUrl,
+          headline: p.headline,
+          connectionStatus: connectionMap.get(p.userId)?.status || 'none',
+          connectionId: connectionMap.get(p.userId)?.connectionId || null,
+        }))
+        .slice(0, 20); // Limit results
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Search users error:", error);
+      res.status(500).json({ error: "Failed to search users" });
+    }
+  });
+  
   // Get conversations (users with whom current user has exchanged messages)
   app.get("/api/messages/conversations", async (req: Request, res: Response) => {
     if (!req.session.userId) {
