@@ -350,6 +350,23 @@ export const directMessages = pgTable("direct_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Team group messages (like Facebook group chat)
+export const teamMessages = pgTable("team_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  teamId: uuid("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Track which team messages each user has read
+export const teamMessageReads = pgTable("team_message_reads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  teamId: uuid("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  lastReadAt: timestamp("last_read_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIdeaSchema = createInsertSchema(ideas).omit({ id: true, createdAt: true, updatedAt: true });
@@ -358,6 +375,7 @@ export const insertProjectSchema = createInsertSchema(projects).omit({ id: true,
 export const insertUniversitySchema = createInsertSchema(universities).omit({ id: true, createdAt: true });
 export const insertConnectionSchema = createInsertSchema(connections).omit({ id: true, createdAt: true, respondedAt: true });
 export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({ id: true, createdAt: true, read: true });
+export const insertTeamMessageSchema = createInsertSchema(teamMessages).omit({ id: true, createdAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -380,6 +398,9 @@ export type Connection = typeof connections.$inferSelect;
 export type InsertConnection = z.infer<typeof insertConnectionSchema>;
 export type DirectMessage = typeof directMessages.$inferSelect;
 export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;
+export type TeamMessage = typeof teamMessages.$inferSelect;
+export type InsertTeamMessage = z.infer<typeof insertTeamMessageSchema>;
+export type TeamMessageRead = typeof teamMessageReads.$inferSelect;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";
