@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { WelcomeModal } from '@/components/portal/WelcomeModal';
@@ -98,6 +100,11 @@ export default function Dashboard() {
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
   const [invitingUserId, setInvitingUserId] = useState<number | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState('');
+  const [inviteIdeaId, setInviteIdeaId] = useState<string | null>(null);
+  const [sendingInvite, setSendingInvite] = useState(false);
+  const [sentInvites, setSentInvites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     async function fetchData() {
@@ -151,27 +158,95 @@ export default function Dashboard() {
     }
   };
 
-  const handleInvite = async (inviteeId: number, ideaId: string) => {
-    setInvitingUserId(inviteeId);
+  const getInviteMessageTemplate = (name: string | null, ideaTitle: string, skills?: string[] | null) => {
+    const displayName = name || 'there';
+    const skillsText = skills && skills.length > 0 ? `Your expertise in ${skills.slice(0, 2).join(' and ')} caught my attention. ` : '';
+    
+    return `Hi ${displayName},
+
+I came across your profile and found your experience and skillsets really valuable for our project "${ideaTitle}". ${skillsText}I believe we could learn a lot from your guidance and mentorship.
+
+Would you be interested in joining us? I'd love to discuss how we can work together.
+
+Looking forward to hearing from you!`;
+  };
+
+  const handleOpenInviteDialog = (member: Profile, ideaId?: string) => {
+    setSelectedProfile(member);
+    
+    if (ideaId) {
+      const idea = myIdeas.find(i => i.id === ideaId);
+      setInviteIdeaId(ideaId);
+      setInviteMessage(getInviteMessageTemplate(member.fullName, idea?.title || 'our startup', member.skills));
+    } else if (myIdeas.length === 1) {
+      setInviteIdeaId(myIdeas[0].id);
+      setInviteMessage(getInviteMessageTemplate(member.fullName, myIdeas[0].title, member.skills));
+    } else {
+      setInviteIdeaId(null);
+      setInviteMessage('');
+    }
+    
+    setInviteDialogOpen(true);
+  };
+
+  const handleSelectIdea = (ideaId: string) => {
+    setInviteIdeaId(ideaId);
+    const idea = myIdeas.find(i => i.id === ideaId);
+    if (selectedProfile && idea) {
+      setInviteMessage(getInviteMessageTemplate(selectedProfile.fullName, idea.title, selectedProfile.skills));
+    }
+  };
+
+  const handleSendInvite = async () => {
+    if (!selectedProfile || !inviteIdeaId) return;
+    
+    setSendingInvite(true);
     try {
-      await fetch('/api/team-invites', {
+      const response = await fetch('/api/team-invites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ideaId, inviteeId }),
+        body: JSON.stringify({ 
+          ideaId: inviteIdeaId, 
+          inviteeId: selectedProfile.userId,
+          message: inviteMessage,
+        }),
       });
       
-      setPotentialMembers(prev => prev.filter(m => m.userId !== inviteeId));
-      setSelectedProfile(null);
-      toast({
-        title: 'Invite sent',
-        description: 'The person has been invited to join your team.',
+      if (response.ok) {
+        setSentInvites(prev => new Set([...prev, `${selectedProfile.userId}-${inviteIdeaId}`]));
+        setInviteDialogOpen(false);
+        setSelectedProfile(null);
+        setInviteMessage('');
+        setInviteIdeaId(null);
+        toast({
+          title: 'Invitation sent!',
+          description: `Your invitation has been sent to ${selectedProfile.fullName || 'the user'}.`,
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to send invitation');
+      }
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to send invite', 
+        variant: 'destructive' 
       });
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to send invite', variant: 'destructive' });
     } finally {
-      setInvitingUserId(null);
+      setSendingInvite(false);
     }
+  };
+
+  const handleInvite = async (inviteeId: number, ideaId: string) => {
+    const member = potentialMembers.find(m => m.userId === inviteeId);
+    if (member) {
+      handleOpenInviteDialog(member, ideaId);
+    }
+  };
+
+  const isAlreadyInvited = (userId: number, ideaId: string) => {
+    return sentInvites.has(`${userId}-${ideaId}`);
   };
 
   const stageColors: Record<string, string> = {
@@ -504,23 +579,20 @@ export default function Dashboard() {
                       size="sm"
                       className="w-full mt-3"
                       onClick={() => {
-                        if (myIdeas.length === 1) {
-                          handleInvite(member.userId, myIdeas[0].id);
-                        } else if (myIdeas.length > 1) {
-                          setSelectedProfile(member);
-                          setSelectedIdea(null);
-                        } else {
+                        if (myIdeas.length === 0) {
                           toast({
                             title: 'No ideas yet',
                             description: 'Post an idea first to invite team members.',
                             variant: 'destructive',
                           });
+                        } else {
+                          handleOpenInviteDialog(member);
                         }
                       }}
                       disabled={invitingUserId === member.userId}
                       data-testid={`button-invite-${member.userId}`}
                     >
-                      <UserPlus className="w-4 h-4 mr-2" />
+                      <Sparkles className="w-4 h-4 mr-2" />
                       Invite
                     </Button>
                   </div>
@@ -630,9 +702,16 @@ export default function Dashboard() {
         </Card>
       </motion.div>
 
-      {/* Profile Preview Dialog */}
-      <Dialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
-        <DialogContent className="max-w-md">
+      {/* Enhanced Invite Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={(open) => {
+        setInviteDialogOpen(open);
+        if (!open) {
+          setSelectedProfile(null);
+          setInviteMessage('');
+          setInviteIdeaId(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Profile</DialogTitle>
             <DialogDescription>View member details</DialogDescription>
@@ -684,40 +763,78 @@ export default function Dashboard() {
                     </a>
                   </Button>
                 )}
-                {selectedProfile.githubUrl && (
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={selectedProfile.githubUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      GitHub
-                    </a>
-                  </Button>
-                )}
               </div>
               
-              {/* Invite section if there are multiple ideas */}
-              {myIdeas.length > 0 && !joinRequests.some(r => r.requester.userId === selectedProfile.userId) && (
-                <div className="pt-4 border-t">
-                  <h4 className="font-medium text-sm mb-2">Invite to join your idea</h4>
-                  <div className="space-y-2">
-                    {myIdeas.map((idea) => (
-                      <Button
-                        key={idea.id}
-                        variant={selectedIdea === idea.id ? 'default' : 'outline'}
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => handleInvite(selectedProfile.userId, idea.id)}
-                        disabled={invitingUserId === selectedProfile.userId}
-                        data-testid={`button-invite-to-${idea.id}`}
-                      >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        {idea.title}
-                      </Button>
-                    ))}
+              {/* Invite section with idea selection and message */}
+              {myIdeas.length > 0 && (
+                <div className="pt-4 border-t space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Invite to join your idea</Label>
+                    <div className="mt-2 space-y-2">
+                      {myIdeas.map((idea) => (
+                        <Button
+                          key={idea.id}
+                          variant={inviteIdeaId === idea.id ? 'default' : 'outline'}
+                          size="sm"
+                          className="w-full justify-start gap-2"
+                          onClick={() => handleSelectIdea(idea.id)}
+                          data-testid={`button-select-idea-${idea.id}`}
+                        >
+                          <Lightbulb className="w-4 h-4" />
+                          {idea.title}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
+                  
+                  {inviteIdeaId && (
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-message" className="text-sm font-medium">
+                        Personalized Message
+                      </Label>
+                      <Textarea
+                        id="invite-message"
+                        value={inviteMessage}
+                        onChange={(e) => setInviteMessage(e.target.value)}
+                        placeholder="Write a personalized message..."
+                        className="min-h-[150px] text-sm"
+                        data-testid="textarea-invite-message"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        This message will be included in the email invitation.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setInviteDialogOpen(false)}
+              data-testid="button-cancel-invite"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendInvite}
+              disabled={sendingInvite || !inviteIdeaId || !inviteMessage.trim()}
+              data-testid="button-send-invite"
+            >
+              {sendingInvite ? (
+                <>
+                  <span className="animate-spin mr-2">&#9696;</span>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Send Invitation
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

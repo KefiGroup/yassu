@@ -1443,6 +1443,14 @@ export default function IdeaDetail() {
                     Find Team Members
                   </Button>
                   <Button
+                    onClick={() => navigate(`/portal/mvp-builder?ideaId=${idea.id}`)}
+                    variant="outline"
+                    data-testid="button-mvp-builder"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    MVP Builder
+                  </Button>
+                  <Button
                     onClick={async () => {
                       // Track referral in Yassu database
                       try {
@@ -1894,42 +1902,52 @@ export default function IdeaDetail() {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Create a professional pitch deck to present your startup to investors.
               </p>
-              <Button
-                onClick={async () => {
-                  if (!idea) return;
-                  try {
-                    await apiRequest('/api/referrals/track', {
-                      method: 'POST',
-                      body: JSON.stringify({
-                        platform: 'manus',
-                        ideaId: idea.id,
-                        ideaTitle: idea.title,
-                        actionType: 'pitch_deck',
-                      }),
-                    });
-                  } catch (e) {
-                    console.error('Failed to track referral:', e);
-                  }
-                  const fundingPitch = businessPlan?.sections?.fundingPitch || '';
-                  const context = {
-                    source: 'yassu',
-                    ref: user?.email || 'yassu-platform',
-                    project: idea.title,
-                    task: 'Create a professional pitch deck presentation',
-                    problem: idea.problem,
-                    solution: idea.solution || '',
-                    users: idea.targetUser || '',
-                    funding_strategy: fundingPitch.substring(0, 500),
-                  };
-                  const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
-                  window.open(manusUrl, '_blank');
-                }}
-                className="bg-gradient-to-r from-amber-500 to-orange-500"
-                data-testid="button-build-pitch-deck-manus"
-              >
-                <Presentation className="w-4 h-4 mr-2" />
-                Build Pitch Deck with Manus AI
-              </Button>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <Button
+                  onClick={() => navigate(`/portal/pitch-deck?ideaId=${idea?.id}`)}
+                  variant="outline"
+                  data-testid="button-pitch-deck-generator"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Pitch Deck Generator
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!idea) return;
+                    try {
+                      await apiRequest('/api/referrals/track', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                          platform: 'manus',
+                          ideaId: idea.id,
+                          ideaTitle: idea.title,
+                          actionType: 'pitch_deck',
+                        }),
+                      });
+                    } catch (e) {
+                      console.error('Failed to track referral:', e);
+                    }
+                    const fundingPitch = businessPlan?.sections?.fundingPitch || '';
+                    const context = {
+                      source: 'yassu',
+                      ref: user?.email || 'yassu-platform',
+                      project: idea.title,
+                      task: 'Create a professional pitch deck presentation',
+                      problem: idea.problem,
+                      solution: idea.solution || '',
+                      users: idea.targetUser || '',
+                      funding_strategy: fundingPitch.substring(0, 500),
+                    };
+                    const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+                    window.open(manusUrl, '_blank');
+                  }}
+                  className="bg-gradient-to-r from-amber-500 to-orange-500"
+                  data-testid="button-build-pitch-deck-manus"
+                >
+                  <Presentation className="w-4 h-4 mr-2" />
+                  Build Pitch Deck with Manus AI
+                </Button>
+              </div>
             </div>
             
             {businessPlan?.sections?.fundingPitch && (
