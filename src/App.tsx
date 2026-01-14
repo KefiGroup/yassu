@@ -40,6 +40,8 @@ const Collaborators = lazy(() => import("./pages/portal/Collaborators"));
 const UserProfile = lazy(() => import("./pages/portal/UserProfile"));
 const ReferralDashboard = lazy(() => import("./pages/portal/ReferralDashboard"));
 const Pipeline = lazy(() => import("./pages/portal/Pipeline"));
+const MVPBuilder = lazy(() => import("./pages/portal/MVPBuilder"));
+const PitchDeck = lazy(() => import("./pages/portal/PitchDeck"));
 const Admin = lazy(() => import("./pages/Admin"));
 
 const queryClient = new QueryClient();
@@ -111,6 +113,8 @@ const App = () => {
                   <Route path="users/:userId" element={<UserProfile />} />
                   <Route path="referral-dashboard" element={<ReferralDashboard />} />
                   <Route path="pipeline" element={<Pipeline />} />
+                  <Route path="mvp-builder" element={<MVPBuilder />} />
+                  <Route path="pitch-deck" element={<PitchDeck />} />
                   <Route path="admin" element={<Admin />} />
                 </Route>
                 

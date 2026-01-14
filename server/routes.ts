@@ -3028,4 +3028,309 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to send team message" });
     }
   });
+
+  // ==========================================
+  // AI MVP Builder & Pitch Deck APIs
+  // ==========================================
+
+  // MVP Builder Chat API with streaming
+  app.post("/api/ai/mvp-chat", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { ideaId, message, conversationHistory } = req.body;
+
+      if (!ideaId || !message) {
+        return res.status(400).json({ error: "Idea ID and message are required" });
+      }
+
+      // Get idea and business plan context
+      const idea = await storage.getIdea(ideaId);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      // Get business plan sections if available
+      const workflowSections = await db.select()
+        .from(schema.workflowSections)
+        .where(eq(schema.workflowSections.ideaId, ideaId));
+
+      const businessPlanContext = workflowSections.length > 0
+        ? workflowSections.map(s => `## ${s.sectionKey}\n${s.content}`).join("\n\n")
+        : "";
+
+      const systemPrompt = `You are an expert product development AI assistant for Yassu, "The New-Age Marketplace for University-Native Company Creation."
+
+Your role is to help university student founders build their MVP (Minimum Viable Product). You have full access to their startup idea and business plan.
+
+STARTUP CONTEXT:
+- Title: ${idea.title}
+- Problem: ${idea.problem}
+- Solution: ${idea.solution || "To be defined"}
+- Target Users: ${idea.targetUser || "To be identified"}
+- Why Now: ${idea.whyNow || "Not specified"}
+
+${businessPlanContext ? `BUSINESS PLAN ANALYSIS:\n${businessPlanContext}` : ""}
+
+Your expertise includes:
+1. **Feature Prioritization** - Help identify P0/P1/P2 features, what to build first
+2. **Technical Specifications** - Write detailed specs that developers can implement
+3. **Tech Stack Recommendations** - Suggest appropriate technologies based on requirements
+4. **Database Design** - Create schema designs and data models
+5. **User Stories** - Write clear, actionable user stories and acceptance criteria
+6. **Development Roadmap** - Create realistic timelines and milestones
+7. **API Design** - Design RESTful or GraphQL APIs
+8. **UI/UX Guidelines** - Provide design recommendations
+
+When providing specifications:
+- Use markdown formatting with clear headers
+- Include code snippets when helpful (use proper code blocks)
+- Provide actionable, implementable details
+- Consider the founder is a university student with limited resources
+- Output should be portable to Manus.AI or similar tools for actual building
+
+Be concise, practical, and encouraging. Focus on what's achievable for a student founder.`;
+
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const client = new OpenAI({ apiKey, baseURL });
+
+      const messages = [
+        { role: "system" as const, content: systemPrompt },
+        ...conversationHistory.map((m: any) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+        { role: "user" as const, content: message },
+      ];
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        max_tokens: 4096,
+        stream: true,
+      });
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (error) {
+      console.error("MVP chat error:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to process chat" });
+      }
+    }
+  });
+
+  // Pitch Deck Generator API
+  app.post("/api/ai/pitch-deck", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { ideaId } = req.body;
+
+      if (!ideaId) {
+        return res.status(400).json({ error: "Idea ID is required" });
+      }
+
+      const idea = await storage.getIdea(ideaId);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      // Get business plan sections
+      const workflowSections = await db.select()
+        .from(schema.workflowSections)
+        .where(eq(schema.workflowSections.ideaId, ideaId));
+
+      const businessPlanContext = workflowSections.length > 0
+        ? workflowSections.map(s => `## ${s.sectionKey}\n${s.content}`).join("\n\n")
+        : "";
+
+      const prompt = `You are an expert pitch deck creator for startups. Create a compelling 10-slide pitch deck for this startup idea.
+
+STARTUP IDEA:
+- Title: ${idea.title}
+- Problem: ${idea.problem}
+- Solution: ${idea.solution || "To be defined based on problem analysis"}
+- Target Users: ${idea.targetUser || "To be identified"}
+- Why Now: ${idea.whyNow || ""}
+
+${businessPlanContext ? `BUSINESS PLAN CONTEXT:\n${businessPlanContext}` : ""}
+
+Create a JSON response with exactly 10 slides. Each slide should have:
+- title: The slide title
+- content: Markdown formatted content for the slide (2-5 bullet points or a short paragraph)
+- speakerNotes: What the presenter should say (1-2 sentences)
+
+The 10 slides should be:
+1. Title Slide - Company name, tagline, one-liner
+2. The Problem - Pain point you're solving
+3. The Solution - Your unique approach
+4. Market Opportunity - TAM/SAM/SOM, market trends
+5. Product - Key features, screenshots placeholder description
+6. Business Model - How you make money
+7. Traction - Current progress, milestones achieved
+8. Competition - Competitive landscape, your differentiation
+9. The Team - Founder backgrounds, why you're qualified
+10. The Ask - Funding amount, use of funds, next steps
+
+Format your response as valid JSON:
+{
+  "slides": [
+    {"title": "...", "content": "...", "speakerNotes": "..."},
+    ...
+  ]
+}
+
+Make the content compelling, specific to this startup, and investor-ready. Use markdown formatting (bold, bullets, headers) in the content.`;
+
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const client = new OpenAI({ apiKey, baseURL });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 8192,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "Failed to generate pitch deck" });
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Pitch deck generation error:", error);
+      res.status(500).json({ error: "Failed to generate pitch deck" });
+    }
+  });
+
+  // Pitch Deck Chat API for refining slides
+  app.post("/api/ai/pitch-chat", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { ideaId, message, currentSlide, slideIndex, conversationHistory } = req.body;
+
+      if (!ideaId || !message) {
+        return res.status(400).json({ error: "Idea ID and message are required" });
+      }
+
+      const idea = await storage.getIdea(ideaId);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      const systemPrompt = `You are an expert pitch deck consultant helping a university student founder refine their pitch deck slides.
+
+STARTUP: ${idea.title}
+PROBLEM: ${idea.problem}
+SOLUTION: ${idea.solution || "To be defined"}
+
+${currentSlide ? `CURRENT SLIDE (${slideIndex + 1}):
+Title: ${currentSlide.title}
+Content: ${currentSlide.content}
+Speaker Notes: ${currentSlide.speakerNotes || "None"}` : ""}
+
+Your role:
+1. Help improve the slide content based on the user's request
+2. Make suggestions more compelling, clear, and investor-ready
+3. When providing an updated slide, include it in your response
+
+If you're updating the slide, include a JSON block at the end of your response like this:
+\`\`\`json:updatedSlide
+{"title": "...", "content": "...", "speakerNotes": "..."}
+\`\`\`
+
+Be concise and actionable in your feedback.`;
+
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const client = new OpenAI({ apiKey, baseURL });
+
+      const messages = [
+        { role: "system" as const, content: systemPrompt },
+        ...conversationHistory.map((m: any) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+        { role: "user" as const, content: message },
+      ];
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        max_tokens: 2048,
+        stream: true,
+      });
+
+      let fullContent = "";
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+          fullContent += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      // Check if there's an updated slide in the response
+      const slideMatch = fullContent.match(/```json:updatedSlide\n([\s\S]*?)```/);
+      if (slideMatch) {
+        try {
+          const updatedSlide = JSON.parse(slideMatch[1]);
+          res.write(`data: ${JSON.stringify({ updatedSlide })}\n\n`);
+        } catch {}
+      }
+
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (error) {
+      console.error("Pitch chat error:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to process chat" });
+      }
+    }
+  });
 }
