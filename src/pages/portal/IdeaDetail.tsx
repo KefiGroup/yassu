@@ -218,6 +218,9 @@ export default function IdeaDetail() {
   
   // AI Team Role Suggester
   const [showRoleSuggester, setShowRoleSuggester] = useState(false);
+  
+  // Team for this idea
+  const [ideaTeam, setIdeaTeam] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     async function fetchIdea() {
@@ -281,6 +284,19 @@ export default function IdeaDetail() {
           }
         } catch (e) {
           // No business plan yet
+        }
+        
+        // Fetch team for this idea
+        try {
+          const teamResponse = await fetch(`/api/teams/by-idea/${ideaId}`);
+          if (teamResponse.ok) {
+            const teamData = await teamResponse.json();
+            if (teamData.team) {
+              setIdeaTeam(teamData.team);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch team:', e);
         }
       } catch (error) {
         console.error('Failed to fetch idea:', error);
@@ -1662,23 +1678,41 @@ export default function IdeaDetail() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-muted-foreground" />
+            {ideaTeam ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{ideaTeam.name}</h3>
+                <p className="text-muted-foreground mb-4">
+                  Manage your team, find advisors, and invite collaborators.
+                </p>
+                <Button 
+                  onClick={() => navigate(`/portal/teams/${ideaTeam.id}`)}
+                  data-testid="button-go-to-team"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Go to My Team
+                </Button>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Your Team</h3>
-              <p className="text-muted-foreground mb-4">
-                Team member management coming soon. Use the Find Team Members button to discover collaborators based on required skills.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/portal/collaborators')}
-                data-testid="button-browse-collaborators"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Browse Collaborators
-              </Button>
-            </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">No Team Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create a team for this project to start inviting collaborators and advisors.
+                </p>
+                <Button 
+                  onClick={() => navigate('/portal/teams/new')}
+                  data-testid="button-create-team"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Create Team
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

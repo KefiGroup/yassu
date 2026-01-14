@@ -819,6 +819,29 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  app.get("/api/teams/by-idea/:ideaId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const { ideaId } = req.params;
+      const team = await db.select()
+        .from(schema.teams)
+        .where(eq(schema.teams.ideaId, ideaId))
+        .limit(1);
+      
+      if (team.length === 0) {
+        return res.json({ team: null });
+      }
+      
+      res.json({ team: team[0] });
+    } catch (error) {
+      console.error("Failed to fetch team by idea:", error);
+      res.status(500).json({ error: "Failed to fetch team" });
+    }
+  });
+
   app.get("/api/teams/my", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
