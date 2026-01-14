@@ -893,6 +893,7 @@ export function registerRoutes(app: Express): void {
       const creator = await db.select({
         fullName: schema.profiles.fullName,
         avatarUrl: schema.profiles.avatarUrl,
+        headline: schema.profiles.headline,
       })
         .from(schema.profiles)
         .where(eq(schema.profiles.userId, team.createdBy))
@@ -910,6 +911,7 @@ export function registerRoutes(app: Express): void {
           ...team,
           creatorName: creator[0]?.fullName,
           creatorAvatar: creator[0]?.avatarUrl,
+          creatorHeadline: creator[0]?.headline,
           ideaTitle,
         },
         members,
