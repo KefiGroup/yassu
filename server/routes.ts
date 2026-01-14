@@ -906,6 +906,72 @@ export function registerRoutes(app: Express): void {
         ideaTitle = idea?.title;
       }
       
+      // Get existing member user IDs
+      const existingMemberIds = new Set([team.createdBy, ...members.map(m => m.userId)]);
+      
+      // Get recommended advisors (profiles with advisor badges, not already team members)
+      let recommendedAdvisors: any[] = [];
+      const advisorBadges = await db.select({
+        userId: schema.profileBadges.userId,
+        fullName: schema.profiles.fullName,
+        avatarUrl: schema.profiles.avatarUrl,
+        headline: schema.profiles.headline,
+        skills: schema.profiles.skills,
+      })
+        .from(schema.profileBadges)
+        .leftJoin(schema.profiles, eq(schema.profileBadges.userId, schema.profiles.userId))
+        .where(eq(schema.profileBadges.badgeType, 'advisor'))
+        .limit(10);
+      
+      recommendedAdvisors = advisorBadges
+        .filter(a => !existingMemberIds.has(a.userId))
+        .slice(0, 5);
+      
+      // Get recommended collaborators (other users with relevant skills, not already team members)
+      let recommendedCollaborators: any[] = [];
+      const allProfiles = await db.select({
+        userId: schema.profiles.userId,
+        fullName: schema.profiles.fullName,
+        avatarUrl: schema.profiles.avatarUrl,
+        headline: schema.profiles.headline,
+        skills: schema.profiles.skills,
+      })
+        .from(schema.profiles)
+        .limit(20);
+      
+      recommendedCollaborators = allProfiles
+        .filter(p => !existingMemberIds.has(p.userId))
+        .slice(0, 5);
+      
+      // Get join requests for this team's idea
+      let joinRequests: any[] = [];
+      if (team.ideaId && isCreator) {
+        const requests = await db.select({
+          id: schema.joinRequests.id,
+          userId: schema.joinRequests.userId,
+          message: schema.joinRequests.message,
+          role: schema.joinRequests.role,
+          motivation: schema.joinRequests.motivation,
+          experience: schema.joinRequests.experience,
+          status: schema.joinRequests.status,
+          createdAt: schema.joinRequests.createdAt,
+          fullName: schema.profiles.fullName,
+          avatarUrl: schema.profiles.avatarUrl,
+          headline: schema.profiles.headline,
+        })
+          .from(schema.joinRequests)
+          .leftJoin(schema.profiles, eq(schema.joinRequests.userId, schema.profiles.userId))
+          .where(
+            and(
+              eq(schema.joinRequests.ideaId, team.ideaId),
+              eq(schema.joinRequests.status, 'pending')
+            )
+          )
+          .orderBy(desc(schema.joinRequests.createdAt));
+        
+        joinRequests = requests;
+      }
+      
       res.json({
         team: {
           ...team,
@@ -915,6 +981,9 @@ export function registerRoutes(app: Express): void {
           ideaTitle,
         },
         members,
+        recommendedAdvisors,
+        recommendedCollaborators,
+        joinRequests,
       });
     } catch (error) {
       console.error("Failed to fetch team:", error);

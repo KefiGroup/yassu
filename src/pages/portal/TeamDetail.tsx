@@ -20,6 +20,9 @@ import {
   Star,
   Briefcase,
   ExternalLink,
+  Check,
+  X,
+  Clock,
 } from 'lucide-react';
 
 interface TeamMember {
@@ -32,6 +35,28 @@ interface TeamMember {
   headline: string | null;
   skills?: string[] | null;
   interests?: string[] | null;
+}
+
+interface RecommendedPerson {
+  userId: number;
+  fullName: string | null;
+  avatarUrl: string | null;
+  headline: string | null;
+  skills?: string[] | null;
+}
+
+interface JoinRequest {
+  id: string;
+  userId: number;
+  message: string | null;
+  role: string | null;
+  motivation: string | null;
+  experience: string | null;
+  status: string | null;
+  createdAt: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  headline: string | null;
 }
 
 interface Team {
@@ -164,8 +189,12 @@ export default function TeamDetail() {
   const { toast } = useToast();
   const [team, setTeam] = useState<Team | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [recommendedAdvisors, setRecommendedAdvisors] = useState<RecommendedPerson[]>([]);
+  const [recommendedCollaborators, setRecommendedCollaborators] = useState<RecommendedPerson[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [processingRequest, setProcessingRequest] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchTeam() {
@@ -177,6 +206,9 @@ export default function TeamDetail() {
           const data = await response.json();
           setTeam(data.team);
           setMembers(data.members || []);
+          setRecommendedAdvisors(data.recommendedAdvisors || []);
+          setRecommendedCollaborators(data.recommendedCollaborators || []);
+          setJoinRequests(data.joinRequests || []);
         } else if (response.status === 404) {
           setError('Team not found');
           toast({
@@ -254,6 +286,44 @@ export default function TeamDetail() {
     m.role.toLowerCase() === 'member' ||
     (!['advisor', 'founder'].includes(m.role.toLowerCase()))
   );
+
+  const handleJoinRequestAction = async (requestId: string, action: 'approved' | 'rejected') => {
+    setProcessingRequest(requestId);
+    try {
+      const response = await fetch(`/api/join-requests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: action }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: action === 'approved' ? 'Request Approved' : 'Request Rejected',
+          description: action === 'approved' 
+            ? 'The member has been added to your team.' 
+            : 'The join request has been declined.',
+        });
+        // Refresh team data
+        const teamResponse = await fetch(`/api/teams/${id}`, { credentials: 'include' });
+        if (teamResponse.ok) {
+          const data = await teamResponse.json();
+          setMembers(data.members || []);
+          setJoinRequests(data.joinRequests || []);
+        }
+      } else {
+        throw new Error('Failed to process request');
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to process the join request.',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessingRequest(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -350,81 +420,290 @@ export default function TeamDetail() {
           <MemberCard member={founder} navigate={navigate} />
         </div>
 
-        {advisors.length > 0 && (
-          <>
-            <Separator />
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <Separator />
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-500" />
                 Advisors
-                <Badge variant="secondary" className="ml-2">{advisors.length}</Badge>
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {advisors.map((member) => (
-                  <MemberCard 
-                    key={member.id} 
-                    member={{ ...member, isCreator: false }} 
-                    navigate={navigate} 
-                  />
-                ))}
-              </div>
+              </CardTitle>
+              {isCreator && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => navigate('/portal/advisors')}
+                  data-testid="button-browse-advisors"
+                >
+                  <UserPlus className="w-4 h-4 mr-1" />
+                  Browse All
+                </Button>
+              )}
             </div>
-          </>
-        )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {advisors.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Confirmed Advisors ({advisors.length})</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {advisors.map((member) => (
+                    <MemberCard 
+                      key={member.id} 
+                      member={{ ...member, isCreator: false }} 
+                      navigate={navigate} 
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {isCreator && recommendedAdvisors.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Recommended Advisors to Invite</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {recommendedAdvisors.map((person) => (
+                    <Card key={person.userId} className="hover:shadow-md transition-all border-dashed">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          <Avatar 
+                            className="w-12 h-12 cursor-pointer"
+                            onClick={() => navigate(`/portal/users/${person.userId}`)}
+                          >
+                            <AvatarImage src={person.avatarUrl || undefined} />
+                            <AvatarFallback>{getInitials(person.fullName)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h4 
+                              className="font-semibold cursor-pointer hover:text-primary truncate"
+                              onClick={() => navigate(`/portal/users/${person.userId}`)}
+                            >
+                              {person.fullName || 'User'}
+                            </h4>
+                            <Badge variant="outline" className="mt-1">
+                              <Star className="w-3 h-3 mr-1" />
+                              Advisor Badge
+                            </Badge>
+                            {person.headline && (
+                              <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{person.headline}</p>
+                            )}
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="default"
+                            onClick={() => navigate(`/portal/users/${person.userId}`)}
+                            data-testid={`button-invite-advisor-${person.userId}`}
+                          >
+                            View Profile
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {advisors.length === 0 && recommendedAdvisors.length === 0 && (
+              <div className="text-center py-6 text-muted-foreground">
+                <Star className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p>No advisors yet. Browse the marketplace to find experts for your team.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {collaborators.length > 0 && (
-          <>
-            <Separator />
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <Separator />
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
                 <Briefcase className="w-5 h-5 text-blue-500" />
                 Collaborators
-                <Badge variant="secondary" className="ml-2">{collaborators.length}</Badge>
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {collaborators.map((member) => (
-                  <MemberCard 
-                    key={member.id} 
-                    member={{ ...member, isCreator: false }} 
-                    navigate={navigate} 
-                  />
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {advisors.length === 0 && collaborators.length === 0 && (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center">
-              <UserPlus className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No team members yet</h3>
-              <p className="text-muted-foreground mb-4">
-                {isCreator 
-                  ? 'Invite collaborators and advisors to grow your team!'
-                  : 'The founder hasn\'t added any team members yet.'}
-              </p>
+              </CardTitle>
               {isCreator && (
-                <div className="flex items-center justify-center gap-3">
-                  <Button
-                    onClick={() => navigate('/portal/collaborators')}
-                    data-testid="button-find-collaborators-empty"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Find Collaborators
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate('/portal/advisors')}
-                    data-testid="button-find-advisors-empty"
-                  >
-                    <Star className="w-4 h-4 mr-2" />
-                    Find Advisors
-                  </Button>
-                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => navigate('/portal/collaborators')}
+                  data-testid="button-browse-collaborators"
+                >
+                  <UserPlus className="w-4 h-4 mr-1" />
+                  Browse All
+                </Button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {collaborators.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Confirmed Collaborators ({collaborators.length})</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {collaborators.map((member) => (
+                    <MemberCard 
+                      key={member.id} 
+                      member={{ ...member, isCreator: false }} 
+                      navigate={navigate} 
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {isCreator && recommendedCollaborators.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Recommended Collaborators to Invite</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {recommendedCollaborators.map((person) => (
+                    <Card key={person.userId} className="hover:shadow-md transition-all border-dashed">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          <Avatar 
+                            className="w-12 h-12 cursor-pointer"
+                            onClick={() => navigate(`/portal/users/${person.userId}`)}
+                          >
+                            <AvatarImage src={person.avatarUrl || undefined} />
+                            <AvatarFallback>{getInitials(person.fullName)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h4 
+                              className="font-semibold cursor-pointer hover:text-primary truncate"
+                              onClick={() => navigate(`/portal/users/${person.userId}`)}
+                            >
+                              {person.fullName || 'User'}
+                            </h4>
+                            {person.headline && (
+                              <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{person.headline}</p>
+                            )}
+                            {person.skills && person.skills.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {person.skills.slice(0, 2).map((skill, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">{skill}</Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="default"
+                            onClick={() => navigate(`/portal/users/${person.userId}`)}
+                            data-testid={`button-invite-collaborator-${person.userId}`}
+                          >
+                            View Profile
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {collaborators.length === 0 && recommendedCollaborators.length === 0 && (
+              <div className="text-center py-6 text-muted-foreground">
+                <Briefcase className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p>No collaborators yet. Browse the marketplace to find team members.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {isCreator && (
+          <>
+            <Separator />
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-orange-500" />
+                  Team Join Requests
+                  {joinRequests.length > 0 && (
+                    <Badge variant="default" className="ml-2">{joinRequests.length}</Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {joinRequests.length > 0 ? (
+                  <div className="space-y-4">
+                    {joinRequests.map((request) => (
+                      <Card key={request.id} className="bg-muted/30">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-4">
+                            <Avatar 
+                              className="w-12 h-12 cursor-pointer"
+                              onClick={() => navigate(`/portal/users/${request.userId}`)}
+                            >
+                              <AvatarImage src={request.avatarUrl || undefined} />
+                              <AvatarFallback>{getInitials(request.fullName)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 
+                                  className="font-semibold cursor-pointer hover:text-primary"
+                                  onClick={() => navigate(`/portal/users/${request.userId}`)}
+                                >
+                                  {request.fullName || 'User'}
+                                </h4>
+                                {request.role && (
+                                  <Badge variant="outline">{request.role}</Badge>
+                                )}
+                              </div>
+                              {request.headline && (
+                                <p className="text-sm text-muted-foreground mb-2">{request.headline}</p>
+                              )}
+                              {request.motivation && (
+                                <div className="bg-background rounded p-2 mb-2">
+                                  <p className="text-sm font-medium">Why they want to join:</p>
+                                  <p className="text-sm text-muted-foreground">{request.motivation}</p>
+                                </div>
+                              )}
+                              {request.experience && (
+                                <div className="text-sm">
+                                  <span className="font-medium">Experience: </span>
+                                  <span className="text-muted-foreground">{request.experience}</span>
+                                </div>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-2">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                Requested {formatDate(request.createdAt)}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="default"
+                                onClick={() => handleJoinRequestAction(request.id, 'approved')}
+                                disabled={processingRequest === request.id}
+                                data-testid={`button-approve-${request.id}`}
+                              >
+                                {processingRequest === request.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Check className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleJoinRequestAction(request.id, 'rejected')}
+                                disabled={processingRequest === request.id}
+                                data-testid={`button-reject-${request.id}`}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Clock className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p>No pending join requests</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
         )}
       </motion.div>
     </div>
