@@ -26,6 +26,7 @@ const IdeaDetail = lazy(() => import("./pages/portal/IdeaDetail"));
 const MyIdeas = lazy(() => import("./pages/portal/MyIdeas"));
 const SmartMatching = lazy(() => import("./pages/portal/SmartMatching"));
 const Teams = lazy(() => import("./pages/portal/Teams"));
+const TeamDetail = lazy(() => import("./pages/portal/TeamDetail"));
 const Workflows = lazy(() => import("./pages/portal/Workflows"));
 const WorkflowRun = lazy(() => import("./pages/portal/WorkflowRun"));
 const Projects = lazy(() => import("./pages/portal/Projects"));
@@ -97,6 +98,7 @@ const App = () => {
                   <Route path="my-ideas" element={<MyIdeas />} />
                   <Route path="projects" element={<Projects />} />
                   <Route path="teams" element={<Teams />} />
+                  <Route path="teams/:id" element={<TeamDetail />} />
                   <Route path="workflows" element={<Workflows />} />
                   <Route path="workflows/:id" element={<WorkflowRun />} />
                   <Route path="resources" element={<Resources />} />

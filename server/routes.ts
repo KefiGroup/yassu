@@ -2,7 +2,7 @@ import express, { Request, Response, Express } from "express";
 import { storage } from "./storage";
 import { pool, db } from "./db";
 import * as schema from "../shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
@@ -843,6 +843,80 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Failed to fetch user teams:", error);
       res.status(500).json({ error: "Failed to fetch your teams" });
+    }
+  });
+
+  app.get("/api/teams/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const teamId = req.params.id;
+      const userId = req.session.userId;
+      const team = await storage.getTeam(teamId);
+      
+      if (!team) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      
+      // Check if user is authorized to view this team (creator, member, or admin)
+      const isCreator = team.createdBy === userId;
+      const isMember = await db.select()
+        .from(schema.teamMembers)
+        .where(sql`${schema.teamMembers.teamId} = ${teamId} AND ${schema.teamMembers.userId} = ${userId}`)
+        .limit(1);
+      const isAdmin = await db.select()
+        .from(schema.userRoles)
+        .where(sql`${schema.userRoles.userId} = ${userId} AND ${schema.userRoles.role} = 'admin'`)
+        .limit(1);
+      
+      if (!isCreator && isMember.length === 0 && isAdmin.length === 0) {
+        return res.status(403).json({ error: "You don't have access to this team" });
+      }
+      
+      // Get team members
+      const members = await db.select({
+        id: schema.teamMembers.id,
+        userId: schema.teamMembers.userId,
+        role: schema.teamMembers.role,
+        joinedAt: schema.teamMembers.joinedAt,
+        fullName: schema.profiles.fullName,
+        avatarUrl: schema.profiles.avatarUrl,
+        headline: schema.profiles.headline,
+      })
+        .from(schema.teamMembers)
+        .leftJoin(schema.profiles, eq(schema.teamMembers.userId, schema.profiles.userId))
+        .where(eq(schema.teamMembers.teamId, teamId));
+      
+      // Get creator info
+      const creator = await db.select({
+        fullName: schema.profiles.fullName,
+        avatarUrl: schema.profiles.avatarUrl,
+      })
+        .from(schema.profiles)
+        .where(eq(schema.profiles.userId, team.createdBy))
+        .limit(1);
+      
+      // Get linked idea title
+      let ideaTitle = null;
+      if (team.ideaId) {
+        const idea = await storage.getIdea(team.ideaId);
+        ideaTitle = idea?.title;
+      }
+      
+      res.json({
+        team: {
+          ...team,
+          creatorName: creator[0]?.fullName,
+          creatorAvatar: creator[0]?.avatarUrl,
+          ideaTitle,
+        },
+        members,
+      });
+    } catch (error) {
+      console.error("Failed to fetch team:", error);
+      res.status(500).json({ error: "Failed to fetch team details" });
     }
   });
 
@@ -2258,6 +2332,219 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Cron weekly digest error:", error);
       res.status(500).json({ error: "Failed to send weekly digest" });
+    }
+  });
+
+  // Direct Messages API
+  
+  // Get conversations (users with whom current user has exchanged messages)
+  app.get("/api/messages/conversations", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const userId = req.session.userId;
+      
+      // Get all unique users the current user has messaged with
+      const sentMessages = await db.select({
+        recipientId: schema.directMessages.recipientId,
+      })
+        .from(schema.directMessages)
+        .where(eq(schema.directMessages.senderId, userId))
+        .groupBy(schema.directMessages.recipientId);
+      
+      const receivedMessages = await db.select({
+        senderId: schema.directMessages.senderId,
+      })
+        .from(schema.directMessages)
+        .where(eq(schema.directMessages.recipientId, userId))
+        .groupBy(schema.directMessages.senderId);
+      
+      // Combine unique user IDs
+      const userIds = new Set([
+        ...sentMessages.map(m => m.recipientId),
+        ...receivedMessages.map(m => m.senderId),
+      ]);
+      
+      // Get user profiles and last message for each conversation
+      const conversations = await Promise.all(
+        Array.from(userIds).map(async (partnerId) => {
+          const profile = await db.select()
+            .from(schema.profiles)
+            .where(eq(schema.profiles.userId, partnerId))
+            .limit(1);
+          
+          // Get last message
+          const lastMessage = await db.select()
+            .from(schema.directMessages)
+            .where(
+              sql`(${schema.directMessages.senderId} = ${userId} AND ${schema.directMessages.recipientId} = ${partnerId})
+                  OR (${schema.directMessages.senderId} = ${partnerId} AND ${schema.directMessages.recipientId} = ${userId})`
+            )
+            .orderBy(desc(schema.directMessages.createdAt))
+            .limit(1);
+          
+          // Count unread messages
+          const unreadCount = await db.select({ count: sql<number>`count(*)` })
+            .from(schema.directMessages)
+            .where(
+              sql`${schema.directMessages.senderId} = ${partnerId} 
+                  AND ${schema.directMessages.recipientId} = ${userId} 
+                  AND ${schema.directMessages.read} = false`
+            );
+          
+          return {
+            partnerId,
+            partnerName: profile[0]?.fullName || 'Unknown',
+            partnerAvatar: profile[0]?.avatarUrl,
+            partnerHeadline: profile[0]?.headline,
+            lastMessage: lastMessage[0]?.content || '',
+            lastMessageAt: lastMessage[0]?.createdAt,
+            unreadCount: Number(unreadCount[0]?.count || 0),
+          };
+        })
+      );
+      
+      // Sort by last message time
+      conversations.sort((a, b) => {
+        if (!a.lastMessageAt) return 1;
+        if (!b.lastMessageAt) return -1;
+        return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+      });
+      
+      res.json(conversations);
+    } catch (error) {
+      console.error("Failed to fetch conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+  
+  // Get messages with a specific user
+  app.get("/api/messages/:userId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const currentUserId = req.session.userId;
+      const partnerId = parseInt(req.params.userId);
+      
+      if (isNaN(partnerId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      // Get messages between the two users
+      const messages = await db.select()
+        .from(schema.directMessages)
+        .where(
+          sql`(${schema.directMessages.senderId} = ${currentUserId} AND ${schema.directMessages.recipientId} = ${partnerId})
+              OR (${schema.directMessages.senderId} = ${partnerId} AND ${schema.directMessages.recipientId} = ${currentUserId})`
+        )
+        .orderBy(schema.directMessages.createdAt);
+      
+      // Mark messages as read
+      await db.update(schema.directMessages)
+        .set({ read: true })
+        .where(
+          sql`${schema.directMessages.senderId} = ${partnerId} 
+              AND ${schema.directMessages.recipientId} = ${currentUserId} 
+              AND ${schema.directMessages.read} = false`
+        );
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+  
+  // Send a message
+  app.post("/api/messages", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const { recipientId, content } = req.body;
+      
+      if (!recipientId || !content) {
+        return res.status(400).json({ error: "Recipient and content are required" });
+      }
+      
+      // Check if recipient exists
+      const recipient = await db.select()
+        .from(schema.users)
+        .where(eq(schema.users.id, recipientId))
+        .limit(1);
+      
+      if (recipient.length === 0) {
+        return res.status(404).json({ error: "Recipient not found" });
+      }
+      
+      // Create message
+      const [message] = await db.insert(schema.directMessages)
+        .values({
+          senderId: req.session.userId,
+          recipientId: recipientId,
+          content: content.trim(),
+        })
+        .returning();
+      
+      // Send email notification
+      try {
+        const sender = await db.select()
+          .from(schema.profiles)
+          .where(eq(schema.profiles.userId, req.session.userId))
+          .limit(1);
+        
+        const recipientProfile = await db.select()
+          .from(schema.profiles)
+          .where(eq(schema.profiles.userId, recipientId))
+          .limit(1);
+        
+        if (recipientProfile[0]?.email || recipient[0]?.email) {
+          const { sendNewMessageEmail } = await import('./email');
+          await sendNewMessageEmail(
+            recipientProfile[0]?.email || recipient[0].email,
+            {
+              recipientName: recipientProfile[0]?.fullName || 'there',
+              senderName: sender[0]?.fullName || 'Someone',
+              messagePreview: content.length > 100 ? content.substring(0, 100) + '...' : content,
+              senderAvatar: sender[0]?.avatarUrl,
+            }
+          );
+        }
+      } catch (emailError) {
+        console.error("Failed to send message notification email:", emailError);
+        // Don't fail the request if email fails
+      }
+      
+      res.json(message);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+  
+  // Get unread message count
+  app.get("/api/messages/unread/count", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` })
+        .from(schema.directMessages)
+        .where(
+          sql`${schema.directMessages.recipientId} = ${req.session.userId} 
+              AND ${schema.directMessages.read} = false`
+        );
+      
+      res.json({ unreadCount: Number(result[0]?.count || 0) });
+    } catch (error) {
+      console.error("Failed to get unread count:", error);
+      res.status(500).json({ error: "Failed to get unread count" });
     }
   });
 }

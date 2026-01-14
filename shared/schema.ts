@@ -340,6 +340,16 @@ export const connections = pgTable("connections", {
   respondedAt: timestamp("responded_at"),
 });
 
+// Direct messages between users
+export const directMessages = pgTable("direct_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  recipientId: integer("recipient_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIdeaSchema = createInsertSchema(ideas).omit({ id: true, createdAt: true, updatedAt: true });
@@ -347,6 +357,7 @@ export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, creat
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUniversitySchema = createInsertSchema(universities).omit({ id: true, createdAt: true });
 export const insertConnectionSchema = createInsertSchema(connections).omit({ id: true, createdAt: true, respondedAt: true });
+export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({ id: true, createdAt: true, read: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -367,6 +378,8 @@ export type TeamInvite = typeof teamInvites.$inferSelect;
 export type IdeaWorkflowSection = typeof ideaWorkflowSections.$inferSelect;
 export type Connection = typeof connections.$inferSelect;
 export type InsertConnection = z.infer<typeof insertConnectionSchema>;
+export type DirectMessage = typeof directMessages.$inferSelect;
+export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";
