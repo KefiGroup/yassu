@@ -20,6 +20,9 @@ import {
   User,
   Plus,
   Users,
+  Check,
+  Clock,
+  ChevronRight,
 } from 'lucide-react';
 
 interface Conversation {
@@ -539,34 +542,43 @@ export default function Messages() {
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                   </div>
                 ) : searchUsers.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="divide-y divide-border">
                     {searchUsers.map((userItem) => (
                       <div
                         key={userItem.userId}
                         onClick={() => handleUserSelect(userItem)}
-                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors"
+                        className="flex items-center gap-3 p-3 cursor-pointer hover-elevate transition-colors"
                         data-testid={`user-${userItem.userId}`}
                       >
-                        <Avatar className="w-10 h-10 flex-shrink-0">
+                        <Avatar className="w-10 h-10 flex-shrink-0 border border-border">
                           <AvatarImage src={userItem.avatarUrl || undefined} />
-                          <AvatarFallback>{getInitials(userItem.fullName)}</AvatarFallback>
+                          <AvatarFallback className="text-sm">{getInitials(userItem.fullName)}</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{userItem.fullName}</p>
+                            <span className="font-medium text-sm truncate">{userItem.fullName}</span>
                             {userItem.connectionStatus === 'accepted' && (
-                              <Badge variant="secondary" className="text-xs flex-shrink-0">Connected</Badge>
+                              <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/50 px-1.5 py-0.5 rounded flex-shrink-0">
+                                <Check className="w-3 h-3" />
+                                Connected
+                              </span>
                             )}
                             {userItem.connectionStatus === 'pending' && (
-                              <Badge variant="outline" className="text-xs flex-shrink-0">Pending</Badge>
+                              <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded flex-shrink-0">
+                                <Clock className="w-3 h-3" />
+                                Pending
+                              </span>
                             )}
                           </div>
                           {userItem.headline && (
-                            <p className="text-sm text-muted-foreground truncate max-w-full">
-                              {userItem.headline}
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              {userItem.headline.length > 60 
+                                ? userItem.headline.substring(0, 60) + '...' 
+                                : userItem.headline}
                             </p>
                           )}
                         </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       </div>
                     ))}
                   </div>
