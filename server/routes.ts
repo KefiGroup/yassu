@@ -1,6 +1,8 @@
 import express, { Request, Response, Express } from "express";
 import { storage } from "./storage";
-import { pool } from "./db";
+import { pool, db } from "./db";
+import * as schema from "../shared/schema";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
@@ -806,6 +808,33 @@ export function registerRoutes(app: Express): void {
       res.json(teams);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch teams" });
+    }
+  });
+
+  app.get("/api/teams/my", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const teams = await storage.getUserTeams(req.session.userId);
+      
+      // Get member counts for each team
+      const teamsWithCounts = await Promise.all(teams.map(async (team) => {
+        const members = await db.select()
+          .from(schema.teamMembers)
+          .where(eq(schema.teamMembers.teamId, team.id));
+        
+        return {
+          ...team,
+          memberCount: members.length + 1, // +1 for creator
+        };
+      }));
+      
+      res.json(teamsWithCounts);
+    } catch (error) {
+      console.error("Failed to fetch user teams:", error);
+      res.status(500).json({ error: "Failed to fetch your teams" });
     }
   });
 

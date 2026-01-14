@@ -52,6 +52,7 @@ export interface IStorage {
   addIdeaTag(ideaId: string, tag: string): Promise<void>;
   
   getTeams(userId?: number): Promise<Team[]>;
+  getUserTeams(userId: number): Promise<Team[]>;
   getTeam(id: string): Promise<Team | undefined>;
   createTeam(data: Partial<Team>): Promise<Team>;
   
@@ -537,6 +538,37 @@ export class DatabaseStorage implements IStorage {
 
   async getTeams(userId?: number): Promise<Team[]> {
     return db.select().from(schema.teams).orderBy(desc(schema.teams.createdAt));
+  }
+
+  async getUserTeams(userId: number): Promise<Team[]> {
+    // Get teams where user is the creator
+    const createdTeams = await db.select()
+      .from(schema.teams)
+      .where(eq(schema.teams.createdBy, userId));
+    
+    // Get teams where user is a member
+    const memberTeams = await db.select({
+      id: schema.teams.id,
+      name: schema.teams.name,
+      description: schema.teams.description,
+      ideaId: schema.teams.ideaId,
+      createdBy: schema.teams.createdBy,
+      createdAt: schema.teams.createdAt,
+      updatedAt: schema.teams.updatedAt,
+    })
+      .from(schema.teamMembers)
+      .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+      .where(eq(schema.teamMembers.userId, userId));
+    
+    // Combine and deduplicate
+    const allTeams = [...createdTeams, ...memberTeams];
+    const uniqueTeams = allTeams.filter((team, index, self) => 
+      index === self.findIndex(t => t.id === team.id)
+    );
+    
+    return uniqueTeams.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
   async getTeam(id: string): Promise<Team | undefined> {
