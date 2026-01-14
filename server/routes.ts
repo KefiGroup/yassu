@@ -2618,4 +2618,272 @@ export function registerRoutes(app: Express): void {
       res.status(500).json({ error: "Failed to get unread count" });
     }
   });
+
+  // Team Group Messages API
+  
+  // Get team chats the user is part of
+  app.get("/api/team-messages/chats", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const userId = req.session.userId;
+      
+      // Get teams where user is creator or member
+      const userTeamMemberships = await db.select({
+        teamId: schema.teamMembers.teamId,
+      })
+        .from(schema.teamMembers)
+        .where(eq(schema.teamMembers.userId, userId));
+      
+      const createdTeams = await db.select({
+        id: schema.teams.id,
+      })
+        .from(schema.teams)
+        .where(eq(schema.teams.createdBy, userId));
+      
+      // Combine team IDs
+      const teamIds = new Set([
+        ...userTeamMemberships.map(m => m.teamId),
+        ...createdTeams.map(t => t.id),
+      ]);
+      
+      if (teamIds.size === 0) {
+        return res.json([]);
+      }
+      
+      // Get full team details
+      const userTeams = await db.select({
+        id: schema.teams.id,
+        name: schema.teams.name,
+        description: schema.teams.description,
+        createdBy: schema.teams.createdBy,
+      })
+        .from(schema.teams)
+        .where(sql`${schema.teams.id} IN (${sql.join(Array.from(teamIds).map(id => sql`${id}`), sql`,`)})`);
+      
+      // Get last message and unread count for each team
+      const teamChats = await Promise.all(
+        userTeams.map(async (team) => {
+          // Get last message
+          const lastMessage = await db.select({
+            content: schema.teamMessages.content,
+            createdAt: schema.teamMessages.createdAt,
+            senderId: schema.teamMessages.senderId,
+          })
+            .from(schema.teamMessages)
+            .where(eq(schema.teamMessages.teamId, team.id))
+            .orderBy(desc(schema.teamMessages.createdAt))
+            .limit(1);
+          
+          // Get user's last read time
+          const lastRead = await db.select()
+            .from(schema.teamMessageReads)
+            .where(
+              sql`${schema.teamMessageReads.teamId} = ${team.id} 
+                  AND ${schema.teamMessageReads.userId} = ${userId}`
+            )
+            .limit(1);
+          
+          // Count unread messages (messages after last read time)
+          let unreadCount = 0;
+          if (lastRead[0]) {
+            const unreadResult = await db.select({ count: sql<number>`count(*)` })
+              .from(schema.teamMessages)
+              .where(
+                sql`${schema.teamMessages.teamId} = ${team.id} 
+                    AND ${schema.teamMessages.createdAt} > ${lastRead[0].lastReadAt}
+                    AND ${schema.teamMessages.senderId} != ${userId}`
+              );
+            unreadCount = Number(unreadResult[0]?.count || 0);
+          } else {
+            // If never read, count all messages not from user
+            const unreadResult = await db.select({ count: sql<number>`count(*)` })
+              .from(schema.teamMessages)
+              .where(
+                sql`${schema.teamMessages.teamId} = ${team.id} 
+                    AND ${schema.teamMessages.senderId} != ${userId}`
+              );
+            unreadCount = Number(unreadResult[0]?.count || 0);
+          }
+          
+          // Get sender name for last message
+          let senderName = '';
+          if (lastMessage[0]) {
+            const sender = await db.select({ fullName: schema.profiles.fullName })
+              .from(schema.profiles)
+              .where(eq(schema.profiles.userId, lastMessage[0].senderId))
+              .limit(1);
+            senderName = sender[0]?.fullName || 'Unknown';
+          }
+          
+          return {
+            teamId: team.id,
+            teamName: team.name,
+            teamImage: null as string | null,
+            lastMessage: lastMessage[0]?.content || '',
+            lastMessageAt: lastMessage[0]?.createdAt,
+            lastMessageSender: senderName,
+            unreadCount,
+          };
+        })
+      );
+      
+      // Sort by last message time
+      teamChats.sort((a, b) => {
+        if (!a.lastMessageAt) return 1;
+        if (!b.lastMessageAt) return -1;
+        return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+      });
+      
+      res.json(teamChats);
+    } catch (error) {
+      console.error("Failed to fetch team chats:", error);
+      res.status(500).json({ error: "Failed to fetch team chats" });
+    }
+  });
+  
+  // Get messages for a specific team
+  app.get("/api/team-messages/:teamId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const userId = req.session.userId;
+      const teamId = req.params.teamId;
+      
+      // Verify user is part of the team
+      const team = await db.select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, teamId))
+        .limit(1);
+      
+      if (team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      
+      // Check if user is creator or member
+      const isCreator = team[0].createdBy === userId;
+      const membership = await db.select()
+        .from(schema.teamMembers)
+        .where(sql`${schema.teamMembers.teamId} = ${teamId} AND ${schema.teamMembers.userId} = ${userId}`)
+        .limit(1);
+      
+      if (!isCreator && membership.length === 0) {
+        return res.status(403).json({ error: "Not a member of this team" });
+      }
+      
+      // Get messages with sender info
+      const messages = await db.select({
+        id: schema.teamMessages.id,
+        teamId: schema.teamMessages.teamId,
+        senderId: schema.teamMessages.senderId,
+        content: schema.teamMessages.content,
+        createdAt: schema.teamMessages.createdAt,
+        senderName: schema.profiles.fullName,
+        senderAvatar: schema.profiles.avatarUrl,
+      })
+        .from(schema.teamMessages)
+        .leftJoin(schema.profiles, eq(schema.teamMessages.senderId, schema.profiles.userId))
+        .where(eq(schema.teamMessages.teamId, teamId))
+        .orderBy(schema.teamMessages.createdAt);
+      
+      // Update last read time
+      const existingRead = await db.select()
+        .from(schema.teamMessageReads)
+        .where(
+          sql`${schema.teamMessageReads.teamId} = ${teamId} 
+              AND ${schema.teamMessageReads.userId} = ${userId}`
+        )
+        .limit(1);
+      
+      if (existingRead.length > 0) {
+        await db.update(schema.teamMessageReads)
+          .set({ lastReadAt: new Date() })
+          .where(eq(schema.teamMessageReads.id, existingRead[0].id));
+      } else {
+        await db.insert(schema.teamMessageReads)
+          .values({
+            teamId,
+            userId,
+            lastReadAt: new Date(),
+          });
+      }
+      
+      res.json({
+        team: {
+          id: team[0].id,
+          name: team[0].name,
+          imageUrl: null as string | null,
+        },
+        messages,
+      });
+    } catch (error) {
+      console.error("Failed to fetch team messages:", error);
+      res.status(500).json({ error: "Failed to fetch team messages" });
+    }
+  });
+  
+  // Send a team message
+  app.post("/api/team-messages", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const { teamId, content } = req.body;
+      const userId = req.session.userId;
+      
+      if (!teamId || !content) {
+        return res.status(400).json({ error: "Team ID and content are required" });
+      }
+      
+      // Verify user is part of the team
+      const team = await db.select()
+        .from(schema.teams)
+        .where(eq(schema.teams.id, teamId))
+        .limit(1);
+      
+      if (team.length === 0) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      
+      // Check if user is creator or member
+      const isCreator = team[0].createdBy === userId;
+      const membership = await db.select()
+        .from(schema.teamMembers)
+        .where(sql`${schema.teamMembers.teamId} = ${teamId} AND ${schema.teamMembers.userId} = ${userId}`)
+        .limit(1);
+      
+      if (!isCreator && membership.length === 0) {
+        return res.status(403).json({ error: "Not a member of this team" });
+      }
+      
+      // Create message
+      const [message] = await db.insert(schema.teamMessages)
+        .values({
+          teamId,
+          senderId: userId,
+          content: content.trim(),
+        })
+        .returning();
+      
+      // Get sender profile for response
+      const sender = await db.select()
+        .from(schema.profiles)
+        .where(eq(schema.profiles.userId, userId))
+        .limit(1);
+      
+      res.json({
+        ...message,
+        senderName: sender[0]?.fullName || 'Unknown',
+        senderAvatar: sender[0]?.avatarUrl,
+      });
+    } catch (error) {
+      console.error("Failed to send team message:", error);
+      res.status(500).json({ error: "Failed to send team message" });
+    }
+  });
 }
