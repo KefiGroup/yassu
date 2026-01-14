@@ -12,7 +12,7 @@ const Footer = () => {
           className="flex flex-col md:flex-row items-center justify-between gap-6"
         >
           <div className="flex items-center">
-            <img src="/yassu-logo-new.jpg" alt="Yassu" className="h-10 w-auto" />
+            <img src="/yassu-logo-new.jpg" alt="Yassu" className="h-12 w-auto rounded-md" />
           </div>
 
           <p className="text-muted-foreground text-sm text-center">

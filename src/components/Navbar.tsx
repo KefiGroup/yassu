@@ -11,7 +11,7 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center" data-testid="link-nav-home">
-          <img src="/yassu-logo-new.jpg" alt="Yassu" className="h-12 w-auto" />
+          <img src="/yassu-logo-new.jpg" alt="Yassu" className="h-14 w-auto rounded-md" />
         </a>
 
         <div className="hidden md:flex items-center gap-8">

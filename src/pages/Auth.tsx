@@ -164,7 +164,7 @@ const Auth = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <a href="/" className="inline-flex items-center justify-center">
-            <img src="/yassu-logo-new.jpg" alt="Yassu" className="h-14 w-auto" />
+            <img src="/yassu-logo-new.jpg" alt="Yassu" className="h-16 w-auto rounded-md" />
           </a>
           <p className="text-muted-foreground mt-2">The New-Age Marketplace for University-Native Company Creation</p>
         </div>

@@ -81,7 +81,7 @@ export function PortalSidebar() {
           <img 
             src="/yassu-logo-new.jpg" 
             alt="Yassu" 
-            className={collapsed ? "h-8 w-auto" : "h-12 w-auto"}
+            className={collapsed ? "h-10 w-auto rounded-md" : "h-12 w-auto rounded-md"}
           />
         </NavLink>
       </SidebarHeader>
