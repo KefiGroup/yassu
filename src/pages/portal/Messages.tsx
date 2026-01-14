@@ -340,11 +340,11 @@ export default function Messages() {
   };
 
   const handleUserSelect = (selectedUser: SearchUser) => {
-    // Check if already connected
-    if (selectedUser.connectionStatus === 'accepted') {
+    // Check if already connected or pending - allow messaging directly
+    if (selectedUser.connectionStatus === 'accepted' || selectedUser.connectionStatus === 'pending') {
       startConversationWithUser(selectedUser);
     } else {
-      // Show confirmation dialog for non-connected users
+      // Show confirmation dialog for non-connected users (no existing connection)
       setPendingMessageUser(selectedUser);
       setConnectionMessage('');
       setShowConnectionConfirm(true);
