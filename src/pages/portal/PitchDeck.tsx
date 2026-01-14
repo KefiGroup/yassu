@@ -135,6 +135,15 @@ export default function PitchDeck() {
 
   const handleChatSend = async () => {
     if (!input.trim() || isLoading) return;
+    
+    if (slides.length === 0) {
+      toast({
+        title: "Generate Deck First",
+        description: "Please generate your pitch deck before using the refinement chat.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -143,6 +152,7 @@ export default function PitchDeck() {
       timestamp: new Date(),
     };
 
+    const savedInput = input.trim();
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -224,6 +234,7 @@ export default function PitchDeck() {
         variant: "destructive",
       });
       setMessages(prev => prev.slice(0, -1));
+      setInput(savedInput);
     } finally {
       setIsLoading(false);
     }

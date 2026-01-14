@@ -114,6 +114,7 @@ What would you like to work on first?`,
       timestamp: new Date(),
     };
 
+    const savedInput = input.trim();
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -184,6 +185,7 @@ What would you like to work on first?`,
         variant: "destructive",
       });
       setMessages(prev => prev.slice(0, -1));
+      setInput(savedInput);
     } finally {
       setIsLoading(false);
     }

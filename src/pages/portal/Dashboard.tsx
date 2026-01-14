@@ -575,26 +575,39 @@ Looking forward to hearing from you!`;
                         )}
                       </div>
                     )}
-                    <Button
-                      size="sm"
-                      className="w-full mt-3"
-                      onClick={() => {
-                        if (myIdeas.length === 0) {
-                          toast({
-                            title: 'No ideas yet',
-                            description: 'Post an idea first to invite team members.',
-                            variant: 'destructive',
-                          });
-                        } else {
-                          handleOpenInviteDialog(member);
-                        }
-                      }}
-                      disabled={invitingUserId === member.userId}
-                      data-testid={`button-invite-${member.userId}`}
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Invite
-                    </Button>
+                    {myIdeas.some(idea => isAlreadyInvited(member.userId, idea.id)) ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full mt-3"
+                        disabled
+                        data-testid={`button-invited-${member.userId}`}
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        Invited
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="w-full mt-3"
+                        onClick={() => {
+                          if (myIdeas.length === 0) {
+                            toast({
+                              title: 'No ideas yet',
+                              description: 'Post an idea first to invite team members.',
+                              variant: 'destructive',
+                            });
+                          } else {
+                            handleOpenInviteDialog(member);
+                          }
+                        }}
+                        disabled={invitingUserId === member.userId}
+                        data-testid={`button-invite-${member.userId}`}
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Invite
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
