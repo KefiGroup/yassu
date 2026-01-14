@@ -221,6 +221,7 @@ export default function IdeaDetail() {
   
   // Team for this idea
   const [ideaTeam, setIdeaTeam] = useState<{ id: string; name: string } | null>(null);
+  const [creatingTeam, setCreatingTeam] = useState(false);
 
   useEffect(() => {
     async function fetchIdea() {
@@ -435,6 +436,46 @@ export default function IdeaDetail() {
       });
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleCreateTeam = async () => {
+    if (!idea || !user) return;
+    
+    setCreatingTeam(true);
+    try {
+      const response = await fetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: `${idea.title} Team`,
+          description: `Team for ${idea.title}`,
+          ideaId: idea.id,
+        }),
+      });
+      
+      if (response.ok) {
+        const newTeam = await response.json();
+        setIdeaTeam({ id: newTeam.id, name: newTeam.name });
+        toast({
+          title: 'Team Created',
+          description: 'Your team has been created. You can now invite collaborators and advisors.',
+        });
+        navigate(`/portal/teams/${newTeam.id}`);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create team');
+      }
+    } catch (error) {
+      console.error('Failed to create team:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create team',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingTeam(false);
     }
   };
 
@@ -1704,13 +1745,20 @@ export default function IdeaDetail() {
                 <p className="text-muted-foreground mb-4">
                   Create a team for this project to start inviting collaborators and advisors.
                 </p>
-                <Button 
-                  onClick={() => navigate('/portal/teams/new')}
-                  data-testid="button-create-team"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Create Team
-                </Button>
+                {isOwner && (
+                  <Button 
+                    onClick={handleCreateTeam}
+                    disabled={creatingTeam}
+                    data-testid="button-create-team"
+                  >
+                    {creatingTeam ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Users className="w-4 h-4 mr-2" />
+                    )}
+                    {creatingTeam ? 'Creating Team...' : 'Create Team'}
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
