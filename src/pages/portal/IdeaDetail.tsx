@@ -150,13 +150,11 @@ const planSections = [
 ];
 
 const journeySteps = [
-  { id: 1, title: 'Post Idea', icon: PenLine, description: 'Share your startup idea' },
-  { id: 2, title: 'Business Plan', icon: Brain, description: 'Generate with Yassu AI' },
-  { id: 3, title: 'Find Advisors and Collaborators', icon: UserCheck, description: 'Connect with advisors, ambassadors & collaborators' },
-  { id: 4, title: 'Form Team', icon: Users2, description: 'Build your founding team' },
-  { id: 5, title: 'Build MVP', icon: Wrench, description: 'Develop your product' },
-  { id: 6, title: 'Yassu Foundry', icon: Presentation, description: 'Present your progress' },
-  { id: 7, title: 'Launch', icon: Rocket, description: 'Funding or market launch' },
+  { id: 1, title: 'Idea', icon: PenLine, description: 'Share your startup idea', segment: 'idea' },
+  { id: 2, title: 'Business Plan', icon: Brain, description: 'Generate with Yassu AI', segment: 'businessPlan' },
+  { id: 3, title: 'Team', icon: Users2, description: 'Build your founding team', segment: 'team' },
+  { id: 4, title: 'MVP', icon: Wrench, description: 'Develop your product', segment: 'mvp' },
+  { id: 5, title: 'Funding', icon: DollarSign, description: 'Pitch & funding strategy', segment: 'funding' },
 ];
 
 export default function IdeaDetail() {
@@ -164,6 +162,28 @@ export default function IdeaDetail() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+
+  // Segment refs for scroll navigation
+  const ideaRef = useRef<HTMLDivElement>(null);
+  const businessPlanRef = useRef<HTMLDivElement>(null);
+  const teamRef = useRef<HTMLDivElement>(null);
+  const mvpRef = useRef<HTMLDivElement>(null);
+  const fundingRef = useRef<HTMLDivElement>(null);
+  
+  const segmentRefs: Record<string, React.RefObject<HTMLDivElement>> = {
+    idea: ideaRef,
+    businessPlan: businessPlanRef,
+    team: teamRef,
+    mvp: mvpRef,
+    funding: fundingRef,
+  };
+
+  const scrollToSegment = (segment: string) => {
+    const ref = segmentRefs[segment];
+    if (ref?.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const [idea, setIdea] = useState<Idea | null>(null);
   const [businessPlan, setBusinessPlan] = useState<BusinessPlan | null>(null);
@@ -1040,7 +1060,7 @@ export default function IdeaDetail() {
       >
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Your Yassu Journey</CardTitle>
+            <CardTitle className="text-lg">Your Project Journey</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto pb-2">
@@ -1054,16 +1074,19 @@ export default function IdeaDetail() {
                   
                   return (
                     <div key={step.id} className="flex items-center">
-                      <div className="flex flex-col items-center gap-1">
+                      <button
+                        onClick={() => scrollToSegment(step.segment)}
+                        className="flex flex-col items-center gap-1 group cursor-pointer"
+                        data-testid={`journey-step-${step.id}`}
+                      >
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:scale-110 group-hover:shadow-md ${
                             isCompleted
                               ? 'bg-primary text-primary-foreground'
                               : isCurrent
                               ? 'bg-primary/20 text-primary ring-2 ring-primary'
-                              : 'bg-muted text-muted-foreground'
+                              : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
                           }`}
-                          data-testid={`journey-step-${step.id}`}
                         >
                           {isCompleted ? (
                             <CheckCircle className="w-5 h-5" />
@@ -1071,12 +1094,12 @@ export default function IdeaDetail() {
                             <StepIcon className="w-5 h-5" />
                           )}
                         </div>
-                        <span className={`text-xs text-center w-20 ${
-                          isCompleted || isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground'
+                        <span className={`text-xs text-center w-20 transition-colors ${
+                          isCompleted || isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground group-hover:text-foreground'
                         }`}>
                           {step.title}
                         </span>
-                      </div>
+                      </button>
                       {index < journeySteps.length - 1 && (
                         <div className={`w-12 h-1 mx-3 rounded-full flex-shrink-0 ${
                           isCompleted ? 'bg-primary' : 'bg-muted'
@@ -1093,13 +1116,22 @@ export default function IdeaDetail() {
 
 
 
+      {/* SEGMENT: Idea */}
       <motion.div
+        ref={ideaRef}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
+        className="scroll-mt-4"
       >
         <Card>
           <CardHeader>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <PenLine className="w-4 h-4 text-primary" />
+              </div>
+              <h2 className="font-semibold text-lg">Idea Overview</h2>
+            </div>
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="space-y-2">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -1263,22 +1295,25 @@ export default function IdeaDetail() {
       </motion.div>
 
       {/* Business Plan Section - Show for owners (always) or public ideas with plan */}
+      {/* SEGMENT: Business Plan */}
       {(isOwner || (businessPlan && idea.isPublic)) && (
       <motion.div
+        ref={businessPlanRef}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.25 }}
+        className="scroll-mt-4"
       >
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-white" />
+                  <Brain className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    Yassu Business Plan
+                    Business Plan
                     {businessPlan?.status === 'completed' && (
                       <Badge className="bg-emerald-500 text-white">
                         <CheckCircle className="w-3 h-3 mr-1" />
@@ -1589,6 +1624,202 @@ export default function IdeaDetail() {
       </motion.div>
       )}
 
+      {/* SEGMENT: Team */}
+      <motion.div
+        ref={teamRef}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+        className="scroll-mt-4"
+      >
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                  <Users2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle>Team Members</CardTitle>
+                  <p className="text-sm text-muted-foreground">Build your founding team</p>
+                </div>
+              </div>
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRoleSuggester(true)}
+                  data-testid="button-find-team-members"
+                >
+                  <Users2 className="w-4 h-4 mr-2" />
+                  Find Team Members
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Your Team</h3>
+              <p className="text-muted-foreground mb-4">
+                Team member management coming soon. Use the Find Team Members button to discover collaborators based on required skills.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/portal/collaborators')}
+                data-testid="button-browse-collaborators"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Browse Collaborators
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* SEGMENT: MVP */}
+      <motion.div
+        ref={mvpRef}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.35 }}
+        className="scroll-mt-4"
+      >
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                <Wrench className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle>MVP Development</CardTitle>
+                <p className="text-sm text-muted-foreground">Build your minimum viable product</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-4">
+                <Code className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Build Your MVP</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Turn your idea into reality. Use AI-powered tools to build your product quickly.
+              </p>
+              <Button
+                onClick={async () => {
+                  if (!idea) return;
+                  try {
+                    await apiRequest('/api/referrals/track', {
+                      method: 'POST',
+                      body: JSON.stringify({
+                        platform: 'manus',
+                        ideaId: idea.id,
+                        ideaTitle: idea.title,
+                      }),
+                    });
+                  } catch (e) {
+                    console.error('Failed to track referral:', e);
+                  }
+                  const context = {
+                    source: 'yassu',
+                    ref: user?.email || 'yassu-platform',
+                    project: idea.title,
+                    problem: idea.problem,
+                    solution: idea.solution || '',
+                    users: idea.targetUser || '',
+                  };
+                  const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+                  window.open(manusUrl, '_blank');
+                }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600"
+                data-testid="button-build-mvp-manus"
+              >
+                <Code className="w-4 h-4 mr-2" />
+                Build MVP with Manus AI
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* SEGMENT: Funding */}
+      <motion.div
+        ref={fundingRef}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+        className="scroll-mt-4"
+      >
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle>Funding & Pitch Deck</CardTitle>
+                <p className="text-sm text-muted-foreground">Prepare for fundraising</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {businessPlan?.sections?.fundingPitch ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-emerald-500 text-white">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Pitch Strategy Ready
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setActiveTab('fundingPitch');
+                      scrollToSegment('businessPlan');
+                    }}
+                    data-testid="button-view-funding-pitch"
+                  >
+                    View in Business Plan
+                  </Button>
+                </div>
+                <div className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-4 rounded-lg max-h-48 overflow-hidden relative">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    {preprocessMarkdown(businessPlan.sections.fundingPitch)}
+                  </ReactMarkdown>
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-muted/80 to-transparent pointer-events-none" />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Click "View in Business Plan" to see the full funding strategy
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                  <Presentation className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Pitch Deck & Funding Strategy</h3>
+                <p className="text-muted-foreground mb-4">
+                  Generate your business plan first to unlock the AI-powered funding pitch and investor strategy section.
+                </p>
+                {!businessPlan && isOwner && (
+                  <Button 
+                    onClick={handleGeneratePlan} 
+                    disabled={generating}
+                    data-testid="button-generate-plan-funding"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Business Plan
+                  </Button>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
@@ -1810,7 +2041,7 @@ export default function IdeaDetail() {
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedMember.skills.map((skill) => (
-                    <Badge key={skill} variant="ghost" className="bg-muted">
+                    <Badge key={skill} variant="secondary">
                       {skill}
                     </Badge>
                   ))}
