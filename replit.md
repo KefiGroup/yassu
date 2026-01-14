@@ -19,7 +19,8 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
 - **Team Formation & Collaboration**: Features for finding co-founders, advisors, and ambassadors based on skills and interests. Includes a connection system (like LinkedIn) for users to build their network, send team invitations, and manage join requests.
 - **Collaborator Marketplace**: A dedicated section to discover and filter platform users by roles, skills, interests, clubs, and universities, with clickable profiles.
 - **Admin Dashboard**: A unified interface for administrators to manage badges (Ambassador, Advisor), view all ideas (including private ones), and grant/revoke admin privileges.
-- **Notification System**: Email notifications for connection requests and weekly digests.
+- **Direct Messaging**: Full messaging system with conversation threads, real-time UI, and email notifications for new messages.
+- **Notification System**: Email notifications for connection requests, team invitations, new messages, and weekly digests.
 - **Journey Progress Tracker**: Visual progress tracker for each idea's development stages.
 - **UI/UX**: Utilizes Tailwind CSS and shadcn/ui for a modern, responsive design. The dashboard is redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
 
