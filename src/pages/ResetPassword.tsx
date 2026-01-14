@@ -97,11 +97,8 @@ export default function ResetPassword() {
         className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Rocket className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">Yassu</span>
+          <a href="/" className="inline-flex items-center justify-center">
+            <img src="/yassu-logo-new.jpg" alt="Yassu" className="h-14 w-auto" />
           </a>
         </div>
 

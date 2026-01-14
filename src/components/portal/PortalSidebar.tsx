@@ -77,11 +77,11 @@ export function PortalSidebar() {
   return (
     <Sidebar className={collapsed ? 'w-14' : 'w-60'} collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <NavLink to="/portal" className="flex items-center gap-2">
+        <NavLink to="/portal" className="flex items-center">
           <img 
-            src="/yassu-logo.png" 
+            src="/yassu-logo-new.jpg" 
             alt="Yassu" 
-            className={collapsed ? "h-8 w-auto" : "h-10 w-auto"}
+            className={collapsed ? "h-8 w-auto" : "h-12 w-auto"}
           />
         </NavLink>
       </SidebarHeader>
