@@ -1417,32 +1417,23 @@ export default function IdeaDetail() {
                   Yassu AI will analyze your idea and generate a comprehensive business plan
                   covering 8 key areas in about 2 minutes.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    onClick={handleGeneratePlan}
-                    disabled={generating}
-                    data-testid="button-generate-plan"
-                  >
-                    {generating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Starting...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Generate Business Plan
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowRoleSuggester(true)}
-                  >
-                    <Users2 className="w-4 h-4 mr-2" />
-                    Find Team Members
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleGeneratePlan}
+                  disabled={generating}
+                  data-testid="button-generate-plan"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Business Plan
+                    </>
+                  )}
+                </Button>
               </div>
             ) : businessPlan.status === 'running' || businessPlan.status === 'pending' ? (
               <div className="text-center py-8">
