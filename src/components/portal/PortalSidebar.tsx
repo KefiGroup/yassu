@@ -18,7 +18,6 @@ import {
   LayoutDashboard,
   Lightbulb,
   Users,
-  Workflow,
   FolderKanban,
   BookOpen,
   MessageSquare,
@@ -26,12 +25,10 @@ import {
   Shield,
   TrendingUp,
   Trophy,
-  Rocket,
   GraduationCap,
   Briefcase,
   Settings,
   DollarSign,
-  FolderOpen,
 } from 'lucide-react';
 
 const mainNavItems = [
@@ -81,12 +78,11 @@ export function PortalSidebar() {
     <Sidebar className={collapsed ? 'w-14' : 'w-60'} collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <NavLink to="/portal" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-            <Rocket className="w-4 h-4 text-primary-foreground" />
-          </div>
-          {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-foreground">Yassu</span>
-          )}
+          <img 
+            src="/yassu-logo.png" 
+            alt="Yassu" 
+            className={collapsed ? "h-8 w-auto" : "h-10 w-auto"}
+          />
         </NavLink>
       </SidebarHeader>
 
