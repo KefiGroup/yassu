@@ -1794,46 +1794,84 @@ export default function IdeaDetail() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-4">
-                <Code className="w-8 h-8 text-primary" />
+            <div className="space-y-6">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  How It Works
+                </h4>
+                <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                  <li><strong>Plan your MVP</strong> - Use our AI-powered MVP Builder to define features, tech stack, and specifications</li>
+                  <li><strong>Build with Manus AI</strong> - Take your specifications to Manus AI to actually build and deploy your product</li>
+                </ol>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Build Your MVP</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Turn your idea into reality. Use AI-powered tools to build your product quickly.
-              </p>
-              <Button
-                onClick={async () => {
-                  if (!idea) return;
-                  try {
-                    await apiRequest('/api/referrals/track', {
-                      method: 'POST',
-                      body: JSON.stringify({
-                        platform: 'manus',
-                        ideaId: idea.id,
-                        ideaTitle: idea.title,
-                      }),
-                    });
-                  } catch (e) {
-                    console.error('Failed to track referral:', e);
-                  }
-                  const context = {
-                    source: 'yassu',
-                    ref: user?.email || 'yassu-platform',
-                    project: idea.title,
-                    problem: idea.problem,
-                    solution: idea.solution || '',
-                    users: idea.targetUser || '',
-                  };
-                  const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
-                  window.open(manusUrl, '_blank');
-                }}
-                className="bg-gradient-to-r from-purple-600 to-pink-600"
-                data-testid="button-build-mvp-manus"
-              >
-                <Code className="w-4 h-4 mr-2" />
-                Build MVP with Manus AI
-              </Button>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                  <CardContent className="pt-6 text-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto mb-3">
+                      <FileText className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-2">Step 1: Plan Your MVP</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Chat with AI to define features, user stories, database schema, and development roadmap.
+                    </p>
+                    <Button
+                      onClick={() => navigate(`/portal/mvp-builder?ideaId=${idea?.id}`)}
+                      variant="outline"
+                      className="w-full"
+                      data-testid="button-mvp-builder-main"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Open MVP Builder
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                  <CardContent className="pt-6 text-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-3">
+                      <Code className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-2">Step 2: Build It</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Take your MVP specifications to Manus AI to build and deploy your actual product.
+                    </p>
+                    <Button
+                      onClick={async () => {
+                        if (!idea) return;
+                        try {
+                          await apiRequest('/api/referrals/track', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                              platform: 'manus',
+                              ideaId: idea.id,
+                              ideaTitle: idea.title,
+                            }),
+                          });
+                        } catch (e) {
+                          console.error('Failed to track referral:', e);
+                        }
+                        const context = {
+                          source: 'yassu',
+                          ref: user?.email || 'yassu-platform',
+                          project: idea.title,
+                          problem: idea.problem,
+                          solution: idea.solution || '',
+                          users: idea.targetUser || '',
+                        };
+                        const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+                        window.open(manusUrl, '_blank');
+                      }}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
+                      data-testid="button-build-mvp-manus"
+                    >
+                      <Code className="w-4 h-4 mr-2" />
+                      Build with Manus AI
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1894,59 +1932,88 @@ export default function IdeaDetail() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-4">
-                <Presentation className="w-8 h-8 text-primary" />
+            <div className="space-y-6">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  How It Works
+                </h4>
+                <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                  <li><strong>Generate your deck</strong> - Use our AI to create 10 professional slides with content and speaker notes</li>
+                  <li><strong>Refine each slide</strong> - Chat with AI to improve specific slides before presenting</li>
+                  <li><strong>Build with Manus AI</strong> - Create a polished presentation file with Manus</li>
+                </ol>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Build Your Pitch Deck</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Create a professional pitch deck to present your startup to investors.
-              </p>
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <Button
-                  onClick={() => navigate(`/portal/pitch-deck?ideaId=${idea?.id}`)}
-                  variant="outline"
-                  data-testid="button-pitch-deck-generator"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Pitch Deck Generator
-                </Button>
-                <Button
-                  onClick={async () => {
-                    if (!idea) return;
-                    try {
-                      await apiRequest('/api/referrals/track', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                          platform: 'manus',
-                          ideaId: idea.id,
-                          ideaTitle: idea.title,
-                          actionType: 'pitch_deck',
-                        }),
-                      });
-                    } catch (e) {
-                      console.error('Failed to track referral:', e);
-                    }
-                    const fundingPitch = businessPlan?.sections?.fundingPitch || '';
-                    const context = {
-                      source: 'yassu',
-                      ref: user?.email || 'yassu-platform',
-                      project: idea.title,
-                      task: 'Create a professional pitch deck presentation',
-                      problem: idea.problem,
-                      solution: idea.solution || '',
-                      users: idea.targetUser || '',
-                      funding_strategy: fundingPitch.substring(0, 500),
-                    };
-                    const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
-                    window.open(manusUrl, '_blank');
-                  }}
-                  className="bg-gradient-to-r from-amber-500 to-orange-500"
-                  data-testid="button-build-pitch-deck-manus"
-                >
-                  <Presentation className="w-4 h-4 mr-2" />
-                  Build Pitch Deck with Manus AI
-                </Button>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                  <CardContent className="pt-6 text-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
+                      <FileText className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-2">Step 1: Generate & Refine</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      AI creates 10 investor-ready slides. Refine each slide with chat.
+                    </p>
+                    <Button
+                      onClick={() => navigate(`/portal/pitch-deck?ideaId=${idea?.id}`)}
+                      variant="outline"
+                      className="w-full"
+                      data-testid="button-pitch-deck-generator"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Open Pitch Deck Generator
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                  <CardContent className="pt-6 text-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
+                      <Presentation className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-2">Step 2: Build Presentation</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Create a polished slide deck file ready for investor meetings.
+                    </p>
+                    <Button
+                      onClick={async () => {
+                        if (!idea) return;
+                        try {
+                          await apiRequest('/api/referrals/track', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                              platform: 'manus',
+                              ideaId: idea.id,
+                              ideaTitle: idea.title,
+                              actionType: 'pitch_deck',
+                            }),
+                          });
+                        } catch (e) {
+                          console.error('Failed to track referral:', e);
+                        }
+                        const fundingPitch = businessPlan?.sections?.fundingPitch || '';
+                        const context = {
+                          source: 'yassu',
+                          ref: user?.email || 'yassu-platform',
+                          project: idea.title,
+                          task: 'Create a professional pitch deck presentation',
+                          problem: idea.problem,
+                          solution: idea.solution || '',
+                          users: idea.targetUser || '',
+                          funding_strategy: fundingPitch.substring(0, 500),
+                        };
+                        const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+                        window.open(manusUrl, '_blank');
+                      }}
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500"
+                      data-testid="button-build-pitch-deck-manus"
+                    >
+                      <Presentation className="w-4 h-4 mr-2" />
+                      Build with Manus AI
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             </div>
             
