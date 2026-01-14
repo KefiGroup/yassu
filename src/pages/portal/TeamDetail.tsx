@@ -9,6 +9,16 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { 
   ArrowLeft, 
   Users, 
   Calendar, 
@@ -23,6 +33,7 @@ import {
   Check,
   X,
   Clock,
+  Send,
 } from 'lucide-react';
 
 interface TeamMember {
@@ -195,6 +206,95 @@ export default function TeamDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteTarget, setInviteTarget] = useState<{ userId: number; fullName: string | null; role: 'advisor' | 'collaborator'; skills?: string[] | null } | null>(null);
+  const [inviteMessage, setInviteMessage] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
+
+  const getInviteMessageTemplate = (role: 'advisor' | 'collaborator', name: string | null, skills?: string[] | null) => {
+    const displayName = name || 'there';
+    const skillsText = skills && skills.length > 0 ? `Your expertise in ${skills.slice(0, 2).join(' and ')} caught my attention. ` : '';
+    
+    if (role === 'advisor') {
+      return `Hi ${displayName},
+
+I came across your profile and found your experience and skillsets really valuable for our project "${team?.ideaTitle || team?.name || 'our startup'}". ${skillsText}I believe we could learn a lot from your guidance and mentorship.
+
+Would you be interested in joining us as an advisor? I'd love to discuss how we can work together.
+
+Looking forward to hearing from you!`;
+    } else {
+      return `Hi ${displayName},
+
+I'm reaching out because I think you'd be a great fit for our team at "${team?.ideaTitle || team?.name || 'our startup'}". ${skillsText}Your skills and background align well with what we're building.
+
+We're looking for passionate collaborators who want to make an impact. Would you be interested in joining us?
+
+Let me know if you'd like to learn more about the project!`;
+    }
+  };
+
+  const handleOpenInviteDialog = (person: { userId: number; fullName: string | null; skills?: string[] | null }, role: 'advisor' | 'collaborator') => {
+    setInviteTarget({ ...person, role });
+    setInviteMessage(getInviteMessageTemplate(role, person.fullName, person.skills));
+    setInviteDialogOpen(true);
+  };
+
+  const handleSendInvite = async () => {
+    if (!inviteTarget) return;
+    
+    if (!team?.ideaId) {
+      toast({
+        title: 'Cannot send invitation',
+        description: 'This team is not linked to a project. Please link a project first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setSendingInvite(true);
+    try {
+      const response = await fetch('/api/team-invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ideaId: team.ideaId,
+          inviteeId: inviteTarget.userId,
+          message: inviteMessage,
+          role: inviteTarget.role,
+        }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: 'Invitation sent!',
+          description: `Your invitation has been sent to ${inviteTarget.fullName || 'the user'}.`,
+        });
+        setInviteDialogOpen(false);
+        setInviteTarget(null);
+        setInviteMessage('');
+        // Refresh team data to update recommended lists
+        const teamResponse = await fetch(`/api/teams/${id}`, { credentials: 'include' });
+        if (teamResponse.ok) {
+          const data = await teamResponse.json();
+          setRecommendedAdvisors(data.recommendedAdvisors || []);
+          setRecommendedCollaborators(data.recommendedCollaborators || []);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to send invitation');
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to send invitation. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingInvite(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchTeam() {
@@ -487,14 +587,25 @@ export default function TeamDetail() {
                               <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{person.headline}</p>
                             )}
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="default"
-                            onClick={() => navigate(`/portal/users/${person.userId}`)}
-                            data-testid={`button-invite-advisor-${person.userId}`}
-                          >
-                            View Profile
-                          </Button>
+                          <div className="flex flex-col gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="default"
+                              onClick={() => handleOpenInviteDialog(person, 'advisor')}
+                              data-testid={`button-invite-advisor-${person.userId}`}
+                            >
+                              <Send className="w-3 h-3 mr-1" />
+                              Invite
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => navigate(`/portal/users/${person.userId}`)}
+                              data-testid={`button-view-advisor-${person.userId}`}
+                            >
+                              View Profile
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -582,14 +693,25 @@ export default function TeamDetail() {
                               </div>
                             )}
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="default"
-                            onClick={() => navigate(`/portal/users/${person.userId}`)}
-                            data-testid={`button-invite-collaborator-${person.userId}`}
-                          >
-                            View Profile
-                          </Button>
+                          <div className="flex flex-col gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="default"
+                              onClick={() => handleOpenInviteDialog(person, 'collaborator')}
+                              data-testid={`button-invite-collaborator-${person.userId}`}
+                            >
+                              <Send className="w-3 h-3 mr-1" />
+                              Invite
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => navigate(`/portal/users/${person.userId}`)}
+                              data-testid={`button-view-collaborator-${person.userId}`}
+                            >
+                              View Profile
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -706,6 +828,74 @@ export default function TeamDetail() {
           </>
         )}
       </motion.div>
+
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              Invite {inviteTarget?.fullName || 'User'} as {inviteTarget?.role === 'advisor' ? 'Advisor' : 'Collaborator'}
+            </DialogTitle>
+            <DialogDescription>
+              Customize your invitation message below. A personalized message helps the recipient understand why you think they'd be a great fit for your team.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <Avatar className="w-10 h-10">
+                <AvatarFallback>{getInitials(inviteTarget?.fullName)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{inviteTarget?.fullName || 'User'}</p>
+                <Badge variant={inviteTarget?.role === 'advisor' ? 'default' : 'secondary'} className="mt-1">
+                  {inviteTarget?.role === 'advisor' ? (
+                    <><Star className="w-3 h-3 mr-1" />Advisor</>
+                  ) : (
+                    <><Briefcase className="w-3 h-3 mr-1" />Collaborator</>
+                  )}
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="invite-message">Your Message</Label>
+              <Textarea
+                id="invite-message"
+                value={inviteMessage}
+                onChange={(e) => setInviteMessage(e.target.value)}
+                placeholder="Write a personalized message..."
+                className="min-h-[200px] resize-none"
+                data-testid="textarea-invite-message"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tip: Mention specific skills or experiences that caught your attention to make your invitation more personal.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setInviteDialogOpen(false)}
+              data-testid="button-cancel-invite"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendInvite}
+              disabled={sendingInvite || !inviteMessage.trim()}
+              data-testid="button-send-invite"
+            >
+              {sendingInvite ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</>
+              ) : (
+                <><Send className="w-4 h-4 mr-2" />Send Invitation</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
