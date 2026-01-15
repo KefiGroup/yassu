@@ -738,17 +738,21 @@ export default function PitchPreparation() {
         </TabsList>
 
         <div className="mt-6">
-          <ScrollArea className="h-[calc(100vh-280px)]">
-            <TabsContent value="script" className="mt-0">
+          <TabsContent value="script" className="mt-0">
+            <ScrollArea className="h-[calc(100vh-280px)]">
               {renderScriptTab()}
-            </TabsContent>
-            <TabsContent value="objections" className="mt-0">
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="objections" className="mt-0">
+            <ScrollArea className="h-[calc(100vh-280px)]">
               {renderObjectionsTab()}
-            </TabsContent>
-            <TabsContent value="rehearsal" className="mt-0">
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="rehearsal" className="mt-0">
+            <ScrollArea className="h-[calc(100vh-280px)]">
               {renderRehearsalTab()}
-            </TabsContent>
-          </ScrollArea>
+            </ScrollArea>
+          </TabsContent>
         </div>
       </Tabs>
     </div>
