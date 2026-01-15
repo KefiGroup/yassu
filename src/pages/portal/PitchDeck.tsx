@@ -93,7 +93,7 @@ export default function PitchDeck() {
 
   const { data: businessPlan } = useQuery<any>({
     queryKey: ["workflow-sections", ideaId],
-    queryFn: () => apiRequest(`/ideas/${ideaId}/workflow-sections`),
+    queryFn: () => apiRequest(`/ideas/${ideaId}/workflows`),
     enabled: !!ideaId,
   });
 
