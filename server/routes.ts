@@ -3644,13 +3644,17 @@ DECISION CRITERIA:
 - Recommend ANGEL if: early-stage, pre-product, limited traction, founder-story driven, raising under $500K
 - Recommend VC if: has product, some traction, large TAM, raising $500K+, needs institutional backing
 
+DECK TYPE CRITERIA:
+- ALWAYS default to "full" (11 slides) - this is the standard for investor meetings
+- Only use "warm_intro" (6 slides) if the user explicitly requests a shorter format or if this is clearly just for a cold email/LinkedIn outreach
+
 Return a JSON object with this EXACT structure:
 {
   "analysis": {
     "investorMode": "angel" or "vc",
     "investorModeReason": "Brief explanation of why this investor type is recommended",
-    "deckType": "full" or "warm_intro",
-    "deckTypeReason": "Brief explanation of deck type recommendation",
+    "deckType": "full",
+    "deckTypeReason": "Full 11-slide deck recommended for formal investor presentations",
     "fundraisingStage": "pre_seed" or "seed",
     "targetRaise": "Specific amount like $250K or $1.5M",
     "raiseReason": "Brief explanation of raise amount recommendation"
