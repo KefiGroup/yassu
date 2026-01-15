@@ -40,7 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 type InvestorMode = "angel" | "vc";
-type DeckType = "full" | "warm_intro";
+type DeckType = "full";
 type FundraisingStage = "pre_seed" | "seed";
 
 interface PitchContext {
@@ -322,7 +322,7 @@ export default function InvestorPitchDeck() {
       
       toast({
         title: "Pitch Deck Generated",
-        description: `Your ${context.deckType === "full" ? "full" : "warm intro"} deck is ready for review.`,
+        description: `Your 11-slide pitch deck is ready for review.`,
       });
     } catch (error: any) {
       console.error("Generation error:", error);
@@ -426,7 +426,7 @@ export default function InvestorPitchDeck() {
   };
 
   const generateManusExport = (slideData: SlideContent[], context: PitchContext) => {
-    const maxBullets = context.deckType === "warm_intro" ? 3 : 4;
+    const maxBullets = 4;
     
     const exportText = slideData.map((slide, index) => {
       const bulletPoints = slide.keyPoints.slice(0, maxBullets);
@@ -756,7 +756,7 @@ export default function InvestorPitchDeck() {
                     {pitchContext.investorMode === "angel" ? "Angel" : "VC"}
                   </Badge>
                   <Badge variant="outline" className="mr-2">
-                    {pitchContext.deckType === "full" ? "Full Deck" : "Warm Intro"}
+                    11 Slides
                   </Badge>
                   <Badge variant="outline">
                     {pitchContext.targetRaise}

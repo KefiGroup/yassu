@@ -3644,17 +3644,13 @@ DECISION CRITERIA:
 - Recommend ANGEL if: early-stage, pre-product, limited traction, founder-story driven, raising under $500K
 - Recommend VC if: has product, some traction, large TAM, raising $500K+, needs institutional backing
 
-DECK TYPE CRITERIA:
-- ALWAYS default to "full" (11 slides) - this is the standard for investor meetings
-- Only use "warm_intro" (6 slides) if the user explicitly requests a shorter format or if this is clearly just for a cold email/LinkedIn outreach
-
 Return a JSON object with this EXACT structure:
 {
   "analysis": {
     "investorMode": "angel" or "vc",
     "investorModeReason": "Brief explanation of why this investor type is recommended",
     "deckType": "full",
-    "deckTypeReason": "Full 11-slide deck recommended for formal investor presentations",
+    "deckTypeReason": "Full 11-slide deck for formal investor presentations",
     "fundraisingStage": "pre_seed" or "seed",
     "targetRaise": "Specific amount like $250K or $1.5M",
     "raiseReason": "Brief explanation of raise amount recommendation"
@@ -3803,19 +3799,11 @@ Return a JSON object with this EXACT structure:
         }
       }
 
-      const isWarmIntro = deckType === "warm_intro";
       const isAngel = investorMode === "angel";
-      const slideCount = isWarmIntro ? 6 : 11;
-      const maxBullets = isWarmIntro ? 3 : 4;
+      const slideCount = 11;
+      const maxBullets = 4;
 
-      const slideStructure = isWarmIntro 
-        ? `1. Problem
-2. Solution
-3. Why Now
-4. Proof / Traction
-5. Market Opportunity
-6. Team + Ask`
-        : `1. Title & Hook
+      const slideStructure = `1. Title & Hook
 2. Problem
 3. Solution
 4. Why Now
@@ -3859,7 +3847,7 @@ ${teamContext}
 ${businessPlanNotes ? `ADDITIONAL NOTES:\n${businessPlanNotes}\n` : ""}
 ${ideaContext ? `BUSINESS PLAN CONTEXT:\n${ideaContext}\n` : ""}
 
-Generate a ${isWarmIntro ? "6-slide WARM INTRO deck (designed for email/LinkedIn intros, understandable in under 2 minutes)" : "11-slide FULL PITCH DECK (for formal investor meetings with separate Team and The Ask slides)"}.
+Generate an 11-slide FULL PITCH DECK for formal investor meetings with separate Team and The Ask slides.
 
 REQUIRED SLIDES:
 ${slideStructure}
@@ -3871,7 +3859,7 @@ For EACH slide, generate using this EXACT structure:
   "investorBelief": "<what the investor must believe after this slide>",
   "primaryHeadline": "<ONE strong sentence - the main slide title>",
   "supportingSubheadline": "<one clarifying sentence, optional>",
-  "keyPoints": ["<bullet 1>", "<bullet 2>", "<bullet 3>"${!isWarmIntro ? ', "<bullet 4>"' : ""}],
+  "keyPoints": ["<bullet 1>", "<bullet 2>", "<bullet 3>", "<bullet 4>"],
   "suggestedVisual": "<e.g. bar chart, comparison table, funnel, timeline, icon row>",
   "presenterNotes": "<clarifying context for the presenter, not for slide>"
 }
@@ -3963,7 +3951,6 @@ Return ONLY valid JSON with this structure:
       }
 
       const isAngel = pitchContext?.investorMode === "angel";
-      const isWarmIntro = pitchContext?.deckType === "warm_intro";
 
       const slidesJson = JSON.stringify(slides, null, 2);
 
@@ -3973,7 +3960,7 @@ CURRENT DECK:
 ${slidesJson}
 
 INVESTOR MODE: ${isAngel ? "Angel (focus on founder story, clarity, emotional resonance)" : "VC (focus on scale, metrics, defensibility)"}
-DECK TYPE: ${isWarmIntro ? "Warm Intro (6 slides, must be digestible in 2 minutes)" : "Full Deck (11 slides for formal meetings - Team and The Ask are SEPARATE slides)"}
+DECK TYPE: Full Deck (11 slides for formal meetings - Team and The Ask are SEPARATE slides)
 
 YOUR TASK:
 1. Tighten ALL headlines - make them punchier and more memorable
@@ -3986,7 +3973,7 @@ YOUR TASK:
 CRITICAL RULES:
 - Return ONLY the refined slides, no explanations
 - Keep the exact same JSON structure
-- Maximum ${isWarmIntro ? "3" : "4"} key points per slide
+- Maximum 4 key points per slide
 - Each headline must pass the "so what?" test
 - No slide should have more than one core message
 
