@@ -1914,18 +1914,17 @@ export default function IdeaDetail() {
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
                       <FileText className="w-6 h-6 text-primary" />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 1: Generate & Refine</h4>
+                    <h4 className="font-semibold mb-2">Step 1: Generate Investor Deck</h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      AI creates 10 investor-ready slides. Refine each slide with chat.
+                      Create investor-grade content for Angel or VC pitch. Export ready for Manus.
                     </p>
                     <Button
-                      onClick={() => navigate(`/portal/pitch-deck?ideaId=${idea?.id}`)}
-                      variant="outline"
+                      onClick={() => navigate(`/portal/investor-pitch-deck?ideaId=${idea?.id}`)}
                       className="w-full"
                       data-testid="button-pitch-deck-generator"
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Open Pitch Deck Generator
+                      Open Investor Deck Generator
                     </Button>
                   </CardContent>
                 </Card>

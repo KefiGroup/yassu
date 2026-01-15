@@ -42,6 +42,7 @@ const ReferralDashboard = lazy(() => import("./pages/portal/ReferralDashboard"))
 const Pipeline = lazy(() => import("./pages/portal/Pipeline"));
 const MVPBuilder = lazy(() => import("./pages/portal/MVPBuilder"));
 const PitchDeck = lazy(() => import("./pages/portal/PitchDeck"));
+const InvestorPitchDeck = lazy(() => import("./pages/portal/InvestorPitchDeck"));
 const Admin = lazy(() => import("./pages/Admin"));
 
 const queryClient = new QueryClient();
@@ -115,6 +116,7 @@ const App = () => {
                   <Route path="pipeline" element={<Pipeline />} />
                   <Route path="mvp-builder" element={<MVPBuilder />} />
                   <Route path="pitch-deck" element={<PitchDeck />} />
+                  <Route path="investor-pitch-deck" element={<InvestorPitchDeck />} />
                   <Route path="admin" element={<Admin />} />
                 </Route>
                 

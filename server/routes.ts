@@ -3335,4 +3335,252 @@ Be concise and actionable in your feedback.`;
       }
     }
   });
+
+  // Investor Pitch Deck Generator API - Main generation endpoint
+  app.post("/api/ai/investor-pitch-deck", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { pitchContext, ideaId } = req.body;
+
+      if (!pitchContext) {
+        return res.status(400).json({ error: "Pitch context is required" });
+      }
+
+      const {
+        startupName,
+        fundraisingStage,
+        targetRaise,
+        investorMode,
+        deckType,
+        geography,
+        problemStatement,
+        solutionStatement,
+        currentTraction,
+        founderBackground,
+        businessPlanNotes
+      } = pitchContext;
+
+      // Get additional context from idea if provided
+      let ideaContext = "";
+      if (ideaId) {
+        const idea = await storage.getIdea(ideaId);
+        if (idea) {
+          const workflowSections = await db.select()
+            .from(schema.ideaWorkflowSections)
+            .where(eq(schema.ideaWorkflowSections.ideaId, ideaId));
+
+          if (workflowSections.length > 0) {
+            ideaContext = workflowSections.map(s => `## ${s.sectionType}\n${s.content}`).join("\n\n");
+          }
+        }
+      }
+
+      const isWarmIntro = deckType === "warm_intro";
+      const isAngel = investorMode === "angel";
+      const slideCount = isWarmIntro ? 6 : 10;
+      const maxBullets = isWarmIntro ? 3 : 4;
+
+      const slideStructure = isWarmIntro 
+        ? `1. Problem
+2. Solution
+3. Why Now
+4. Proof / Traction
+5. Market Opportunity
+6. Team + Ask`
+        : `1. Title & Hook
+2. Problem
+3. Solution
+4. Why Now
+5. Market Opportunity
+6. Product
+7. Business Model
+8. Traction
+9. Competition
+10. Team + The Ask`;
+
+      const investorTone = isAngel
+        ? `ANGEL INVESTOR OPTIMIZATION:
+- Emphasize founder credibility and story
+- Focus on narrative clarity and emotional resonance
+- Highlight clear first milestone post-investment
+- Use simple language and intuitive framing
+- Show early conviction signals`
+        : `VC INVESTOR OPTIMIZATION:
+- Emphasize scale potential and repeatability
+- Focus on market size, "Why Now" timing, and defensibility
+- Highlight competitive positioning with institutional tone
+- Show metrics discipline and wedge + expansion strategy
+- Use professional, data-driven language`;
+
+      const prompt = `You are a top-tier investor who has reviewed 10,000+ pitch decks. Your task is to generate investor-grade pitch deck content.
+
+${investorTone}
+
+STARTUP CONTEXT:
+- Startup Name: ${startupName}
+- Fundraising Stage: ${fundraisingStage === "pre_seed" ? "Pre-seed" : "Seed"}
+- Target Raise: ${targetRaise}
+- Geography: ${geography}
+- Problem: ${problemStatement}
+- Solution: ${solutionStatement}
+- Current Traction: ${currentTraction}
+- Founder Background: ${founderBackground}
+
+${businessPlanNotes ? `ADDITIONAL NOTES:\n${businessPlanNotes}\n` : ""}
+${ideaContext ? `BUSINESS PLAN CONTEXT:\n${ideaContext}\n` : ""}
+
+Generate a ${isWarmIntro ? "6-slide WARM INTRO deck (designed for email/LinkedIn intros, understandable in under 2 minutes)" : "10-slide FULL PITCH DECK (for formal investor meetings)"}.
+
+REQUIRED SLIDES:
+${slideStructure}
+
+For EACH slide, generate using this EXACT structure:
+{
+  "slideNumber": <number>,
+  "slideTitle": "<title>",
+  "investorBelief": "<what the investor must believe after this slide>",
+  "primaryHeadline": "<ONE strong sentence - the main slide title>",
+  "supportingSubheadline": "<one clarifying sentence, optional>",
+  "keyPoints": ["<bullet 1>", "<bullet 2>", "<bullet 3>"${!isWarmIntro ? ', "<bullet 4>"' : ""}],
+  "suggestedVisual": "<e.g. bar chart, comparison table, funnel, timeline, icon row>",
+  "presenterNotes": "<clarifying context for the presenter, not for slide>"
+}
+
+Also generate a metrics validation table:
+{
+  "metricsValidation": [
+    {
+      "slideNumber": <number>,
+      "slideTitle": "<title>",
+      "metricsRequired": "<what data investors will look for>",
+      "proxyMetrics": "<acceptable alternatives for early stage>",
+      "riskLevel": "<Low|Medium|High>",
+      "sensitivityNotes": "<investor concerns>"
+    }
+  ]
+}
+
+CRITICAL RULES:
+- No paragraphs on slides - bullet points only
+- No buzzwords or vague claims
+- Slide-ready language only
+- Maximum ${maxBullets} bullet points per slide
+- Each bullet must be specific and evidence-based where possible
+
+Return ONLY valid JSON with this structure:
+{
+  "slides": [...],
+  "metricsValidation": [...]
+}`;
+
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const client = new OpenAI({ apiKey, baseURL });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 8192,
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "Failed to generate pitch deck" });
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Investor pitch deck generation error:", error);
+      res.status(500).json({ error: "Failed to generate pitch deck" });
+    }
+  });
+
+  // Investor Pitch Deck Refinement - "Investor-Proof This Deck"
+  app.post("/api/ai/investor-pitch-deck/refine", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { pitchContext, slides, ideaId } = req.body;
+
+      if (!slides || slides.length === 0) {
+        return res.status(400).json({ error: "Slides are required for refinement" });
+      }
+
+      const isAngel = pitchContext?.investorMode === "angel";
+      const isWarmIntro = pitchContext?.deckType === "warm_intro";
+
+      const slidesJson = JSON.stringify(slides, null, 2);
+
+      const prompt = `You are a ruthless investor editor. Your job is to investor-proof this pitch deck.
+
+CURRENT DECK:
+${slidesJson}
+
+INVESTOR MODE: ${isAngel ? "Angel (focus on founder story, clarity, emotional resonance)" : "VC (focus on scale, metrics, defensibility)"}
+DECK TYPE: ${isWarmIntro ? "Warm Intro (6 slides, must be digestible in 2 minutes)" : "Full Deck (10+ slides for formal meetings)"}
+
+YOUR TASK:
+1. Tighten ALL headlines - make them punchier and more memorable
+2. Remove ALL vague claims - replace with specific signals or delete
+3. Eliminate buzzwords and fluff
+4. Add "Why Now" logic if missing from any slide
+5. Ensure each slide has ONE clear investor belief it must create
+6. Make key points concrete and evidence-based
+
+CRITICAL RULES:
+- Return ONLY the refined slides, no explanations
+- Keep the exact same JSON structure
+- Maximum ${isWarmIntro ? "3" : "4"} key points per slide
+- Each headline must pass the "so what?" test
+- No slide should have more than one core message
+
+Return the refined deck as valid JSON:
+{
+  "slides": [...]
+}`;
+
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const client = new OpenAI({ apiKey, baseURL });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 8192,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "Failed to refine pitch deck" });
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error("Investor pitch deck refinement error:", error);
+      res.status(500).json({ error: "Failed to refine pitch deck" });
+    }
+  });
 }

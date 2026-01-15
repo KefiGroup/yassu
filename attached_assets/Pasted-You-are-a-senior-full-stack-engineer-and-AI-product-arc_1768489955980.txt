@@ -1,0 +1,275 @@
+You are a senior full-stack engineer and AI product architect.
+
+Build an **AI-powered Investor Pitch Deck Generator** inside my portal.
+
+This system’s sole purpose is to generate **investor-grade pitch deck content** that can be exported directly into **Manus** for high-quality slide design.
+
+The system must clearly separate:
+
+* **WHAT to say (investor logic, structure, wording)** → handled by AI
+* **HOW it looks (visual design, layout)** → handled by Manus
+
+No visual design logic should exist in this module.
+
+---
+
+## CORE PRODUCT OBJECTIVE
+
+Help founders generate pitch decks that:
+
+* Sound like they were written by an investor
+* Pass pattern-recognition tests
+* Get replies, meetings, and follow-ups
+
+This is a **thinking engine**, not a slide tool.
+
+---
+
+## REQUIRED USER INPUT (STEP 1 — INTAKE FORM)
+
+Mandatory fields:
+
+* Startup name
+* Fundraising stage (Pre-seed / Seed)
+* Target raise amount
+* Investor Mode (Angel / Institutional VC)
+* Deck Type (Full Pitch Deck / 6-Slide Warm Intro)
+* Geography
+* One-sentence problem
+* One-sentence solution
+* Current traction (or “pre-traction”)
+* Founder background (short)
+
+Optional:
+
+* Upload business plan or notes
+
+Store all inputs in a structured object called `pitch_context`.
+
+---
+
+## INVESTOR MODE RULES (GLOBAL LOGIC)
+
+### Angel Mode
+
+Optimize for:
+
+* Founder credibility
+* Narrative clarity
+* Emotional resonance
+* Early conviction
+
+Emphasis:
+
+* Founder story
+* Clear first milestone post-investment
+* Use of funds
+* Simple language, intuitive framing
+
+### VC Mode
+
+Optimize for:
+
+* Scale potential
+* Market size
+* Defensibility
+* Repeatability
+
+Emphasis:
+
+* “Why Now”
+* Wedge + expansion
+* Competitive positioning
+* Metrics discipline
+* Institutional tone
+
+The AI must internally adapt:
+
+* Headlines
+* Bullet framing
+* Slide prioritization
+  Based on Investor Mode.
+
+---
+
+## DECK TYPE RULES
+
+### Full Pitch Deck
+
+* 10–12 slides
+* Standard investor sequence
+* Used for formal meetings
+
+### Warm Intro Deck
+
+* Exactly 6 slides
+* Designed for email, WhatsApp, LinkedIn intros
+* Must be understandable in under 2 minutes
+
+Mandatory 6 slides:
+
+1. Problem
+2. Solution
+3. Why Now
+4. Proof / Traction (or credible proxy)
+5. Market Opportunity
+6. Team + Ask
+
+---
+
+## STEP 2 — CORE DECK GENERATION (INVESTOR LOGIC)
+
+Trigger AI with role:
+“You are a top-tier investor who has reviewed 10,000+ pitch decks.”
+
+For EACH slide, generate using this STRICT STRUCTURE:
+
+```
+Slide Number:
+Slide Title:
+
+Investor Belief:
+(What the investor must believe after this slide)
+
+Primary Headline:
+(ONE strong sentence — slide title in Manus)
+
+Supporting Subheadline (optional):
+(One clarifying sentence only if needed)
+
+Key Points (max 4 for Full Deck, max 3 for Warm Intro):
+- Bullet 1
+- Bullet 2
+- Bullet 3
+- Bullet 4 (if applicable)
+
+Suggested Visual:
+(e.g. bar chart, comparison table, funnel, timeline, icon row)
+
+Presenter Notes (optional, NOT for slide):
+(Clarifying context)
+```
+
+Rules:
+
+* No paragraphs
+* No buzzwords
+* Slide-ready language only
+
+---
+
+## STEP 3 — INVESTOR RUTHLESS REWRITE
+
+Add a button: **“Investor-Proof This Deck”**
+
+AI must:
+
+* Tighten headlines
+* Remove vague claims
+* Replace fluff with signals
+* Add “Why Now” logic if missing
+
+Return ONLY the final refined version (no drafts).
+
+---
+
+## STEP 4 — METRICS & SIGNAL VALIDATION (FOUNDER-ONLY)
+
+Generate a separate table (not slides):
+
+```
+Slide Number:
+Metrics Required:
+Acceptable Proxy Metrics (if early stage):
+Risk Level (Low / Medium / High):
+Investor Sensitivity Notes:
+```
+
+No invented data allowed.
+
+---
+
+## STEP 5 — MANUS EXPORT GENERATOR (CRITICAL)
+
+Generate a **clean, copy-paste-ready export** labeled:
+
+### “MANUS SLIDE INPUT — DO NOT EDIT CONTENT”
+
+For EACH slide, output EXACTLY:
+
+```
+SLIDE X — [Slide Title]
+
+HEADLINE:
+[Primary Headline]
+
+SUBHEAD (if any):
+[Supporting Subheadline]
+
+ON-SLIDE BULLETS:
+• Bullet 1
+• Bullet 2
+• Bullet 3
+• Bullet 4 (if applicable)
+
+SUGGESTED VISUAL:
+[One clear visual instruction]
+```
+
+Rules:
+
+* No commentary
+* No markdown styling beyond labels
+* No explanations
+* Plain text only
+* Designed for direct paste into Manus
+
+If Deck Type = Warm Intro Deck, limit bullets to MAX 3 and simplify visuals.
+
+---
+
+## UI REQUIREMENTS
+
+* Left panel: step navigation (Intake → Export)
+* Top selectors:
+
+  * Investor Mode (Angel / VC)
+  * Deck Type (Full / Warm Intro)
+* Main panel: generated content
+* Inline edits allowed before export
+* One-click “Copy for Manus” button
+* Version history saved automatically
+
+---
+
+## NON-GOALS (DO NOT BUILD)
+
+* No slide themes
+* No branding tools
+* No Canva / PowerPoint logic
+* No investor CRM
+* No fundraising analytics
+
+---
+
+## TECH REQUIREMENTS
+
+* Frontend: React
+* Backend: Node or Python
+* AI: OpenAI (low temperature, structured outputs)
+* Deterministic output preferred
+* Plain-text export compatibility with Manus
+
+---
+
+## SUCCESS CRITERIA
+
+If a user pastes the export into Manus and the resulting deck:
+
+* Looks clean
+* Sounds credible
+* Feels investor-ready
+
+Then the feature succeeds.
+
+If Manus needs to guess what belongs on a slide, the feature has failed.
