@@ -22,6 +22,15 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
 - **Direct Messaging**: Full messaging system with conversation threads, real-time UI, and email notifications for new messages.
 - **Notification System**: Email notifications for connection requests, team invitations, new messages, and weekly digests.
 - **Journey Progress Tracker**: Visual progress tracker for each idea's development stages.
+- **Investor Pitch Deck Generator**: AI-powered multi-step wizard for creating investor-grade pitch decks. Features include:
+  - Investor Mode toggle (Angel vs VC) with different optimization strategies
+  - Deck Type selection (Full 10-slide deck vs 6-slide Warm Intro)
+  - Intake form for startup context (name, stage, raise amount, problem, solution, traction, founder background)
+  - AI generation using investor perspective with structured slide output
+  - "Investor-Proof This Deck" refinement feature for tightening language
+  - Metrics validation table showing required metrics per slide
+  - Manus-ready export with copy-paste format for slide design
+  - Version history tracking with restore capability
 - **UI/UX**: Utilizes Tailwind CSS and shadcn/ui for a modern, responsive design. The dashboard is redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
 
 ## External Dependencies
