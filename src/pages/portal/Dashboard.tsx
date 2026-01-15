@@ -27,6 +27,9 @@ import {
   User,
   ArrowRight,
   Sparkles,
+  Compass,
+  Search,
+  Rocket,
 } from 'lucide-react';
 interface Profile {
   id: number;
@@ -548,126 +551,176 @@ Looking forward to hearing from you!`;
         </Card>
       </motion.div>
 
-      {/* Section 3: People to Invite */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-emerald-500" />
-              People to Invite
-            </CardTitle>
-            <CardDescription>Smart matches based on skills and interests relevant to your ideas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
-                ))}
-              </div>
-            ) : potentialMembers.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {potentialMembers.map((member) => (
-                  <div
-                    key={member.userId}
-                    className="p-4 rounded-lg border border-border hover:border-primary/20 transition-colors"
-                    data-testid={`card-potential-member-${member.userId}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Avatar 
-                        className="w-10 h-10 cursor-pointer"
-                        onClick={() => setSelectedProfile(member)}
-                        data-testid={`avatar-member-${member.userId}`}
-                      >
-                        <AvatarImage src={member.avatarUrl || undefined} />
-                        <AvatarFallback>{getInitials(member.fullName)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <span 
-                          className="font-medium cursor-pointer hover:text-primary block truncate"
-                          onClick={() => setSelectedProfile(member)}
-                          data-testid={`text-member-name-${member.userId}`}
-                        >
-                          {member.fullName || 'Unknown'}
-                        </span>
-                        {member.yassuRole && (
-                          <Badge variant="secondary" className="text-xs mt-1">
-                            {member.yassuRole === 'ambassador' ? (
-                              <><GraduationCap className="w-3 h-3 mr-1" /> Ambassador</>
-                            ) : (
-                              <><Briefcase className="w-3 h-3 mr-1" /> Advisor</>
-                            )}
-                          </Badge>
-                        )}
-                      </div>
+      {/* Section 3: Get Started (for users without ideas) OR People to Invite (for users with ideas) */}
+      {!loading && myIdeas.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+        >
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Compass className="w-5 h-5 text-primary" />
+                Get Started
+              </CardTitle>
+              <CardDescription>Join an existing project or create your own startup idea</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-6 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                      <Search className="w-5 h-5 text-blue-500" />
                     </div>
-                    {member.skills && member.skills.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {member.skills.slice(0, 3).map((skill, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
-                        {member.skills.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{member.skills.length - 3}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                    {myIdeas.some(idea => isAlreadyInvited(member.userId, idea.id)) ? (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="w-full mt-3"
-                        disabled
-                        data-testid={`button-invited-${member.userId}`}
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Invited
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="w-full mt-3"
-                        onClick={() => {
-                          if (myIdeas.length === 0) {
-                            toast({
-                              title: 'No ideas yet',
-                              description: 'Post an idea first to invite team members.',
-                              variant: 'destructive',
-                            });
-                          } else {
-                            handleOpenInviteDialog(member);
-                          }
-                        }}
-                        disabled={invitingUserId === member.userId}
-                        data-testid={`button-invite-${member.userId}`}
-                      >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Invite
-                      </Button>
-                    )}
+                    <h3 className="font-semibold">Browse Ideas</h3>
                   </div>
-                ))}
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Explore startup ideas in the marketplace and apply to join a team that matches your skills and interests.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigate('/portal/ideas')}
+                    data-testid="button-browse-ideas"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Browse Ideas Marketplace
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+                
+                <div className="p-6 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                      <Rocket className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <h3 className="font-semibold">Create Your Own</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Have a startup idea? Post it and find co-founders who can help bring your vision to life.
+                  </p>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    onClick={() => navigate('/portal/ideas/new')}
+                    data-testid="button-create-idea"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Post Your Idea
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <UserPlus className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-muted-foreground">
-                  {myIdeas.length === 0 
-                    ? 'Post an idea first to start inviting team members' 
-                    : 'No advisors or ambassadors available to invite'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-emerald-500" />
+                People to Invite
+              </CardTitle>
+              <CardDescription>Smart matches based on skills and interests relevant to your ideas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+                  ))}
+                </div>
+              ) : potentialMembers.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {potentialMembers.map((member) => (
+                    <div
+                      key={member.userId}
+                      className="p-4 rounded-lg border border-border hover:border-primary/20 transition-colors"
+                      data-testid={`card-potential-member-${member.userId}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Avatar 
+                          className="w-10 h-10 cursor-pointer"
+                          onClick={() => setSelectedProfile(member)}
+                          data-testid={`avatar-member-${member.userId}`}
+                        >
+                          <AvatarImage src={member.avatarUrl || undefined} />
+                          <AvatarFallback>{getInitials(member.fullName)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <span 
+                            className="font-medium cursor-pointer hover:text-primary block truncate"
+                            onClick={() => setSelectedProfile(member)}
+                            data-testid={`text-member-name-${member.userId}`}
+                          >
+                            {member.fullName || 'Unknown'}
+                          </span>
+                          {member.yassuRole && (
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              {member.yassuRole === 'ambassador' ? (
+                                <><GraduationCap className="w-3 h-3 mr-1" /> Ambassador</>
+                              ) : (
+                                <><Briefcase className="w-3 h-3 mr-1" /> Advisor</>
+                              )}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      {member.skills && member.skills.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {member.skills.slice(0, 3).map((skill, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {member.skills.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{member.skills.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      {myIdeas.some(idea => isAlreadyInvited(member.userId, idea.id)) ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="w-full mt-3"
+                          disabled
+                          data-testid={`button-invited-${member.userId}`}
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          Invited
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="w-full mt-3"
+                          onClick={() => handleOpenInviteDialog(member)}
+                          disabled={invitingUserId === member.userId}
+                          data-testid={`button-invite-${member.userId}`}
+                        >
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Invite
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <UserPlus className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                  <p className="text-muted-foreground">No advisors or ambassadors available to invite</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Section 4: My Connections */}
       <motion.div
