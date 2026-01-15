@@ -149,6 +149,7 @@ const planSections = [
   { id: 'fundingPitch', label: 'Funding Pitch', icon: DollarSign },
 ];
 
+// Journey steps now support independent completion - each milestone can be achieved in any order
 const journeySteps = [
   { id: 1, title: 'Post Idea', icon: PenLine, description: 'Share your startup idea', segment: 'idea' },
   { id: 2, title: 'Business Plan', icon: Brain, description: 'Generate with Yassu AI', segment: 'businessPlan' },
@@ -158,6 +159,9 @@ const journeySteps = [
   { id: 6, title: 'Yassu Foundry', icon: Rocket, description: 'Accelerate growth', segment: 'foundry' },
   { id: 7, title: 'Seek Funding / Market Launch', icon: DollarSign, description: 'Go to market', segment: 'funding' },
 ];
+
+// Helper to determine step status independently - each step has its own signals
+type StepStatus = 'completed' | 'in_progress' | 'not_started';
 
 export default function IdeaDetail() {
   const { id: ideaId } = useParams<{ id: string }>();
@@ -221,6 +225,37 @@ export default function IdeaDetail() {
   
   // Team for this idea
   const [ideaTeam, setIdeaTeam] = useState<{ id: string; name: string } | null>(null);
+  const [hasMvpFeatures, setHasMvpFeatures] = useState(false);
+  const [hasPitchDeck, setHasPitchDeck] = useState(false);
+  const [hasAdvisors, setHasAdvisors] = useState(false);
+  const [mvpInProgress, setMvpInProgress] = useState(false);
+  
+  // Helper function to determine step status INDEPENDENTLY
+  // Each step checks only its own signals, no cross-dependencies
+  const getStepStatus = (stepId: number): StepStatus => {
+    switch (stepId) {
+      case 1: // Post Idea - complete once idea exists
+        return idea ? 'completed' : 'not_started';
+      case 2: // Business Plan - own signal
+        if (businessPlan?.status === 'completed') return 'completed';
+        if (businessPlan?.status === 'running') return 'in_progress';
+        return 'not_started';
+      case 3: // Find Advisors - own signal based on advisor connections
+        return hasAdvisors ? 'completed' : 'in_progress'; // Always in progress since it's ongoing
+      case 4: // Form Team - own signal
+        return ideaTeam ? 'completed' : 'not_started';
+      case 5: // Build MVP - own signal based on MVP features
+        if (hasMvpFeatures) return 'completed';
+        if (mvpInProgress) return 'in_progress';
+        return 'not_started';
+      case 6: // Yassu Foundry - future feature, always not started for now
+        return 'not_started';
+      case 7: // Seek Funding - own signal based on pitch deck
+        return hasPitchDeck ? 'completed' : 'not_started';
+      default:
+        return 'not_started';
+    }
+  };
   const [creatingTeam, setCreatingTeam] = useState(false);
 
   useEffect(() => {
@@ -298,6 +333,53 @@ export default function IdeaDetail() {
           }
         } catch (e) {
           console.error('Failed to fetch team:', e);
+        }
+        
+        // Check for MVP features and in-progress status
+        try {
+          const mvpResponse = await fetch(`/api/ideas/${ideaId}/mvp-features`);
+          if (mvpResponse.ok) {
+            const mvpData = await mvpResponse.json();
+            const hasFeatures = mvpData.features && mvpData.features.length > 0;
+            setHasMvpFeatures(hasFeatures);
+            // If has features, it's at least in progress
+            if (hasFeatures) setMvpInProgress(true);
+          }
+        } catch (e) {
+          // MVP features endpoint may not exist, check workflow sections for mvp_design
+          try {
+            const workflowResponse = await fetch(`/api/ideas/${ideaId}/workflows/mvp_design`);
+            if (workflowResponse.ok) {
+              const section = await workflowResponse.json();
+              if (section?.content) {
+                setMvpInProgress(true);
+              }
+            }
+          } catch (e2) {
+            // No MVP work yet
+          }
+        }
+        
+        // Check for pitch deck
+        try {
+          const pitchResponse = await fetch(`/api/ideas/${ideaId}/pitch-deck`);
+          if (pitchResponse.ok) {
+            const pitchData = await pitchResponse.json();
+            setHasPitchDeck(!!pitchData.id);
+          }
+        } catch (e) {
+          // Pitch deck endpoint may not exist yet, that's ok
+        }
+        
+        // Check for advisors (users interested in advising this idea)
+        try {
+          const advisorResponse = await fetch(`/api/ideas/${ideaId}/advisors`);
+          if (advisorResponse.ok) {
+            const advisorData = await advisorResponse.json();
+            setHasAdvisors(advisorData.advisors && advisorData.advisors.length > 0);
+          }
+        } catch (e) {
+          // No advisors endpoint, that's ok - defaults to false
         }
       } catch (error) {
         console.error('Failed to fetch idea:', error);
@@ -1141,10 +1223,9 @@ export default function IdeaDetail() {
               <div className="flex items-center justify-center min-w-max">
                 {journeySteps.map((step, index) => {
                   const StepIcon = step.icon;
-                  const isCompleted = step.id === 1 || (step.id === 2 && businessPlan?.status === 'completed');
-                  const isCurrent = (step.id === 2 && !businessPlan) || 
-                    (step.id === 2 && businessPlan?.status === 'running') ||
-                    (step.id === 3 && businessPlan?.status === 'completed');
+                  const status = getStepStatus(step.id);
+                  const isCompleted = status === 'completed';
+                  const isInProgress = status === 'in_progress';
                   
                   return (
                     <div key={step.id} className="flex items-center">
@@ -1157,8 +1238,8 @@ export default function IdeaDetail() {
                           className={`w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:scale-110 group-hover:shadow-md ${
                             isCompleted
                               ? 'bg-primary text-primary-foreground'
-                              : isCurrent
-                              ? 'bg-primary/20 text-primary ring-2 ring-primary'
+                              : isInProgress
+                              ? 'bg-primary/20 text-primary ring-2 ring-primary ring-offset-2'
                               : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
                           }`}
                         >
@@ -1169,15 +1250,17 @@ export default function IdeaDetail() {
                           )}
                         </div>
                         <span className={`text-xs text-center w-20 transition-colors ${
-                          isCompleted || isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground group-hover:text-foreground'
+                          isCompleted ? 'text-foreground font-medium' : 
+                          isInProgress ? 'text-primary font-medium' : 
+                          'text-muted-foreground group-hover:text-foreground'
                         }`}>
                           {step.title}
                         </span>
                       </button>
                       {index < journeySteps.length - 1 && (
-                        <div className={`w-12 h-1 mx-3 rounded-full flex-shrink-0 ${
-                          isCompleted ? 'bg-primary' : 'bg-muted'
-                        }`} />
+                        <div 
+                          className="w-12 h-0.5 mx-3 flex-shrink-0 border-t-2 border-dashed border-muted" 
+                        />
                       )}
                     </div>
                   );
