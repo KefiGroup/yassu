@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
@@ -77,14 +77,11 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(
-    require("express").static(distPath, {
-      index: false,
-    }),
-  );
+  // Serve static assets
+  app.use(express.static(distPath, { index: false }));
 
-  // Catch-all: serve index.html for any route not matched above
-  app.use((_req, res) => {
+  // Catch-all: serve index.html for any route not matched (SPA routing)
+  app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
