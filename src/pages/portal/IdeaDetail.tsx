@@ -1980,33 +1980,6 @@ export default function IdeaDetail() {
               </div>
             </div>
             
-            {businessPlan?.sections?.fundingPitch && (
-              <div className="mt-6 pt-6 border-t space-y-4">
-                <div className="flex items-center justify-between">
-                  <Badge className="bg-emerald-500 text-white">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Funding Strategy Ready
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setActiveTab('fundingPitch');
-                      scrollToSegment('businessPlan');
-                    }}
-                    data-testid="button-view-funding-pitch"
-                  >
-                    View in Business Plan
-                  </Button>
-                </div>
-                <div className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-4 rounded-lg max-h-48 overflow-hidden relative">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                    {preprocessMarkdown(businessPlan.sections.fundingPitch)}
-                  </ReactMarkdown>
-                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-muted/80 to-transparent pointer-events-none" />
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       </motion.div>
