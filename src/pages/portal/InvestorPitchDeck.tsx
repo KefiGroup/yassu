@@ -592,7 +592,7 @@ export default function InvestorPitchDeck() {
           type="file"
           ref={fileInputRef}
           onChange={handleFileUpload}
-          accept=".txt,.md,.doc,.docx"
+          accept=".txt,.md,.doc,.docx,.pptx,.pdf"
           className="hidden"
         />
         <button
