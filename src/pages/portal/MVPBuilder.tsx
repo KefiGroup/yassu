@@ -119,26 +119,49 @@ export default function MVPBuilder() {
 
   const selectedFeatures = features.filter(f => f.selected);
 
+  const generateMVPFromBusinessPlan = async () => {
+    setIsGenerating(true);
+    setStep("chat");
+    
+    const prompt = `I have my full business plan loaded. Please analyze it and create a lean MVP specification.
+
+Follow your tasks:
+1. Extract the single most important assumption to validate first
+2. Define the narrowest possible MVP to test that assumption
+3. Specify the happy-path user flow only
+4. List exactly 5 must-have features max
+5. Explicitly list what we are NOT building yet
+6. Recommend the fastest tools (no-code / low-code / AI-assisted)
+7. Define ONE success metric for the first 30 days
+8. Call out any feature that should be delayed, even if it feels "important"
+
+Be opinionated. Cut anything that's overkill for MVP.`;
+
+    await sendMessage(prompt, true);
+  };
+
   const generateMVPSpec = async () => {
     setIsGenerating(true);
     
     const selectedFeaturesList = selectedFeatures.map(f => `- ${f.name}: ${f.description}`).join("\n");
-    const prompt = `Based on my startup idea and business plan, please create a comprehensive MVP specification document.
+    const prompt = `Based on my startup idea and business plan, please create a lean MVP specification.
 
 Selected features to include:
 ${selectedFeaturesList}
 
 ${customFeatures ? `Additional requirements:\n${customFeatures}` : ""}
 
-Please provide:
-1. **Executive Summary** - Brief overview of the MVP
-2. **Core Features** - Detailed breakdown of each selected feature with user stories
-3. **User Flow** - How users will navigate the product
-4. **Technical Requirements** - High-level tech recommendations (keep it simple)
-5. **Development Phases** - Suggested order of building features
-6. **Launch Checklist** - What's needed before going live
+Follow your tasks:
+1. Extract the single most important assumption to validate first
+2. Define the narrowest possible MVP to test that assumption  
+3. Specify the happy-path user flow only
+4. List exactly 5 must-have features max (from my selection above)
+5. Explicitly list what we are NOT building yet
+6. Recommend the fastest tools (no-code / low-code / AI-assisted)
+7. Define ONE success metric for the first 30 days
+8. Call out any feature that should be delayed
 
-Format this as a clear, actionable document that I could share with a developer or use with an AI coding tool.`;
+Be opinionated. Cut anything that's overkill for MVP.`;
 
     await sendMessage(prompt, true);
     setStep("chat");
@@ -325,56 +348,134 @@ Format this as a clear, actionable document that I could share with a developer 
               <CardTitle className="text-2xl">Let's Build Your MVP</CardTitle>
               <CardDescription className="text-base">
                 {hasBusinessPlan 
-                  ? "Great news! You have a business plan ready. Let's use it to define your MVP features."
+                  ? "Your business plan is ready! AI will analyze it and create a lean MVP spec."
                   : "Let's define the core features for your minimum viable product."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {hasBusinessPlan && (
-                <div className="flex items-center gap-3 p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm">Business Plan Available</p>
-                    <p className="text-xs text-muted-foreground">
-                      Your AI-generated business plan will be used to suggest relevant features.
-                    </p>
+              {hasBusinessPlan ? (
+                <>
+                  <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <p className="font-medium text-sm">Business Plan Loaded</p>
+                    </div>
+                    <div className="bg-background/50 rounded-md p-3 max-h-48 overflow-y-auto text-xs text-muted-foreground space-y-2">
+                      {businessPlan.slice(0, 3).map((section: any, i: number) => (
+                        <div key={i}>
+                          <span className="font-medium text-foreground">{section.sectionKey}:</span>{' '}
+                          {section.content?.slice(0, 150)}...
+                        </div>
+                      ))}
+                      {businessPlan.length > 3 && (
+                        <p className="text-muted-foreground italic">+ {businessPlan.length - 3} more sections</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              <div className="space-y-3">
-                <h3 className="font-medium">What we'll do:</h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-medium text-primary">1</span>
-                    </div>
-                    Select standard features for your MVP
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-medium text-primary">2</span>
-                    </div>
-                    Add any custom requirements you have
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-medium text-primary">3</span>
-                    </div>
-                    Generate a complete MVP specification
-                  </li>
-                </ul>
-              </div>
 
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={() => setStep("features")}
-                data-testid="button-start-building"
-              >
-                Start Building
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+                  <div className="space-y-3">
+                    <h3 className="font-medium text-sm">AI will analyze your business plan and:</h3>
+                    <ul className="space-y-1.5 text-sm text-muted-foreground">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        Extract the core assumption to validate first
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        Define the narrowest MVP (buildable in 2-4 weeks)
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        List exactly 5 must-have features max
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                        Recommend no-code/low-code tools
+                      </li>
+                    </ul>
+                  </div>
+
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={generateMVPFromBusinessPlan}
+                    disabled={isGenerating}
+                    data-testid="button-generate-from-plan"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating MVP Spec...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate MVP from Business Plan
+                      </>
+                    )}
+                  </Button>
+                  
+                  <div className="text-center">
+                    <Button 
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setStep("features")}
+                      className="text-muted-foreground"
+                      data-testid="button-manual-features"
+                    >
+                      Or select features manually instead
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-sm">No Business Plan Yet</p>
+                        <p className="text-xs text-muted-foreground">
+                          Generate a business plan first for best results, or select features manually.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+              
+                  <div className="space-y-3">
+                    <h3 className="font-medium">What we'll do:</h3>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-medium text-primary">1</span>
+                        </div>
+                        Select standard features for your MVP
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-medium text-primary">2</span>
+                        </div>
+                        Add any custom requirements you have
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-medium text-primary">3</span>
+                        </div>
+                        Generate a complete MVP specification
+                      </li>
+                    </ul>
+                  </div>
+
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={() => setStep("features")}
+                    data-testid="button-start-building"
+                  >
+                    Start Building
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
