@@ -780,6 +780,31 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Save MVP link for an idea
+  app.patch("/api/ideas/:id/mvp-link", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      if (idea.createdBy !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to modify this idea" });
+      }
+
+      const { mvpLink } = req.body;
+      const updatedIdea = await storage.updateIdea(req.params.id, { mvpLink });
+      res.json(updatedIdea);
+    } catch (error) {
+      console.error("Save MVP link error:", error);
+      res.status(500).json({ error: "Failed to save MVP link" });
+    }
+  });
+
   app.delete("/api/ideas/:id", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });

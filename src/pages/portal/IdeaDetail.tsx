@@ -100,6 +100,7 @@ interface Idea {
   createdAt: string;
   createdBy: number;
   isPublic: boolean;
+  mvpLink: string | null;
   tags?: string[];
 }
 
@@ -230,6 +231,11 @@ export default function IdeaDetail() {
   const [hasPitchDeck, setHasPitchDeck] = useState(false);
   const [hasAdvisors, setHasAdvisors] = useState(false);
   const [mvpInProgress, setMvpInProgress] = useState(false);
+  
+  // MVP Link input
+  const [showMvpLinkInput, setShowMvpLinkInput] = useState(false);
+  const [mvpLinkValue, setMvpLinkValue] = useState('');
+  const [savingMvpLink, setSavingMvpLink] = useState(false);
   
   // Helper function to determine step status INDEPENDENTLY
   // Each step checks only its own signals, no cross-dependencies
@@ -801,6 +807,35 @@ export default function IdeaDetail() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveMvpLink = async () => {
+    if (!ideaId || !mvpLinkValue.trim()) return;
+    
+    setSavingMvpLink(true);
+    try {
+      await apiRequest(`/ideas/${ideaId}/mvp-link`, {
+        method: 'PATCH',
+        body: JSON.stringify({ mvpLink: mvpLinkValue.trim() }),
+      });
+      
+      setIdea(prev => prev ? { ...prev, mvpLink: mvpLinkValue.trim() } : prev);
+      setShowMvpLinkInput(false);
+      setMvpLinkValue('');
+      
+      toast({
+        title: 'MVP Link Saved',
+        description: 'Your MVP project link has been saved.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Save Failed',
+        description: 'Could not save MVP link. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingMvpLink(false);
     }
   };
 
@@ -2409,6 +2444,55 @@ export default function IdeaDetail() {
           }}
         />
       )}
+
+      {/* MVP Link Input Dialog */}
+      <Dialog open={showMvpLinkInput} onOpenChange={setShowMvpLinkInput}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="w-5 h-5" />
+              Link Your MVP Project
+            </DialogTitle>
+            <DialogDescription>
+              Paste the link to your Manus project or deployed MVP. This helps track your progress.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">MVP Link</label>
+              <input
+                type="url"
+                placeholder="https://manus.im/app/... or https://your-mvp.com"
+                value={mvpLinkValue}
+                onChange={(e) => setMvpLinkValue(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                data-testid="input-mvp-link"
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowMvpLinkInput(false);
+                  setMvpLinkValue('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveMvpLink}
+                disabled={!mvpLinkValue.trim() || savingMvpLink}
+                data-testid="button-save-mvp-link"
+              >
+                {savingMvpLink ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : null}
+                Save Link
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
