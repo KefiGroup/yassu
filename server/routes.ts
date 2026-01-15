@@ -3336,6 +3336,125 @@ Be concise and actionable in your feedback.`;
     }
   });
 
+  // Investor Pitch Deck - AI Analysis endpoint (auto-populates from business plan)
+  app.post("/api/ai/investor-pitch-deck/analyze", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { ideaId, uploadedPlan } = req.body;
+
+      if (!ideaId) {
+        return res.status(400).json({ error: "Idea ID is required" });
+      }
+
+      const idea = await storage.getIdea(ideaId);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      let businessPlanContent = "";
+      
+      if (uploadedPlan && uploadedPlan.length > 100) {
+        businessPlanContent = uploadedPlan;
+      } else {
+        const workflowSections = await db.select()
+          .from(schema.ideaWorkflowSections)
+          .where(eq(schema.ideaWorkflowSections.ideaId, ideaId));
+
+        businessPlanContent = workflowSections.map(s => `## ${s.sectionType}\n${s.content}`).join("\n\n");
+      }
+
+      if (!businessPlanContent || businessPlanContent.length < 100) {
+        return res.status(400).json({ 
+          error: "Insufficient business plan content",
+          message: "Please complete your business plan before generating a pitch deck. We need enough context to create investor-grade content."
+        });
+      }
+
+      const prompt = `You are a seasoned startup advisor with deep experience in fundraising. Analyze this business plan and extract all relevant context for an investor pitch deck.
+
+BUSINESS PLAN:
+${businessPlanContent}
+
+IDEA TITLE: ${idea.title}
+IDEA PROBLEM: ${idea.problem || "Not specified"}
+IDEA SOLUTION: ${idea.solution || "Not specified"}
+
+YOUR TASK:
+Analyze this business plan and determine:
+1. The recommended investor type (angel vs VC) based on company stage, metrics, and market
+2. The recommended fundraising amount based on typical raises for this stage/market
+3. The fundraising stage (pre_seed or seed)
+4. Extract the key pitch elements
+
+DECISION CRITERIA:
+- Recommend ANGEL if: early-stage, pre-product, limited traction, founder-story driven, raising under $500K
+- Recommend VC if: has product, some traction, large TAM, raising $500K+, needs institutional backing
+
+Return a JSON object with this EXACT structure:
+{
+  "analysis": {
+    "investorMode": "angel" or "vc",
+    "investorModeReason": "Brief explanation of why this investor type is recommended",
+    "deckType": "full" or "warm_intro",
+    "deckTypeReason": "Brief explanation of deck type recommendation",
+    "fundraisingStage": "pre_seed" or "seed",
+    "targetRaise": "Specific amount like $250K or $1.5M",
+    "raiseReason": "Brief explanation of raise amount recommendation"
+  },
+  "extractedContext": {
+    "startupName": "Company name from business plan",
+    "problemStatement": "One clear sentence describing the problem",
+    "solutionStatement": "One clear sentence describing the solution",
+    "currentTraction": "Summary of traction, metrics, or 'Pre-traction: [description]' if early",
+    "founderBackground": "Relevant founder experience extracted from plan",
+    "geography": "Target market geography",
+    "keyInsights": ["3-5 key insights that should inform the deck"],
+    "warnings": ["Any concerns or gaps that the founder should address"]
+  },
+  "nextSteps": {
+    "instruction": "Clear instruction for what the founder should do next",
+    "tips": ["2-3 tips for improving the pitch"]
+  }
+}`;
+
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const client = new OpenAI({ apiKey, baseURL });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 2048,
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "Failed to analyze business plan" });
+      }
+
+      const parsed = JSON.parse(content);
+      res.json({
+        success: true,
+        ideaTitle: idea.title,
+        ...parsed
+      });
+    } catch (error) {
+      console.error("Business plan analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze business plan" });
+    }
+  });
+
   // Investor Pitch Deck Generator API - Main generation endpoint
   app.post("/api/ai/investor-pitch-deck", async (req: Request, res: Response) => {
     if (!req.session.userId) {
