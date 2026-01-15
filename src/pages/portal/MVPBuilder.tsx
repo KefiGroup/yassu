@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,7 +100,8 @@ export default function MVPBuilder() {
   });
 
   const { data: businessPlan } = useQuery<any>({
-    queryKey: ["/api/ideas", ideaId, "workflow-sections"],
+    queryKey: ["workflow-sections", ideaId],
+    queryFn: () => apiRequest(`/ideas/${ideaId}/workflow-sections`),
     enabled: !!ideaId,
   });
 
