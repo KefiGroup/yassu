@@ -131,8 +131,10 @@ export default function PitchPreparation() {
   useEffect(() => {
     if (pitchDeckLoading || sectionsLoading) return;
     
-    if (pitchDeck && pitchDeck.slides && pitchDeck.slides.length > 0) {
-      setInvestorMode(pitchDeck.investorMode || "angel");
+    // API returns { deck: { slides: [...], investorMode, ... } }
+    const deckData = pitchDeck?.deck;
+    if (deckData && deckData.slides && deckData.slides.length > 0) {
+      setInvestorMode(deckData.investorMode || "angel");
       setViewState("ready");
     } else {
       setViewState("loading");
@@ -146,7 +148,8 @@ export default function PitchPreparation() {
   }, [pitchDeck, pitchDeckLoading, sectionsLoading, ideaId, navigate, toast]);
 
   const generatePreparation = async () => {
-    if (!ideaId || !pitchDeck) return;
+    const deckData = pitchDeck?.deck;
+    if (!ideaId || !deckData) return;
     
     setViewState("generating");
     
@@ -161,7 +164,7 @@ export default function PitchPreparation() {
         body: JSON.stringify({
           ideaId,
           investorMode,
-          pitchDeckSlides: pitchDeck.slides,
+          pitchDeckSlides: deckData.slides,
           businessPlan: businessPlanContent,
         }),
       }) as { success: boolean; data?: PitchPreparationData; error?: string };
