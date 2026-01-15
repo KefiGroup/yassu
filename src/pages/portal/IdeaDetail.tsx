@@ -1849,11 +1849,12 @@ export default function IdeaDetail() {
                 </h4>
                 <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                   <li><strong>Plan your MVP</strong> - Use our AI-powered MVP Builder to define features, tech stack, and specifications</li>
-                  <li><strong>Build with Manus AI</strong> - Take your specifications to Manus AI to actually build and deploy your product</li>
+                  <li><strong>Build with Manus AI</strong> - Take your specifications to Manus AI to build and deploy your product</li>
+                  <li><strong>Link your MVP</strong> - Paste your Manus project link back here to track your progress</li>
                 </ol>
               </div>
               
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
                   <CardContent className="pt-6 text-center">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto mb-3">
@@ -1861,7 +1862,7 @@ export default function IdeaDetail() {
                     </div>
                     <h4 className="font-semibold mb-2">Step 1: Plan Your MVP</h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Chat with AI to define features, user stories, database schema, and development roadmap.
+                      Define features, user stories, and development roadmap.
                     </p>
                     <Button
                       onClick={() => navigate(`/portal/mvp-builder?ideaId=${idea?.id}`)}
@@ -1880,9 +1881,9 @@ export default function IdeaDetail() {
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-3">
                       <Code className="w-6 h-6 text-primary" />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 2: Build It</h4>
+                    <h4 className="font-semibold mb-2">Step 2: Build with Manus</h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Take your MVP specifications to Manus AI to build and deploy your actual product.
+                      Take specs to Manus AI to build and deploy your product.
                     </p>
                     <Button
                       onClick={async () => {
@@ -1914,8 +1915,52 @@ export default function IdeaDetail() {
                       data-testid="button-build-mvp-manus"
                     >
                       <Code className="w-4 h-4 mr-2" />
-                      Build with Manus AI
+                      Open Manus AI
                     </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                  <CardContent className="pt-6 text-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center mx-auto mb-3">
+                      <Link2 className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-2">Step 3: Link Your MVP</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Paste your Manus project link to track your MVP.
+                    </p>
+                    {idea?.mvpLink ? (
+                      <div className="space-y-2">
+                        <Button
+                          onClick={() => window.open(idea.mvpLink!, '_blank')}
+                          className="w-full"
+                          variant="outline"
+                          data-testid="button-view-mvp"
+                        >
+                          <Globe className="w-4 h-4 mr-2" />
+                          View MVP
+                        </Button>
+                        <Button
+                          onClick={() => setShowMvpLinkInput(true)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          data-testid="button-update-mvp-link"
+                        >
+                          Update Link
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => setShowMvpLinkInput(true)}
+                        variant="secondary"
+                        className="w-full"
+                        data-testid="button-add-mvp-link"
+                      >
+                        <Link2 className="w-4 h-4 mr-2" />
+                        Add MVP Link
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>
