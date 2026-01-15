@@ -388,6 +388,71 @@ Looking forward to hearing from you!`;
         </p>
       </motion.div>
 
+      {/* Get Started Section (for users without ideas) */}
+      {!loading && myIdeas.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Compass className="w-5 h-5 text-primary" />
+                Get Started
+              </CardTitle>
+              <CardDescription>Join an existing project or create your own startup idea</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-6 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                      <Search className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <h3 className="font-semibold">Browse Ideas</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Explore startup ideas in the marketplace and apply to join a team that matches your skills and interests.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigate('/portal/ideas')}
+                    data-testid="button-browse-ideas"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Browse Ideas Marketplace
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+                
+                <div className="p-6 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                      <Rocket className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <h3 className="font-semibold">Create Your Own</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Have a startup idea? Post it and find co-founders who can help bring your vision to life.
+                  </p>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    onClick={() => navigate('/portal/ideas/new')}
+                    data-testid="button-create-idea"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Post Your Idea
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Section 1: My Ideas */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -551,70 +616,8 @@ Looking forward to hearing from you!`;
         </Card>
       </motion.div>
 
-      {/* Section 3: Get Started (for users without ideas) OR People to Invite (for users with ideas) */}
-      {!loading && myIdeas.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-        >
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Compass className="w-5 h-5 text-primary" />
-                Get Started
-              </CardTitle>
-              <CardDescription>Join an existing project or create your own startup idea</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-6 rounded-lg border border-border bg-card">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      <Search className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <h3 className="font-semibold">Browse Ideas</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Explore startup ideas in the marketplace and apply to join a team that matches your skills and interests.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate('/portal/ideas')}
-                    data-testid="button-browse-ideas"
-                  >
-                    <Search className="w-4 h-4 mr-2" />
-                    Browse Ideas Marketplace
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-                
-                <div className="p-6 rounded-lg border border-border bg-card">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
-                      <Rocket className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <h3 className="font-semibold">Create Your Own</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Have a startup idea? Post it and find co-founders who can help bring your vision to life.
-                  </p>
-                  <Button 
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                    onClick={() => navigate('/portal/ideas/new')}
-                    data-testid="button-create-idea"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Post Your Idea
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ) : (
+      {/* Section 3: People to Invite (only when user has ideas) */}
+      {myIdeas.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
