@@ -216,7 +216,7 @@ export default function InvestorPitchDeck() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          ideaId: parseInt(ideaId),
+          ideaId,
           uploadedPlan: uploadedPlan || undefined
         }),
       });
@@ -247,7 +247,7 @@ export default function InvestorPitchDeck() {
       const response = await fetch("/api/ai/investor-pitch-deck", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pitchContext: context, ideaId: parseInt(ideaId) }),
+        body: JSON.stringify({ pitchContext: context, ideaId }),
       });
 
       if (!response.ok) {
@@ -310,7 +310,7 @@ export default function InvestorPitchDeck() {
         body: JSON.stringify({ 
           pitchContext, 
           slides: currentSlides,
-          ideaId: parseInt(ideaId!) 
+          ideaId 
         }),
       });
 
