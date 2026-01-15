@@ -3054,11 +3054,11 @@ export function registerRoutes(app: Express): void {
 
       // Get business plan sections if available
       const workflowSections = await db.select()
-        .from(schema.workflowSections)
-        .where(eq(schema.workflowSections.ideaId, ideaId));
+        .from(schema.ideaWorkflowSections)
+        .where(eq(schema.ideaWorkflowSections.ideaId, ideaId));
 
       const businessPlanContext = workflowSections.length > 0
-        ? workflowSections.map(s => `## ${s.sectionKey}\n${s.content}`).join("\n\n")
+        ? workflowSections.map(s => `## ${s.sectionType}\n${s.content}`).join("\n\n")
         : "";
 
       const systemPrompt = `You are the founder's product manager and execution partner.
@@ -3162,11 +3162,11 @@ Be concise, practical, and encouraging. Focus on what's achievable.`;
 
       // Get business plan sections
       const workflowSections = await db.select()
-        .from(schema.workflowSections)
-        .where(eq(schema.workflowSections.ideaId, ideaId));
+        .from(schema.ideaWorkflowSections)
+        .where(eq(schema.ideaWorkflowSections.ideaId, ideaId));
 
       const businessPlanContext = workflowSections.length > 0
-        ? workflowSections.map(s => `## ${s.sectionKey}\n${s.content}`).join("\n\n")
+        ? workflowSections.map(s => `## ${s.sectionType}\n${s.content}`).join("\n\n")
         : "";
 
       const prompt = `You are an expert pitch deck creator for startups. Create a compelling 10-slide pitch deck for this startup idea.
