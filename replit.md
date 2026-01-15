@@ -21,7 +21,7 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
 - **Admin Dashboard**: A unified interface for administrators to manage badges (Ambassador, Advisor), view all ideas (including private ones), and grant/revoke admin privileges.
 - **Direct Messaging**: Full messaging system with conversation threads, real-time UI, and email notifications for new messages.
 - **Notification System**: Email notifications for connection requests, team invitations, new messages, and weekly digests.
-- **Journey Progress Tracker**: Visual progress tracker for each idea's development stages.
+- **Journey Progress Tracker**: Visual progress tracker for each idea's development stages with independent milestone completion. Each step (Post Idea, Business Plan, Find Advisors, Form Team, Build MVP, Yassu Foundry, Seek Funding) can be completed in any order without sequential dependencies. Features dashed connecting lines to indicate non-linear paths and ring-style in-progress indicators.
 - **Investor Pitch Deck Generator**: AI-powered one-click generator for creating investor-grade pitch decks. Features include:
   - Auto-analysis of business plan to determine investor type (Angel vs VC) and raise amount
   - Clean centered UI matching the MVP Builder design pattern
