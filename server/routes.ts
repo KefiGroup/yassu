@@ -17,6 +17,24 @@ import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_inte
 
 const objectStorageService = new ObjectStorageService();
 
+// Stage order for determining the "highest" stage achieved
+const stageOrder = ['idea_posted', 'business_plan', 'find_advisors', 'form_team', 'build_mvp', 'yassu_foundry', 'launched'] as const;
+type IdeaStage = typeof stageOrder[number];
+
+// Helper to update idea stage if the new stage is "higher" than current
+async function updateIdeaStageIfHigher(ideaId: string, newStage: IdeaStage) {
+  const idea = await storage.getIdea(ideaId);
+  if (!idea) return;
+  
+  const currentIndex = stageOrder.indexOf(idea.stage as IdeaStage || 'idea_posted');
+  const newIndex = stageOrder.indexOf(newStage);
+  
+  if (newIndex > currentIndex) {
+    await storage.updateIdea(ideaId, { stage: newStage });
+    console.log(`[Stage Update] Idea ${ideaId} stage updated from ${idea.stage} to ${newStage}`);
+  }
+}
+
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -803,6 +821,12 @@ export function registerRoutes(app: Express): void {
 
       const { mvpLink } = req.body;
       const updatedIdea = await storage.updateIdea(req.params.id, { mvpLink });
+      
+      // Update idea stage to build_mvp when MVP link is added
+      if (mvpLink) {
+        await updateIdeaStageIfHigher(req.params.id, 'build_mvp');
+      }
+      
       res.json(updatedIdea);
     } catch (error) {
       console.error("Save MVP link error:", error);
@@ -888,6 +912,9 @@ export function registerRoutes(app: Express): void {
         slides: JSON.stringify(slides),
         metricsValidation: metricsValidation ? JSON.stringify(metricsValidation) : undefined,
       });
+      
+      // Update idea stage to yassu_foundry when pitch deck is created
+      await updateIdeaStageIfHigher(req.params.id, 'yassu_foundry');
       
       // Return with parsed JSON fields for consistency
       res.json({ 
@@ -1495,6 +1522,11 @@ export function registerRoutes(app: Express): void {
           const { sendRequestAcceptedEmail, sendRequestRejectedEmail, sendRequestPendingEmail } = await import('./email');
           
           if (status === 'accepted') {
+            // Update idea stage to form_team when someone joins
+            updateIdeaStageIfHigher(updated.ideaId, 'form_team').catch(err => {
+              console.error('Failed to update idea stage:', err);
+            });
+            
             sendRequestAcceptedEmail(
               applicant.email,
               applicant.fullName || 'there',
@@ -1711,6 +1743,11 @@ export function registerRoutes(app: Express): void {
 
       // If accepted, add user to team
       if (status === "accepted") {
+        // Update idea stage to form_team when someone accepts invite
+        updateIdeaStageIfHigher(invite.ideaId, 'form_team').catch(err => {
+          console.error('Failed to update idea stage:', err);
+        });
+        
         // Find or create team for this idea
         let [team] = await db.select()
           .from(schema.teams)
