@@ -1510,23 +1510,34 @@ export function registerRoutes(app: Express): void {
       const updated = await storage.updateJoinRequest(req.params.id, { status });
       
       if (updated) {
+        console.log(`[Join Request] Processing status update to ${status} for request ${req.params.id}`);
+        
         // Get applicant and idea owner info
+        if (!updated.ideaId) {
+          console.error('[Join Request] No ideaId on join request');
+        }
+        
         const [applicant, idea] = await Promise.all([
           storage.getProfile(updated.userId),
-          storage.getIdea(updated.ideaId)
+          updated.ideaId ? storage.getIdea(updated.ideaId) : null
         ]);
         
         const ideaOwner = idea ? await storage.getProfile(idea.createdBy) : null;
+        
+        console.log(`[Join Request] Applicant email: ${applicant?.email}, Idea: ${idea?.title}, Owner: ${ideaOwner?.fullName}`);
         
         if (applicant?.email && idea && ideaOwner) {
           const { sendRequestAcceptedEmail, sendRequestRejectedEmail, sendRequestPendingEmail } = await import('./email');
           
           if (status === 'accepted') {
             // Update idea stage to form_team when someone joins
-            updateIdeaStageIfHigher(updated.ideaId, 'form_team').catch(err => {
-              console.error('Failed to update idea stage:', err);
-            });
+            if (updated.ideaId) {
+              updateIdeaStageIfHigher(updated.ideaId, 'form_team').catch(err => {
+                console.error('Failed to update idea stage:', err);
+              });
+            }
             
+            console.log(`[Join Request] Sending acceptance email to ${applicant.email}`);
             sendRequestAcceptedEmail(
               applicant.email,
               applicant.fullName || 'there',
@@ -1538,6 +1549,7 @@ export function registerRoutes(app: Express): void {
               console.error('Failed to send request accepted email:', err);
             });
           } else if (status === 'rejected') {
+            console.log(`[Join Request] Sending rejection email to ${applicant.email}`);
             sendRequestRejectedEmail(
               applicant.email,
               applicant.fullName || 'there',
@@ -1549,6 +1561,7 @@ export function registerRoutes(app: Express): void {
             });
           } else if (status === 'pending' && customMessage) {
             // Only send pending email if there's a custom message
+            console.log(`[Join Request] Sending pending email to ${applicant.email}`);
             sendRequestPendingEmail(
               applicant.email,
               applicant.fullName || 'there',
@@ -1559,6 +1572,8 @@ export function registerRoutes(app: Express): void {
               console.error('Failed to send request pending email:', err);
             });
           }
+        } else {
+          console.error(`[Join Request] Missing data for email: applicant=${!!applicant?.email}, idea=${!!idea}, owner=${!!ideaOwner}`);
         }
       }
       
