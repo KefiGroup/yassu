@@ -33,7 +33,8 @@ import {
   Building2,
   DollarSign,
   Lightbulb,
-  Mic
+  Mic,
+  RefreshCw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -781,6 +782,18 @@ export default function InvestorPitchDeck() {
           >
             <FileDown className="w-4 h-4 mr-2" />
             Export
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setViewState("ready");
+              setSlides([]);
+              setVersionHistory([]);
+            }}
+            data-testid="button-regenerate-deck"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Regenerate
           </Button>
           <Button
             onClick={refineDeck}
