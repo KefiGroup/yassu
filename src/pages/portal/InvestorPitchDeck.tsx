@@ -160,7 +160,8 @@ export default function InvestorPitchDeck() {
   });
 
   const { data: workflowSections, isLoading: sectionsLoading } = useQuery<any[]>({
-    queryKey: ["/api/ideas", ideaId, "workflows"],
+    queryKey: ["workflow-sections", ideaId],
+    queryFn: () => apiRequest(`/ideas/${ideaId}/workflows`),
     enabled: !!ideaId,
   });
 
