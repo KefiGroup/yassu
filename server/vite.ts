@@ -81,7 +81,8 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath, { index: false }));
 
   // Catch-all: serve index.html for any route not matched (SPA routing)
-  app.use("*", (_req, res) => {
+  // Express 5 uses {*splat} syntax for wildcard routes
+  app.get("/{*splat}", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
