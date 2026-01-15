@@ -63,6 +63,7 @@ import {
   Wrench,
   Presentation,
   TrendingUp as Funding,
+  Mic,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -1986,20 +1987,20 @@ export default function IdeaDetail() {
                 </h4>
                 <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                   <li><strong>Generate your deck</strong> - Use our AI to create 10 professional slides with content and speaker notes</li>
-                  <li><strong>Refine each slide</strong> - Chat with AI to improve specific slides before presenting</li>
-                  <li><strong>Build with Manus AI</strong> - Create a polished presentation file with Manus</li>
+                  <li><strong>Build with Manus AI</strong> - Export your content to Manus and create polished slides</li>
+                  <li><strong>Prepare your pitch</strong> - Get AI coaching on delivery, objections, and Q&A</li>
                 </ol>
               </div>
               
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
                   <CardContent className="pt-6 text-center">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
                       <FileText className="w-6 h-6 text-primary" />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 1: Generate Investor Deck</h4>
+                    <h4 className="font-semibold mb-2">Step 1: Generate Deck Content</h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Create investor-grade content for Angel or VC pitch. Export ready for Manus.
+                      AI creates investor-grade slides. Copy the export for Manus.
                     </p>
                     <Button
                       onClick={() => navigate(`/portal/investor-pitch-deck?ideaId=${idea?.id}`)}
@@ -2007,7 +2008,7 @@ export default function IdeaDetail() {
                       data-testid="button-pitch-deck-generator"
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Open Investor Deck Generator
+                      Generate Deck
                     </Button>
                   </CardContent>
                 </Card>
@@ -2017,9 +2018,9 @@ export default function IdeaDetail() {
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
                       <Presentation className="w-6 h-6 text-primary" />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 2: Build Presentation</h4>
+                    <h4 className="font-semibold mb-2">Step 2: Design in Manus</h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Create a polished slide deck file ready for investor meetings.
+                      Paste your export into Manus to create polished slides.
                     </p>
                     <Button
                       onClick={async () => {
@@ -2055,7 +2056,28 @@ export default function IdeaDetail() {
                       data-testid="button-build-pitch-deck-manus"
                     >
                       <Presentation className="w-4 h-4 mr-2" />
-                      Build with Manus AI
+                      Open Manus AI
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                  <CardContent className="pt-6 text-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-3">
+                      <Mic className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold mb-2">Step 3: Prepare Your Pitch</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Get delivery scripts, handle objections, and practice Q&A.
+                    </p>
+                    <Button
+                      onClick={() => navigate(`/portal/pitch-preparation?ideaId=${idea?.id}`)}
+                      className="w-full"
+                      variant="secondary"
+                      data-testid="button-pitch-preparation"
+                    >
+                      <Mic className="w-4 h-4 mr-2" />
+                      Prepare Pitch
                     </Button>
                   </CardContent>
                 </Card>
