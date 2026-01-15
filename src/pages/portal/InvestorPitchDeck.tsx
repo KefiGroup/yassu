@@ -1010,6 +1010,17 @@ export default function InvestorPitchDeck() {
           Manus will handle all visual design. This export contains only the content structure.
         </p>
       </div>
+
+      <div className="flex justify-center mt-6">
+        <Button
+          size="lg"
+          onClick={() => navigate(`/portal/ideas/${ideaId}`)}
+          data-testid="button-complete-return-idea"
+        >
+          <CheckCircle className="w-5 h-5 mr-2" />
+          Complete & Return to Idea
+        </Button>
+      </div>
     </div>
   );
 
