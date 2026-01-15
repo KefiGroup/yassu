@@ -32,7 +32,8 @@ import {
   Users,
   Building2,
   DollarSign,
-  Lightbulb
+  Lightbulb,
+  Mic
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -702,6 +703,14 @@ export default function InvestorPitchDeck() {
                 Investor-Proof
               </>
             )}
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => navigate(`/portal/pitch-preparation?ideaId=${ideaId}`)}
+            data-testid="button-prepare-pitch"
+          >
+            <Mic className="w-4 h-4 mr-2" />
+            Prepare Pitch
           </Button>
         </div>
       </div>

@@ -3702,4 +3702,137 @@ Return the refined deck as valid JSON:
       res.status(500).json({ error: "Failed to refine pitch deck" });
     }
   });
+
+  // Pitch Preparation Module - Delivery Script & Objection Playbook
+  app.post("/api/ai/pitch-preparation", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { ideaId, investorMode, pitchDeckSlides, businessPlan } = req.body;
+
+      if (!pitchDeckSlides || pitchDeckSlides.length === 0) {
+        return res.status(400).json({ error: "Pitch deck slides are required" });
+      }
+
+      const isAngel = investorMode === "angel";
+      const slidesJson = JSON.stringify(pitchDeckSlides, null, 2);
+
+      const prompt = `You are a senior venture investor and pitch coach who has sat through hundreds of founder presentations.
+
+Your task is to prepare this founder for their investor pitch - not to create slides, but to help them DELIVER the pitch, handle objections, and survive live Q&A.
+
+PITCH DECK SLIDES:
+${slidesJson}
+
+BUSINESS PLAN CONTEXT:
+${businessPlan || "Not provided"}
+
+INVESTOR MODE: ${isAngel ? "Angel Investors (focus on founder story, vision, personal conviction)" : "Institutional VCs (focus on scale, metrics, defensibility, returns)"}
+
+Generate a comprehensive pitch preparation package with three sections:
+
+## SECTION 1: DELIVERY SCRIPT
+For EACH slide in the pitch deck, generate a spoken delivery script. The founder should be able to read this and practice saying it out loud.
+
+## SECTION 2: INVESTOR OBJECTIONS
+Generate 10-15 high-probability investor objections grouped by these categories:
+- Problem & Urgency
+- Solution & Differentiation
+- Market Size & Returns
+- Traction / Proof
+- Business Model
+- Go-To-Market
+- Competition
+- Team
+- Timing / Why Now
+- Risk & Downside
+
+For each objection, include:
+- The exact wording an investor would use (be tough, not polite)
+- Why this concern comes up
+- Risk level (Low/Medium/High)
+- Best short answer for live pitch (1-2 sentences, calm and confident)
+- Expanded answer if they push further (max 4 sentences)
+- What NOT to say (common founder mistakes)
+- Objection type (Clarifiable / Needs Proof Soon / Structural Risk / Likely Deal-Breaker)
+- What would reduce this concern (specific evidence or milestone)
+
+## SECTION 3: RAPID-FIRE REHEARSAL
+Generate 10-12 rapid-fire practice questions for the founder to answer out loud:
+- Increasing difficulty
+- Cover different aspects of the business
+- Include ideal answer and time guidance (e.g., "Under 20 seconds")
+
+CRITICAL RULES:
+- Be TOUGH. Real investors are skeptical.
+- No polite phrasing in objections. Use real investor language.
+- Delivery scripts should sound SPOKEN, not written
+- Focus on ${isAngel ? "founder conviction and narrative clarity" : "metrics, scale potential, and market opportunity"}
+
+Return as valid JSON:
+{
+  "deliveryScript": [
+    {
+      "slideNumber": 1,
+      "slideTitle": "string",
+      "whatYouSay": "string (30-60 seconds of natural spoken language)",
+      "keyEmphasis": "string (what investors should remember)",
+      "deliveryTip": "string (pacing, tone guidance)"
+    }
+  ],
+  "objections": [
+    {
+      "id": 1,
+      "category": "string",
+      "objection": "string (exact investor wording)",
+      "whyThisComesUp": "string",
+      "riskLevel": "Low" | "Medium" | "High",
+      "bestShortAnswer": "string",
+      "ifTheyPushFurther": "string",
+      "whatNotToSay": "string",
+      "objectionType": "Clarifiable" | "Needs Proof Soon" | "Structural Risk" | "Likely Deal-Breaker",
+      "whatWouldReduceConcern": "string"
+    }
+  ],
+  "rehearsalQuestions": [
+    {
+      "question": "string",
+      "idealAnswer": "string",
+      "timeGuidance": "string"
+    }
+  ]
+}`;
+
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const client = new OpenAI({ apiKey, baseURL });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 12000,
+        temperature: 0.4,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "Failed to generate preparation" });
+      }
+
+      const parsed = JSON.parse(content);
+      res.json({ success: true, data: parsed });
+    } catch (error) {
+      console.error("Pitch preparation generation error:", error);
+      res.status(500).json({ error: "Failed to generate pitch preparation" });
+    }
+  });
 }
