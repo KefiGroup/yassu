@@ -3855,7 +3855,7 @@ ${teamContext}
 ${businessPlanNotes ? `ADDITIONAL NOTES:\n${businessPlanNotes}\n` : ""}
 ${ideaContext ? `BUSINESS PLAN CONTEXT:\n${ideaContext}\n` : ""}
 
-Generate a ${isWarmIntro ? "6-slide WARM INTRO deck (designed for email/LinkedIn intros, understandable in under 2 minutes)" : "10-slide FULL PITCH DECK (for formal investor meetings)"}.
+Generate a ${isWarmIntro ? "6-slide WARM INTRO deck (designed for email/LinkedIn intros, understandable in under 2 minutes)" : "11-slide FULL PITCH DECK (for formal investor meetings with separate Team and The Ask slides)"}.
 
 REQUIRED SLIDES:
 ${slideStructure}
@@ -3969,7 +3969,7 @@ CURRENT DECK:
 ${slidesJson}
 
 INVESTOR MODE: ${isAngel ? "Angel (focus on founder story, clarity, emotional resonance)" : "VC (focus on scale, metrics, defensibility)"}
-DECK TYPE: ${isWarmIntro ? "Warm Intro (6 slides, must be digestible in 2 minutes)" : "Full Deck (10+ slides for formal meetings)"}
+DECK TYPE: ${isWarmIntro ? "Warm Intro (6 slides, must be digestible in 2 minutes)" : "Full Deck (11 slides for formal meetings - Team and The Ask are SEPARATE slides)"}
 
 YOUR TASK:
 1. Tighten ALL headlines - make them punchier and more memorable
