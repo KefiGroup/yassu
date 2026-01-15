@@ -3710,7 +3710,7 @@ Return a JSON object with this EXACT structure:
 
       const isWarmIntro = deckType === "warm_intro";
       const isAngel = investorMode === "angel";
-      const slideCount = isWarmIntro ? 6 : 10;
+      const slideCount = isWarmIntro ? 6 : 11;
       const maxBullets = isWarmIntro ? 3 : 4;
 
       const slideStructure = isWarmIntro 
@@ -3729,7 +3729,8 @@ Return a JSON object with this EXACT structure:
 7. Business Model
 8. Traction
 9. Competition
-10. Team + The Ask`;
+10. Team
+11. The Ask`;
 
       const investorTone = isAngel
         ? `ANGEL INVESTOR OPTIMIZATION:
@@ -3801,7 +3802,7 @@ CRITICAL RULES:
 - Maximum ${maxBullets} bullet points per slide
 - Each bullet must be specific and evidence-based where possible
 
-TEAM SLIDE INSTRUCTIONS (Slide ${isWarmIntro ? "6" : "10"}):
+TEAM SLIDE INSTRUCTIONS (Slide 10):
 - CRITICAL: Use the EXACT NAMES from the "ACTUAL TEAM PROFILES" section above
 - The first bullet point MUST include the founder's full name (e.g., "Pauline Teo - Entrepreneur & Mentor...")
 - Copy the founder's headline/background VERBATIM as their credential line
@@ -3809,6 +3810,12 @@ TEAM SLIDE INSTRUCTIONS (Slide ${isWarmIntro ? "6" : "10"}):
 - For each team member, include their ACTUAL NAME and role
 - Do NOT use generic phrases like "Founder with experience" - use their actual name and credentials
 - Show "founder-market fit" - why this specific person is built to win this market
+
+THE ASK SLIDE INSTRUCTIONS (Slide 11):
+- State the exact funding amount being raised
+- Outline how funds will be allocated (product development %, marketing %, operations %, etc.)
+- Include key milestones that will be achieved with this funding
+- End with a clear call-to-action for investors
 
 Return ONLY valid JSON with this structure:
 {

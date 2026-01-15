@@ -789,6 +789,8 @@ export default function InvestorPitchDeck() {
               setViewState("ready");
               setSlides([]);
               setVersionHistory([]);
+              setAnalysisResult(null);
+              setPitchContext(prev => ({ ...prev, deckType: "full" }));
             }}
             data-testid="button-regenerate-deck"
           >
