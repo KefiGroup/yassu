@@ -3695,10 +3695,15 @@ Return a JSON object with this EXACT structure:
           const ideaOwnerProfile = await storage.getProfile(idea.createdBy);
           if (ideaOwnerProfile) {
             const ownerBadges = await storage.getUserBadges(idea.createdBy);
-            const advisorBadge = ownerBadges.find((b: any) => b.badgeType === "advisor");
             
-            // Add founder info
-            teamContext = `\n\nFOUNDER:\n- ${ideaOwnerProfile.fullName || "Founder"}: ${ideaOwnerProfile.headline || ideaOwnerProfile.bio || ""}${ideaOwnerProfile.skills?.length ? ` | Skills: ${ideaOwnerProfile.skills.join(", ")}` : ""}` + teamContext;
+            // Add founder info with explicit name and credentials
+            const founderName = ideaOwnerProfile.fullName || "Founder";
+            const founderHeadline = ideaOwnerProfile.headline || ideaOwnerProfile.bio || "";
+            const founderSkills = ideaOwnerProfile.skills || [];
+            
+            teamContext = `\n\n=== ACTUAL TEAM PROFILES (USE THESE EXACT NAMES AND CREDENTIALS) ===\n\nFOUNDER/CEO:\n- Name: ${founderName}\n- Background: ${founderHeadline}${founderSkills.length ? `\n- Key Skills: ${founderSkills.join(", ")}` : ""}` + teamContext;
+            
+            console.log("[Pitch Deck] Team context being sent to AI:", teamContext);
           }
         }
       }
@@ -3797,12 +3802,13 @@ CRITICAL RULES:
 - Each bullet must be specific and evidence-based where possible
 
 TEAM SLIDE INSTRUCTIONS (Slide ${isWarmIntro ? "6" : "10"}):
-- USE THE TEAM PROFILE DATA provided above - do not invent team credentials
-- Include each team member's name, role, and most relevant credentials (from their headline, skills, or bio)
-- For advisors, highlight their industry expertise and connections
-- For founders, emphasize domain expertise and why they are uniquely positioned to solve this problem
-- If specific credentials are provided (e.g., "Ex-Google", "10 years in healthcare"), use them verbatim
-- Show "founder-market fit" - why this team specifically is built to win this market
+- CRITICAL: Use the EXACT NAMES from the "ACTUAL TEAM PROFILES" section above
+- The first bullet point MUST include the founder's full name (e.g., "Pauline Teo - Entrepreneur & Mentor...")
+- Copy the founder's headline/background VERBATIM as their credential line
+- Include all key skills mentioned in their profile
+- For each team member, include their ACTUAL NAME and role
+- Do NOT use generic phrases like "Founder with experience" - use their actual name and credentials
+- Show "founder-market fit" - why this specific person is built to win this market
 
 Return ONLY valid JSON with this structure:
 {
