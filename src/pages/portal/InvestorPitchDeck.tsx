@@ -249,6 +249,7 @@ export default function InvestorPitchDeck() {
       const analyzeResponse = await fetch("/api/ai/investor-pitch-deck/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ 
           ideaId,
           uploadedPlan: uploadedPlan || undefined
@@ -281,6 +282,7 @@ export default function InvestorPitchDeck() {
       const response = await fetch("/api/ai/investor-pitch-deck", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ pitchContext: context, ideaId }),
       });
 
@@ -297,7 +299,7 @@ export default function InvestorPitchDeck() {
       
       // Save to database
       try {
-        await fetch(`/api/ideas/${ideaId}/pitch-deck`, {
+        const saveResponse = await fetch(`/api/ideas/${ideaId}/pitch-deck`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -309,6 +311,10 @@ export default function InvestorPitchDeck() {
             metricsValidation: data.metricsValidation,
           }),
         });
+        if (!saveResponse.ok) {
+          const saveError = await saveResponse.json();
+          console.error("Failed to save pitch deck:", saveError);
+        }
       } catch (saveErr) {
         console.error("Failed to save pitch deck:", saveErr);
       }
@@ -359,6 +365,7 @@ export default function InvestorPitchDeck() {
       const response = await fetch("/api/ai/investor-pitch-deck/refine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ 
           pitchContext, 
           slides: currentSlides,

@@ -327,7 +327,7 @@ export default function PitchPreparation() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Slides</span>
-              <Badge variant="outline">{pitchDeck?.slides?.length || 0} slides</Badge>
+              <Badge variant="outline">{pitchDeck?.deck?.slides?.length || 0} slides</Badge>
             </div>
           </CardContent>
         </Card>
