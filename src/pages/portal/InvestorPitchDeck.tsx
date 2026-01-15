@@ -159,23 +159,22 @@ export default function InvestorPitchDeck() {
     enabled: !!ideaId,
   });
 
-  const { data: businessPlan } = useQuery<any>({
-    queryKey: ["workflow-sections", ideaId],
-    queryFn: () => apiRequest(`/ideas/${ideaId}/workflows`),
+  const { data: workflowSections, isLoading: sectionsLoading } = useQuery<any[]>({
+    queryKey: ["/api/ideas", ideaId, "workflows"],
     enabled: !!ideaId,
   });
 
   useEffect(() => {
-    if (businessPlan?.sections) {
-      const sections = Object.entries(businessPlan.sections)
-        .filter(([_, content]) => content)
-        .map(([key, content]) => `## ${key}\n${String(content).substring(0, 200)}...`);
+    if (sectionsLoading) return;
+    
+    if (workflowSections && Array.isArray(workflowSections) && workflowSections.length > 0) {
+      const sections = workflowSections
+        .filter((section: any) => section.content)
+        .map((section: any) => `## ${section.sectionType}\n${String(section.content).substring(0, 200)}...`);
       setBusinessPlanPreview(sections);
-      setViewState("ready");
-    } else if (businessPlan) {
-      setViewState("ready");
     }
-  }, [businessPlan]);
+    setViewState("ready");
+  }, [workflowSections, sectionsLoading]);
 
   useEffect(() => {
     if (idea) {
