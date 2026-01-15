@@ -781,7 +781,7 @@ export default function InvestorPitchDeck() {
             data-testid="button-view-export"
           >
             <FileDown className="w-4 h-4 mr-2" />
-            Export
+            Export to Manus
           </Button>
           <Button
             variant="outline"
@@ -866,6 +866,31 @@ export default function InvestorPitchDeck() {
 
       <ScrollArea className="h-[calc(100vh-200px)]">
         {slides.map((slide, index) => renderSlideCard(slide, index))}
+        
+        {/* Export to Manus CTA at end of slides */}
+        <Card className="mt-6 border-2 border-dashed border-primary/30 bg-primary/5">
+          <CardContent className="py-8 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Presentation className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Ready to Design Your Pitch Deck?</h3>
+                <p className="text-muted-foreground max-w-md mx-auto mb-4">
+                  Export your slides to Manus for professional PowerPoint design. Manus will transform your content into a visually stunning investor-ready presentation.
+                </p>
+              </div>
+              <Button
+                size="lg"
+                onClick={() => setViewState("export")}
+                data-testid="button-export-manus-cta"
+              >
+                <FileDown className="w-5 h-5 mr-2" />
+                Export to Manus for Pitch Deck Design
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </ScrollArea>
     </div>
   );
