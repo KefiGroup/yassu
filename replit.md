@@ -33,6 +33,15 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - Metrics validation table showing required metrics per slide
   - Manus-ready export with copy-paste format for slide design
   - Version history tracking with restore capability
+- **Pitch Preparation Module**: AI-powered investor pitch preparation to help founders deliver confidently and handle Q&A. Features include:
+  - Spoken delivery script for each slide (what to say out loud, key emphasis, delivery tips)
+  - Investor objection generator with 10 categories (Problem, Solution, Market, Traction, Business Model, GTM, Competition, Team, Timing, Risk)
+  - Risk-level classification (High/Medium/Low) with color-coded badges
+  - Live Q&A response playbook with best answers and "what NOT to say"
+  - Deal-breaker awareness and mitigation strategies
+  - Rapid-fire rehearsal drill with 10-12 practice questions
+  - Practice Mode toggle to hide answers for self-testing
+  - One-click export of full preparation playbook
 - **UI/UX**: Utilizes Tailwind CSS and shadcn/ui for a modern, responsive design. The dashboard is redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
 
 ## External Dependencies
