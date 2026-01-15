@@ -180,6 +180,17 @@ export interface IStorage {
     metricsValidation?: string;
   }): Promise<typeof schema.pitchDecks.$inferSelect>;
   updatePitchDeck(ideaId: string, data: Partial<typeof schema.pitchDecks.$inferInsert>): Promise<typeof schema.pitchDecks.$inferSelect | undefined>;
+  
+  // Pitch Preparations
+  getPitchPreparation(ideaId: string): Promise<typeof schema.pitchPreparations.$inferSelect | undefined>;
+  savePitchPreparation(data: {
+    ideaId: string;
+    investorMode: string;
+    deliveryScripts: string;
+    objections?: string;
+    rehearsalQuestions?: string;
+  }): Promise<typeof schema.pitchPreparations.$inferSelect>;
+  updatePitchPreparation(ideaId: string, data: Partial<typeof schema.pitchPreparations.$inferInsert>): Promise<typeof schema.pitchPreparations.$inferSelect | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1628,6 +1639,60 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(schema.pitchDecks.id, existing.id))
+      .returning();
+    return updated;
+  }
+
+  async getPitchPreparation(ideaId: string): Promise<typeof schema.pitchPreparations.$inferSelect | undefined> {
+    const [prep] = await db
+      .select()
+      .from(schema.pitchPreparations)
+      .where(eq(schema.pitchPreparations.ideaId, ideaId))
+      .orderBy(desc(schema.pitchPreparations.updatedAt))
+      .limit(1);
+    return prep;
+  }
+
+  async savePitchPreparation(data: {
+    ideaId: string;
+    investorMode: string;
+    deliveryScripts: string;
+    objections?: string;
+    rehearsalQuestions?: string;
+  }): Promise<typeof schema.pitchPreparations.$inferSelect> {
+    const existing = await this.getPitchPreparation(data.ideaId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(schema.pitchPreparations)
+        .set({
+          ...data,
+          version: (existing.version || 1) + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.pitchPreparations.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const [prep] = await db
+      .insert(schema.pitchPreparations)
+      .values(data)
+      .returning();
+    return prep;
+  }
+
+  async updatePitchPreparation(ideaId: string, data: Partial<typeof schema.pitchPreparations.$inferInsert>): Promise<typeof schema.pitchPreparations.$inferSelect | undefined> {
+    const existing = await this.getPitchPreparation(ideaId);
+    if (!existing) return undefined;
+    
+    const [updated] = await db
+      .update(schema.pitchPreparations)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.pitchPreparations.id, existing.id))
       .returning();
     return updated;
   }

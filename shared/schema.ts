@@ -178,6 +178,18 @@ export const pitchDecks = pgTable("pitch_decks", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const pitchPreparations = pgTable("pitch_preparations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  investorMode: text("investor_mode").notNull(), // "angel" | "vc"
+  deliveryScripts: text("delivery_scripts").notNull(), // JSON array of slide scripts
+  objections: text("objections"), // JSON array of objections
+  rehearsalQuestions: text("rehearsal_questions"), // JSON array of Q&A
+  version: integer("version").default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const teams = pgTable("teams", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),

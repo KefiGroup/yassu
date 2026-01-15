@@ -122,6 +122,13 @@ export default function PitchPreparation() {
     enabled: !!ideaId,
   });
 
+  // Fetch existing pitch preparation data
+  const { data: existingPreparation, isLoading: prepLoading } = useQuery<any>({
+    queryKey: ["pitch-preparation", ideaId],
+    queryFn: () => apiRequest(`/ideas/${ideaId}/pitch-preparation`),
+    enabled: !!ideaId,
+  });
+
   useEffect(() => {
     if (idea) {
       setIdeaTitle(idea.title || "Your Startup");
@@ -129,13 +136,26 @@ export default function PitchPreparation() {
   }, [idea]);
 
   useEffect(() => {
-    if (pitchDeckLoading || sectionsLoading) return;
+    if (pitchDeckLoading || sectionsLoading || prepLoading) return;
     
     // API returns { deck: { slides: [...], investorMode, ... } }
     const deckData = pitchDeck?.deck;
     if (deckData && deckData.slides && deckData.slides.length > 0) {
       setInvestorMode(deckData.investorMode || "angel");
-      setViewState("ready");
+      
+      // Check if we have existing preparation data
+      if (existingPreparation?.preparation) {
+        const prep = existingPreparation.preparation;
+        setPreparationData({
+          deliveryScript: prep.deliveryScripts || [],
+          objections: prep.objections || [],
+          rehearsalQuestions: prep.rehearsalQuestions || [],
+        });
+        setInvestorMode(prep.investorMode || "angel");
+        setViewState("prepared");
+      } else {
+        setViewState("ready");
+      }
     } else {
       setViewState("loading");
       toast({
@@ -145,7 +165,7 @@ export default function PitchPreparation() {
       });
       navigate(`/portal/investor-pitch-deck?ideaId=${ideaId}`);
     }
-  }, [pitchDeck, pitchDeckLoading, sectionsLoading, ideaId, navigate, toast]);
+  }, [pitchDeck, pitchDeckLoading, sectionsLoading, prepLoading, existingPreparation, ideaId, navigate, toast]);
 
   const generatePreparation = async () => {
     const deckData = pitchDeck?.deck;
@@ -172,6 +192,22 @@ export default function PitchPreparation() {
       if (response.success && response.data) {
         setPreparationData(response.data);
         setViewState("prepared");
+        
+        // Save to database
+        try {
+          await apiRequest(`/ideas/${ideaId}/pitch-preparation`, {
+            method: "POST",
+            body: JSON.stringify({
+              investorMode,
+              deliveryScripts: response.data.deliveryScript,
+              objections: response.data.objections,
+              rehearsalQuestions: response.data.rehearsalQuestions,
+            }),
+          });
+        } catch (saveErr) {
+          console.error("Failed to save pitch preparation:", saveErr);
+        }
+        
         toast({
           title: "Preparation complete",
           description: "Your investor pitch preparation is ready for rehearsal.",
