@@ -168,6 +168,18 @@ export interface IStorage {
     createdIdeas: (Idea & { teamSize: number })[];
     collaboratingIdeas: (Idea & { role: string | null; joinedAt: Date | null; teamSize: number })[];
   }>;
+  
+  // Pitch Decks
+  getPitchDeck(ideaId: string): Promise<typeof schema.pitchDecks.$inferSelect | undefined>;
+  savePitchDeck(data: {
+    ideaId: string;
+    investorMode: string;
+    deckType: string;
+    targetRaise?: string;
+    slides: string;
+    metricsValidation?: string;
+  }): Promise<typeof schema.pitchDecks.$inferSelect>;
+  updatePitchDeck(ideaId: string, data: Partial<typeof schema.pitchDecks.$inferInsert>): Promise<typeof schema.pitchDecks.$inferSelect | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1560,6 +1572,64 @@ export class DatabaseStorage implements IStorage {
       createdIdeas: createdIdeasWithTeamSize,
       collaboratingIdeas: collaboratingIdeasWithTeamSize,
     };
+  }
+
+  async getPitchDeck(ideaId: string): Promise<typeof schema.pitchDecks.$inferSelect | undefined> {
+    const [deck] = await db
+      .select()
+      .from(schema.pitchDecks)
+      .where(eq(schema.pitchDecks.ideaId, ideaId))
+      .orderBy(desc(schema.pitchDecks.updatedAt))
+      .limit(1);
+    return deck;
+  }
+
+  async savePitchDeck(data: {
+    ideaId: string;
+    investorMode: string;
+    deckType: string;
+    targetRaise?: string;
+    slides: string;
+    metricsValidation?: string;
+  }): Promise<typeof schema.pitchDecks.$inferSelect> {
+    // Check if a deck exists for this idea
+    const existing = await this.getPitchDeck(data.ideaId);
+    
+    if (existing) {
+      // Update existing deck with new version
+      const [updated] = await db
+        .update(schema.pitchDecks)
+        .set({
+          ...data,
+          version: (existing.version || 1) + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.pitchDecks.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    // Create new deck
+    const [deck] = await db
+      .insert(schema.pitchDecks)
+      .values(data)
+      .returning();
+    return deck;
+  }
+
+  async updatePitchDeck(ideaId: string, data: Partial<typeof schema.pitchDecks.$inferInsert>): Promise<typeof schema.pitchDecks.$inferSelect | undefined> {
+    const existing = await this.getPitchDeck(ideaId);
+    if (!existing) return undefined;
+    
+    const [updated] = await db
+      .update(schema.pitchDecks)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.pitchDecks.id, existing.id))
+      .returning();
+    return updated;
   }
 
 }

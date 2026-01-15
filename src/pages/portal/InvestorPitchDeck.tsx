@@ -187,6 +187,39 @@ export default function InvestorPitchDeck() {
     }
   }, [idea]);
 
+  // Load existing pitch deck from database
+  useEffect(() => {
+    if (!ideaId) return;
+    
+    const loadExistingDeck = async () => {
+      try {
+        const response = await fetch(`/api/ideas/${ideaId}/pitch-deck`, {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const { deck } = await response.json();
+          if (deck && deck.slides && deck.slides.length > 0) {
+            setSlides(deck.slides);
+            setMetricsValidation(deck.metricsValidation || []);
+            if (deck.investorMode && deck.deckType) {
+              setPitchContext(prev => ({
+                ...prev,
+                investorMode: deck.investorMode,
+                deckType: deck.deckType,
+                targetRaise: deck.targetRaise || "",
+              }));
+            }
+            setViewState("slides");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load existing pitch deck:", err);
+      }
+    };
+    
+    loadExistingDeck();
+  }, [ideaId]);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -262,6 +295,24 @@ export default function InvestorPitchDeck() {
       generateManusExport(data.slides, context);
       setViewState("slides");
       
+      // Save to database
+      try {
+        await fetch(`/api/ideas/${ideaId}/pitch-deck`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            investorMode: context.investorMode,
+            deckType: context.deckType,
+            targetRaise: context.targetRaise,
+            slides: data.slides,
+            metricsValidation: data.metricsValidation,
+          }),
+        });
+      } catch (saveErr) {
+        console.error("Failed to save pitch deck:", saveErr);
+      }
+      
       toast({
         title: "Pitch Deck Generated",
         description: `Your ${context.deckType === "full" ? "full" : "warm intro"} deck is ready for review.`,
@@ -322,8 +373,33 @@ export default function InvestorPitchDeck() {
       const data = await response.json();
       setSlides(data.slides);
       setEditedContent({});
+      
+      // Update metricsValidation if provided in response
+      const updatedMetrics = data.metricsValidation || metricsValidation;
+      if (data.metricsValidation) {
+        setMetricsValidation(data.metricsValidation);
+      }
+      
       saveToHistory(data.slides, "After Investor-Proof Refinement");
       generateManusExport(data.slides, pitchContext);
+      
+      // Save refined deck to database
+      try {
+        await fetch(`/api/ideas/${ideaId}/pitch-deck`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            investorMode: pitchContext.investorMode,
+            deckType: pitchContext.deckType,
+            targetRaise: pitchContext.targetRaise,
+            slides: data.slides,
+            metricsValidation: updatedMetrics,
+          }),
+        });
+      } catch (saveErr) {
+        console.error("Failed to save refined pitch deck:", saveErr);
+      }
       
       toast({
         title: "Deck Investor-Proofed",

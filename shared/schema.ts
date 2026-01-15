@@ -164,6 +164,20 @@ export const ideaNextSteps = pgTable("idea_next_steps", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const pitchDecks = pgTable("pitch_decks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  investorMode: text("investor_mode").notNull(), // "angel" | "vc"
+  deckType: text("deck_type").notNull(), // "full" | "warm_intro"
+  targetRaise: text("target_raise"),
+  slides: text("slides").notNull(), // JSON string of slide content
+  metricsValidation: text("metrics_validation"), // JSON string of metrics
+  finalDeckUrl: text("final_deck_url"), // URL to Manus/designed deck
+  version: integer("version").default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const teams = pgTable("teams", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),

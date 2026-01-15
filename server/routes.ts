@@ -805,6 +805,130 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Get pitch deck for an idea
+  app.get("/api/ideas/:id/pitch-deck", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Authorization check - verify user owns or is a team member of the idea
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+      
+      if (idea.createdBy !== req.session.userId) {
+        // Check if user is a team member
+        const teamWithMembers = await storage.getTeamByIdeaId(req.params.id);
+        const isTeamMember = teamWithMembers?.members?.some((m: any) => m.userId === req.session.userId);
+        if (!isTeamMember) {
+          return res.status(403).json({ error: "Not authorized to access this pitch deck" });
+        }
+      }
+      
+      const deck = await storage.getPitchDeck(req.params.id);
+      if (!deck) {
+        return res.json({ deck: null });
+      }
+      
+      // Parse the JSON fields
+      res.json({
+        deck: {
+          ...deck,
+          slides: JSON.parse(deck.slides || '[]'),
+          metricsValidation: deck.metricsValidation ? JSON.parse(deck.metricsValidation) : null,
+        }
+      });
+    } catch (error) {
+      console.error("Get pitch deck error:", error);
+      res.status(500).json({ error: "Failed to get pitch deck" });
+    }
+  });
+
+  // Save pitch deck for an idea
+  app.post("/api/ideas/:id/pitch-deck", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      if (idea.createdBy !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to modify this idea" });
+      }
+
+      const { investorMode, deckType, targetRaise, slides, metricsValidation } = req.body;
+      
+      const deck = await storage.savePitchDeck({
+        ideaId: req.params.id,
+        investorMode,
+        deckType,
+        targetRaise,
+        slides: JSON.stringify(slides),
+        metricsValidation: metricsValidation ? JSON.stringify(metricsValidation) : undefined,
+      });
+      
+      // Return with parsed JSON fields for consistency
+      res.json({ 
+        deck: {
+          ...deck,
+          slides: JSON.parse(deck.slides || '[]'),
+          metricsValidation: deck.metricsValidation ? JSON.parse(deck.metricsValidation) : null,
+        }
+      });
+    } catch (error) {
+      console.error("Save pitch deck error:", error);
+      res.status(500).json({ error: "Failed to save pitch deck" });
+    }
+  });
+
+  // Update pitch deck (e.g., add final deck URL)
+  app.patch("/api/ideas/:id/pitch-deck", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      if (idea.createdBy !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to modify this idea" });
+      }
+
+      const { finalDeckUrl, slides, metricsValidation } = req.body;
+      const updateData: any = {};
+      
+      if (finalDeckUrl !== undefined) updateData.finalDeckUrl = finalDeckUrl;
+      if (slides !== undefined) updateData.slides = JSON.stringify(slides);
+      if (metricsValidation !== undefined) updateData.metricsValidation = JSON.stringify(metricsValidation);
+      
+      const deck = await storage.updatePitchDeck(req.params.id, updateData);
+      if (!deck) {
+        return res.status(404).json({ error: "Pitch deck not found" });
+      }
+      
+      // Return with parsed JSON fields for consistency
+      res.json({ 
+        deck: {
+          ...deck,
+          slides: JSON.parse(deck.slides || '[]'),
+          metricsValidation: deck.metricsValidation ? JSON.parse(deck.metricsValidation) : null,
+        }
+      });
+    } catch (error) {
+      console.error("Update pitch deck error:", error);
+      res.status(500).json({ error: "Failed to update pitch deck" });
+    }
+  });
+
   app.delete("/api/ideas/:id", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
