@@ -820,8 +820,19 @@ export function registerRoutes(app: Express): void {
       
       if (idea.createdBy !== req.session.userId) {
         // Check if user is a team member
-        const teamWithMembers = await storage.getTeamByIdeaId(req.params.id);
-        const isTeamMember = teamWithMembers?.members?.some((m: any) => m.userId === req.session.userId);
+        const teams = await db.select()
+          .from(schema.teams)
+          .where(eq(schema.teams.ideaId, req.params.id))
+          .limit(1);
+        
+        let isTeamMember = false;
+        if (teams.length > 0) {
+          const teamMembers = await db.select()
+            .from(schema.teamMembers)
+            .where(eq(schema.teamMembers.teamId, teams[0].id));
+          isTeamMember = teamMembers.some((m: any) => m.userId === req.session.userId);
+        }
+        
         if (!isTeamMember) {
           return res.status(403).json({ error: "Not authorized to access this pitch deck" });
         }
@@ -3633,6 +3644,7 @@ Return a JSON object with this EXACT structure:
 
       // Get additional context from idea if provided
       let ideaContext = "";
+      let teamContext = "";
       if (ideaId) {
         const idea = await storage.getIdea(ideaId);
         if (idea) {
@@ -3642,6 +3654,51 @@ Return a JSON object with this EXACT structure:
 
           if (workflowSections.length > 0) {
             ideaContext = workflowSections.map(s => `## ${s.sectionType}\n${s.content}`).join("\n\n");
+          }
+          
+          // Fetch team members and advisors for Team slide
+          const teams = await db.select()
+            .from(schema.teams)
+            .where(eq(schema.teams.ideaId, ideaId))
+            .limit(1);
+          
+          if (teams.length > 0) {
+            const teamMembers = await db.select()
+              .from(schema.teamMembers)
+              .where(eq(schema.teamMembers.teamId, teams[0].id));
+            
+            if (teamMembers.length > 0) {
+              const memberProfiles = await Promise.all(
+                teamMembers.map(async (m: any) => {
+                  const profile = await storage.getProfile(m.userId);
+                  return profile ? {
+                    role: m.role,
+                    fullName: profile.fullName || "Team Member",
+                    headline: profile.headline || "",
+                    skills: profile.skills || [],
+                    interests: profile.interests || [],
+                    bio: profile.bio || "",
+                  } : null;
+                })
+              );
+              
+              const validMembers = memberProfiles.filter(Boolean);
+              if (validMembers.length > 0) {
+                teamContext = `\n\nTEAM MEMBERS:\n${validMembers.map((m: any) => 
+                  `- ${m.fullName} (${m.role}): ${m.headline || m.bio || ""}${m.skills?.length ? ` | Skills: ${m.skills.join(", ")}` : ""}`
+                ).join("\n")}`;
+              }
+            }
+          }
+          
+          // Also check for advisors connected to this idea's creator
+          const ideaOwnerProfile = await storage.getProfile(idea.createdBy);
+          if (ideaOwnerProfile) {
+            const ownerBadges = await storage.getUserBadges(idea.createdBy);
+            const advisorBadge = ownerBadges.find((b: any) => b.badgeType === "advisor");
+            
+            // Add founder info
+            teamContext = `\n\nFOUNDER:\n- ${ideaOwnerProfile.fullName || "Founder"}: ${ideaOwnerProfile.headline || ideaOwnerProfile.bio || ""}${ideaOwnerProfile.skills?.length ? ` | Skills: ${ideaOwnerProfile.skills.join(", ")}` : ""}` + teamContext;
           }
         }
       }
@@ -3696,6 +3753,7 @@ STARTUP CONTEXT:
 - Solution: ${solutionStatement}
 - Current Traction: ${currentTraction}
 - Founder Background: ${founderBackground}
+${teamContext}
 
 ${businessPlanNotes ? `ADDITIONAL NOTES:\n${businessPlanNotes}\n` : ""}
 ${ideaContext ? `BUSINESS PLAN CONTEXT:\n${ideaContext}\n` : ""}
@@ -3737,6 +3795,14 @@ CRITICAL RULES:
 - Slide-ready language only
 - Maximum ${maxBullets} bullet points per slide
 - Each bullet must be specific and evidence-based where possible
+
+TEAM SLIDE INSTRUCTIONS (Slide ${isWarmIntro ? "6" : "10"}):
+- USE THE TEAM PROFILE DATA provided above - do not invent team credentials
+- Include each team member's name, role, and most relevant credentials (from their headline, skills, or bio)
+- For advisors, highlight their industry expertise and connections
+- For founders, emphasize domain expertise and why they are uniquely positioned to solve this problem
+- If specific credentials are provided (e.g., "Ex-Google", "10 years in healthcare"), use them verbatim
+- Show "founder-market fit" - why this team specifically is built to win this market
 
 Return ONLY valid JSON with this structure:
 {

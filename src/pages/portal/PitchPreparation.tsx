@@ -299,6 +299,18 @@ export default function PitchPreparation() {
 
   const renderReadyView = () => (
     <div className="max-w-2xl mx-auto py-12 px-4">
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/portal/investor-pitch-deck?ideaId=${ideaId}`)}
+          data-testid="button-back-to-deck"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Pitch Deck
+        </Button>
+      </div>
+      
       <div className="text-center space-y-6">
         <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
           <Mic className="w-8 h-8 text-primary" />

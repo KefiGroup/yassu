@@ -478,6 +478,18 @@ export default function InvestorPitchDeck() {
 
   const renderReadyView = () => (
     <div className="max-w-2xl mx-auto py-12 px-4">
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/portal/ideas/${ideaId}`)}
+          data-testid="button-back-to-idea"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Idea
+        </Button>
+      </div>
+      
       <div className="text-center mb-8">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
           <Presentation className="w-8 h-8 text-primary" />
