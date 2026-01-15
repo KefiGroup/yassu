@@ -90,9 +90,14 @@ export function registerRoutes(app: Express): void {
 
       // Send welcome email (don't wait for it to avoid blocking)
       const { sendWelcomeEmail } = await import('./email');
-      sendWelcomeEmail(user.email, fullName || 'there').catch(err => {
-        console.error('Failed to send welcome email:', err);
-      });
+      console.log(`[Registration] Sending welcome email to: ${user.email}`);
+      sendWelcomeEmail(user.email, fullName || 'there')
+        .then(() => {
+          console.log(`[Registration] Welcome email sent successfully to: ${user.email}`);
+        })
+        .catch(err => {
+          console.error(`[Registration] Failed to send welcome email to ${user.email}:`, err);
+        });
 
       req.session.userId = user.id;
       // Explicitly save session before responding
@@ -1470,32 +1475,58 @@ export function registerRoutes(app: Express): void {
     }
 
     try {
-      const { status } = req.body;
-      if (!["accepted", "rejected"].includes(status)) {
+      const { status, customMessage } = req.body;
+      if (!["accepted", "rejected", "pending"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
       }
       
       const updated = await storage.updateJoinRequest(req.params.id, { status });
       
-      // Send acceptance email if accepted
-      if (status === 'accepted' && updated) {
-        const [accepter, idea, ideaCreator] = await Promise.all([
+      if (updated) {
+        // Get applicant and idea owner info
+        const [applicant, idea] = await Promise.all([
           storage.getProfile(updated.userId),
-          storage.getIdea(updated.ideaId),
-          storage.getIdea(updated.ideaId).then(i => i ? storage.getProfile(i.createdBy) : null)
+          storage.getIdea(updated.ideaId)
         ]);
         
-        if (accepter && idea && ideaCreator && ideaCreator.email) {
-          const { sendRequestAcceptedEmail } = await import('./email');
-          sendRequestAcceptedEmail(
-            ideaCreator.email,
-            ideaCreator.fullName || 'there',
-            accepter.fullName || 'Someone',
-            idea.title,
-            updated.ideaId
-          ).catch(err => {
-            console.error('Failed to send request accepted email:', err);
-          });
+        const ideaOwner = idea ? await storage.getProfile(idea.createdBy) : null;
+        
+        if (applicant?.email && idea && ideaOwner) {
+          const { sendRequestAcceptedEmail, sendRequestRejectedEmail, sendRequestPendingEmail } = await import('./email');
+          
+          if (status === 'accepted') {
+            sendRequestAcceptedEmail(
+              applicant.email,
+              applicant.fullName || 'there',
+              ideaOwner.fullName || 'The project owner',
+              idea.title,
+              updated.ideaId,
+              customMessage
+            ).catch(err => {
+              console.error('Failed to send request accepted email:', err);
+            });
+          } else if (status === 'rejected') {
+            sendRequestRejectedEmail(
+              applicant.email,
+              applicant.fullName || 'there',
+              ideaOwner.fullName || 'The project owner',
+              idea.title,
+              customMessage
+            ).catch(err => {
+              console.error('Failed to send request rejected email:', err);
+            });
+          } else if (status === 'pending' && customMessage) {
+            // Only send pending email if there's a custom message
+            sendRequestPendingEmail(
+              applicant.email,
+              applicant.fullName || 'there',
+              ideaOwner.fullName || 'The project owner',
+              idea.title,
+              customMessage
+            ).catch(err => {
+              console.error('Failed to send request pending email:', err);
+            });
+          }
         }
       }
       

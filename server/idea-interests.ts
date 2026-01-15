@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from './db';
 import { requireAuth } from './middleware';
+import { sendJoinRequestEmail } from './email';
 
 const router = Router();
 
@@ -15,9 +16,12 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check if user is the creator (can't express interest in own idea)
+    // Get idea details with creator info
     const ideaResult = await pool.query(
-      'SELECT created_by FROM ideas WHERE id = $1',
+      `SELECT i.id, i.title, i.created_by, p.email as owner_email, p.full_name as owner_name
+       FROM ideas i
+       JOIN profiles p ON i.created_by = p.user_id
+       WHERE i.id = $1`,
       [ideaId]
     );
 
@@ -25,7 +29,9 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Idea not found' });
     }
 
-    if (ideaResult.rows[0].created_by === userId) {
+    const idea = ideaResult.rows[0];
+
+    if (idea.created_by === userId) {
       return res.status(400).json({ error: 'Cannot express interest in your own idea' });
     }
 
@@ -42,6 +48,13 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
       });
     }
 
+    // Get applicant details
+    const applicantResult = await pool.query(
+      `SELECT full_name, skills FROM profiles WHERE user_id = $1`,
+      [userId]
+    );
+    const applicant = applicantResult.rows[0];
+
     // Create interest record with application details
     const result = await pool.query(
       `INSERT INTO join_requests (idea_id, user_id, message, motivation, role, time_commitment, experience, status)
@@ -50,12 +63,20 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
       [ideaId, userId, message || null, motivation || null, role || null, timeCommitment || null, experience || null]
     );
 
-    // TODO: Send notification to idea creator
-    // await sendNotification(ideaResult.rows[0].created_by, {
-    //   title: 'New Interest in Your Idea!',
-    //   message: `Someone wants to join your idea`,
-    //   link: `/portal/my-ideas/${ideaId}/interests`
-    // });
+    // Send email notification to idea creator
+    if (idea.owner_email) {
+      sendJoinRequestEmail(
+        idea.owner_email,
+        idea.owner_name || 'there',
+        applicant?.full_name || 'A Yassu member',
+        idea.title,
+        role || 'Team Member',
+        applicant?.skills || [],
+        motivation || message || 'I would love to join your team!'
+      ).catch(err => {
+        console.error('Failed to send join request email:', err);
+      });
+    }
 
     res.json({ 
       success: true, 

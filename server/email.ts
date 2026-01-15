@@ -678,7 +678,8 @@ export async function sendRequestAcceptedEmail(
   applicantName: string,
   ownerName: string,
   ideaTitle: string,
-  ideaId: string
+  ideaId: string,
+  customMessage?: string
 ): Promise<void> {
   const ideaLink = `${APP_URL}/portal/ideas/${ideaId}`;
   
@@ -710,6 +711,15 @@ export async function sendRequestAcceptedEmail(
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Congratulations! <strong>${ownerName}</strong> has accepted your request to join the team for <strong>${ideaTitle}</strong>.
               </p>
+              
+              ${customMessage ? `
+              <div style="margin: 20px 0; padding: 20px; background-color: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 4px;">
+                <p style="margin: 0 0 8px; color: #1a1a1a; font-size: 14px; font-weight: 600;">Message from ${ownerName}:</p>
+                <p style="margin: 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                  "${customMessage}"
+                </p>
+              </div>
+              ` : ''}
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 You are now an official collaborator on the project. You can now access the project workspace, communicate with your new teammates, and start building together.
@@ -758,6 +768,188 @@ export async function sendRequestAcceptedEmail(
   await sendEmail({
     to: applicantEmail,
     subject: `Welcome to the team! Your request for ${ideaTitle} was accepted`,
+    html,
+  });
+}
+
+export async function sendRequestRejectedEmail(
+  applicantEmail: string,
+  applicantName: string,
+  ownerName: string,
+  ideaTitle: string,
+  customMessage?: string
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update on your request - Yassu</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${applicantName},</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Thank you for your interest in joining <strong>${ideaTitle}</strong>. After careful consideration, the team has decided to move forward with other candidates at this time.
+              </p>
+              
+              ${customMessage ? `
+              <div style="margin: 20px 0; padding: 20px; background-color: #f9fafb; border-left: 4px solid #6b7280; border-radius: 4px;">
+                <p style="margin: 0 0 8px; color: #1a1a1a; font-size: 14px; font-weight: 600;">Message from ${ownerName}:</p>
+                <p style="margin: 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                  "${customMessage}"
+                </p>
+              </div>
+              ` : ''}
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Don't be discouraged! There are many other exciting projects on Yassu looking for talented collaborators like you. Keep exploring and connecting with the community.
+              </p>
+              
+              <table role="presentation" style="margin: 30px 0;">
+                <tr>
+                  <td style="border-radius: 6px; background-color: #7c3aed;">
+                    <a href="${APP_URL}/portal/ideas" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      Explore More Ideas
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                Need help? Reply to this email.
+              </p>
+              
+              <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Best,<br>
+                The Yassu Team
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                © ${new Date().getFullYear()} Yassu. All rights reserved.
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                Where Elite University Talent Builds Together
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await sendEmail({
+    to: applicantEmail,
+    subject: `Update on your request for ${ideaTitle}`,
+    html,
+  });
+}
+
+export async function sendRequestPendingEmail(
+  applicantEmail: string,
+  applicantName: string,
+  ownerName: string,
+  ideaTitle: string,
+  customMessage?: string
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your request is under review - Yassu</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${applicantName},</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Thank you for your interest in joining <strong>${ideaTitle}</strong>. ${ownerName} has reviewed your application and would like to take some more time to consider your request.
+              </p>
+              
+              ${customMessage ? `
+              <div style="margin: 20px 0; padding: 20px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                <p style="margin: 0 0 8px; color: #1a1a1a; font-size: 14px; font-weight: 600;">Message from ${ownerName}:</p>
+                <p style="margin: 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                  "${customMessage}"
+                </p>
+              </div>
+              ` : ''}
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Your application is still active and being considered. You will receive another notification once a final decision is made.
+              </p>
+              
+              <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                Need help? Reply to this email.
+              </p>
+              
+              <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Best,<br>
+                The Yassu Team
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                © ${new Date().getFullYear()} Yassu. All rights reserved.
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                Where Elite University Talent Builds Together
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await sendEmail({
+    to: applicantEmail,
+    subject: `Your request for ${ideaTitle} is under review`,
     html,
   });
 }

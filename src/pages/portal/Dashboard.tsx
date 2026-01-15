@@ -105,6 +105,14 @@ export default function Dashboard() {
   const [inviteIdeaId, setInviteIdeaId] = useState<string | null>(null);
   const [sendingInvite, setSendingInvite] = useState(false);
   const [sentInvites, setSentInvites] = useState<Set<string>>(new Set());
+  
+  // Join request review states
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<JoinRequest | null>(null);
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [actionType, setActionType] = useState<'accepted' | 'rejected' | 'pending' | null>(null);
+  const [actionMessage, setActionMessage] = useState('');
+  const [processingAction, setProcessingAction] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -137,25 +145,67 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const handleJoinRequestAction = async (requestId: string, status: 'accepted' | 'rejected') => {
+  const handleJoinRequestAction = async (requestId: string, status: 'accepted' | 'rejected' | 'pending', customMessage?: string) => {
+    setProcessingAction(true);
     try {
       await fetch(`/api/join-requests/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, customMessage }),
       });
       
-      setJoinRequests(prev => prev.filter(r => r.id !== requestId));
+      if (status !== 'pending') {
+        setJoinRequests(prev => prev.filter(r => r.id !== requestId));
+      }
+      
+      const statusLabels = {
+        accepted: 'Request accepted',
+        rejected: 'Request declined',
+        pending: 'Response sent'
+      };
+      const statusDescriptions = {
+        accepted: 'The collaborator has been notified and added to your team.',
+        rejected: 'The collaborator has been notified of your decision.',
+        pending: 'Your message has been sent to the collaborator.'
+      };
+      
       toast({
-        title: status === 'accepted' ? 'Request accepted' : 'Request rejected',
-        description: status === 'accepted' 
-          ? 'The person has been notified and added to your team.' 
-          : 'The person has been notified.',
+        title: statusLabels[status],
+        description: statusDescriptions[status],
       });
+      
+      setActionDialogOpen(false);
+      setReviewDialogOpen(false);
+      setSelectedRequest(null);
+      setActionType(null);
+      setActionMessage('');
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to update request', variant: 'destructive' });
+    } finally {
+      setProcessingAction(false);
     }
+  };
+
+  const openReviewDialog = (request: JoinRequest) => {
+    setSelectedRequest(request);
+    setReviewDialogOpen(true);
+  };
+
+  const openActionDialog = (type: 'accepted' | 'rejected' | 'pending') => {
+    setActionType(type);
+    // Set default message templates
+    const requesterName = selectedRequest?.requester.fullName || 'there';
+    const ideaTitle = selectedRequest?.idea.title || 'the project';
+    
+    const templates = {
+      accepted: `Hi ${requesterName},\n\nWelcome to the team! I'm excited to have you join ${ideaTitle}. Let's connect soon to discuss next steps and how you can contribute.\n\nLooking forward to working together!`,
+      rejected: `Hi ${requesterName},\n\nThank you for your interest in ${ideaTitle}. After careful consideration, we've decided to move forward with other candidates whose skills more closely match our current needs.\n\nWe appreciate your enthusiasm and wish you the best in your future endeavors. Keep exploring other opportunities on Yassu!`,
+      pending: `Hi ${requesterName},\n\nThank you for your interest in ${ideaTitle}. We're still reviewing applications and would like to take a bit more time to make our decision.\n\nWe'll be in touch soon with an update. Thanks for your patience!`
+    };
+    
+    setActionMessage(templates[type]);
+    setActionDialogOpen(true);
   };
 
   const getInviteMessageTemplate = (name: string | null, ideaTitle: string, skills?: string[] | null) => {
@@ -475,19 +525,13 @@ Looking forward to hearing from you!`;
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
-                          size="icon"
                           variant="outline"
-                          onClick={() => handleJoinRequestAction(request.id, 'rejected')}
-                          data-testid={`button-reject-${request.id}`}
+                          size="sm"
+                          onClick={() => openReviewDialog(request)}
+                          data-testid={`button-review-${request.id}`}
                         >
-                          <X className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          onClick={() => handleJoinRequestAction(request.id, 'accepted')}
-                          data-testid={`button-accept-${request.id}`}
-                        >
-                          <Check className="w-4 h-4" />
+                          <User className="w-4 h-4 mr-1" />
+                          Review
                         </Button>
                       </div>
                     </div>
@@ -844,6 +888,181 @@ Looking forward to hearing from you!`;
                 <>
                   <UserPlus className="w-4 h-4 mr-2" />
                   Send Invitation
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Profile Dialog */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent className="sm:max-w-lg" data-testid="dialog-review-request">
+          <DialogHeader>
+            <DialogTitle>Review Join Request</DialogTitle>
+            <DialogDescription>
+              Review this collaborator's profile and decide on their request to join your project.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              {/* Requester profile */}
+              <div className="flex items-center gap-4">
+                <Avatar className="w-16 h-16">
+                  <AvatarImage src={selectedRequest.requester.avatarUrl || undefined} />
+                  <AvatarFallback className="text-lg">{getInitials(selectedRequest.requester.fullName)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedRequest.requester.fullName || 'Unknown'}</h3>
+                  {selectedRequest.requester.yassuRole && (
+                    <Badge variant="secondary">
+                      {selectedRequest.requester.yassuRole === 'ambassador' ? (
+                        <><GraduationCap className="w-3 h-3 mr-1" /> Ambassador</>
+                      ) : (
+                        <><Briefcase className="w-3 h-3 mr-1" /> Advisor</>
+                      )}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              
+              {/* Project requesting to join */}
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">Requesting to join:</p>
+                <p className="font-medium">{selectedRequest.idea.title}</p>
+              </div>
+              
+              {/* Their message */}
+              {selectedRequest.message && (
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Their message:</p>
+                  <p className="text-sm italic">"{selectedRequest.message}"</p>
+                </div>
+              )}
+              
+              {/* Bio */}
+              {selectedRequest.requester.bio && (
+                <div>
+                  <h4 className="font-medium text-sm mb-1">About</h4>
+                  <p className="text-sm text-muted-foreground">{selectedRequest.requester.bio}</p>
+                </div>
+              )}
+              
+              {/* Skills */}
+              {selectedRequest.requester.skills && selectedRequest.requester.skills.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Skills</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedRequest.requester.skills.map((skill, i) => (
+                      <Badge key={i} variant="outline" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Social links */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {selectedRequest.requester.linkedinUrl && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={selectedRequest.requester.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      LinkedIn
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => openActionDialog('pending')}
+              data-testid="button-action-pending"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Need More Time
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => openActionDialog('rejected')}
+              className="text-destructive border-destructive hover:bg-destructive/10"
+              data-testid="button-action-reject"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Decline
+            </Button>
+            <Button
+              onClick={() => openActionDialog('accepted')}
+              data-testid="button-action-accept"
+            >
+              <Check className="w-4 h-4 mr-2" />
+              Accept
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Action Message Dialog */}
+      <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+        <DialogContent className="sm:max-w-md" data-testid="dialog-action-message">
+          <DialogHeader>
+            <DialogTitle>
+              {actionType === 'accepted' && 'Accept Request'}
+              {actionType === 'rejected' && 'Decline Request'}
+              {actionType === 'pending' && 'Send a Message'}
+            </DialogTitle>
+            <DialogDescription>
+              {actionType === 'accepted' && 'Write a welcome message for your new team member.'}
+              {actionType === 'rejected' && 'Optionally explain your decision to the applicant.'}
+              {actionType === 'pending' && 'Let them know you need more time to review their application.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="action-message">Your Message</Label>
+              <Textarea
+                id="action-message"
+                value={actionMessage}
+                onChange={(e) => setActionMessage(e.target.value)}
+                placeholder="Write a personalized message..."
+                className="min-h-[150px] text-sm"
+                data-testid="textarea-action-message"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setActionDialogOpen(false);
+                setActionMessage('');
+              }}
+              data-testid="button-cancel-action"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedRequest && actionType) {
+                  handleJoinRequestAction(selectedRequest.id, actionType, actionMessage);
+                }
+              }}
+              disabled={processingAction}
+              variant={actionType === 'rejected' ? 'destructive' : 'default'}
+              data-testid="button-confirm-action"
+            >
+              {processingAction ? (
+                <>
+                  <span className="animate-spin mr-2">&#9696;</span>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  {actionType === 'accepted' && <><Check className="w-4 h-4 mr-2" />Accept & Send</>}
+                  {actionType === 'rejected' && <><X className="w-4 h-4 mr-2" />Decline & Send</>}
+                  {actionType === 'pending' && <><MessageSquare className="w-4 h-4 mr-2" />Send Message</>}
                 </>
               )}
             </Button>
