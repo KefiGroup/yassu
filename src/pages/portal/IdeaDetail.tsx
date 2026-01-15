@@ -1048,21 +1048,34 @@ export default function IdeaDetail() {
         </Button>
         {isOwner && (
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleTogglePrivacy}
-              disabled={togglingPrivacy}
+            <div 
+              onClick={togglingPrivacy ? undefined : handleTogglePrivacy}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
+                togglingPrivacy ? 'opacity-50 cursor-not-allowed' : 'hover-elevate'
+              } ${
+                idea.isPublic 
+                  ? 'bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-400' 
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
+              }`}
               data-testid="button-toggle-privacy"
             >
               {togglingPrivacy ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : idea.isPublic ? (
-                <Globe className="w-4 h-4 mr-2" />
+                <Globe className="w-4 h-4" />
               ) : (
-                <Lock className="w-4 h-4 mr-2" />
+                <Lock className="w-4 h-4" />
               )}
-              {idea.isPublic ? 'Public' : 'Private'}
-            </Button>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium leading-tight">
+                  {idea.isPublic ? 'Public' : 'Private'}
+                </span>
+                <span className="text-[10px] opacity-70 leading-tight">
+                  {idea.isPublic ? 'Visible to all' : 'Only you can see'}
+                </span>
+              </div>
+              <span className="text-[10px] opacity-50 ml-1">Click to change</span>
+            </div>
             <Button
               variant="outline"
               onClick={() => navigate(`/portal/ideas/${ideaId}/edit`)}
