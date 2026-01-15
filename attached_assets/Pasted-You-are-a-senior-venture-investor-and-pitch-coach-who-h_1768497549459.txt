@@ -1,0 +1,136 @@
+You are a senior venture investor and pitch coach who has sat through hundreds of founder presentations.
+
+Build an **AI-powered Investor Pitch Preparation Module** inside my portal.
+
+This module is NOT for building slides.
+This module is for preparing founders to **deliver the pitch, handle objections, and survive live Q&A**.
+
+It must feel like a tough rehearsal with a real investor.
+
+---
+
+## INPUTS (NO NEW DATA COLLECTION)
+
+This module must consume:
+
+* The uploaded business plan
+* The finalized pitch deck content (from the pitch deck module)
+* Investor Mode (Angel / Institutional VC)
+
+Do NOT ask the user to re-enter information unless explicitly necessary.
+
+---
+
+## CORE OBJECTIVE
+
+Prepare the founder to:
+
+* Present confidently without reading slides
+* Anticipate tough investor questions
+* Respond clearly, calmly, and credibly
+* Avoid defensive or amateur answers
+* Turn objections into trust-building moments
+
+This is **presentation readiness**, not content creation.
+
+---
+
+## STEP 1 — PITCH DELIVERY SCRIPT (FOUNDER VOICE)
+
+Generate a **spoken presentation script**, slide by slide.
+
+For EACH slide in the pitch deck, output:
+
+```
+SLIDE: [Slide Title]
+
+What You Say (Out Loud):
+(30–60 seconds of natural, spoken language — not reading bullets)
+
+Key Emphasis:
+(What investors should remember from this slide)
+
+Delivery Tip:
+(Pacing, tone, or emphasis guidance)
+```
+
+Rules:
+
+* Conversational, confident tone
+* No jargon dumping
+* No reading from slides
+* Optimized for live presentation
+
+---
+
+## STEP 2 — INVESTOR OBJECTION GENERATION
+
+Based on the pitch deck and business plan, generate **high-probability investor objections**.
+
+Group objections into these categories:
+
+1. Problem & Urgency
+2. Solution & Differentiation
+3. Market Size & Returns
+4. Traction / Proof
+5. Business Model
+6. Go-To-Market
+7. Competition
+8. Team
+9. Timing / Why Now
+10. Risk & Downside
+
+For EACH objection, output:
+
+```
+Investor Objection:
+(Exact wording an investor would use)
+
+Why This Comes Up:
+(The real concern behind the question)
+
+Risk Level:
+(Low / Medium / High)
+```
+
+No polite phrasing. No softening. Use real investor language.
+
+---
+
+## STEP 3 — OBJECTION RESPONSE SCRIPT (LIVE Q&A)
+
+For EACH objection, generate a **live-response playbook**:
+
+```
+Best Short Answer (Live Pitch):
+(1–2 sentences, calm and confident)
+
+If They Push Further:
+(Expanded explanation, max 4 sentences)
+
+What NOT to Say:
+(Common founder mistakes or defensive responses)
+```
+
+Tone:
+
+* Direct
+* Calm
+* Non-defensive
+* Investor-fluent
+
+Answers must sound **spoken**, not written.
+
+---
+
+## STEP 4 — DEAL-BREAKER AWARENESS
+
+For each objection, classify:
+
+```
+Objection Type:
+- Clarifiable
+- Needs Proof Soon
+- Structural Risk
+- Likely Deal-Breaker (for this 
+```
