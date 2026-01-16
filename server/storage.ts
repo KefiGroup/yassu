@@ -70,6 +70,7 @@ export interface IStorage {
   
   getNotifications(userId: number): Promise<Notification[]>;
   markNotificationRead(id: string): Promise<void>;
+  createNotification(data: { userId: number; type: string; title: string; message?: string; link?: string }): Promise<Notification>;
 
   getUniversityResources(universityId: string): Promise<any[]>;
   
@@ -657,6 +658,17 @@ export class DatabaseStorage implements IStorage {
 
   async markNotificationRead(id: string): Promise<void> {
     await db.update(schema.notifications).set({ read: true }).where(eq(schema.notifications.id, id));
+  }
+
+  async createNotification(data: { userId: number; type: string; title: string; message?: string; link?: string }): Promise<Notification> {
+    const [notification] = await db.insert(schema.notifications).values({
+      userId: data.userId,
+      type: data.type,
+      title: data.title,
+      message: data.message || null,
+      link: data.link || null,
+    }).returning();
+    return notification;
   }
 
   async getUniversityResources(universityId: string): Promise<any[]> {

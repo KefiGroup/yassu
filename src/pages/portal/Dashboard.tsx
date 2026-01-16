@@ -649,7 +649,10 @@ Looking forward to hearing from you!`;
                       <div className="flex items-start gap-3">
                         <Avatar 
                           className="w-10 h-10 cursor-pointer"
-                          onClick={() => setSelectedProfile(member)}
+                          onClick={() => {
+                            setSelectedProfile(member);
+                            setInviteDialogOpen(true);
+                          }}
                           data-testid={`avatar-member-${member.userId}`}
                         >
                           <AvatarImage src={member.avatarUrl || undefined} />
@@ -658,7 +661,10 @@ Looking forward to hearing from you!`;
                         <div className="flex-1 min-w-0">
                           <span 
                             className="font-medium cursor-pointer hover:text-primary block truncate"
-                            onClick={() => setSelectedProfile(member)}
+                            onClick={() => {
+                              setSelectedProfile(member);
+                              setInviteDialogOpen(true);
+                            }}
                             data-testid={`text-member-name-${member.userId}`}
                           >
                             {member.fullName || 'Unknown'}

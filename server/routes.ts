@@ -1515,6 +1515,20 @@ export function registerRoutes(app: Express): void {
         message,
         status: "pending"
       });
+      
+      // Notify the idea owner about the new join request
+      const idea = await storage.getIdea(ideaId);
+      const applicant = await storage.getProfile(req.session.userId);
+      if (idea && applicant) {
+        await storage.createNotification({
+          userId: idea.createdBy,
+          type: 'join_request',
+          title: 'New Join Request',
+          message: `${applicant.fullName || 'Someone'} wants to join your project "${idea.title}"`,
+          link: `/portal/ideas/${ideaId}`,
+        });
+      }
+      
       res.json(request);
     } catch (error) {
       console.error("Create join request error:", error);
@@ -1592,6 +1606,15 @@ export function registerRoutes(app: Express): void {
               });
             }
             
+            // Create notification for the applicant
+            await storage.createNotification({
+              userId: updated.userId,
+              type: 'request_accepted',
+              title: 'Request Accepted!',
+              message: `Your request to join "${idea.title}" has been accepted`,
+              link: `/portal/ideas/${idea.id}`,
+            });
+            
             console.log(`[Join Request] Sending acceptance email to ${applicant.email}, ideaId: ${idea.id}`);
             sendRequestAcceptedEmail(
               applicant.email,
@@ -1604,6 +1627,15 @@ export function registerRoutes(app: Express): void {
               console.error('Failed to send request accepted email:', err);
             });
           } else if (status === 'rejected') {
+            // Create notification for the applicant
+            await storage.createNotification({
+              userId: updated.userId,
+              type: 'request_rejected',
+              title: 'Request Update',
+              message: `Your request to join "${idea.title}" was not approved at this time`,
+              link: '/portal/ideas',
+            });
+            
             console.log(`[Join Request] Sending rejection email to ${applicant.email}`);
             sendRequestRejectedEmail(
               applicant.email,
@@ -1688,6 +1720,15 @@ export function registerRoutes(app: Express): void {
       ]);
       
       if (inviter && invitee && idea && invitee.email) {
+        // Create notification for the invitee
+        await storage.createNotification({
+          userId: inviteeId,
+          type: 'team_invite',
+          title: 'Team Invitation',
+          message: `${inviter.fullName || 'Someone'} invited you to join "${idea.title}"`,
+          link: `/portal/ideas/${ideaId}`,
+        });
+        
         const { sendTeamInvitationEmail } = await import('./email');
         sendTeamInvitationEmail(
           invitee.email,
@@ -2263,6 +2304,15 @@ export function registerRoutes(app: Express): void {
       ]);
       
       if (sender && recipient && recipient.email) {
+        // Create notification for the recipient
+        await storage.createNotification({
+          userId: recipientId,
+          type: 'connection_request',
+          title: 'Connection Request',
+          message: `${sender.fullName || 'Someone'} wants to connect with you`,
+          link: '/portal/collaborators',
+        });
+        
         const { sendConnectionRequestEmail } = await import('./email');
         sendConnectionRequestEmail(
           recipient.email,
@@ -2342,6 +2392,17 @@ export function registerRoutes(app: Express): void {
       if (!connection) {
         return res.status(404).json({ error: "Connection not found or cannot accept" });
       }
+      
+      // Notify the requester that their connection was accepted
+      const accepter = await storage.getProfile(req.session.userId);
+      await storage.createNotification({
+        userId: connection.requesterId,
+        type: 'connection_accepted',
+        title: 'Connection Accepted',
+        message: `${accepter?.fullName || 'Someone'} accepted your connection request`,
+        link: '/portal/collaborators',
+      });
+      
       res.json(connection);
     } catch (error) {
       console.error("Accept connection error:", error);
@@ -3093,7 +3154,7 @@ export function registerRoutes(app: Express): void {
         })
         .returning();
       
-      // Send email notification
+      // Create notification and send email
       try {
         const sender = await db.select()
           .from(schema.profiles)
@@ -3104,6 +3165,15 @@ export function registerRoutes(app: Express): void {
           .from(schema.profiles)
           .where(eq(schema.profiles.userId, recipientId))
           .limit(1);
+        
+        // Create notification for the recipient
+        await storage.createNotification({
+          userId: recipientId,
+          type: 'new_message',
+          title: 'New Message',
+          message: `${sender[0]?.fullName || 'Someone'} sent you a message`,
+          link: `/portal/messages`,
+        });
         
         if (recipientProfile[0]?.email || recipient[0]?.email) {
           const { sendNewMessageEmail } = await import('./email');
