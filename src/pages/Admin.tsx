@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -58,6 +58,19 @@ interface Announcement {
   updatedAt: string;
 }
 
+interface Suggestion {
+  id: number;
+  userId: number | null;
+  suggestion: string;
+  status: 'new' | 'reviewed' | 'implemented' | 'dismissed';
+  adminNotes: string | null;
+  reviewedBy: number | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  userEmail: string | null;
+  userFullName: string | null;
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -66,6 +79,7 @@ export default function Admin() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [ideaSearchQuery, setIdeaSearchQuery] = useState('');
@@ -98,17 +112,19 @@ export default function Admin() {
           return;
         }
         
-        const [profilesData, ideasData, adminsData, announcementsData] = await Promise.all([
+        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData] = await Promise.all([
           apiRequest<ProfileWithBadges[]>('/admin/profiles'),
           apiRequest<Idea[]>('/admin/ideas'),
           apiRequest<AdminUser[]>('/admin/admins'),
-          apiRequest<Announcement[]>('/admin/announcements')
+          apiRequest<Announcement[]>('/admin/announcements'),
+          apiRequest<Suggestion[]>('/admin/suggestions')
         ]);
         
         setProfiles(profilesData);
         setIdeas(ideasData);
         setAdmins(adminsData);
         setAnnouncements(announcementsData);
+        setSuggestions(suggestionsData);
       } catch (error) {
         console.error('Admin check failed:', error);
         navigate('/portal');
@@ -498,6 +514,15 @@ export default function Admin() {
           <TabsTrigger value="announcements" className="gap-2" data-testid="tab-announcements">
             <Megaphone className="w-4 h-4" />
             Announcements
+          </TabsTrigger>
+          <TabsTrigger value="suggestions" className="gap-2" data-testid="tab-suggestions">
+            <MessageSquare className="w-4 h-4" />
+            Suggestions
+            {suggestions.filter(s => s.status === 'new').length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                {suggestions.filter(s => s.status === 'new').length}
+              </Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -1046,6 +1071,137 @@ export default function Admin() {
                             )}
                           </Button>
                         </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="suggestions">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                User Suggestions
+              </CardTitle>
+              <CardDescription>
+                Review feedback and feature requests submitted by users through Kefi.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {suggestions.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    No suggestions have been submitted yet.
+                  </p>
+                ) : (
+                  suggestions.map((suggestion) => (
+                    <div
+                      key={suggestion.id}
+                      className="p-4 border rounded-lg space-y-3"
+                      data-testid={`suggestion-item-${suggestion.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <p className="text-sm">{suggestion.suggestion}</p>
+                          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                            <span>
+                              {suggestion.userFullName || suggestion.userEmail || 'Anonymous User'}
+                            </span>
+                            <span>-</span>
+                            <span>{new Date(suggestion.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <Badge
+                          variant={
+                            suggestion.status === 'new' ? 'default' :
+                            suggestion.status === 'implemented' ? 'secondary' :
+                            suggestion.status === 'reviewed' ? 'outline' :
+                            'destructive'
+                          }
+                          className={
+                            suggestion.status === 'new' ? 'bg-blue-500' :
+                            suggestion.status === 'implemented' ? 'bg-green-500' :
+                            ''
+                          }
+                        >
+                          {suggestion.status === 'new' && <Clock className="w-3 h-3 mr-1" />}
+                          {suggestion.status === 'reviewed' && <Eye className="w-3 h-3 mr-1" />}
+                          {suggestion.status === 'implemented' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {suggestion.status === 'dismissed' && <XCircle className="w-3 h-3 mr-1" />}
+                          {suggestion.status.charAt(0).toUpperCase() + suggestion.status.slice(1)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await apiRequest(`/admin/suggestions/${suggestion.id}`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({ status: 'reviewed' }),
+                              });
+                              const updated = await apiRequest<Suggestion[]>('/admin/suggestions');
+                              setSuggestions(updated);
+                              toast({ title: 'Marked as Reviewed' });
+                            } catch (error) {
+                              toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
+                            }
+                          }}
+                          disabled={suggestion.status === 'reviewed'}
+                          data-testid={`button-review-${suggestion.id}`}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Reviewed
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await apiRequest(`/admin/suggestions/${suggestion.id}`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({ status: 'implemented' }),
+                              });
+                              const updated = await apiRequest<Suggestion[]>('/admin/suggestions');
+                              setSuggestions(updated);
+                              toast({ title: 'Marked as Implemented' });
+                            } catch (error) {
+                              toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
+                            }
+                          }}
+                          disabled={suggestion.status === 'implemented'}
+                          data-testid={`button-implement-${suggestion.id}`}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Implemented
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await apiRequest(`/admin/suggestions/${suggestion.id}`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({ status: 'dismissed' }),
+                              });
+                              const updated = await apiRequest<Suggestion[]>('/admin/suggestions');
+                              setSuggestions(updated);
+                              toast({ title: 'Suggestion Dismissed' });
+                            } catch (error) {
+                              toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
+                            }
+                          }}
+                          disabled={suggestion.status === 'dismissed'}
+                          data-testid={`button-dismiss-${suggestion.id}`}
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Dismiss
+                        </Button>
                       </div>
                     </div>
                   ))

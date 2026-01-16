@@ -411,6 +411,19 @@ export const announcements = pgTable("announcements", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const suggestionStatusEnum = pgEnum("suggestion_status", ["new", "reviewed", "implemented", "dismissed"]);
+
+export const suggestions = pgTable("suggestions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  suggestion: text("suggestion").notNull(),
+  status: suggestionStatusEnum("status").default("new").notNull(),
+  adminNotes: text("admin_notes"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIdeaSchema = createInsertSchema(ideas).omit({ id: true, createdAt: true, updatedAt: true });
@@ -421,6 +434,7 @@ export const insertConnectionSchema = createInsertSchema(connections).omit({ id:
 export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({ id: true, createdAt: true, read: true });
 export const insertTeamMessageSchema = createInsertSchema(teamMessages).omit({ id: true, createdAt: true });
 export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ id: true, createdAt: true, reviewedAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -448,6 +462,8 @@ export type InsertTeamMessage = z.infer<typeof insertTeamMessageSchema>;
 export type TeamMessageRead = typeof teamMessageReads.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type Suggestion = typeof suggestions.$inferSelect;
+export type InsertSuggestion = z.infer<typeof insertSuggestionSchema>;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";

@@ -3199,6 +3199,105 @@ Return valid JSON:
     }
   });
 
+  // ============ Suggestions API (Kefi) ============
+
+  // Submit a suggestion (authenticated users)
+  app.post("/api/suggestions", async (req: Request, res: Response) => {
+    try {
+      const { suggestion } = req.body;
+      
+      if (!suggestion || typeof suggestion !== 'string' || suggestion.trim().length < 10) {
+        return res.status(400).json({ error: "Please provide a suggestion with at least 10 characters" });
+      }
+
+      const [created] = await db.insert(schema.suggestions)
+        .values({
+          userId: req.session.userId || null,
+          suggestion: suggestion.trim(),
+        })
+        .returning();
+      
+      res.json({ success: true, message: "Thank you for your suggestion! The Yassu team will review it." });
+    } catch (error) {
+      console.error("Submit suggestion error:", error);
+      res.status(500).json({ error: "Failed to submit suggestion" });
+    }
+  });
+
+  // Get all suggestions (admin only)
+  app.get("/api/admin/suggestions", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const allSuggestions = await db.select({
+        id: schema.suggestions.id,
+        userId: schema.suggestions.userId,
+        suggestion: schema.suggestions.suggestion,
+        status: schema.suggestions.status,
+        adminNotes: schema.suggestions.adminNotes,
+        reviewedBy: schema.suggestions.reviewedBy,
+        reviewedAt: schema.suggestions.reviewedAt,
+        createdAt: schema.suggestions.createdAt,
+        userEmail: schema.users.email,
+        userFullName: schema.users.fullName,
+      })
+        .from(schema.suggestions)
+        .leftJoin(schema.users, eq(schema.suggestions.userId, schema.users.id))
+        .orderBy(desc(schema.suggestions.createdAt));
+      
+      res.json(allSuggestions);
+    } catch (error) {
+      console.error("Get suggestions error:", error);
+      res.status(500).json({ error: "Failed to get suggestions" });
+    }
+  });
+
+  // Update suggestion status (admin only)
+  app.patch("/api/admin/suggestions/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const suggestionId = parseInt(req.params.id);
+      const { status, adminNotes } = req.body;
+
+      const updateData: any = {
+        reviewedBy: req.session.userId,
+        reviewedAt: new Date(),
+      };
+
+      if (status) updateData.status = status;
+      if (adminNotes !== undefined) updateData.adminNotes = adminNotes;
+
+      const [updated] = await db.update(schema.suggestions)
+        .set(updateData)
+        .where(eq(schema.suggestions.id, suggestionId))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Suggestion not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Update suggestion error:", error);
+      res.status(500).json({ error: "Failed to update suggestion" });
+    }
+  });
+
   // Direct Messages API
   
   // Search users for messaging (returns all users with connection status)
@@ -4629,6 +4728,37 @@ Return as valid JSON:
         return res.status(400).json({ error: "Message is required" });
       }
 
+      // Check if this is a suggestion submission
+      const suggestionPatterns = [
+        /^(?:i have a suggestion|i'd like to suggest|i want to suggest|suggestion:|feature request:|my suggestion is|here's a suggestion|can you add|please add|you should add|it would be nice if|i wish yassu|yassu should)/i,
+        /(?:suggestion for yassu|feedback for yassu|improve yassu|feature idea)/i
+      ];
+      
+      const isSuggestion = suggestionPatterns.some(pattern => pattern.test(message.trim()));
+      
+      if (isSuggestion && message.length >= 10) {
+        // Extract and save the suggestion
+        let suggestionText = message
+          .replace(/^(?:i have a suggestion:|i'd like to suggest:|suggestion:|feature request:|my suggestion is:|here's a suggestion:)\s*/i, '')
+          .trim();
+        
+        if (suggestionText.length < 10) {
+          suggestionText = message;
+        }
+
+        await db.insert(schema.suggestions)
+          .values({
+            userId: req.session.userId || null,
+            suggestion: suggestionText,
+          });
+
+        return res.json({
+          success: true,
+          message: "Thank you so much for your suggestion! I've recorded it and the Yassu team will review it. Your feedback helps make the platform better for all student founders. Is there anything else I can help you with?",
+          suggestionSaved: true
+        });
+      }
+
       const { searchHelpTopics, getHelpContext } = await import('./helpContent');
       
       const relevantTopics = searchHelpTopics(message);
@@ -4665,7 +4795,8 @@ Guidelines:
 - Keep responses concise (2-4 sentences for simple questions, more for complex ones)
 - Use bullet points for step-by-step instructions
 - Be encouraging about their startup journey
-- Never make up features that don't exist on Yassu`;
+- Never make up features that don't exist on Yassu
+- If someone wants to give feedback or a suggestion for improving Yassu, tell them to phrase it as "I have a suggestion: [their idea]" and you'll record it for the team`;
 
       const messages: Array<{role: 'system' | 'user' | 'assistant', content: string}> = [
         { role: 'system', content: systemPrompt }

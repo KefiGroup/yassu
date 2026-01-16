@@ -369,6 +369,18 @@ Team members can always see ideas they're part of. Admins can view all ideas for
 2. Check the platform announcements for known issues
 3. Contact the Yassu team through the platform
 We're here to help you on your founder journey!`
+  },
+  {
+    id: "submit-suggestion",
+    category: "Support",
+    title: "How to submit a suggestion",
+    keywords: ["suggestion", "feedback", "improve", "feature request", "idea for yassu", "recommend"],
+    content: `You can submit suggestions for improving Yassu directly through me (Kefi)! 
+Just tell me your suggestion by saying something like:
+- "I have a suggestion: [your idea]"
+- "I'd like to suggest: [your improvement idea]"
+- "Feature request: [what you'd like to see]"
+The Yassu team reviews all suggestions and uses them to make the platform better for everyone.`
   }
 ];
 
