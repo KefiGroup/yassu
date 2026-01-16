@@ -404,7 +404,7 @@ Let me know if you'd like to learn more about the project!`;
     (!['advisor', 'founder'].includes(m.role.toLowerCase()))
   );
 
-  const handleJoinRequestAction = async (requestId: string, action: 'approved' | 'rejected') => {
+  const handleJoinRequestAction = async (requestId: string, action: 'accepted' | 'rejected') => {
     setProcessingRequest(requestId);
     try {
       const response = await fetch(`/api/join-requests/${requestId}`, {
@@ -416,8 +416,8 @@ Let me know if you'd like to learn more about the project!`;
       
       if (response.ok) {
         toast({
-          title: action === 'approved' ? 'Request Approved' : 'Request Rejected',
-          description: action === 'approved' 
+          title: action === 'accepted' ? 'Request Approved' : 'Request Rejected',
+          description: action === 'accepted' 
             ? 'The member has been added to your team.' 
             : 'The join request has been declined.',
         });
@@ -833,7 +833,7 @@ Let me know if you'd like to learn more about the project!`;
                               <Button 
                                 size="sm" 
                                 variant="default"
-                                onClick={() => handleJoinRequestAction(request.id, 'approved')}
+                                onClick={() => handleJoinRequestAction(request.id, 'accepted')}
                                 disabled={processingRequest === request.id}
                                 data-testid={`button-approve-${request.id}`}
                               >
