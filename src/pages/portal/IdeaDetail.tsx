@@ -2286,30 +2286,36 @@ export default function IdeaDetail() {
               </div>
               
               <div className="grid gap-4 md:grid-cols-3">
-                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                {/* Step 1: Generate Deck - colored if has pitch deck */}
+                <Card className={`border-2 transition-colors ${hasPitchDeck ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
-                      <FileText className="w-6 h-6 text-primary" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${hasPitchDeck ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/20' : 'bg-muted'}`}>
+                      <FileText className={`w-6 h-6 ${hasPitchDeck ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 1: Generate Deck Content</h4>
+                    <h4 className="font-semibold mb-2 flex items-center justify-center gap-2">
+                      Step 1: Generate Deck Content
+                      {hasPitchDeck && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    </h4>
                     <p className="text-sm text-muted-foreground mb-4">
                       AI creates investor-grade slides. Copy the export for Manus.
                     </p>
                     <Button
                       onClick={() => navigate(`/portal/investor-pitch-deck?ideaId=${idea?.id}`)}
+                      variant={hasPitchDeck ? "default" : "outline"}
                       className="w-full"
                       data-testid="button-pitch-deck-generator"
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Deck
+                      {hasPitchDeck ? 'View Deck' : 'Generate Deck'}
                     </Button>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                {/* Step 2: Design in Manus - colored if Step 1 is complete */}
+                <Card className={`border-2 transition-colors ${hasPitchDeck ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
-                      <Presentation className="w-6 h-6 text-primary" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${hasPitchDeck ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/20' : 'bg-muted'}`}>
+                      <Presentation className={`w-6 h-6 ${hasPitchDeck ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
                     <h4 className="font-semibold mb-2">Step 2: Design in Manus</h4>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -2345,19 +2351,22 @@ export default function IdeaDetail() {
                         const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
                         window.open(manusUrl, '_blank');
                       }}
-                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500"
+                      className={hasPitchDeck ? "w-full bg-gradient-to-r from-amber-500 to-orange-500" : "w-full"}
+                      variant={hasPitchDeck ? "default" : "secondary"}
+                      disabled={!hasPitchDeck}
                       data-testid="button-build-pitch-deck-manus"
                     >
                       <Presentation className="w-4 h-4 mr-2" />
-                      Open Manus AI
+                      {hasPitchDeck ? 'Open Manus AI' : 'Complete Step 1 First'}
                     </Button>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                {/* Step 3: Prepare Pitch - colored if Step 1 is complete (ready for preparation) */}
+                <Card className={`border-2 transition-colors ${hasPitchDeck ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-3">
-                      <Mic className="w-6 h-6 text-primary" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${hasPitchDeck ? 'bg-gradient-to-br from-violet-500/30 to-purple-500/20' : 'bg-muted'}`}>
+                      <Mic className={`w-6 h-6 ${hasPitchDeck ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
                     <h4 className="font-semibold mb-2">Step 3: Prepare Your Pitch</h4>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -2366,11 +2375,12 @@ export default function IdeaDetail() {
                     <Button
                       onClick={() => navigate(`/portal/pitch-preparation?ideaId=${idea?.id}`)}
                       className="w-full"
-                      variant="secondary"
+                      variant={hasPitchDeck ? "default" : "secondary"}
+                      disabled={!hasPitchDeck}
                       data-testid="button-pitch-preparation"
                     >
                       <Mic className="w-4 h-4 mr-2" />
-                      Prepare Pitch
+                      {hasPitchDeck ? 'Prepare Pitch' : 'Complete Step 1 First'}
                     </Button>
                   </CardContent>
                 </Card>
