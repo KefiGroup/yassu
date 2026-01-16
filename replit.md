@@ -49,6 +49,12 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - Rapid-fire rehearsal drill with 10-12 practice questions
   - Practice Mode toggle to hide answers for self-testing
   - One-click export of full preparation playbook
+- **Kefi AI Help Assistant**: AI-powered help assistant accessible via floating chat bubble in the portal. Features include:
+  - Comprehensive help content covering all platform features
+  - Natural language Q&A about posting ideas, business plans, pitch decks, team building, etc.
+  - Contextual search that finds relevant help topics based on user questions
+  - Conversation history within each chat session
+  - Friendly, encouraging personality tailored for student founders
 - **UI/UX**: Utilizes Tailwind CSS and shadcn/ui for a modern, responsive design. The dashboard is redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
 
 ## External Dependencies
