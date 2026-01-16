@@ -2089,31 +2089,36 @@ export default function IdeaDetail() {
               </div>
               
               <div className="grid gap-4 md:grid-cols-3">
-                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                {/* Step 1: Plan MVP - colored if has MVP features */}
+                <Card className={`border-2 transition-colors ${hasMvpFeatures ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto mb-3">
-                      <FileText className="w-6 h-6 text-primary" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${hasMvpFeatures ? 'bg-gradient-to-br from-primary/30 to-primary/20' : 'bg-muted'}`}>
+                      <FileText className={`w-6 h-6 ${hasMvpFeatures ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 1: Plan Your MVP</h4>
+                    <h4 className="font-semibold mb-2 flex items-center justify-center gap-2">
+                      Step 1: Plan Your MVP
+                      {hasMvpFeatures && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    </h4>
                     <p className="text-sm text-muted-foreground mb-4">
                       Define features, user stories, and development roadmap.
                     </p>
                     <Button
                       onClick={() => navigate(`/portal/mvp-builder?ideaId=${idea?.id}`)}
-                      variant="outline"
+                      variant={hasMvpFeatures ? "default" : "outline"}
                       className="w-full"
                       data-testid="button-mvp-builder-main"
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Open MVP Builder
+                      {hasMvpFeatures ? 'View MVP Plan' : 'Open MVP Builder'}
                     </Button>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                {/* Step 2: Build with Manus - colored if Step 1 is complete (ready to build) */}
+                <Card className={`border-2 transition-colors ${hasMvpFeatures ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-3">
-                      <Code className="w-6 h-6 text-primary" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${hasMvpFeatures ? 'bg-gradient-to-br from-purple-500/30 to-pink-500/20' : 'bg-muted'}`}>
+                      <Code className={`w-6 h-6 ${hasMvpFeatures ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
                     <h4 className="font-semibold mb-2">Step 2: Build with Manus</h4>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -2145,21 +2150,27 @@ export default function IdeaDetail() {
                         const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
                         window.open(manusUrl, '_blank');
                       }}
-                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
+                      className={hasMvpFeatures ? "w-full bg-gradient-to-r from-purple-600 to-pink-600" : "w-full"}
+                      variant={hasMvpFeatures ? "default" : "secondary"}
+                      disabled={!hasMvpFeatures}
                       data-testid="button-build-mvp-manus"
                     >
                       <Code className="w-4 h-4 mr-2" />
-                      Open Manus AI
+                      {hasMvpFeatures ? 'Open Manus AI' : 'Complete Step 1 First'}
                     </Button>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-2 border-dashed hover:border-primary/50 transition-colors">
+                {/* Step 3: Link MVP - colored if has MVP link */}
+                <Card className={`border-2 transition-colors ${idea?.mvpLink ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center mx-auto mb-3">
-                      <Link2 className="w-6 h-6 text-primary" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${idea?.mvpLink ? 'bg-gradient-to-br from-green-500/30 to-emerald-500/20' : 'bg-muted'}`}>
+                      <Link2 className={`w-6 h-6 ${idea?.mvpLink ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 3: Link Your MVP</h4>
+                    <h4 className="font-semibold mb-2 flex items-center justify-center gap-2">
+                      Step 3: Link Your MVP
+                      {idea?.mvpLink && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    </h4>
                     <p className="text-sm text-muted-foreground mb-4">
                       Paste your Manus project link to track your MVP.
                     </p>
@@ -2168,7 +2179,7 @@ export default function IdeaDetail() {
                         <Button
                           onClick={() => window.open(idea.mvpLink!, '_blank')}
                           className="w-full"
-                          variant="outline"
+                          variant="default"
                           data-testid="button-view-mvp"
                         >
                           <Globe className="w-4 h-4 mr-2" />
