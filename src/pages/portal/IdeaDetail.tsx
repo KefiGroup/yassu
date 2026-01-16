@@ -64,6 +64,8 @@ import {
   Presentation,
   TrendingUp as Funding,
   Mic,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -214,6 +216,7 @@ export default function IdeaDetail() {
   const [editorKey, setEditorKey] = useState(0);
   const [previewMode, setPreviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
   
   // Interest tracking
   const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
@@ -708,6 +711,29 @@ export default function IdeaDetail() {
       setEditorKey(prev => prev + 1);
       setEditorReady(true);
     }, 100);
+  };
+  
+  const copySectionToClipboard = async (sectionId: string, sectionLabel: string) => {
+    if (!businessPlan?.sections) return;
+    
+    const content = businessPlan.sections[sectionId as keyof typeof businessPlan.sections];
+    if (!content) return;
+    
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedSection(sectionId);
+      toast({
+        title: "Copied!",
+        description: `${sectionLabel} copied to clipboard. Paste into Word to edit.`,
+      });
+      setTimeout(() => setCopiedSection(null), 2000);
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: "Please try selecting the text manually.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Helper function to insert markdown formatting at cursor position
@@ -1716,16 +1742,38 @@ export default function IdeaDetail() {
                               </div>
                               <h3 className="font-semibold text-lg">{section.label}</h3>
                             </div>
-                            {isOwner && businessPlan.sections[section.id as keyof typeof businessPlan.sections] && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditSection(section.id)}
-                                data-testid={`button-edit-${section.id}`}
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit
-                              </Button>
+                            {businessPlan.sections[section.id as keyof typeof businessPlan.sections] && (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copySectionToClipboard(section.id, section.label)}
+                                  data-testid={`button-copy-${section.id}`}
+                                >
+                                  {copiedSection === section.id ? (
+                                    <>
+                                      <Check className="w-4 h-4 mr-2" />
+                                      Copied!
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-4 h-4 mr-2" />
+                                      Copy
+                                    </>
+                                  )}
+                                </Button>
+                                {isOwner && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditSection(section.id)}
+                                    data-testid={`button-edit-${section.id}`}
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </Button>
+                                )}
+                              </div>
                             )}
                           </div>
                           <div className="prose prose-sm dark:prose-invert max-w-none">
