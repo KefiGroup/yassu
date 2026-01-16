@@ -182,7 +182,14 @@ Do NOT leave the table empty or use placeholders. Include at least one direct co
 
 ## Competitive Advantage Comparison
 
-Create a markdown table comparing YOUR STARTUP vs the top 3-4 competitors identified above. Use these columns: Feature/Factor | Your Startup | Competitor 1 | Competitor 2 | Competitor 3
+Create a markdown table comparing YOUR STARTUP vs the top 3 real competitors you identified in the Competitive Landscape above.
+
+**CRITICAL: Use the ACTUAL COMPANY/BRAND NAMES in the column headers - NEVER use generic labels like "Competitor 1", "Competitor 2", etc.**
+
+Example for a food delivery startup: Feature/Factor | Your Startup | DoorDash | Uber Eats | Grubhub
+Example for a fashion startup: Feature/Factor | Your Startup | Zara | H&M | ASOS
+
+The table format must be: Feature/Factor | Your Startup | [Real Company Name] | [Real Company Name] | [Real Company Name]
 
 Include 5-7 comparison rows covering:
 - Core value proposition
