@@ -635,6 +635,32 @@ export function registerRoutes(app: Express): void {
       if (!idea) {
         return res.status(404).json({ error: "Idea not found" });
       }
+      
+      // Security: Check access for private ideas
+      if (!idea.isPublic) {
+        if (!req.session.userId) {
+          return res.status(401).json({ error: "Authentication required to view this idea" });
+        }
+        
+        const isOwner = idea.createdBy === req.session.userId;
+        let isTeamMember = false;
+        
+        // Check if user is a team member
+        if (!isOwner) {
+          const teams = await pool.query(
+            `SELECT t.id FROM teams t 
+             JOIN team_members tm ON t.id = tm.team_id 
+             WHERE t.idea_id = $1 AND tm.user_id = $2`,
+            [idea.id, req.session.userId]
+          );
+          isTeamMember = teams.rows.length > 0;
+        }
+        
+        if (!isOwner && !isTeamMember) {
+          return res.status(403).json({ error: "You don't have permission to view this idea" });
+        }
+      }
+      
       const tags = await storage.getIdeaTags(req.params.id);
       res.json({ ...idea, tags: tags.map(t => t.tag) });
     } catch (error) {
