@@ -2024,14 +2024,17 @@ export default function IdeaDetail() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <div className="bg-muted/30 rounded-lg p-4">
+              <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-4 border border-primary/20">
+                <p className="text-sm font-medium mb-3">
+                  Use <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-intro">Manus.im</a> to develop your MVP instantly - an AI agent that can build and deploy full applications from your specifications.
+                </p>
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
                   How It Works
                 </h4>
                 <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                   <li><strong>Plan your MVP</strong> - Use our AI-powered MVP Builder to define features, tech stack, and specifications</li>
-                  <li><strong>Build with Manus AI</strong> - Take your specifications to Manus AI to build and deploy your product</li>
+                  <li><strong>Build with Manus AI</strong> - Copy your specs, go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-step2">manus.im</a>, create a free account if needed, and paste to build your product</li>
                   <li><strong>Link your MVP</strong> - Paste your Manus project link back here to track your progress</li>
                 </ol>
               </div>
