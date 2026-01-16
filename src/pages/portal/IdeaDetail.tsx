@@ -221,6 +221,9 @@ export default function IdeaDetail() {
   const [interestCount, setInterestCount] = useState({ total_count: 0, pending_count: 0, accepted_count: 0 });
   const [expressingInterest, setExpressingInterest] = useState(false);
   const [applicationFormOpen, setApplicationFormOpen] = useState(false);
+  const [improveIdeaDialogOpen, setImproveIdeaDialogOpen] = useState(false);
+  const [improvingIdea, setImprovingIdea] = useState(false);
+  const [improvedIdea, setImprovedIdea] = useState<{ problem?: string; solution?: string; targetUser?: string; whyNow?: string } | null>(null);
   
   // AI Team Role Suggester
   const [showRoleSuggester, setShowRoleSuggester] = useState(false);
@@ -975,6 +978,82 @@ export default function IdeaDetail() {
     }
   };
 
+  const handleImproveIdea = async () => {
+    if (!idea) return;
+    
+    setImprovingIdea(true);
+    setImprovedIdea(null);
+    
+    try {
+      const response = await fetch('/api/ideas/improve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          problem: idea.problem,
+          solution: idea.solution,
+          targetUser: idea.targetUser,
+          whyNow: idea.whyNow
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to improve idea');
+      }
+      
+      const improved = await response.json();
+      setImprovedIdea(improved);
+    } catch (error) {
+      console.error('Improve idea error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate improvements. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setImprovingIdea(false);
+    }
+  };
+
+  const applyImprovements = async () => {
+    if (!idea || !improvedIdea || !ideaId) return;
+    
+    try {
+      const response = await fetch(`/api/ideas/${ideaId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          problem: improvedIdea.problem || idea.problem,
+          solution: improvedIdea.solution || idea.solution,
+          targetUser: improvedIdea.targetUser || idea.targetUser,
+          whyNow: improvedIdea.whyNow || idea.whyNow
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to apply improvements');
+      }
+      
+      const updatedIdea = await response.json();
+      setIdea(updatedIdea);
+      setImproveIdeaDialogOpen(false);
+      setImprovedIdea(null);
+      
+      toast({
+        title: 'Improvements Applied',
+        description: 'Your idea has been updated with AI suggestions.',
+      });
+    } catch (error) {
+      console.error('Apply improvements error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to apply improvements. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const markdownComponents = {
     table: ({ children }: any) => (
       <div className="overflow-x-auto my-4">
@@ -1194,14 +1273,6 @@ export default function IdeaDetail() {
               </div>
               <span className="text-[10px] opacity-50 ml-1">Click to change</span>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/portal/ideas/${ideaId}/edit`)}
-              data-testid="button-edit-idea"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Idea
-            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -1333,22 +1404,35 @@ export default function IdeaDetail() {
                     {idea.stage}
                   </Badge>
                   {isOwner && (
-                    <Button
-                      variant={idea.isPublic ? "outline" : "default"}
-                      size="sm"
-                      onClick={handleToggleVisibility}
-                      disabled={togglingPrivacy}
-                      className={`gap-2 ${idea.isPublic ? '' : 'bg-gray-700 hover:bg-gray-600'}`}
-                    >
-                      {togglingPrivacy ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : idea.isPublic ? (
-                        <Globe className="w-3 h-3" />
-                      ) : (
-                        <Lock className="w-3 h-3" />
-                      )}
-                      {idea.isPublic ? 'Public' : 'Private'}
-                    </Button>
+                    <>
+                      <Button
+                        variant={idea.isPublic ? "outline" : "default"}
+                        size="sm"
+                        onClick={handleToggleVisibility}
+                        disabled={togglingPrivacy}
+                        className={`gap-2 ${idea.isPublic ? '' : 'bg-gray-700 hover:bg-gray-600'}`}
+                        data-testid="button-toggle-visibility-overview"
+                      >
+                        {togglingPrivacy ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : idea.isPublic ? (
+                          <Globe className="w-3 h-3" />
+                        ) : (
+                          <Lock className="w-3 h-3" />
+                        )}
+                        {idea.isPublic ? 'Public' : 'Private'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setImproveIdeaDialogOpen(true)}
+                        className="gap-2"
+                        data-testid="button-improve-idea"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Improve My Idea
+                      </Button>
+                    </>
                   )}
                   {!isOwner && !idea.isPublic && (
                     <Badge variant="outline" className="gap-1">
@@ -2491,6 +2575,119 @@ export default function IdeaDetail() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Improve Idea Dialog */}
+      <Dialog open={improveIdeaDialogOpen} onOpenChange={setImproveIdeaDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Improve My Idea with AI
+            </DialogTitle>
+            <DialogDescription>
+              AI will analyze your idea and suggest improvements to make it more compelling and investor-ready.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {!improvedIdea && !improvingIdea && (
+              <div className="text-center py-8">
+                <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary/50" />
+                <p className="text-muted-foreground mb-4">
+                  Click the button below to have AI analyze and improve your idea's problem statement, solution, target user, and timing.
+                </p>
+                <Button 
+                  onClick={handleImproveIdea}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                  data-testid="button-generate-improvements"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Improvements
+                </Button>
+              </div>
+            )}
+            
+            {improvingIdea && (
+              <div className="text-center py-8">
+                <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+                <p className="text-muted-foreground">AI is analyzing your idea...</p>
+              </div>
+            )}
+            
+            {improvedIdea && (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <h3 className="font-semibold text-green-700 dark:text-green-400 mb-2">
+                    AI Suggestions Ready
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Review the improved content below and apply changes if you're satisfied.
+                  </p>
+                </div>
+                
+                {improvedIdea.problem && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Problem Statement</h4>
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                      {improvedIdea.problem}
+                    </div>
+                  </div>
+                )}
+                
+                {improvedIdea.solution && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Solution</h4>
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                      {improvedIdea.solution}
+                    </div>
+                  </div>
+                )}
+                
+                {improvedIdea.targetUser && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Target User</h4>
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                      {improvedIdea.targetUser}
+                    </div>
+                  </div>
+                )}
+                
+                {improvedIdea.whyNow && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Why Now</h4>
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                      {improvedIdea.whyNow}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setImproveIdeaDialogOpen(false);
+                setImprovedIdea(null);
+              }}
+              data-testid="button-cancel-improve"
+            >
+              Cancel
+            </Button>
+            {improvedIdea && (
+              <Button 
+                onClick={applyImprovements}
+                className="bg-gradient-to-r from-blue-600 to-purple-600"
+                data-testid="button-apply-improvements"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Apply Improvements
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

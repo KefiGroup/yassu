@@ -713,6 +713,75 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // AI Improve Idea endpoint
+  app.post("/api/ideas/improve", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { problem, solution, targetUser, whyNow } = req.body;
+      
+      if (!problem) {
+        return res.status(400).json({ error: "Problem statement is required" });
+      }
+
+      const prompt = `You are an expert startup advisor helping founders improve their startup ideas to be more compelling and investor-ready.
+
+Current Idea:
+- Problem: ${problem}
+${solution ? `- Solution: ${solution}` : ''}
+${targetUser ? `- Target User: ${targetUser}` : ''}
+${whyNow ? `- Why Now: ${whyNow}` : ''}
+
+Please improve each section to make it more:
+1. Specific and concrete (avoid vague language)
+2. Compelling and urgent (why does this matter?)
+3. Data-driven where possible (include estimates/numbers)
+4. Investor-friendly (clear value proposition)
+
+Return a JSON object with improved versions of each field. Keep improvements concise but impactful.
+
+Format your response as valid JSON:
+{
+  "problem": "improved problem statement",
+  "solution": "improved solution",
+  "targetUser": "improved target user description",
+  "whyNow": "improved timing explanation"
+}`;
+
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an expert startup advisor. Always respond with valid JSON only." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
+
+      const responseText = completion.choices[0]?.message?.content || '{}';
+      const improved = JSON.parse(responseText);
+
+      res.json({
+        problem: improved.problem || null,
+        solution: improved.solution || null,
+        targetUser: improved.targetUser || null,
+        whyNow: improved.whyNow || null,
+      });
+    } catch (error) {
+      console.error("Improve idea error:", error);
+      res.status(500).json({ 
+        error: 'Failed to improve idea',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   app.post("/api/ideas", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
