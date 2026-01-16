@@ -384,7 +384,7 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                        Define the narrowest MVP (buildable in 2-4 weeks)
+                        Define the narrowest MVP (build instantly with Manus AI)
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
