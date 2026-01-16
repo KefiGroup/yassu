@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bold, Italic, List, Heading2, Link2, Eye, Code, Globe, Lock } from 'lucide-react';
+import { Bold, Italic, List, Heading2, Link2, Eye, Code, Globe, Lock, Edit3 } from 'lucide-react';
 import { 
   MDXEditor, 
   headingsPlugin,
@@ -227,6 +227,8 @@ export default function IdeaDetail() {
   const [improveIdeaDialogOpen, setImproveIdeaDialogOpen] = useState(false);
   const [improvingIdea, setImprovingIdea] = useState(false);
   const [improvedIdea, setImprovedIdea] = useState<{ problem?: string; solution?: string; targetUser?: string; whyNow?: string } | null>(null);
+  const [improveMode, setImproveMode] = useState<'ai' | 'manual'>('ai');
+  const [manualEdits, setManualEdits] = useState<{ problem: string; solution: string; targetUser: string; whyNow: string }>({ problem: '', solution: '', targetUser: '', whyNow: '' });
   
   // AI Team Role Suggester
   const [showRoleSuggester, setShowRoleSuggester] = useState(false);
@@ -1095,6 +1097,43 @@ export default function IdeaDetail() {
     }
   };
 
+  const applyManualEdits = async () => {
+    if (!idea || !ideaId) return;
+    
+    try {
+      const response = await fetch(`/api/ideas/${ideaId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          problem: manualEdits.problem,
+          solution: manualEdits.solution,
+          targetUser: manualEdits.targetUser,
+          whyNow: manualEdits.whyNow
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save changes');
+      }
+
+      const updatedIdea = await response.json();
+      setIdea(updatedIdea);
+      setImproveIdeaDialogOpen(false);
+      toast({
+        title: 'Changes Saved',
+        description: 'Your idea has been updated successfully.',
+      });
+    } catch (error) {
+      console.error('Apply manual edits error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save changes. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const markdownComponents = {
     table: ({ children }: any) => (
       <div className="overflow-x-auto my-4">
@@ -1466,7 +1505,17 @@ export default function IdeaDetail() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setImproveIdeaDialogOpen(true)}
+                        onClick={() => {
+                          setManualEdits({
+                            problem: idea?.problem || '',
+                            solution: idea?.solution || '',
+                            targetUser: idea?.targetUser || '',
+                            whyNow: idea?.whyNow || ''
+                          });
+                          setImproveMode('ai');
+                          setImprovedIdea(null);
+                          setImproveIdeaDialogOpen(true);
+                        }}
                         className="gap-2"
                         data-testid="button-improve-idea"
                       >
@@ -2653,87 +2702,148 @@ export default function IdeaDetail() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              Improve My Idea with AI
+              Improve My Idea
             </DialogTitle>
             <DialogDescription>
-              AI will analyze your idea and suggest improvements to make it more compelling and investor-ready.
+              Choose how you'd like to improve your idea - edit manually or let AI suggest improvements.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            {!improvedIdea && !improvingIdea && (
-              <div className="text-center py-8">
-                <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary/50" />
-                <p className="text-muted-foreground mb-4">
-                  Click the button below to have AI analyze and improve your idea's problem statement, solution, target user, and timing.
-                </p>
-                <Button 
-                  onClick={handleImproveIdea}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600"
-                  data-testid="button-generate-improvements"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Improvements
-                </Button>
-              </div>
-            )}
+          <Tabs value={improveMode} onValueChange={(v) => setImproveMode(v as 'ai' | 'manual')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="manual" data-testid="tab-manual-edit">
+                <Edit3 className="w-4 h-4 mr-2" />
+                Edit Manually
+              </TabsTrigger>
+              <TabsTrigger value="ai" data-testid="tab-ai-improve">
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Suggestions
+              </TabsTrigger>
+            </TabsList>
             
-            {improvingIdea && (
-              <div className="text-center py-8">
-                <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
-                <p className="text-muted-foreground">AI is analyzing your idea...</p>
-              </div>
-            )}
-            
-            {improvedIdea && (
+            <TabsContent value="manual" className="space-y-4 py-4">
               <div className="space-y-4">
-                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                  <h3 className="font-semibold text-green-700 dark:text-green-400 mb-2">
-                    AI Suggestions Ready
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Review the improved content below and apply changes if you're satisfied.
-                  </p>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Problem Statement</label>
+                  <Textarea
+                    value={manualEdits.problem}
+                    onChange={(e) => setManualEdits(prev => ({ ...prev, problem: e.target.value }))}
+                    placeholder="What problem are you solving?"
+                    className="min-h-[80px]"
+                    data-testid="input-manual-problem"
+                  />
                 </div>
                 
-                {improvedIdea.problem && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Problem Statement</h4>
-                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                      {improvedIdea.problem}
-                    </div>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Solution</label>
+                  <Textarea
+                    value={manualEdits.solution}
+                    onChange={(e) => setManualEdits(prev => ({ ...prev, solution: e.target.value }))}
+                    placeholder="How does your idea solve this problem?"
+                    className="min-h-[80px]"
+                    data-testid="input-manual-solution"
+                  />
+                </div>
                 
-                {improvedIdea.solution && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Solution</h4>
-                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                      {improvedIdea.solution}
-                    </div>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Target User</label>
+                  <Textarea
+                    value={manualEdits.targetUser}
+                    onChange={(e) => setManualEdits(prev => ({ ...prev, targetUser: e.target.value }))}
+                    placeholder="Who is your target customer?"
+                    className="min-h-[60px]"
+                    data-testid="input-manual-target-user"
+                  />
+                </div>
                 
-                {improvedIdea.targetUser && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Target User</h4>
-                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                      {improvedIdea.targetUser}
-                    </div>
-                  </div>
-                )}
-                
-                {improvedIdea.whyNow && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Why Now</h4>
-                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                      {improvedIdea.whyNow}
-                    </div>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Why Now</label>
+                  <Textarea
+                    value={manualEdits.whyNow}
+                    onChange={(e) => setManualEdits(prev => ({ ...prev, whyNow: e.target.value }))}
+                    placeholder="Why is now the right time for this idea?"
+                    className="min-h-[60px]"
+                    data-testid="input-manual-why-now"
+                  />
+                </div>
               </div>
-            )}
-          </div>
+            </TabsContent>
+            
+            <TabsContent value="ai" className="space-y-4 py-4">
+              {!improvedIdea && !improvingIdea && (
+                <div className="text-center py-8">
+                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary/50" />
+                  <p className="text-muted-foreground mb-4">
+                    Click the button below to have AI analyze and improve your idea's problem statement, solution, target user, and timing.
+                  </p>
+                  <Button 
+                    onClick={handleImproveIdea}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600"
+                    data-testid="button-generate-improvements"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Improvements
+                  </Button>
+                </div>
+              )}
+              
+              {improvingIdea && (
+                <div className="text-center py-8">
+                  <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+                  <p className="text-muted-foreground">AI is analyzing your idea...</p>
+                </div>
+              )}
+              
+              {improvedIdea && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <h3 className="font-semibold text-green-700 dark:text-green-400 mb-2">
+                      AI Suggestions Ready
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Review the improved content below and apply changes if you're satisfied.
+                    </p>
+                  </div>
+                  
+                  {improvedIdea.problem && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Problem Statement</h4>
+                      <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                        {improvedIdea.problem}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {improvedIdea.solution && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Solution</h4>
+                      <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                        {improvedIdea.solution}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {improvedIdea.targetUser && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Target User</h4>
+                      <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                        {improvedIdea.targetUser}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {improvedIdea.whyNow && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">Why Now</h4>
+                      <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                        {improvedIdea.whyNow}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
           
           <DialogFooter>
             <Button 
@@ -2746,7 +2856,17 @@ export default function IdeaDetail() {
             >
               Cancel
             </Button>
-            {improvedIdea && (
+            {improveMode === 'manual' && (
+              <Button 
+                onClick={applyManualEdits}
+                className="bg-gradient-to-r from-blue-600 to-purple-600"
+                data-testid="button-save-manual-edits"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+            )}
+            {improveMode === 'ai' && improvedIdea && (
               <Button 
                 onClick={applyImprovements}
                 className="bg-gradient-to-r from-blue-600 to-purple-600"
