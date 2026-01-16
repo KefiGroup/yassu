@@ -1140,15 +1140,16 @@ export default function Admin() {
                           variant="outline"
                           size="sm"
                           onClick={async () => {
+                            const newStatus = 'reviewed';
+                            setSuggestions(prev => prev.map(s => s.id === suggestion.id ? { ...s, status: newStatus } : s));
                             try {
                               await apiRequest(`/admin/suggestions/${suggestion.id}`, {
                                 method: 'PATCH',
-                                body: JSON.stringify({ status: 'reviewed' }),
+                                body: JSON.stringify({ status: newStatus }),
                               });
-                              const updated = await apiRequest<Suggestion[]>('/admin/suggestions');
-                              setSuggestions(updated);
                               toast({ title: 'Marked as Reviewed' });
                             } catch (error) {
+                              setSuggestions(prev => prev.map(s => s.id === suggestion.id ? { ...s, status: suggestion.status } : s));
                               toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
                             }
                           }}
@@ -1162,15 +1163,16 @@ export default function Admin() {
                           variant="outline"
                           size="sm"
                           onClick={async () => {
+                            const newStatus = 'implemented';
+                            setSuggestions(prev => prev.map(s => s.id === suggestion.id ? { ...s, status: newStatus } : s));
                             try {
                               await apiRequest(`/admin/suggestions/${suggestion.id}`, {
                                 method: 'PATCH',
-                                body: JSON.stringify({ status: 'implemented' }),
+                                body: JSON.stringify({ status: newStatus }),
                               });
-                              const updated = await apiRequest<Suggestion[]>('/admin/suggestions');
-                              setSuggestions(updated);
                               toast({ title: 'Marked as Implemented' });
                             } catch (error) {
+                              setSuggestions(prev => prev.map(s => s.id === suggestion.id ? { ...s, status: suggestion.status } : s));
                               toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
                             }
                           }}
@@ -1184,15 +1186,16 @@ export default function Admin() {
                           variant="outline"
                           size="sm"
                           onClick={async () => {
+                            const newStatus = 'dismissed';
+                            setSuggestions(prev => prev.map(s => s.id === suggestion.id ? { ...s, status: newStatus } : s));
                             try {
                               await apiRequest(`/admin/suggestions/${suggestion.id}`, {
                                 method: 'PATCH',
-                                body: JSON.stringify({ status: 'dismissed' }),
+                                body: JSON.stringify({ status: newStatus }),
                               });
-                              const updated = await apiRequest<Suggestion[]>('/admin/suggestions');
-                              setSuggestions(updated);
                               toast({ title: 'Suggestion Dismissed' });
                             } catch (error) {
+                              setSuggestions(prev => prev.map(s => s.id === suggestion.id ? { ...s, status: suggestion.status } : s));
                               toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
                             }
                           }}
