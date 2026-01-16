@@ -682,6 +682,7 @@ export async function sendRequestAcceptedEmail(
   customMessage?: string
 ): Promise<void> {
   const ideaLink = `${APP_URL}/portal/ideas/${ideaId}`;
+  console.log(`[Email] Acceptance email link: ${ideaLink}`);
   
   const html = `
 <!DOCTYPE html>
@@ -728,7 +729,7 @@ export async function sendRequestAcceptedEmail(
               <table role="presentation" style="margin: 30px 0;">
                 <tr>
                   <td style="border-radius: 6px; background-color: #7c3aed;">
-                    <a href="${ideaLink}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                    <a href="${ideaLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
                       Go to Project Workspace
                     </a>
                   </td>
