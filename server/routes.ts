@@ -4619,4 +4619,83 @@ Return as valid JSON:
       res.status(500).json({ error: "Failed to generate pitch preparation" });
     }
   });
+
+  // Kefi Help Assistant endpoint
+  app.post("/api/help/chat", async (req: Request, res: Response) => {
+    try {
+      const { message, conversationHistory = [] } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const { searchHelpTopics, getHelpContext } = await import('./helpContent');
+      
+      const relevantTopics = searchHelpTopics(message);
+      const contextFromTopics = relevantTopics.length > 0 
+        ? relevantTopics.map(t => `## ${t.title}\n${t.content}`).join('\n\n')
+        : getHelpContext();
+
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_API_KEY 
+        ? "https://ai.replit.dev/v1" 
+        : undefined;
+
+      const OpenAI = (await import('openai')).default;
+      const client = new OpenAI({ apiKey, baseURL });
+
+      const systemPrompt = `You are Kefi, a friendly and helpful AI assistant for Yassu - a platform for university students to start their entrepreneurial journey.
+
+Your personality:
+- Warm, encouraging, and supportive
+- Knowledgeable about the Yassu platform
+- Concise but thorough in your answers
+- You use simple language, avoiding jargon
+
+Your knowledge base about Yassu features:
+${contextFromTopics}
+
+Guidelines:
+- Answer questions about Yassu features, how to use the platform, and entrepreneurship basics
+- If asked about something not covered in your knowledge, politely say you're not sure but suggest they explore the platform or contact support
+- Keep responses concise (2-4 sentences for simple questions, more for complex ones)
+- Use bullet points for step-by-step instructions
+- Be encouraging about their startup journey
+- Never make up features that don't exist on Yassu`;
+
+      const messages: Array<{role: 'system' | 'user' | 'assistant', content: string}> = [
+        { role: 'system', content: systemPrompt }
+      ];
+
+      for (const msg of conversationHistory.slice(-6)) {
+        messages.push({ role: msg.role, content: msg.content });
+      }
+      messages.push({ role: 'user', content: message });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        max_tokens: 500,
+        temperature: 0.7,
+      });
+
+      const assistantMessage = response.choices[0]?.message?.content;
+      if (!assistantMessage) {
+        return res.status(500).json({ error: "Failed to generate response" });
+      }
+
+      res.json({ 
+        success: true, 
+        message: assistantMessage,
+        topicsUsed: relevantTopics.map(t => t.title)
+      });
+    } catch (error) {
+      console.error("Kefi help chat error:", error);
+      res.status(500).json({ error: "Failed to process your question" });
+    }
+  });
 }

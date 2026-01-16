@@ -5,6 +5,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { PortalSidebar } from '@/components/portal/PortalSidebar';
 import { PortalHeader } from '@/components/portal/PortalHeader';
 import { AnnouncementBanner } from '@/components/portal/AnnouncementBanner';
+import { KefiChat } from '@/components/portal/KefiChat';
 import {
   Dialog,
   DialogContent,
@@ -85,6 +86,8 @@ export function PortalLayout() {
           </main>
         </div>
       </div>
+
+      <KefiChat />
 
       <Dialog open={showIncompleteDialog} onOpenChange={setShowIncompleteDialog}>
         <DialogContent className="sm:max-w-md" data-testid="dialog-incomplete-profile">
