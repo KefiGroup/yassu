@@ -233,6 +233,7 @@ export default function IdeaDetail() {
   
   // Team for this idea
   const [ideaTeam, setIdeaTeam] = useState<{ id: string; name: string } | null>(null);
+  const [isTeamMember, setIsTeamMember] = useState(false);
   const [hasMvpFeatures, setHasMvpFeatures] = useState(false);
   const [hasPitchDeck, setHasPitchDeck] = useState(false);
   const [hasAdvisors, setHasAdvisors] = useState(false);
@@ -335,13 +336,27 @@ export default function IdeaDetail() {
           // No business plan yet
         }
         
-        // Fetch team for this idea
+        // Fetch team for this idea and check membership
         try {
           const teamResponse = await fetch(`/api/teams/by-idea/${ideaId}`);
           if (teamResponse.ok) {
             const teamData = await teamResponse.json();
             if (teamData.team) {
               setIdeaTeam(teamData.team);
+              // Check if current user is a team member
+              if (teamData.team.id) {
+                try {
+                  const membersResponse = await fetch(`/api/teams/${teamData.team.id}/members`);
+                  if (membersResponse.ok) {
+                    const membersData = await membersResponse.json();
+                    const currentUserId = user?.id;
+                    const isMember = membersData.some((m: any) => m.userId === currentUserId || m.user?.id === currentUserId);
+                    setIsTeamMember(isMember);
+                  }
+                } catch (e) {
+                  console.error('Failed to fetch team members:', e);
+                }
+              }
             }
           }
         } catch (e) {
@@ -1742,7 +1757,7 @@ export default function IdeaDetail() {
                               </div>
                               <h3 className="font-semibold text-lg">{section.label}</h3>
                             </div>
-                            {businessPlan.sections[section.id as keyof typeof businessPlan.sections] && (
+                            {businessPlan.sections[section.id as keyof typeof businessPlan.sections] && (isOwner || isTeamMember) && (
                               <div className="flex items-center gap-2">
                                 <Button
                                   variant="ghost"
