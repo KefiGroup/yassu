@@ -720,24 +720,35 @@ ${outputRules}`,
 
 ${ideaContext}
 
-Generate the following sections in clean markdown format:
+Generate the following sections in clean markdown format. Write in complete sentences with specific, actionable recommendations. DO NOT use placeholder formats like "Name | Focus Area | ---" or table-like separators.
 
 ## Campus Resources
-- Relevant labs/research centers
-- Specific professors/mentors to approach
-- University-specific grants/funding
-- Incubators/accelerators on campus
+
+**Relevant labs/research centers:** Describe 2-3 types of university labs or research centers that would be relevant (e.g., "Look for your university's Design Lab or Fashion Innovation Center, which often provide access to prototyping equipment and industry connections").
+
+**Specific professors/mentors to approach:** Suggest what types of professors to seek out based on their expertise areas (e.g., "Seek out professors in your business school who specialize in consumer behavior or retail marketing, as they can provide valuable market insights and may serve as advisors").
+
+**University-specific grants/funding:** Describe the types of university funding programs to look for (e.g., "Most universities offer entrepreneurship grants ranging from $1,000-$25,000 through business plan competitions and innovation funds. Check with your school's entrepreneurship center").
+
+**Incubators/accelerators on campus:** Explain what campus incubator programs typically offer and how to find them (e.g., "University incubators typically provide free workspace, mentorship, and funding connections. Look for programs run by your business school or innovation office").
 
 ## Student Network Wedge
-- Ideal student clubs for early adopters
-- Campus events for launch
-- How to leverage alumni network
-- Student-specific distribution channels
+
+**Ideal student clubs for early adopters:** Identify 2-3 specific types of student clubs that would be most receptive (e.g., "Fashion-focused clubs, entrepreneurship societies, and business fraternities/sororities are ideal first customers who can provide feedback and spread word-of-mouth").
+
+**Campus events for launch:** Suggest specific event types and strategies (e.g., "Partner with campus fashion shows, entrepreneur pitch nights, or club fairs to showcase your product. Consider sponsoring student organization events for visibility").
+
+**How to leverage alumni network:** Provide actionable strategies (e.g., "Connect with recent alumni through LinkedIn and your university's alumni portal. Many successful alumni actively mentor student entrepreneurs and can open doors to industry contacts").
+
+**Student-specific distribution channels:** Describe channels unique to the university environment (e.g., "Leverage Instagram and TikTok for peer-to-peer marketing, organize pop-up events in high-traffic campus locations, and partner with student influencers").
 
 ## Academic Integration
-- Relevant courses for project credit
-- Potential research collaboration
-- Internship/hiring pipeline from specific majors
+
+**Relevant courses for project credit:** Identify course types that could provide academic credit while building the startup (e.g., "Capstone courses in entrepreneurship, marketing practicums, and independent study projects can provide academic credit while you develop your business").
+
+**Potential research collaboration:** Suggest research areas that could benefit the startup (e.g., "Partner with business school researchers studying consumer trends or sustainability in fashion for data-driven insights that strengthen your business model").
+
+**Internship/hiring pipeline:** Explain how to build a talent pipeline from campus (e.g., "Recruit from fashion merchandising, marketing, and business programs. Many students seek startup experience for their resumes and will work part-time or for equity").
 ${outputRules}`,
     },
     {
