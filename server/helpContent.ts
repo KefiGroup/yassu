@@ -185,6 +185,50 @@ Your business plan must be generated first.`
 - Resource estimation
 Access it from your idea's detail page after generating your business plan.`
   },
+  {
+    id: "mvp-manus-export",
+    category: "MVP Builder",
+    title: "How to transfer MVP to Manus for design",
+    keywords: ["manus", "export", "transfer", "design", "mvp file", "copy", "professional design", "manus ready"],
+    content: `To transfer your MVP specifications to Manus for professional design:
+1. Go to your idea's detail page
+2. Click on the "MVP Design" section in your business plan
+3. Look for the "Manus-Ready Export" or copy button
+4. Click to copy the formatted MVP specifications
+5. Go to Manus (manus.im or the Manus app)
+6. Paste the specifications into Manus
+7. Manus will use the structured format to help design your MVP
+
+The export includes:
+- Core feature requirements
+- User flows and journeys
+- Technical specifications
+- Design considerations
+- Wireframe suggestions
+
+This makes it easy for Manus (or any AI design tool) to understand exactly what you need to build.`
+  },
+  {
+    id: "mvp-copy-format",
+    category: "MVP Builder",
+    title: "How to copy MVP for external tools",
+    keywords: ["copy", "paste", "manus", "export", "format", "external", "figma", "design tool"],
+    content: `Your MVP specifications can be copied and used in various tools:
+
+**For Manus:**
+1. Copy the MVP section from your business plan
+2. Paste directly into Manus for AI-assisted design
+
+**For Figma/Design Tools:**
+1. Use the wireframe suggestions as reference
+2. Follow the user flow specifications
+
+**For Developers:**
+1. Share the technical requirements section
+2. Reference the feature priority list
+
+Look for Copy or Export buttons in each section of your business plan to get formatted content ready for external tools.`
+  },
 
   // Team Building
   {
