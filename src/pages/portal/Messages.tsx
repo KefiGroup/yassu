@@ -122,6 +122,7 @@ export default function Messages() {
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
   
   // New message dialog state
   const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
@@ -290,6 +291,8 @@ export default function Messages() {
             ? { ...c, lastMessage: message.content, lastMessageAt: message.createdAt }
             : c
         ));
+        // Refocus the input after sending
+        setTimeout(() => messageInputRef.current?.focus(), 0);
       } else {
         throw new Error('Failed to send');
       }
@@ -328,6 +331,8 @@ export default function Messages() {
             ? { ...c, lastMessage: message.content, lastMessageAt: message.createdAt, lastMessageSender: message.senderName }
             : c
         ));
+        // Refocus the input after sending
+        setTimeout(() => messageInputRef.current?.focus(), 0);
       } else {
         throw new Error('Failed to send');
       }
@@ -967,6 +972,7 @@ export default function Messages() {
                   <div className="p-4 border-t">
                     <div className="flex gap-2">
                       <Input
+                        ref={messageInputRef}
                         placeholder="Type a message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
