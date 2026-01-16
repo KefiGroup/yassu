@@ -180,6 +180,23 @@ Do NOT leave the table empty or use placeholders. Include at least one direct co
 - Underserved customer segments
 - Your potential wedge/entry point
 
+## Market Validation Analysis
+
+Analyze whether there is genuine market demand for this product/service:
+
+**Market Demand Evidence:** Explain what signals indicate there IS a market for this product/service. Look for pain points, existing spending patterns, search trends, or competitor traction that proves demand exists.
+
+**Market Concerns:** Honestly assess any reasons why the market might be limited or challenging. Consider market size, customer willingness to pay, or behavioral barriers.
+
+**If Market Is Weak - How to Create Demand:** If the current market seems small or non-existent, provide specific strategies to CREATE a market:
+- Education-first approach (teaching customers why they need this)
+- Building on adjacent markets (piggybacking on existing behaviors)
+- Creating urgency or FOMO
+- Influencer/thought leader partnerships to validate the category
+- Starting hyper-niche before expanding
+
+**Pivot Recommendations:** If the core idea struggles to find market fit, suggest 2-3 specific pivots or modifications that would make the product/service more marketable while staying true to the founder's vision.
+
 ## Competitive Advantage Comparison
 
 Create a markdown table comparing YOUR STARTUP vs the top 3 real competitors you identified in the Competitive Landscape above.
@@ -665,6 +682,31 @@ Adapt channels based on business type:
 **For Hybrid:**
 - Combine strategies from both digital and physical components
 - Focus on integrated customer experience
+
+## Pricing Strategy
+
+Develop a pricing strategy that hits the sweet spot for the target market while remaining competitive:
+
+**Target Market Price Sensitivity:** Analyze how price-sensitive the target customers are. Consider their income levels, spending habits, and what they currently pay for alternatives.
+
+**Competitive Pricing Comparison:** Compare your proposed pricing to the real competitors identified earlier:
+- Where should you position yourself? (Premium, mid-market, budget-friendly, or value leader)
+- What pricing models do competitors use? (Subscription, one-time, freemium, tiered, etc.)
+- What's the pricing sweet spot where you can win customers without leaving money on the table?
+
+**Recommended Pricing Model:** Suggest the optimal pricing structure:
+- Specific price points or ranges with justification
+- Pricing tiers if applicable (e.g., Basic/Pro/Enterprise or Small/Medium/Large)
+- Any introductory pricing, discounts, or bundling strategies for launch
+- How to communicate value to justify the price
+
+**Pricing Psychology Tips:** Provide 2-3 pricing psychology tactics relevant to this market:
+- Anchoring strategies
+- Charm pricing (e.g., $9.99 vs $10)
+- Decoy options
+- Value framing techniques
+
+**When to Raise Prices:** Outline triggers or milestones that would justify a price increase (e.g., after proving product-market fit, adding features, or building brand recognition).
 
 ## 12-Month Growth Roadmap
 
