@@ -1537,13 +1537,13 @@ export function registerRoutes(app: Express): void {
               });
             }
             
-            console.log(`[Join Request] Sending acceptance email to ${applicant.email}`);
+            console.log(`[Join Request] Sending acceptance email to ${applicant.email}, ideaId: ${idea.id}`);
             sendRequestAcceptedEmail(
               applicant.email,
               applicant.fullName || 'there',
               ideaOwner.fullName || 'The project owner',
               idea.title,
-              updated.ideaId,
+              idea.id,
               customMessage
             ).catch(err => {
               console.error('Failed to send request accepted email:', err);
