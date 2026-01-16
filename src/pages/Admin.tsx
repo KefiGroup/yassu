@@ -94,6 +94,7 @@ export default function Admin() {
     startsAt: new Date().toISOString().slice(0, 16),
     endsAt: '',
     isActive: true,
+    sendEmail: false,
   });
 
   useEffect(() => {
@@ -310,6 +311,7 @@ export default function Admin() {
       startsAt: new Date().toISOString().slice(0, 16),
       endsAt: '',
       isActive: true,
+      sendEmail: false,
     });
     setEditingAnnouncement(null);
     setShowAnnouncementForm(false);
@@ -325,6 +327,7 @@ export default function Admin() {
       startsAt: new Date(announcement.startsAt).toISOString().slice(0, 16),
       endsAt: announcement.endsAt ? new Date(announcement.endsAt).toISOString().slice(0, 16) : '',
       isActive: announcement.isActive,
+      sendEmail: false,
     });
     setShowAnnouncementForm(true);
   };
@@ -977,6 +980,28 @@ export default function Admin() {
                         Active (visible to users)
                       </label>
                     </div>
+                    
+                    {!editingAnnouncement && (
+                      <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border">
+                        <input
+                          type="checkbox"
+                          id="announcement-send-email"
+                          checked={announcementForm.sendEmail}
+                          onChange={(e) => setAnnouncementForm(prev => ({ ...prev, sendEmail: e.target.checked }))}
+                          className="h-4 w-4 rounded border-input"
+                          data-testid="checkbox-announcement-send-email"
+                        />
+                        <div>
+                          <label htmlFor="announcement-send-email" className="text-sm font-medium">
+                            Send email notification to all users
+                          </label>
+                          <p className="text-xs text-muted-foreground">
+                            This will send an email to all registered users about this announcement
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex gap-2">
                       <Button
                         onClick={handleSaveAnnouncement}
