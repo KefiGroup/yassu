@@ -425,6 +425,223 @@ Just tell me your suggestion by saying something like:
 - "I'd like to suggest: [your improvement idea]"
 - "Feature request: [what you'd like to see]"
 The Yassu team reviews all suggestions and uses them to make the platform better for everyone.`
+  },
+
+  // Platform Navigation
+  {
+    id: "platform-navigation",
+    category: "Navigation",
+    title: "How to navigate the Yassu platform",
+    keywords: ["navigate", "sidebar", "menu", "sections", "where", "find"],
+    content: `The Yassu platform has these main sections in the sidebar:
+
+**Main:**
+- My Dashboard - Overview of your ideas, join requests, and people to invite
+- My Projects - View and manage all your startup ideas  
+- My Teams - See teams you're part of
+
+**Marketplace:**
+- Ideas - Browse all public startup ideas
+- Collaborators - Find co-founders by skills and interests
+- Ambassadors - View Yassu community leaders
+- Advisors - Find experienced mentors
+- Resources - Platform resources and guides
+- Messages - Your direct messages
+
+**Account:**
+- Profile - Edit your profile, skills, and interests
+- Settings - Account and notification settings
+
+**Admin (if you have access):**
+- Admin - Manage users, badges, and announcements
+- Pipeline - View platform metrics
+- Referrals - Track Manus referrals`
+  },
+  {
+    id: "dashboard-overview",
+    category: "Navigation",
+    title: "What's on My Dashboard",
+    keywords: ["dashboard", "home", "overview", "my ideas", "join requests"],
+    content: `Your Dashboard shows three key sections:
+
+1. **My Ideas** - All your startup ideas with their current journey stage
+   - Click any idea to view details, edit, or generate business plans
+   
+2. **Team Join Requests** - People who want to join your teams
+   - Accept or decline requests here
+   
+3. **People to Invite** - Suggested collaborators based on your ideas
+   - Quick way to find and invite team members`
+  },
+
+  // Manus Integration Details
+  {
+    id: "manus-overview",
+    category: "Manus Integration",
+    title: "What is Manus and how does Yassu integrate with it?",
+    keywords: ["manus", "manus.im", "AI design", "integration", "what is manus"],
+    content: `Manus (manus.im) is an AI agent that creates professional designs and presentations instantly.
+
+**How Yassu integrates with Manus:**
+1. **MVP Builder** - Copy your MVP specifications and paste into Manus to design your app
+2. **Pitch Deck** - Copy your slide content and paste into Manus to create beautiful presentations
+3. **Business Plan sections** - Export any section for Manus to turn into professional documents
+
+**How to use:**
+1. Generate your content in Yassu (business plan, MVP specs, pitch deck)
+2. Click the "Copy" or "Open Manus AI" button
+3. Manus will create professional designs based on your content
+
+It's instant - no need to spend weeks designing yourself!`
+  },
+  {
+    id: "manus-mvp",
+    category: "Manus Integration", 
+    title: "Building your MVP with Manus",
+    keywords: ["manus mvp", "build mvp", "manus app", "design mvp", "create app"],
+    content: `To build your MVP with Manus:
+
+**Step 1: Plan Your MVP in Yassu**
+1. Go to your idea and click "Build MVP" section
+2. Generate MVP specifications from your business plan
+3. AI will create feature list, user stories, and technical requirements
+
+**Step 2: Design in Manus**
+1. Click "Open Manus AI" in the MVP Builder section
+2. Manus will receive your project context automatically
+3. Ask Manus to design your app, website, or prototype
+
+**Step 3: Link Your MVP**
+1. Once Manus creates your design, copy the project link
+2. Paste it back in Yassu to track your progress
+
+Build instantly with Manus AI instead of spending weeks on development!`
+  },
+  {
+    id: "manus-pitch-deck",
+    category: "Manus Integration",
+    title: "Creating pitch deck slides with Manus",
+    keywords: ["manus pitch", "pitch deck design", "manus slides", "presentation manus"],
+    content: `To create beautiful pitch deck slides with Manus:
+
+**Step 1: Generate Deck Content**
+1. Go to your idea's "Funding & Pitch Deck" section
+2. Click "Generate Deck" to create 10 investor-ready slides
+3. Review and refine your content
+
+**Step 2: Design in Manus**
+1. Click "Open Manus AI" 
+2. Your slide content is automatically sent to Manus
+3. Manus will create professional PowerPoint/Google Slides presentations
+
+**Step 3: Prepare Your Pitch**
+1. Use the Pitch Preparation module for speaking scripts
+2. Practice handling investor objections
+3. Use the Q&A playbook for tough questions`
+  },
+
+  // Business Plan Sections Detail
+  {
+    id: "business-plan-sections",
+    category: "Business Plan",
+    title: "All sections in the AI Business Plan",
+    keywords: ["sections", "what sections", "business plan parts", "full plan"],
+    content: `Your AI Business Plan includes these tabs:
+
+1. **Full Plan** - Complete overview of all sections
+2. **Founder Fit** - Why you're the right person for this startup
+3. **Competitive Landscape** - Real competitor analysis with actual company names
+4. **Risk & Moat** - Threats and your competitive advantages
+5. **MVP Design** - Feature priorities and technical requirements
+6. **Team & Talent** - Skills needed and hiring roadmap
+7. **Launch Plan** - Go-to-market strategy and timeline
+8. **School Advantage** - University resources and connections you can leverage
+9. **Funding Pitch** - Investment ask and use of funds
+
+Each section can be edited, copied, or regenerated independently.`
+  },
+  {
+    id: "copy-business-plan",
+    category: "Business Plan",
+    title: "How to copy business plan sections",
+    keywords: ["copy", "export", "share", "download", "business plan copy"],
+    content: `To copy any business plan section:
+
+1. Go to your idea's Business Plan
+2. Click on the section tab you want
+3. Click the "Copy" button next to the section title
+4. The content is copied to your clipboard
+
+**Use copied content for:**
+- Manus (paste to create professional documents)
+- Figma or design tools
+- Sharing with mentors or advisors
+- Grant applications
+- Investor emails
+
+You can also download the entire business plan as a Word document using the "Download" button.`
+  },
+
+  // Step-by-step Flows
+  {
+    id: "full-journey-flow",
+    category: "Journey Progress",
+    title: "Complete startup journey on Yassu",
+    keywords: ["full journey", "complete flow", "start to finish", "all steps"],
+    content: `Here's your complete startup journey on Yassu:
+
+**1. Post Idea** - Create your startup idea with Problem, Solution, Target Users, Why Now
+**2. Business Plan** - Generate AI-powered 9-section business plan
+**3. Find Advisors** - Connect with experienced mentors on the platform
+**4. Form Team** - Invite co-founders and team members
+**5. Build MVP** - Plan and build your minimum viable product with Manus
+**6. Yassu Foundry** - Apply for Yassu's incubator program (coming soon)
+**7. Seek Funding** - Create pitch deck and prepare for investor meetings
+
+Each step can be completed in any order - work on what matters most to you!`
+  },
+  {
+    id: "idea-improvement",
+    category: "Ideas",
+    title: "How does AI improve my idea?",
+    keywords: ["improve idea", "AI suggestions", "auto improve", "enhance idea"],
+    content: `When you post a new idea, Yassu AI automatically improves it:
+
+1. **Auto-parsing** - Your description is analyzed and split into structured fields
+2. **Field enhancement** - AI suggests improvements for:
+   - Problem statement - clearer pain point articulation
+   - Solution - more specific value proposition
+   - Target users - better audience definition
+   - Why now - stronger timing justification
+
+3. **Manual editing** - You can always edit any field manually
+4. **Business type detection** - AI identifies your business category (Tech, F&B, Fashion, etc.)
+
+This happens automatically when you save your idea!`
+  },
+
+  // Advisor Recommendation
+  {
+    id: "advisor-importance",
+    category: "Advisors",
+    title: "Why should I work with Yassu Advisors?",
+    keywords: ["advisor", "mentor", "guidance", "help", "experience", "recommend advisor"],
+    content: `Yassu Advisors are experienced mentors who can help your startup succeed:
+
+**Why work with advisors:**
+- AI-generated plans are a great starting point, but not foolproof
+- Advisors provide real-world experience and feedback
+- They can spot issues AI might miss
+- Help refine your strategy and business model
+- Make introductions to investors and partners
+
+**How to find advisors:**
+1. Go to "Advisors" in the sidebar
+2. Browse profiles by expertise and industry
+3. Send connection requests
+4. Invite them to advise on your idea
+
+We highly recommend pairing AI tools with human mentorship for the best results!`
   }
 ];
 
