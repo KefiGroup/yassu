@@ -131,20 +131,25 @@
 }
 
 .mdxeditor table {
-  width: 100%;
-  max-width: 100%;
-  table-layout: fixed;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  table-layout: auto !important;
   border-collapse: collapse;
   font-size: 0.875rem;
+  display: table !important;
 }
 
 .mdxeditor table th,
 .mdxeditor table td {
   border: 1px solid hsl(var(--border));
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
   text-align: left;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  white-space: normal;
+  max-width: none;
+  width: auto;
 }
 
 .mdxeditor table th {
@@ -160,4 +165,24 @@
 /* Ensure tables don't overflow in the editor container */
 .mdxeditor-root-contenteditable {
   overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Fix MDXEditor table wrapper */
+.mdxeditor [data-editor-type="table"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto;
+}
+
+/* Lexical table wrapper */
+.mdxeditor .PlaygroundEditorTheme__tableCell,
+.mdxeditor .PlaygroundEditorTheme__tableRow {
+  width: auto !important;
+}
+
+/* Override any fixed widths on table containers */
+.mdxeditor div[data-lexical-decorator="true"] {
+  max-width: 100% !important;
+  width: 100% !important;
 }
