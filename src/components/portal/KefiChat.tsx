@@ -5,6 +5,17 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { api } from '@/lib/api';
 
+function formatMarkdown(text: string): string {
+  return text
+    .replace(/^### (.+)$/gm, '<strong class="block text-base mt-3 mb-1">$1</strong>')
+    .replace(/^## (.+)$/gm, '<strong class="block text-lg mt-3 mb-1">$1</strong>')
+    .replace(/^# (.+)$/gm, '<strong class="block text-xl mt-3 mb-1">$1</strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<span class="block pl-2">• $1</span>')
+    .replace(/^\d+\. (.+)$/gm, '<span class="block pl-2">$&</span>');
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -148,14 +159,19 @@ export function KefiChat() {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${
+                    className={`max-w-[85%] rounded-lg px-4 py-2 text-sm ${
                       message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
+                        ? 'bg-primary text-primary-foreground whitespace-pre-wrap'
                         : 'bg-muted'
                     }`}
                     data-testid={`message-${message.role}-${message.id}`}
+                    dangerouslySetInnerHTML={
+                      message.role === 'assistant' 
+                        ? { __html: formatMarkdown(message.content) }
+                        : undefined
+                    }
                   >
-                    {message.content}
+                    {message.role === 'user' ? message.content : undefined}
                   </div>
                 </div>
               ))}
