@@ -2098,7 +2098,7 @@ export default function IdeaDetail() {
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-4 border border-primary/20">
                 <p className="text-sm font-medium mb-3">
-                  Use <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-intro">Manus.im</a> to develop your MVP instantly - an AI agent that can build and deploy full applications from your specifications.
+                  Use <a href="https://manus.im/invitation/XT9XTFJVZ8SASD" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-intro">Manus.im</a> to develop your MVP instantly - an AI agent that can build and deploy full applications from your specifications.
                 </p>
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
@@ -2106,7 +2106,7 @@ export default function IdeaDetail() {
                 </h4>
                 <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                   <li><strong>Plan your MVP</strong> - Use our AI-powered MVP Builder to define features, tech stack, and specifications</li>
-                  <li><strong>Build with Manus AI</strong> - Copy your specs, go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-step2">manus.im</a>, create a free account if needed, and paste to build your product</li>
+                  <li><strong>Build with Manus AI</strong> - Copy your specs, go to <a href="https://manus.im/invitation/XT9XTFJVZ8SASD" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-step2">manus.im</a>, create a free account if needed, and paste to build your product</li>
                   <li><strong>Link your MVP</strong> - Paste your Manus project link back here to track your progress</li>
                 </ol>
               </div>
@@ -2170,7 +2170,7 @@ export default function IdeaDetail() {
                           solution: idea.solution || '',
                           users: idea.targetUser || '',
                         };
-                        const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+                        const manusUrl = `https://manus.im/invitation/XT9XTFJVZ8SASD?${new URLSearchParams(context).toString()}`;
                         window.open(manusUrl, '_blank');
                       }}
                       className={hasMvpFeatures ? "w-full bg-gradient-to-r from-purple-600 to-pink-600" : "w-full"}
@@ -2295,7 +2295,7 @@ export default function IdeaDetail() {
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-4 border border-primary/20">
                 <p className="text-sm font-medium mb-3">
-                  Use <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-intro">Manus.im</a> to create stunning pitch deck slides instantly - an AI agent that designs professional PowerPoint presentations from your content.
+                  Use <a href="https://manus.im/invitation/XT9XTFJVZ8SASD" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-intro">Manus.im</a> to create stunning pitch deck slides instantly - an AI agent that designs professional PowerPoint presentations from your content.
                 </p>
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
@@ -2303,7 +2303,7 @@ export default function IdeaDetail() {
                 </h4>
                 <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                   <li><strong>Generate your deck</strong> - Use our AI to create 10 professional slides with content and speaker notes</li>
-                  <li><strong>Build with Manus AI</strong> - Copy your slides, go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-step2">manus.im</a>, create a free account if needed, and paste to design your deck</li>
+                  <li><strong>Build with Manus AI</strong> - Copy your slides, go to <a href="https://manus.im/invitation/XT9XTFJVZ8SASD" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-step2">manus.im</a>, create a free account if needed, and paste to design your deck</li>
                   <li><strong>Prepare your pitch</strong> - Get AI coaching on delivery, objections, and Q&A</li>
                 </ol>
               </div>
@@ -2371,7 +2371,7 @@ export default function IdeaDetail() {
                           users: idea.targetUser || '',
                           funding_strategy: fundingPitch.substring(0, 500),
                         };
-                        const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+                        const manusUrl = `https://manus.im/invitation/XT9XTFJVZ8SASD?${new URLSearchParams(context).toString()}`;
                         window.open(manusUrl, '_blank');
                       }}
                       className={hasPitchDeck ? "w-full bg-gradient-to-r from-amber-500 to-orange-500" : "w-full"}

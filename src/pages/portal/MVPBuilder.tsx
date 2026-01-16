@@ -287,7 +287,7 @@ Be opinionated. Cut anything that's overkill for MVP.`;
       problem: idea?.problem || '',
       solution: idea?.solution || '',
     };
-    const manusUrl = `https://manus.im?${new URLSearchParams(context).toString()}`;
+    const manusUrl = `https://manus.im/invitation/XT9XTFJVZ8SASD?${new URLSearchParams(context).toString()}`;
     window.open(manusUrl, "_blank");
   };
 
@@ -683,7 +683,7 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                           
                           {copiedId === message.id && (
                             <span className="text-xs text-muted-foreground animate-in fade-in">
-                              Now paste this into <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">Manus.im</a> to build your MVP
+                              Now paste this into <a href="https://manus.im/invitation/XT9XTFJVZ8SASD" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">Manus.im</a> to build your MVP
                             </span>
                           )}
                         </div>
@@ -693,7 +693,7 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                             <Button
                               size="sm"
                               className="bg-gradient-to-r from-amber-500 to-orange-500 text-white"
-                              onClick={() => window.open('https://manus.im', '_blank')}
+                              onClick={() => window.open('https://manus.im/invitation/XT9XTFJVZ8SASD', '_blank')}
                               data-testid="button-open-manus-inline"
                             >
                               <ExternalLink className="h-3 w-3 mr-1" />
@@ -755,13 +755,13 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                       <p className="font-medium mb-2 text-sm">Option 1: Build instantly with AI</p>
                       <ol className="list-decimal list-inside space-y-1 text-xs text-muted-foreground mb-3">
                         <li>Copy your MVP plan (button above)</li>
-                        <li>Go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-mvp">manus.im</a></li>
+                        <li>Go to <a href="https://manus.im/invitation/XT9XTFJVZ8SASD" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-mvp">manus.im</a></li>
                         <li>Paste and let AI design your app</li>
                       </ol>
                       <Button
                         size="sm"
                         className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white"
-                        onClick={() => window.open('https://manus.im', '_blank')}
+                        onClick={() => window.open('https://manus.im/invitation/XT9XTFJVZ8SASD', '_blank')}
                         data-testid="button-open-manus-mvp"
                       >
                         <ExternalLink className="h-3 w-3 mr-1" />

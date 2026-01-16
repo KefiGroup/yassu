@@ -1018,7 +1018,7 @@ export default function InvestorPitchDeck() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.open("https://manus.im", "_blank")}
+            onClick={() => window.open("https://manus.im/invitation/XT9XTFJVZ8SASD", "_blank")}
             data-testid="button-open-manus"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
@@ -1031,7 +1031,7 @@ export default function InvestorPitchDeck() {
         <p className="font-medium mb-2">How to create your pitch deck with Manus:</p>
         <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
           <li>Click <strong>"Copy for Manus"</strong> above to copy your slide content</li>
-          <li>Click <strong>"Open Manus"</strong> or go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-deck">manus.im</a></li>
+          <li>Click <strong>"Open Manus"</strong> or go to <a href="https://manus.im/invitation/XT9XTFJVZ8SASD" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-deck">manus.im</a></li>
           <li>Create a free account if you don't have one</li>
           <li>Paste the copied content and ask Manus to design your pitch deck</li>
           <li>Manus will create professional PowerPoint slides from your content</li>
