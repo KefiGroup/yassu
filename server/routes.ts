@@ -726,28 +726,42 @@ export function registerRoutes(app: Express): void {
         return res.status(400).json({ error: "Problem statement is required" });
       }
 
-      const prompt = `You are an expert startup advisor helping founders improve their startup ideas to be more compelling and investor-ready.
+      const prompt = `You are an expert startup advisor helping founders refine their startup ideas for clarity and investor appeal.
 
-Current Idea:
-- Problem: ${problem}
-${solution ? `- Solution: ${solution}` : ''}
+CURRENT IDEA INPUT:
+- Problem Statement: ${problem}
+${solution ? `- Proposed Solution: ${solution}` : ''}
 ${targetUser ? `- Target User: ${targetUser}` : ''}
 ${whyNow ? `- Why Now: ${whyNow}` : ''}
 
-Please improve each section to make it more:
-1. Specific and concrete (avoid vague language)
-2. Compelling and urgent (why does this matter?)
-3. Data-driven where possible (include estimates/numbers)
-4. Investor-friendly (clear value proposition)
+CRITICAL INSTRUCTIONS - Each field must be DISTINCT and DIFFERENT:
 
-Return a JSON object with improved versions of each field. Keep improvements concise but impactful.
+1. **PROBLEM** (2-3 sentences max): Describe ONLY the pain point, challenge, or gap in the market. 
+   - Focus on WHO is suffering and WHAT they struggle with
+   - Include a specific metric or statistic if possible (e.g., "X% of authors fail to...")
+   - DO NOT mention your solution here - only describe the problem
+   - Example: "Self-published authors struggle to gain visibility on Amazon KDP, with over 80% of books selling fewer than 100 copies. Most lack the marketing expertise and design skills needed to compete with traditionally published titles."
 
-Format your response as valid JSON:
+2. **SOLUTION** (2-3 sentences max): Describe ONLY your product/service and HOW it solves the problem.
+   - Focus on WHAT you're building and HOW it works
+   - Be specific about the key features or approach
+   - DO NOT repeat the problem here - only describe your solution
+   - Example: "Authors Bureau is an AI-powered platform that handles the entire publishing journey - from manuscript formatting and cover design to category optimization and marketing automation. Our algorithms identify high-potential niches and craft personalized launch strategies."
+
+3. **TARGET USER** (1-2 sentences): Describe WHO specifically will use this.
+   - Be specific: demographics, behaviors, current alternatives they use
+
+4. **WHY NOW** (1-2 sentences): Explain the timing opportunity.
+   - What recent trends, technologies, or market changes make this the right time?
+
+IMPORTANT: The Problem and Solution MUST be completely different content. Problem = the pain/struggle. Solution = your product/features.
+
+Return valid JSON:
 {
-  "problem": "improved problem statement",
-  "solution": "improved solution",
-  "targetUser": "improved target user description",
-  "whyNow": "improved timing explanation"
+  "problem": "clear problem statement focusing on the pain point only - no mention of solution",
+  "solution": "clear solution statement describing your product/service - different from problem",
+  "targetUser": "specific target user description",
+  "whyNow": "timing explanation"
 }`;
 
       const OpenAI = (await import('openai')).default;
