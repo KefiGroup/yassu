@@ -1556,6 +1556,35 @@ export function registerRoutes(app: Express): void {
           const { sendRequestAcceptedEmail, sendRequestRejectedEmail, sendRequestPendingEmail } = await import('./email');
           
           if (status === 'accepted') {
+            // Add user to the team when request is accepted
+            try {
+              // Find the team for this idea
+              const teams = await db.select().from(schema.teams).where(eq(schema.teams.ideaId, idea.id));
+              if (teams.length > 0) {
+                const team = teams[0];
+                // Check if user is already a team member
+                const existingMember = await db.select().from(schema.teamMembers)
+                  .where(and(
+                    eq(schema.teamMembers.teamId, team.id),
+                    eq(schema.teamMembers.userId, updated.userId)
+                  ));
+                
+                if (existingMember.length === 0) {
+                  // Add user to team
+                  await db.insert(schema.teamMembers).values({
+                    teamId: team.id,
+                    userId: updated.userId,
+                    role: updated.role || 'member',
+                  });
+                  console.log(`[Join Request] Added user ${updated.userId} to team ${team.id}`);
+                }
+              } else {
+                console.error(`[Join Request] No team found for idea ${idea.id}`);
+              }
+            } catch (teamErr) {
+              console.error('[Join Request] Failed to add user to team:', teamErr);
+            }
+            
             // Update idea stage to form_team when someone joins
             if (updated.ideaId) {
               updateIdeaStageIfHigher(updated.ideaId, 'form_team').catch(err => {
