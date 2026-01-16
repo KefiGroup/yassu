@@ -179,6 +179,23 @@ Do NOT leave the table empty or use placeholders. Include at least one direct co
 - Specific gaps in current market offerings
 - Underserved customer segments
 - Your potential wedge/entry point
+
+## Competitive Advantage Comparison
+
+Create a markdown table comparing YOUR STARTUP vs the top 3-4 competitors identified above. Use these columns: Feature/Factor | Your Startup | Competitor 1 | Competitor 2 | Competitor 3
+
+Include 5-7 comparison rows covering:
+- Core value proposition
+- Pricing model/affordability
+- Target customer focus
+- Key differentiator (speed, quality, convenience, etc.)
+- Technology/approach
+- Customer experience
+
+Below the table, provide a brief **"Why We Win"** summary (3-4 bullet points) explaining:
+- The #1 reason customers will choose you over alternatives
+- Your unfair advantage or unique insight
+- What competitors would have to change to match you
 ${outputRules}`,
     },
     {
