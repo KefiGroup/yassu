@@ -19,7 +19,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Search, Bell, LogOut, User, Settings, Home, Shield, Megaphone, Calendar, Wrench, Info, AlertTriangle } from 'lucide-react';
+import { Search, Bell, LogOut, User, Settings, Home, Shield, Megaphone, Calendar, Wrench, Info, AlertTriangle, HelpCircle } from 'lucide-react';
+import { openKefiChat } from '@/components/portal/KefiChat';
 import { Badge } from '@/components/ui/badge';
 
 interface Announcement {
@@ -116,6 +117,17 @@ export function PortalHeader() {
       </form>
 
       <div className="flex items-center gap-2 ml-auto">
+        {/* Help Button */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={openKefiChat}
+          data-testid="button-help"
+          title="Need help? Ask Kefi!"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </Button>
+
         {/* Notifications */}
         <Popover>
           <PopoverTrigger asChild>

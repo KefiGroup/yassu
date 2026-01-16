@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,8 +21,20 @@ I can help you with:
 
 Just type your question below!`;
 
+// Global event for opening chat from header
+export const openKefiChat = () => {
+  window.dispatchEvent(new CustomEvent('openKefiChat'));
+};
+
 export function KefiChat() {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Listen for external open events
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('openKefiChat', handleOpen);
+    return () => window.removeEventListener('openKefiChat', handleOpen);
+  }, []);
   const [messages, setMessages] = useState<Message[]>([
     { id: 'welcome', role: 'assistant', content: WELCOME_MESSAGE }
   ]);
@@ -101,11 +113,11 @@ export function KefiChat() {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-          size="icon"
+          className="fixed bottom-6 right-6 h-12 rounded-full shadow-lg z-50 gap-2 px-5"
           data-testid="button-kefi-open"
         >
-          <MessageCircle className="h-6 w-6" />
+          <HelpCircle className="h-5 w-5" />
+          <span className="font-medium">Help</span>
         </Button>
       )}
 
