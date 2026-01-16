@@ -146,9 +146,40 @@ export default function CreateIdea() {
         isPublic: true,
       });
 
+      // Auto-improve the idea to extract proper problem/solution from narration
+      try {
+        const improveResponse = await fetch('/api/ideas/improve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            problem: formData.narration,
+            solution: formData.narration,
+          })
+        });
+        
+        if (improveResponse.ok) {
+          const improved = await improveResponse.json();
+          // Update the idea with improved content
+          await fetch(`/api/ideas/${idea.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              problem: improved.problem || formData.narration,
+              solution: improved.solution || formData.narration,
+              targetUser: improved.targetUser || null,
+              whyNow: improved.whyNow || null,
+            })
+          });
+        }
+      } catch (improveError) {
+        console.log('Auto-improve skipped:', improveError);
+      }
+
       toast({
         title: 'Idea saved!',
-        description: 'Your idea has been created successfully.',
+        description: 'Your idea has been created and refined by AI.',
       });
 
       navigate(`/portal/ideas/${idea.id}`);
@@ -268,7 +299,7 @@ export default function CreateIdea() {
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
+                    Creating & Refining with AI...
                   </>
                 ) : (
                   <>
