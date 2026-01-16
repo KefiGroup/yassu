@@ -55,6 +55,19 @@ ${idea.targetUser ? `Target Users: ${idea.targetUser}` : "Target Users: To be id
 ${idea.whyNow ? `Why Now: ${idea.whyNow}` : ""}
 `.trim();
 
+  const businessTypeContext = `
+BUSINESS TYPE DETECTION:
+First, analyze the startup idea and classify it into ONE of these categories:
+- TECH/APP: Software products, mobile apps, SaaS platforms, digital marketplaces
+- F&B (Food & Beverage): Restaurants, food products, beverages, catering, meal delivery, food manufacturing
+- FASHION/RETAIL: Clothing, accessories, physical retail, e-commerce for physical goods
+- SERVICE: Consulting, tutoring, cleaning, events, professional services, freelancing
+- HARDWARE/MANUFACTURING: Physical devices, electronics, manufacturing, IoT products
+- HYBRID: Combination (e.g., tech-enabled F&B, fashion with app)
+
+Use the detected business type to tailor ALL recommendations appropriately. Do NOT default to tech/app assumptions.
+`;
+
   const outputRules = `
 
 CRITICAL OUTPUT RULES:
@@ -66,20 +79,41 @@ CRITICAL OUTPUT RULES:
    | Data1   | Data2   | Data3   |
 4. Every table MUST have data rows, not just headers.
 5. Use clear section headings but skip the main title (it's already shown in the UI).
-6. Be concise and actionable.`;
+6. Be concise and actionable.
+7. ADAPT all recommendations to the business type - do NOT assume every startup is a tech/app company.`;
 
+  // Comprehensive skills list covering tech AND non-tech business types
   const officialSkills = [
+    // Backend & APIs
     "Django", "Express.js", "FastAPI", "GraphQL", "Microservices", "Node.js", "REST APIs", "Spring Boot",
+    // Business & Marketing
     "Business Development", "Content Marketing", "Copywriting", "Growth Hacking", "Marketing", "Product Management", "Project Management", "Public Relations", "Sales", "SEO/SEM", "Social Media Marketing",
+    // Cloud & DevOps
     "AWS", "Azure", "CI/CD", "DevOps", "Docker", "Google Cloud", "Kubernetes", "Linux",
+    // Data & AI
     "Computer Vision", "Data Analysis", "Data Science", "Deep Learning", "LLMs/GenAI", "Machine Learning", "NLP", "PyTorch", "TensorFlow",
+    // Databases
     "Firebase", "MongoDB", "MySQL", "PostgreSQL", "Redis", "Supabase",
+    // Design
     "Brand Design", "Figma", "Graphic Design", "Motion Design", "Product Design", "Prototyping", "UI/UX Design", "User Research",
+    // Emerging Tech
     "3D Printing", "AR/VR", "Blockchain", "Cybersecurity", "Hardware", "IoT", "Robotics", "Smart Contracts", "Web3",
+    // Finance & Operations (expanded)
     "Accounting", "Financial Modeling", "Fundraising", "Investor Relations", "Legal", "Operations", "Supply Chain",
+    // Frontend
     "Angular", "Flutter", "HTML/CSS", "Next.js", "React", "React Native", "Svelte", "Tailwind CSS", "Vue.js",
+    // Leadership
     "Agile/Scrum", "Negotiation", "People Management", "Public Speaking", "Strategic Planning", "Team Leadership",
-    "C#", "C++", "Go", "Java", "JavaScript", "Kotlin", "MATLAB", "PHP", "Python", "R", "Ruby", "Rust", "SQL", "Swift", "TypeScript"
+    // Programming Languages
+    "C#", "C++", "Go", "Java", "JavaScript", "Kotlin", "MATLAB", "PHP", "Python", "R", "Ruby", "Rust", "SQL", "Swift", "TypeScript",
+    // F&B Specific
+    "Food Safety & HACCP", "Menu Development", "Culinary Arts", "Restaurant Operations", "Food Cost Management", "Beverage Management", "Catering Operations", "Food Photography", "Recipe Development", "Kitchen Management",
+    // Fashion & Retail Specific
+    "Fashion Design", "Textile Knowledge", "Merchandising", "Visual Merchandising", "Retail Operations", "Inventory Management", "Sourcing & Procurement", "Fashion Buying", "Trend Forecasting", "Pattern Making", "Garment Construction",
+    // Service Business Specific
+    "Customer Service", "Event Planning", "Hospitality Management", "Facility Management", "Quality Assurance", "Service Design", "Client Relations",
+    // Manufacturing & Physical Products
+    "Manufacturing Operations", "Quality Control", "Logistics", "Warehouse Management", "Production Planning", "Vendor Management", "Import/Export", "Packaging Design", "Product Sourcing", "Cost Engineering"
   ].join(", ");
 
   return [
@@ -90,23 +124,25 @@ CRITICAL OUTPUT RULES:
 
 ${ideaContext}
 
+${businessTypeContext}
+
 Generate the following sections in clean markdown format. Cover:
 
 ## Problem Statement & Validation
 - Restate the core problem in 2-3 sentences
 - Who experiences this pain most acutely?
-- How can the founder validate this is a real problem?
+- How can the founder validate this is a real problem? (adapt validation methods to business type)
 
 ## Founder Motivation Assessment
 - What personal connection might a student founder have to this problem?
-- Required domain expertise vs. learnable skills
+- Required domain expertise vs. learnable skills (consider industry-specific requirements for F&B, fashion, etc.)
 - Red flags if founder lacks certain backgrounds
 - Passion sustainability score (1-10) with reasoning
 
 ## Initial Hypothesis Framework
 - Core assumption to test first
 - Falsifiable hypotheses (at least 3)
-- Minimum viable experiment to validate
+- Minimum viable experiment to validate (adapt to business type: taste tests for F&B, sample sales for fashion, etc.)
 - Expected learning timeline
 ${outputRules}`,
     },
@@ -117,10 +153,12 @@ ${outputRules}`,
 
 ${ideaContext}
 
+${businessTypeContext}
+
 Generate the following sections in clean markdown format:
 
 ## Market Map
-- Industry/sector categorization
+- Industry/sector categorization (identify the correct industry for F&B, fashion, service, etc.)
 - Market size estimation (TAM, SAM, SOM)
 - Key market trends driving opportunity
 
@@ -128,7 +166,14 @@ Generate the following sections in clean markdown format:
 
 Create a markdown table with these exact columns: Competitor | Type | Strengths | Weaknesses | Pricing | Target Segment
 
-IMPORTANT: You MUST populate this table with 4-6 REAL competitor companies. Do NOT leave the table empty or use placeholders. Research and include actual companies that compete in this space. Include at least one direct competitor, one indirect competitor, and the "Status Quo" (what customers currently do without a dedicated solution).
+IMPORTANT: You MUST populate this table with 4-6 REAL competitor companies appropriate to the business type. 
+- For Tech/App: Include software companies, apps, and platforms in the same category
+- For F&B: Include local restaurants, food delivery services, or food brands in the same category
+- For Fashion: Include fashion brands, retailers, or designers in the same segment
+- For Service: Include service providers in the same space
+- For Hardware/Manufacturing: Include device makers, physical product companies, or manufacturers in the same category
+- For Hybrid: Include competitors from both digital and physical aspects of the business
+Do NOT leave the table empty or use placeholders. Include at least one direct competitor, one indirect competitor, and the "Status Quo" (what customers currently do without a dedicated solution).
 
 ## Whitespace Analysis
 - Specific gaps in current market offerings
@@ -143,33 +188,73 @@ ${outputRules}`,
 
 ${ideaContext}
 
+${businessTypeContext}
+
 Generate the following sections in clean markdown format:
 
 ## SWOT Analysis
 
-Create a SWOT table with two columns: Category | Analysis. Populate each row with real analysis:
+Create a SWOT table with two columns: Category | Analysis. Populate each row with real analysis appropriate to the business type:
 - Strengths: List 3-4 specific strengths of this startup idea
 - Weaknesses: List 3-4 specific weaknesses or challenges  
 - Opportunities: List 3-4 market opportunities to leverage
 - Threats: List 3-4 external threats to watch for
 
 ## Defensibility Score (1-10)
-Rate and explain potential moats:
+Rate and explain potential moats (adapt to business type):
+
+**For Tech/App:**
 - Network effects potential
 - Switching costs
 - Data/AI advantage
 - Brand/trust building
-- Economies of scale
-- Regulatory barriers
+
+**For F&B:**
+- Recipe/taste differentiation
+- Location advantages
+- Supplier relationships
+- Brand/loyalty building
+- Operational excellence
+
+**For Fashion/Retail:**
+- Design/brand identity
+- Supplier/manufacturing relationships
+- Customer loyalty
+- Distribution advantages
+
+**For Service:**
+- Expertise/reputation
+- Customer relationships
+- Process/methodology IP
+- Network effects (referrals)
+
+**For Hardware/Manufacturing:**
+- Patent/IP protection
+- Manufacturing relationships and exclusivity
+- Design/engineering complexity
+- Economies of scale in production
+- Distribution partnerships
+
+**For Hybrid:**
+- Combine moats from both digital (network effects, data) and physical (IP, relationships)
+- Integration advantages competitors can't easily replicate
 
 ## Top 5 Kill Risks
-For each risk:
+For each risk, consider industry-specific challenges:
 1. **[Risk Name]**
    - Severity: High/Medium/Low
    - Likelihood: High/Medium/Low
    - Description: What could happen
    - Mitigation: Specific action to reduce risk
    - Early warning signs: How to detect
+
+Common risks by business type:
+- F&B: Food safety, supplier reliability, kitchen capacity, delivery quality
+- Fashion: Inventory risk, trend shifts, manufacturing quality, seasonality
+- Service: Key person dependency, quality consistency, capacity constraints
+- Tech: Technical debt, security, scalability, competition
+- Hardware: Manufacturing defects, supply chain disruptions, certification delays, high upfront costs, long lead times
+- Hybrid: Complexity of managing both digital and physical operations, integration challenges
 
 ## Risk Mitigation Roadmap
 - First 30 days priorities
@@ -184,59 +269,135 @@ ${outputRules}`,
 
 ${ideaContext}
 
+${businessTypeContext}
+
+IMPORTANT: Adapt your MVP recommendations based on the business type:
+- For TECH/APP: Focus on software features, screens, tech stack
+- For F&B: Focus on menu/product lineup, kitchen setup, operations, location/delivery strategy
+- For FASHION/RETAIL: Focus on initial collection, sourcing, distribution channels, inventory
+- For SERVICE: Focus on service packages, delivery methods, customer experience touchpoints
+- For HARDWARE: Focus on prototype specifications, manufacturing, supply chain
+- For HYBRID: Cover both digital and physical components appropriately
+
 Generate the following sections in clean markdown format:
 
-## Feature Backlog
+## Business Type
+State the detected business type and briefly explain why.
 
-| Priority | Feature | User Value | Effort | MVP? |
-|----------|---------|------------|--------|------|
-| P0 | User onboarding | Core functionality | M | Yes |
-| P0 | [Feature 2] | ... | S/M/L | Yes |
-| P1 | [Feature 3] | ... | S/M/L | Maybe |
-| P2 | [Feature 4] | ... | S/M/L | No |
+## MVP Backlog
 
-Include 6-8 features with real names, clearly marking MVP vs. post-MVP.
+| Priority | Component/Feature | Customer Value | Effort | MVP? |
+|----------|-------------------|----------------|--------|------|
+| P0 | [Core offering] | Core value proposition | M | Yes |
+| P0 | [Component 2] | ... | S/M/L | Yes |
+| P1 | [Component 3] | ... | S/M/L | Maybe |
+| P2 | [Component 4] | ... | S/M/L | No |
+
+Include 6-8 items appropriate to the business type:
+- For apps: features, screens, integrations
+- For F&B: menu items, kitchen equipment, service formats
+- For fashion: product categories, collections, distribution channels
+- For services: service tiers, delivery methods, tools needed
 
 ## MVP Specification
+
+**For Tech/App businesses:**
 - Core user flow (step by step)
-- Essential screens/pages (list with purpose)
+- Essential screens/pages
 - Key data entities
 
-## Tech Stack Recommendation
-- Frontend: [specific choice] - rationale
-- Backend: [specific choice] - rationale
-- Database: [specific choice] - rationale
+**For Physical businesses (F&B, Fashion, Retail):**
+- Core customer journey (from discovery to purchase/consumption)
+- Physical touchpoints (location, packaging, delivery)
+- Key operational processes
+- Initial product/menu lineup (3-5 hero items/products)
 
-## Development Milestones
+**For Service businesses:**
+- Service delivery process
+- Customer touchpoints
+- Tools and equipment needed
 
-| Week | Milestone | Deliverable |
-|------|-----------|-------------|
-| 1-2 | Setup & Design | Wireframes, tech setup |
-| 3-4 | Core Features | Main functionality |
-| 5-6 | Polish | Testing, fixes |
-| 7-8 | Launch | MVP live |
+## Resource Requirements
 
-## Figma Design Prompt
+Adapt based on business type:
 
-Generate a detailed design brief for creating the MVP in Figma:
+**For Tech/App:**
+- Tech Stack: Frontend, Backend, Database recommendations with rationale
 
-**Design System:**
+**For F&B:**
+- Kitchen/Production Setup: Equipment, space requirements, licenses
+- Supplier Relationships: Key ingredients/materials to source
+- Delivery/Service Infrastructure: Dine-in, takeaway, delivery setup
+
+**For Fashion/Retail:**
+- Production/Sourcing: Manufacturers, minimum order quantities
+- Inventory Strategy: Initial stock levels, storage needs
+- Sales Channels: Online, pop-up, wholesale, retail
+
+**For Service:**
+- Tools & Equipment: What's needed to deliver the service
+- Staffing: Initial team requirements
+- Scheduling/Booking: How customers access the service
+
+**For Hardware/Manufacturing:**
+- Prototype Development: CAD/design tools, prototyping costs, iteration cycles
+- Manufacturing Setup: Contract manufacturers, MOQs, tooling costs
+- Supply Chain: Component sourcing, lead times, quality control
+- Certifications: Safety certifications, compliance requirements (CE, FCC, etc.)
+- Distribution: Fulfillment, warehousing, shipping logistics
+
+**For Hybrid (Tech + Physical):**
+- Cover both digital product requirements AND physical operations
+- Integration points between app/platform and physical service/product
+
+## Launch Milestones
+
+| Week/Month | Milestone | Deliverable |
+|------------|-----------|-------------|
+| Phase 1 | Foundation | [Setup, sourcing, design] |
+| Phase 2 | Build/Produce | [Development, production, inventory] |
+| Phase 3 | Soft Launch | [Beta test, pilot, friends & family] |
+| Phase 4 | Public Launch | [MVP live, initial sales] |
+
+## Design & Branding Brief
+
+**Brand Identity:**
 - Color palette: [Primary, Secondary, Accent colors with hex codes]
-- Typography: [Font families for headings, body, buttons]
-- Component library needs: [Buttons, forms, cards, etc.]
+- Typography: [Font families for different uses]
+- Visual style: [Professional, playful, minimal, luxurious, etc.]
 
-**Key Screens to Design:**
-1. [Screen 1 name] - Purpose, key elements, user actions
-2. [Screen 2 name] - Purpose, key elements, user actions
-3. [Screen 3 name] - Purpose, key elements, user actions
+**Key Design Assets Needed:**
 
-**User Flow Diagram:**
-[Describe the main user journey from entry to key action]
+For Tech/App:
+- Key screens/wireframes to design
+- User flow diagram
 
-**Design Priorities:**
-- Mobile-first or desktop-first?
-- Accessibility requirements
-- Brand personality (e.g., professional, playful, minimal)
+For F&B:
+- Menu design, packaging, signage
+- Social media templates, photography style
+
+For Fashion:
+- Lookbook/catalog style
+- Packaging, tags, labels
+- E-commerce product photography guidelines
+
+For Service:
+- Service brochure/one-pager
+- Booking interface (if applicable)
+- Customer communication templates
+
+For Hardware/Manufacturing:
+- Product renders and packaging design
+- User manual/quick start guide layout
+- Retail/e-commerce product photography
+- Explainer video storyboard
+
+For Hybrid:
+- Both digital assets (app screens) and physical assets (packaging, signage, etc.)
+
+**Brand Personality:**
+- Target aesthetic and customer perception
+- Differentiation from competitors visually
 ${outputRules}`,
     },
     {
@@ -246,17 +407,26 @@ ${outputRules}`,
 
 ${ideaContext}
 
-IMPORTANT: For the Skill Matrix and Required Skills, you MUST use skills from this exact list (pick the most relevant 6-8 skills):
+${businessTypeContext}
+
+IMPORTANT: For the Skill Matrix and Required Skills, you MUST use skills from this exact list (pick the most relevant 6-8 skills based on the DETECTED BUSINESS TYPE):
 
 OFFICIAL SKILLS LIST:
 ${officialSkills}
+
+NOTE: This list includes skills for ALL business types:
+- Tech/App: React, Node.js, Python, UI/UX Design, etc.
+- F&B: Food Safety & HACCP, Culinary Arts, Restaurant Operations, Menu Development, etc.
+- Fashion/Retail: Fashion Design, Merchandising, Sourcing & Procurement, Inventory Management, etc.
+- Service: Customer Service, Event Planning, Service Design, etc.
+- Manufacturing: Manufacturing Operations, Quality Control, Logistics, etc.
 
 Generate the following sections in clean markdown format:
 
 ## Required Skills
 
 <!-- SKILLS_JSON_START -->
-[List the exact skill names from the list above, comma-separated, e.g.: "React, Node.js, Python, UI/UX Design, Product Management"]
+[List the exact skill names from the list above, comma-separated. Choose skills APPROPRIATE to the business type, e.g., for F&B: "Food Safety & HACCP, Menu Development, Restaurant Operations, Marketing, Financial Modeling"]
 <!-- SKILLS_JSON_END -->
 
 ## Skill Matrix
@@ -267,10 +437,13 @@ Generate the following sections in clean markdown format:
 | [Exact skill from list] | Critical | Competent | [Brief reason] |
 | [Exact skill from list] | Important | Competent | [Brief reason] |
 
-Include 6-8 skills using EXACT names from the list above.
+Include 6-8 skills using EXACT names from the list above. Match skills to the business type.
 
 ## Ideal Co-Founder Profiles
 
+Adapt co-founder profiles based on business type:
+
+**For Tech/App:**
 ### Technical Co-Founder
 - Background: [specific experience needed]
 - Required Skills: [skills from the list above]
@@ -281,8 +454,52 @@ Include 6-8 skills using EXACT names from the list above.
 - Required Skills: [skills from the list above]
 - Where to find: [specific places on campus]
 
+**For F&B:**
+### Operations Co-Founder
+- Background: [culinary school, restaurant experience, food science, etc.]
+- Required Skills: [Food Safety & HACCP, Culinary Arts, Kitchen Management, etc.]
+- Where to find: [hospitality programs, culinary clubs, restaurant jobs]
+
+### Business Co-Founder
+- Background: [business/marketing experience, F&B industry knowledge]
+- Required Skills: [Marketing, Financial Modeling, Restaurant Operations, etc.]
+- Where to find: [business school, hospitality management programs]
+
+**For Fashion/Retail:**
+### Creative/Design Co-Founder
+- Background: [fashion design, textile, art school, etc.]
+- Required Skills: [Fashion Design, Trend Forecasting, Pattern Making, etc.]
+- Where to find: [design programs, fashion clubs, art departments]
+
+### Operations Co-Founder
+- Background: [retail, supply chain, e-commerce experience]
+- Required Skills: [Merchandising, Inventory Management, Sourcing & Procurement, etc.]
+- Where to find: [business school, retail internships]
+
+**For Service:**
+### Service Delivery Lead
+- Background: [relevant domain expertise]
+- Required Skills: [Customer Service, Service Design, relevant domain skills]
+- Where to find: [based on service type]
+
+**For Hardware/Manufacturing:**
+### Technical/Engineering Co-Founder
+- Background: [engineering, industrial design, electronics, mechanical engineering]
+- Required Skills: [Hardware, Manufacturing Operations, Product Design, 3D Printing, etc.]
+- Where to find: [engineering programs, maker spaces, robotics clubs]
+
+### Operations Co-Founder
+- Background: [supply chain, manufacturing, logistics experience]
+- Required Skills: [Supply Chain, Manufacturing Operations, Quality Control, Vendor Management]
+- Where to find: [business school, engineering management programs, industry internships]
+
+**For Hybrid:**
+Include relevant profiles from both Tech/App AND the physical business type
+
 ## First 3 Hires (Post-Founding)
-1. [Role 1] - Why first, key skills needed
+
+Adapt based on business type:
+1. [Role 1] - Why first, key skills needed (e.g., Chef for F&B, Developer for Tech, Designer for Fashion, Engineer for Hardware)
 2. [Role 2] - Dependencies
 3. [Role 3] - Growth stage
 
@@ -310,21 +527,21 @@ For optimal team matching, define the ideal co-founder/team member traits:
 
 ## Suggested Invite List
 
-Based on the required skills and personality profile, here are the types of people to invite:
+Based on the required skills and personality profile, here are the types of people to invite (ADAPT to business type):
 
-### Priority 1: Technical Co-Founder
+### Priority 1: [Primary Partner Role - based on business type]
+- **Profile**: [Specific major, year, background]
+- **Skills needed**: [List exact skills from the skill matrix]
+- **Where to find**: [Specific clubs, classes, events relevant to business type]
+- **Matching criteria**: [Personality traits, availability, interests]
+
+### Priority 2: [Secondary Partner Role - based on business type]
 - **Profile**: [Specific major, year, background]
 - **Skills needed**: [List exact skills from the skill matrix]
 - **Where to find**: [Specific clubs, classes, events]
 - **Matching criteria**: [Personality traits, availability, interests]
 
-### Priority 2: Business/Growth Lead
-- **Profile**: [Specific major, year, background]
-- **Skills needed**: [List exact skills from the skill matrix]
-- **Where to find**: [Specific clubs, classes, events]
-- **Matching criteria**: [Personality traits, availability, interests]
-
-### Priority 3: Designer/Product Person
+### Priority 3: [Third Priority Role - based on business type]
 - **Profile**: [Specific major, year, background]
 - **Skills needed**: [List exact skills from the skill matrix]
 - **Where to find**: [Specific clubs, classes, events]
@@ -338,33 +555,138 @@ ${outputRules}`,
 
 ${ideaContext}
 
-Generate the following sections in clean markdown format:
+${businessTypeContext}
+
+Generate the following sections in clean markdown format, ADAPTING metrics and strategies to the business type:
 
 ## Pre-Launch Checklist
+
+Adapt based on business type:
+
+**For Tech/App:**
 - Beta user recruitment strategy
 - Landing page essentials
 - Analytics setup
 - Legal/compliance basics
 
+**For F&B:**
+- Recipe testing and menu finalization
+- Food safety certifications and licenses
+- Supplier agreements finalized
+- Soft launch with friends & family
+- Photography for menu/social media
+
+**For Fashion/Retail:**
+- Sample production and quality check
+- Product photography and lookbook
+- E-commerce or retail setup
+- Inventory management system
+- Packaging and shipping solution
+
+**For Service:**
+- Service process documentation
+- Booking/scheduling system
+- Initial client acquisition strategy
+- Insurance and legal requirements
+
+**For Hardware/Manufacturing:**
+- Working prototype completed and tested
+- Manufacturing partner identified and quoted
+- Bill of materials (BOM) finalized
+- Certifications and compliance research (safety, regulatory)
+- Packaging design and fulfillment solution
+- Pre-order or crowdfunding campaign prepared
+
+**For Hybrid:**
+- Cover requirements from both digital and physical components
+- Integration testing between app and physical product/service
+
 ## Go-To-Market Strategy
-- Primary acquisition channel
-- Secondary acquisition channel
+
+Adapt channels based on business type:
+
+**For Tech/App:**
+- Primary digital acquisition channel
+- Secondary channel
 - Referral/viral loops
-- Content strategy
+- Content marketing strategy
+
+**For F&B:**
+- Location/delivery radius strategy
+- Food delivery platform partnerships (GrabFood, Foodpanda, etc.)
+- Social media presence (Instagram, TikTok for food content)
+- Local community engagement
+- Pop-up or food market events
+
+**For Fashion/Retail:**
+- E-commerce vs. physical retail strategy
+- Influencer/KOL partnerships
+- Pop-up shops and markets
+- Wholesale/consignment opportunities
+- Social media presence (Instagram, TikTok, Pinterest)
+
+**For Service:**
+- Referral programs
+- Partnership channels
+- Online booking/discovery platforms
+- Local marketing
+
+**For Hardware/Manufacturing:**
+- Crowdfunding platform strategy (Kickstarter, Indiegogo)
+- Pre-order campaigns and waitlists
+- Tech/product review outreach (blogs, YouTube)
+- Retail and distribution partnerships
+- Trade shows and maker fairs
+
+**For Hybrid:**
+- Combine strategies from both digital and physical components
+- Focus on integrated customer experience
 
 ## 12-Month Growth Roadmap
 
+Adapt metrics based on business type:
+
 | Month | Focus | Key Metric | Target |
 |-------|-------|------------|--------|
+
+**For Tech/App:**
 | 1-3 | Beta / MVP | Active Users | [Number] |
 | 4-6 | Retention | Churn Rate | <[X]% |
 | 7-9 | Monetization | Revenue | $[Amount] |
 | 10-12 | Scaling | Growth Rate | [X]% MoM |
 
+**For F&B:**
+| 1-3 | Soft Launch | Orders/Day | [Number] |
+| 4-6 | Consistency | Repeat Customers | [X]% |
+| 7-9 | Break-even | Food Cost % | <[X]% |
+| 10-12 | Expansion | Locations/Menu | [Target] |
+
+**For Fashion/Retail:**
+| 1-3 | First Collection | Units Sold | [Number] |
+| 4-6 | Retention | Repeat Purchase Rate | [X]% |
+| 7-9 | Inventory Health | Sell-through Rate | [X]% |
+| 10-12 | Expansion | New SKUs/Channels | [Target] |
+
+**For Service:**
+| 1-3 | Launch | Clients Served | [Number] |
+| 4-6 | Quality | NPS Score | [Target] |
+| 7-9 | Utilization | Booking Rate | [X]% |
+| 10-12 | Scaling | Revenue/Team Size | [Target] |
+
+**For Hardware/Manufacturing:**
+| 1-3 | Prototype | Working Prototypes | [Number] |
+| 4-6 | Pre-orders | Crowdfunding/Pre-orders | [Units] |
+| 7-9 | Production | Units Shipped | [Number] |
+| 10-12 | Scaling | Manufacturing Cost | -[X]% reduction |
+
+**For Hybrid:**
+Include metrics from both Tech/App AND the relevant physical business type
+
 ## Marketing Asset Briefs
-- Social media ad copy (3 variations)
+- Social media ad copy (3 variations tailored to business type)
 - Email sequence (Subject lines for 3 emails)
 - One-sentence pitch for different platforms
+- Visual content strategy (product photos, behind-the-scenes, user-generated content)
 ${outputRules}`,
     },
     {
