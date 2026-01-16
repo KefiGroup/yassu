@@ -664,21 +664,52 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                       )}
                     </CardContent>
                     {message.role === "assistant" && message.content && (
-                      <div className="px-3 pb-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 text-xs"
-                          onClick={() => copyToClipboard(message.content, message.id)}
-                          data-testid={`button-copy-${message.id}`}
-                        >
-                          {copiedId === message.id ? (
-                            <Check className="h-3 w-3 mr-1" />
-                          ) : (
-                            <Copy className="h-3 w-3 mr-1" />
+                      <div className="px-3 pb-3 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => copyToClipboard(message.content, message.id)}
+                            data-testid={`button-copy-${message.id}`}
+                          >
+                            {copiedId === message.id ? (
+                              <Check className="h-3 w-3 mr-1" />
+                            ) : (
+                              <Copy className="h-3 w-3 mr-1" />
+                            )}
+                            {copiedId === message.id ? "Copied!" : "Copy"}
+                          </Button>
+                          
+                          {copiedId === message.id && (
+                            <span className="text-xs text-muted-foreground animate-in fade-in">
+                              Now paste this into <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">Manus.im</a> to build your MVP
+                            </span>
                           )}
-                          Copy
-                        </Button>
+                        </div>
+                        
+                        {copiedId === message.id && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+                              onClick={() => window.open('https://manus.im', '_blank')}
+                              data-testid="button-open-manus-inline"
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Open Manus AI
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/portal/ideas/${ideaId}`)}
+                              data-testid="button-done-back-to-idea"
+                            >
+                              <ArrowLeft className="h-3 w-3 mr-1" />
+                              Done - Back to Idea
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </Card>
