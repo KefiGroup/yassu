@@ -1231,7 +1231,20 @@ Return valid JSON:
   app.get("/api/teams", async (req: Request, res: Response) => {
     try {
       const teams = await storage.getTeams(req.session.userId);
-      res.json(teams);
+      
+      // Get member counts for each team
+      const teamsWithCounts = await Promise.all(teams.map(async (team) => {
+        const members = await db.select()
+          .from(schema.teamMembers)
+          .where(eq(schema.teamMembers.teamId, team.id));
+        
+        return {
+          ...team,
+          memberCount: members.length + 1, // +1 for creator
+        };
+      }));
+      
+      res.json(teamsWithCounts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch teams" });
     }
