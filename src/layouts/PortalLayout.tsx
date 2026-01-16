@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -13,7 +13,19 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { User } from 'lucide-react';
+
+function ContentLoader() {
+  return (
+    <div className="space-y-4 p-4">
+      <Skeleton className="h-8 w-1/3" />
+      <Skeleton className="h-4 w-2/3" />
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-64 w-full" />
+    </div>
+  );
+}
 
 function isProfileIncomplete(profile: { bio: string | null; skills: string[]; interests: string[]; universityId: string | null; otherUniversity: string | null } | null): boolean {
   if (!profile) return true;
@@ -65,7 +77,9 @@ export function PortalLayout() {
         <div className="flex-1 flex flex-col">
           <PortalHeader />
           <main className="flex-1 p-6 overflow-auto">
-            <Outlet />
+            <Suspense fallback={<ContentLoader />}>
+              <Outlet />
+            </Suspense>
           </main>
         </div>
       </div>

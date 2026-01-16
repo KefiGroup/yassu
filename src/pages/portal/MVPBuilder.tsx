@@ -740,6 +740,20 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                   Tech stack
                 </Badge>
               </div>
+              
+              {messages.length > 1 && (
+                <div className="mb-3 p-3 bg-muted/50 rounded-lg border text-sm">
+                  <p className="font-medium flex items-center gap-2 mb-2">
+                    <Rocket className="h-4 w-4 text-primary" />
+                    Ready to build? Use Manus.AI to create your MVP
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
+                    <li>Click <strong>Copy</strong> on the AI response above</li>
+                    <li>Go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-mvp">manus.im</a> (create a free account if you don't have one)</li>
+                    <li>Paste the copied content and ask Manus to build your MVP</li>
+                  </ol>
+                </div>
+              )}
               <div className="flex gap-2">
                 <Textarea
                   value={input}

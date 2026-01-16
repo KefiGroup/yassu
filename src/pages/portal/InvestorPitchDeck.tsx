@@ -1027,6 +1027,17 @@ export default function InvestorPitchDeck() {
         </div>
       </div>
 
+      <div className="mb-4 p-4 bg-muted/50 rounded-lg border">
+        <p className="font-medium mb-2">How to create your pitch deck with Manus:</p>
+        <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+          <li>Click <strong>"Copy for Manus"</strong> above to copy your slide content</li>
+          <li>Click <strong>"Open Manus"</strong> or go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-deck">manus.im</a></li>
+          <li>Create a free account if you don't have one</li>
+          <li>Paste the copied content and ask Manus to design your pitch deck</li>
+          <li>Manus will create professional PowerPoint slides from your content</li>
+        </ol>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <ScrollArea className="h-[calc(100vh-280px)]">
