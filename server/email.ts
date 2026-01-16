@@ -726,16 +726,6 @@ export async function sendRequestAcceptedEmail(
                 You are now an official collaborator on the project. You can now access the project workspace, communicate with your new teammates, and start building together.
               </p>
               
-              <table role="presentation" style="margin: 30px 0;">
-                <tr>
-                  <td style="border-radius: 6px; background-color: #7c3aed;">
-                    <a href="${ideaLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
-                      Go to Project Workspace
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              
               <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
                 Need help? Reply to this email.
               </p>
