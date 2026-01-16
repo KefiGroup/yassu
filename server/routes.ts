@@ -135,25 +135,38 @@ export function registerRoutes(app: Express): void {
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
+      console.log(`[Login] Attempt for email: ${email}`);
       
       const user = await storage.getUserByEmail(email);
       if (!user) {
+        console.log(`[Login] User not found for email: ${email}`);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
       const valid = await bcrypt.compare(password, user.password);
       if (!valid) {
+        console.log(`[Login] Invalid password for user: ${user.id}`);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      req.session.userId = user.id;
-      // Explicitly save session before responding
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
-          return res.status(500).json({ error: 'Failed to save session' });
+      // Regenerate session to prevent session fixation
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          console.error('[Login] Session regenerate error:', regenerateErr);
+          return res.status(500).json({ error: 'Failed to create session' });
         }
-        res.json({ user: { id: user.id, email: user.email, fullName: user.fullName } });
+        
+        req.session.userId = user.id;
+        console.log(`[Login] Session created for user ${user.id} (${user.email}), session: ${req.session.id}`);
+        
+        // Explicitly save session before responding
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            return res.status(500).json({ error: 'Failed to save session' });
+          }
+          res.json({ user: { id: user.id, email: user.email, fullName: user.fullName } });
+        });
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -162,10 +175,23 @@ export function registerRoutes(app: Express): void {
   });
 
   app.post("/api/auth/logout", (req: Request, res: Response) => {
+    const sessionId = req.session.id;
+    const userId = req.session.userId;
+    console.log(`[Logout] Destroying session ${sessionId} for user ${userId}`);
+    
     req.session.destroy((err) => {
       if (err) {
+        console.error('[Logout] Failed to destroy session:', err);
         return res.status(500).json({ error: "Failed to logout" });
       }
+      // Clear the session cookie
+      res.clearCookie('connect.sid', {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
+      console.log(`[Logout] Session destroyed and cookie cleared`);
       res.json({ success: true });
     });
   });
