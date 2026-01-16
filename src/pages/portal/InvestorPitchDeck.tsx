@@ -202,14 +202,22 @@ export default function InvestorPitchDeck() {
           if (deck && deck.slides && deck.slides.length > 0) {
             setSlides(deck.slides);
             setMetricsValidation(deck.metricsValidation || []);
+            
+            const loadedContext = {
+              ...pitchContext,
+              startupName: idea?.title || pitchContext.startupName,
+              investorMode: deck.investorMode || pitchContext.investorMode,
+              deckType: deck.deckType || pitchContext.deckType,
+              targetRaise: deck.targetRaise || pitchContext.targetRaise,
+            };
+            
             if (deck.investorMode && deck.deckType) {
-              setPitchContext(prev => ({
-                ...prev,
-                investorMode: deck.investorMode,
-                deckType: deck.deckType,
-                targetRaise: deck.targetRaise || "",
-              }));
+              setPitchContext(loadedContext);
             }
+            
+            // Generate Manus export for loaded deck
+            generateManusExport(deck.slides, loadedContext);
+            
             setViewState("slides");
           }
         }
@@ -219,7 +227,7 @@ export default function InvestorPitchDeck() {
     };
     
     loadExistingDeck();
-  }, [ideaId]);
+  }, [ideaId, idea]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
