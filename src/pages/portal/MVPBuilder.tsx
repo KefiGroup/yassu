@@ -715,21 +715,47 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                 <div className="mb-4 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border border-primary/20">
                   <p className="font-semibold flex items-center gap-2 mb-3 text-primary">
                     <Rocket className="h-5 w-5" />
-                    Next Steps: Build Your MVP with Manus AI
+                    Next Steps: Build Your MVP
                   </p>
-                  <ol className="list-decimal list-inside space-y-2 text-sm mb-3">
-                    <li><strong>Copy your MVP plan</strong> - Click the Copy button on the AI response above</li>
-                    <li><strong>Open Manus</strong> - Go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium" data-testid="link-manus-mvp">manus.im</a> (create a free account if needed)</li>
-                    <li><strong>Paste and build</strong> - Paste your MVP specs and ask Manus to design your app instantly</li>
-                  </ol>
-                  <Button
-                    className="bg-gradient-to-r from-amber-500 to-orange-500 text-white"
-                    onClick={() => window.open('https://manus.im', '_blank')}
-                    data-testid="button-open-manus-mvp"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open Manus AI
-                  </Button>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Option 1: Manus AI */}
+                    <div className="p-3 bg-background rounded-lg border">
+                      <p className="font-medium mb-2 text-sm">Option 1: Build instantly with AI</p>
+                      <ol className="list-decimal list-inside space-y-1 text-xs text-muted-foreground mb-3">
+                        <li>Copy your MVP plan (button above)</li>
+                        <li>Go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-mvp">manus.im</a></li>
+                        <li>Paste and let AI design your app</li>
+                      </ol>
+                      <Button
+                        size="sm"
+                        className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+                        onClick={() => window.open('https://manus.im', '_blank')}
+                        data-testid="button-open-manus-mvp"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Open Manus AI
+                      </Button>
+                    </div>
+                    
+                    {/* Option 2: Other tools */}
+                    <div className="p-3 bg-background rounded-lg border">
+                      <p className="font-medium mb-2 text-sm">Option 2: Build with other tools</p>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Copy your MVP plan and use it with:
+                      </p>
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        <Badge variant="secondary" className="text-xs">Figma</Badge>
+                        <Badge variant="secondary" className="text-xs">Replit</Badge>
+                        <Badge variant="secondary" className="text-xs">Bubble</Badge>
+                        <Badge variant="secondary" className="text-xs">Webflow</Badge>
+                        <Badge variant="secondary" className="text-xs">Framer</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Or share with a developer to build from scratch.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
               
