@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,26 +8,78 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Bell, Shield, Eye, Trash2, Lock } from 'lucide-react';
+import { Bell, Shield, Eye, Trash2, Lock, Loader2 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function Settings() {
-  const { user, signOut } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const { toast } = useToast();
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [ideaUpdates, setIdeaUpdates] = useState(true);
   const [teamInvites, setTeamInvites] = useState(true);
   const [profileVisibility, setProfileVisibility] = useState(true);
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+  const [isSavingPrivacy, setIsSavingPrivacy] = useState(false);
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const handleSaveNotifications = () => {
-    toast({
-      title: 'Settings saved',
-      description: 'Your notification preferences have been updated.',
-    });
+  // Load preferences from profile
+  useEffect(() => {
+    if (profile) {
+      setEmailNotifications(profile.emailNotificationsEnabled ?? true);
+      setIdeaUpdates(profile.ideaUpdatesEnabled ?? true);
+      setTeamInvites(profile.teamInvitesEnabled ?? true);
+      setProfileVisibility(profile.profilePublic ?? true);
+    }
+  }, [profile]);
+
+  const handleSaveNotifications = async () => {
+    setIsSavingNotifications(true);
+    try {
+      await api.patch('/profile', {
+        emailNotificationsEnabled: emailNotifications,
+        ideaUpdatesEnabled: ideaUpdates,
+        teamInvitesEnabled: teamInvites,
+      });
+      await refreshProfile();
+      toast({
+        title: 'Settings saved',
+        description: 'Your notification preferences have been updated.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save notification preferences.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingNotifications(false);
+    }
+  };
+
+  const handleSavePrivacy = async () => {
+    setIsSavingPrivacy(true);
+    try {
+      await api.patch('/profile', {
+        profilePublic: profileVisibility,
+      });
+      await refreshProfile();
+      toast({
+        title: 'Settings saved',
+        description: 'Your privacy settings have been updated.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save privacy settings.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingPrivacy(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -174,7 +226,8 @@ export default function Settings() {
                 data-testid="switch-team-invites"
               />
             </div>
-            <Button onClick={handleSaveNotifications} data-testid="button-save-notifications">
+            <Button onClick={handleSaveNotifications} disabled={isSavingNotifications} data-testid="button-save-notifications">
+              {isSavingNotifications && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Preferences
             </Button>
           </CardContent>
@@ -213,6 +266,10 @@ export default function Settings() {
                 data-testid="switch-profile-visibility"
               />
             </div>
+            <Button onClick={handleSavePrivacy} disabled={isSavingPrivacy} data-testid="button-save-privacy">
+              {isSavingPrivacy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Privacy Settings
+            </Button>
           </CardContent>
         </Card>
       </motion.div>

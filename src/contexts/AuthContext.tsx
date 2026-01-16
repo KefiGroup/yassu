@@ -28,6 +28,10 @@ interface Profile {
   bio: string | null;
   verificationStatus: 'pending' | 'verified' | 'rejected';
   onboardingCompleted: boolean;
+  emailNotificationsEnabled: boolean | null;
+  ideaUpdatesEnabled: boolean | null;
+  teamInvitesEnabled: boolean | null;
+  profilePublic: boolean | null;
 }
 
 interface UserRole {
