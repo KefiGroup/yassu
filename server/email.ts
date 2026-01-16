@@ -1264,3 +1264,104 @@ export async function sendWeeklyDigestEmail(
     html,
   });
 }
+
+export async function sendAnnouncementEmail(
+  email: string, 
+  fullName: string,
+  announcement: {
+    title: string;
+    message: string;
+    type: 'maintenance' | 'event' | 'update' | 'general';
+    priority: 'normal' | 'important' | 'urgent';
+  }
+): Promise<void> {
+  const typeLabels: Record<string, string> = {
+    maintenance: 'Platform Maintenance',
+    event: 'Event Announcement',
+    update: 'Platform Update',
+    general: 'Announcement',
+  };
+  
+  const priorityColors: Record<string, string> = {
+    urgent: '#dc2626',
+    important: '#f59e0b',
+    normal: '#7c3aed',
+  };
+  
+  const typeLabel = typeLabels[announcement.type] || 'Announcement';
+  const priorityColor = priorityColors[announcement.priority] || '#7c3aed';
+  const displayName = fullName || 'Yassu User';
+  
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${announcement.title} - Yassu</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
+            </td>
+          </tr>
+          
+          <!-- Type Badge -->
+          <tr>
+            <td style="padding: 0 40px; text-align: center;">
+              <span style="display: inline-block; padding: 6px 16px; background-color: ${priorityColor}; color: white; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">
+                ${typeLabel}${announcement.priority === 'urgent' ? ' - URGENT' : announcement.priority === 'important' ? ' - Important' : ''}
+              </span>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 30px 40px 40px;">
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Hi ${displayName},
+              </p>
+              
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 22px; font-weight: 600;">${announcement.title}</h2>
+              
+              <div style="margin: 0 0 30px; color: #4a4a4a; font-size: 16px; line-height: 1.8; white-space: pre-wrap;">${announcement.message}</div>
+              
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="${APP_URL}/portal" style="display: inline-block; padding: 14px 32px; background-color: #7c3aed; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  Go to Yassu Portal
+                </a>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f8f8f8; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0; text-align: center; color: #888; font-size: 14px;">
+                You're receiving this because you're a registered member of Yassu.
+              </p>
+              <p style="margin: 10px 0 0; text-align: center; color: #888; font-size: 12px;">
+                &copy; ${new Date().getFullYear()} Yassu. Empowering student founders.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `${announcement.priority === 'urgent' ? '[URGENT] ' : ''}${announcement.title} - Yassu`,
+    html,
+  });
+}

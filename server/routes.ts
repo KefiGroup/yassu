@@ -3117,7 +3117,7 @@ Return valid JSON:
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      const { title, message, type, priority, startsAt, endsAt, isActive } = req.body;
+      const { title, message, type, priority, startsAt, endsAt, isActive, sendEmail } = req.body;
 
       if (!title || !message) {
         return res.status(400).json({ error: "Title and message are required" });
@@ -3135,6 +3135,57 @@ Return valid JSON:
           createdBy: req.session.userId,
         })
         .returning();
+      
+      // Send email to all users if sendEmail is true
+      if (sendEmail) {
+        try {
+          const { sendAnnouncementEmail } = await import('./email');
+          
+          // Get all users with email addresses
+          const users = await db.select({
+            id: schema.users.id,
+            email: schema.users.email,
+          }).from(schema.users);
+          
+          // Get profiles for user names
+          const profiles = await db.select({
+            userId: schema.profiles.userId,
+            fullName: schema.profiles.fullName,
+          }).from(schema.profiles);
+          
+          const profileMap = new Map(profiles.map(p => [p.userId, p.fullName]));
+          
+          // Send emails in batches to avoid rate limiting
+          const emailPromises = users.map(async (user) => {
+            if (user.email) {
+              try {
+                await sendAnnouncementEmail(
+                  user.email,
+                  profileMap.get(user.id) || '',
+                  {
+                    title,
+                    message,
+                    type: type || 'general',
+                    priority: priority || 'normal',
+                  }
+                );
+              } catch (emailError) {
+                console.error(`Failed to send announcement email to ${user.email}:`, emailError);
+              }
+            }
+          });
+          
+          // Process emails but don't block the response
+          Promise.allSettled(emailPromises).then((results) => {
+            const sent = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+            console.log(`Announcement emails: ${sent} sent, ${failed} failed out of ${users.length} users`);
+          });
+          
+        } catch (emailSetupError) {
+          console.error('Failed to setup announcement email sending:', emailSetupError);
+        }
+      }
       
       res.json(announcement);
     } catch (error) {
