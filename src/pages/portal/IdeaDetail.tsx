@@ -2210,14 +2210,17 @@ export default function IdeaDetail() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <div className="bg-muted/30 rounded-lg p-4">
+              <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-4 border border-primary/20">
+                <p className="text-sm font-medium mb-3">
+                  Use <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-intro">Manus.im</a> to create stunning pitch deck slides instantly - an AI agent that designs professional PowerPoint presentations from your content.
+                </p>
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
                   How It Works
                 </h4>
                 <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                   <li><strong>Generate your deck</strong> - Use our AI to create 10 professional slides with content and speaker notes</li>
-                  <li><strong>Build with Manus AI</strong> - Export your content to Manus and create polished slides</li>
+                  <li><strong>Build with Manus AI</strong> - Copy your slides, go to <a href="https://manus.im" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-manus-pitch-step2">manus.im</a>, create a free account if needed, and paste to design your deck</li>
                   <li><strong>Prepare your pitch</strong> - Get AI coaching on delivery, objections, and Q&A</li>
                 </ol>
               </div>
