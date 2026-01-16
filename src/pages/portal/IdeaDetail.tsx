@@ -66,6 +66,7 @@ import {
   Mic,
   Copy,
   Check,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -1712,6 +1713,28 @@ export default function IdeaDetail() {
               </div>
             </div>
           </CardHeader>
+          
+          {/* AI Disclaimer Banner */}
+          {businessPlan?.status === 'completed' && (
+            <div className="mx-6 mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>
+                  <strong>Note:</strong> AI-generated business plans are a starting point, not foolproof. 
+                  We highly recommend inviting{' '}
+                  <button 
+                    onClick={() => navigate('/portal/advisors')}
+                    className="text-primary underline hover:no-underline font-medium"
+                    data-testid="link-advisors-disclaimer"
+                  >
+                    Yassu Advisors
+                  </button>
+                  {' '}to mentor and refine your strategy.
+                </span>
+              </p>
+            </div>
+          )}
+          
           <CardContent>
             {!businessPlan ? (
               <div className="text-center py-8">
