@@ -301,7 +301,10 @@ Let me know if you'd like to learn more about the project!`;
 
   useEffect(() => {
     async function fetchTeam() {
-      if (!id) return;
+      if (!id || id === 'new') {
+        setLoading(false);
+        return;
+      }
       
       try {
         const response = await fetch(`/api/teams/${id}`, { credentials: 'include' });
@@ -363,6 +366,54 @@ Let me know if you'd like to learn more about the project!`;
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Handle "new" team creation - redirect to My Projects to create from an idea
+  if (id === 'new') {
+    return (
+      <div className="p-6 max-w-2xl mx-auto">
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate('/portal/teams')} 
+          className="mb-6"
+          data-testid="button-back-to-teams"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Teams
+        </Button>
+        
+        <Card>
+          <CardHeader className="text-center">
+            <Users className="w-16 h-16 text-primary/30 mx-auto mb-4" />
+            <CardTitle>Create a Team</CardTitle>
+            <CardDescription>
+              Teams are created from your startup ideas. Each idea can have its own team with collaborators and advisors.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+              To create a team, go to one of your ideas and click "Create My Team" or "Form Team" in the journey tracker.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <Button 
+                onClick={() => navigate('/portal/projects')}
+                data-testid="button-go-to-projects"
+              >
+                <Lightbulb className="w-4 h-4 mr-2" />
+                Go to My Projects
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/portal/ideas')}
+                data-testid="button-browse-ideas"
+              >
+                Browse Ideas
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
