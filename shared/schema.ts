@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, uuid, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -394,6 +394,23 @@ export const teamMessageReads = pgTable("team_message_reads", {
   lastReadAt: timestamp("last_read_at").defaultNow().notNull(),
 });
 
+export const announcementTypeEnum = pgEnum("announcement_type", ["maintenance", "event", "update", "general"]);
+export const announcementPriorityEnum = pgEnum("announcement_priority", ["normal", "important", "urgent"]);
+
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  message: text("message").notNull(),
+  type: announcementTypeEnum("type").default("general").notNull(),
+  priority: announcementPriorityEnum("priority").default("normal").notNull(),
+  startsAt: timestamp("starts_at").defaultNow().notNull(),
+  endsAt: timestamp("ends_at"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIdeaSchema = createInsertSchema(ideas).omit({ id: true, createdAt: true, updatedAt: true });
@@ -403,6 +420,7 @@ export const insertUniversitySchema = createInsertSchema(universities).omit({ id
 export const insertConnectionSchema = createInsertSchema(connections).omit({ id: true, createdAt: true, respondedAt: true });
 export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({ id: true, createdAt: true, read: true });
 export const insertTeamMessageSchema = createInsertSchema(teamMessages).omit({ id: true, createdAt: true });
+export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -428,6 +446,8 @@ export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;
 export type TeamMessage = typeof teamMessages.$inferSelect;
 export type InsertTeamMessage = z.infer<typeof insertTeamMessageSchema>;
 export type TeamMessageRead = typeof teamMessageReads.$inferSelect;
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";

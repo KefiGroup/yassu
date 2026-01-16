@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { PortalSidebar } from '@/components/portal/PortalSidebar';
 import { PortalHeader } from '@/components/portal/PortalHeader';
+import { AnnouncementBanner } from '@/components/portal/AnnouncementBanner';
 import {
   Dialog,
   DialogContent,
@@ -76,6 +77,7 @@ export function PortalLayout() {
         <PortalSidebar />
         <div className="flex-1 flex flex-col">
           <PortalHeader />
+          <AnnouncementBanner />
           <main className="flex-1 p-6 overflow-auto">
             <Suspense fallback={<ContentLoader />}>
               <Outlet />

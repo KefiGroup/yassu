@@ -3016,6 +3016,163 @@ Return valid JSON:
     }
   });
 
+  // ============ Announcements API ============
+  
+  // Get active announcements (public)
+  app.get("/api/announcements", async (req: Request, res: Response) => {
+    try {
+      const now = new Date();
+      const announcements = await db.select()
+        .from(schema.announcements)
+        .where(
+          and(
+            eq(schema.announcements.isActive, true),
+            sql`${schema.announcements.startsAt} <= ${now}`,
+            or(
+              sql`${schema.announcements.endsAt} IS NULL`,
+              sql`${schema.announcements.endsAt} > ${now}`
+            )
+          )
+        )
+        .orderBy(desc(schema.announcements.priority), desc(schema.announcements.createdAt));
+      
+      res.json(announcements);
+    } catch (error) {
+      console.error("Get announcements error:", error);
+      res.status(500).json({ error: "Failed to get announcements" });
+    }
+  });
+
+  // Get all announcements (admin only)
+  app.get("/api/admin/announcements", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const announcements = await db.select()
+        .from(schema.announcements)
+        .orderBy(desc(schema.announcements.createdAt));
+      
+      res.json(announcements);
+    } catch (error) {
+      console.error("Get admin announcements error:", error);
+      res.status(500).json({ error: "Failed to get announcements" });
+    }
+  });
+
+  // Create announcement (admin only)
+  app.post("/api/admin/announcements", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { title, message, type, priority, startsAt, endsAt, isActive } = req.body;
+
+      if (!title || !message) {
+        return res.status(400).json({ error: "Title and message are required" });
+      }
+
+      const [announcement] = await db.insert(schema.announcements)
+        .values({
+          title,
+          message,
+          type: type || 'general',
+          priority: priority || 'normal',
+          startsAt: startsAt ? new Date(startsAt) : new Date(),
+          endsAt: endsAt ? new Date(endsAt) : null,
+          isActive: isActive !== false,
+          createdBy: req.session.userId,
+        })
+        .returning();
+      
+      res.json(announcement);
+    } catch (error) {
+      console.error("Create announcement error:", error);
+      res.status(500).json({ error: "Failed to create announcement" });
+    }
+  });
+
+  // Update announcement (admin only)
+  app.patch("/api/admin/announcements/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const announcementId = parseInt(req.params.id);
+      const { title, message, type, priority, startsAt, endsAt, isActive } = req.body;
+
+      const updateData: any = { updatedAt: new Date() };
+      if (title !== undefined) updateData.title = title;
+      if (message !== undefined) updateData.message = message;
+      if (type !== undefined) updateData.type = type;
+      if (priority !== undefined) updateData.priority = priority;
+      if (startsAt !== undefined) updateData.startsAt = new Date(startsAt);
+      if (endsAt !== undefined) updateData.endsAt = endsAt ? new Date(endsAt) : null;
+      if (isActive !== undefined) updateData.isActive = isActive;
+
+      const [announcement] = await db.update(schema.announcements)
+        .set(updateData)
+        .where(eq(schema.announcements.id, announcementId))
+        .returning();
+      
+      if (!announcement) {
+        return res.status(404).json({ error: "Announcement not found" });
+      }
+
+      res.json(announcement);
+    } catch (error) {
+      console.error("Update announcement error:", error);
+      res.status(500).json({ error: "Failed to update announcement" });
+    }
+  });
+
+  // Delete announcement (admin only)
+  app.delete("/api/admin/announcements/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const announcementId = parseInt(req.params.id);
+
+      const [deleted] = await db.delete(schema.announcements)
+        .where(eq(schema.announcements.id, announcementId))
+        .returning();
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Announcement not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete announcement error:", error);
+      res.status(500).json({ error: "Failed to delete announcement" });
+    }
+  });
+
   // Direct Messages API
   
   // Search users for messaging (returns all users with connection status)

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2 } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -44,6 +44,20 @@ interface AdminUser {
   fullName: string | null;
 }
 
+interface Announcement {
+  id: number;
+  title: string;
+  message: string;
+  type: 'maintenance' | 'event' | 'update' | 'general';
+  priority: 'normal' | 'important' | 'urgent';
+  startsAt: string;
+  endsAt: string | null;
+  isActive: boolean;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -51,10 +65,22 @@ export default function Admin() {
   const [profiles, setProfiles] = useState<ProfileWithBadges[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [ideaSearchQuery, setIdeaSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    message: '',
+    type: 'general' as 'maintenance' | 'event' | 'update' | 'general',
+    priority: 'normal' as 'normal' | 'important' | 'urgent',
+    startsAt: new Date().toISOString().slice(0, 16),
+    endsAt: '',
+    isActive: true,
+  });
 
   useEffect(() => {
     async function checkAdmin() {
@@ -72,15 +98,17 @@ export default function Admin() {
           return;
         }
         
-        const [profilesData, ideasData, adminsData] = await Promise.all([
+        const [profilesData, ideasData, adminsData, announcementsData] = await Promise.all([
           apiRequest<ProfileWithBadges[]>('/admin/profiles'),
           apiRequest<Idea[]>('/admin/ideas'),
-          apiRequest<AdminUser[]>('/admin/admins')
+          apiRequest<AdminUser[]>('/admin/admins'),
+          apiRequest<Announcement[]>('/admin/announcements')
         ]);
         
         setProfiles(profilesData);
         setIdeas(ideasData);
         setAdmins(adminsData);
+        setAnnouncements(announcementsData);
       } catch (error) {
         console.error('Admin check failed:', error);
         navigate('/portal');
@@ -257,6 +285,152 @@ export default function Admin() {
     }
   };
 
+  const resetAnnouncementForm = () => {
+    setAnnouncementForm({
+      title: '',
+      message: '',
+      type: 'general',
+      priority: 'normal',
+      startsAt: new Date().toISOString().slice(0, 16),
+      endsAt: '',
+      isActive: true,
+    });
+    setEditingAnnouncement(null);
+    setShowAnnouncementForm(false);
+  };
+
+  const handleEditAnnouncement = (announcement: Announcement) => {
+    setEditingAnnouncement(announcement);
+    setAnnouncementForm({
+      title: announcement.title,
+      message: announcement.message,
+      type: announcement.type,
+      priority: announcement.priority,
+      startsAt: new Date(announcement.startsAt).toISOString().slice(0, 16),
+      endsAt: announcement.endsAt ? new Date(announcement.endsAt).toISOString().slice(0, 16) : '',
+      isActive: announcement.isActive,
+    });
+    setShowAnnouncementForm(true);
+  };
+
+  const handleSaveAnnouncement = async () => {
+    if (!announcementForm.title.trim() || !announcementForm.message.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Title and message are required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setActionLoading('save-announcement');
+    try {
+      const payload = {
+        ...announcementForm,
+        endsAt: announcementForm.endsAt || null,
+      };
+
+      if (editingAnnouncement) {
+        await apiRequest(`/admin/announcements/${editingAnnouncement.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        });
+        toast({
+          title: 'Announcement Updated',
+          description: 'The announcement has been updated successfully.',
+        });
+      } else {
+        await apiRequest('/admin/announcements', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        toast({
+          title: 'Announcement Created',
+          description: 'The announcement has been created successfully.',
+        });
+      }
+
+      const announcementsData = await apiRequest<Announcement[]>('/admin/announcements');
+      setAnnouncements(announcementsData);
+      resetAnnouncementForm();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save announcement.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) {
+      return;
+    }
+
+    setActionLoading(`delete-announcement-${id}`);
+    try {
+      await apiRequest(`/admin/announcements/${id}`, {
+        method: 'DELETE',
+      });
+
+      const announcementsData = await apiRequest<Announcement[]>('/admin/announcements');
+      setAnnouncements(announcementsData);
+      
+      toast({
+        title: 'Announcement Deleted',
+        description: 'The announcement has been deleted.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete announcement.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleAnnouncementActive = async (announcement: Announcement) => {
+    setActionLoading(`toggle-announcement-${announcement.id}`);
+    try {
+      await apiRequest(`/admin/announcements/${announcement.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: !announcement.isActive }),
+      });
+
+      const announcementsData = await apiRequest<Announcement[]>('/admin/announcements');
+      setAnnouncements(announcementsData);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to toggle announcement.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const getAnnouncementTypeIcon = (type: string) => {
+    switch (type) {
+      case 'maintenance': return <Wrench className="w-4 h-4" />;
+      case 'event': return <Calendar className="w-4 h-4" />;
+      case 'update': return <Info className="w-4 h-4" />;
+      default: return <Bell className="w-4 h-4" />;
+    }
+  };
+
+  const getAnnouncementPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+      case 'important': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+      default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+    }
+  };
+
   const filteredProfiles = profiles.filter((profile) =>
     (profile.fullName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (profile.email?.toLowerCase() || '').includes(searchQuery.toLowerCase())
@@ -320,6 +494,10 @@ export default function Admin() {
           <TabsTrigger value="admins" className="gap-2" data-testid="tab-admins">
             <UserCog className="w-4 h-4" />
             Admin Access
+          </TabsTrigger>
+          <TabsTrigger value="announcements" className="gap-2" data-testid="tab-announcements">
+            <Megaphone className="w-4 h-4" />
+            Announcements
           </TabsTrigger>
         </TabsList>
 
@@ -654,6 +832,224 @@ export default function Admin() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="announcements">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Megaphone className="w-5 h-5" />
+                    Platform Announcements
+                  </CardTitle>
+                  <CardDescription>
+                    Communicate maintenance schedules, events, and updates to all users.
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => {
+                    resetAnnouncementForm();
+                    setShowAnnouncementForm(true);
+                  }}
+                  data-testid="button-new-announcement"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Announcement
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {showAnnouncementForm && (
+                <Card className="border-primary/50">
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      {editingAnnouncement ? 'Edit Announcement' : 'Create Announcement'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Title</label>
+                      <Input
+                        placeholder="Announcement title..."
+                        value={announcementForm.title}
+                        onChange={(e) => setAnnouncementForm(prev => ({ ...prev, title: e.target.value }))}
+                        data-testid="input-announcement-title"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Message</label>
+                      <textarea
+                        className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        placeholder="Announcement message..."
+                        value={announcementForm.message}
+                        onChange={(e) => setAnnouncementForm(prev => ({ ...prev, message: e.target.value }))}
+                        data-testid="input-announcement-message"
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Type</label>
+                        <select
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          value={announcementForm.type}
+                          onChange={(e) => setAnnouncementForm(prev => ({ ...prev, type: e.target.value as any }))}
+                          data-testid="select-announcement-type"
+                        >
+                          <option value="general">General</option>
+                          <option value="event">Event</option>
+                          <option value="update">Update</option>
+                          <option value="maintenance">Maintenance</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Priority</label>
+                        <select
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          value={announcementForm.priority}
+                          onChange={(e) => setAnnouncementForm(prev => ({ ...prev, priority: e.target.value as any }))}
+                          data-testid="select-announcement-priority"
+                        >
+                          <option value="normal">Normal</option>
+                          <option value="important">Important</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Starts At</label>
+                        <Input
+                          type="datetime-local"
+                          value={announcementForm.startsAt}
+                          onChange={(e) => setAnnouncementForm(prev => ({ ...prev, startsAt: e.target.value }))}
+                          data-testid="input-announcement-starts-at"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Ends At (optional)</label>
+                        <Input
+                          type="datetime-local"
+                          value={announcementForm.endsAt}
+                          onChange={(e) => setAnnouncementForm(prev => ({ ...prev, endsAt: e.target.value }))}
+                          data-testid="input-announcement-ends-at"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="announcement-active"
+                        checked={announcementForm.isActive}
+                        onChange={(e) => setAnnouncementForm(prev => ({ ...prev, isActive: e.target.checked }))}
+                        className="h-4 w-4 rounded border-input"
+                        data-testid="checkbox-announcement-active"
+                      />
+                      <label htmlFor="announcement-active" className="text-sm font-medium">
+                        Active (visible to users)
+                      </label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleSaveAnnouncement}
+                        disabled={actionLoading === 'save-announcement'}
+                        data-testid="button-save-announcement"
+                      >
+                        {actionLoading === 'save-announcement' ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : null}
+                        {editingAnnouncement ? 'Update' : 'Create'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={resetAnnouncementForm}
+                        data-testid="button-cancel-announcement"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="space-y-3">
+                {announcements.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Megaphone className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>No announcements yet</p>
+                  </div>
+                ) : (
+                  announcements.map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      className={`p-4 rounded-lg border ${announcement.isActive ? 'bg-card' : 'bg-muted/50 opacity-70'}`}
+                      data-testid={`announcement-${announcement.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            {getAnnouncementTypeIcon(announcement.type)}
+                            <h4 className="font-semibold">{announcement.title}</h4>
+                            <Badge className={getAnnouncementPriorityColor(announcement.priority)}>
+                              {announcement.priority}
+                            </Badge>
+                            <Badge variant={announcement.isActive ? 'default' : 'secondary'}>
+                              {announcement.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">{announcement.message}</p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>Starts: {new Date(announcement.startsAt).toLocaleString()}</span>
+                            {announcement.endsAt && (
+                              <span>Ends: {new Date(announcement.endsAt).toLocaleString()}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleAnnouncementActive(announcement)}
+                            disabled={actionLoading === `toggle-announcement-${announcement.id}`}
+                            data-testid={`button-toggle-announcement-${announcement.id}`}
+                          >
+                            {actionLoading === `toggle-announcement-${announcement.id}` ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : announcement.isActive ? (
+                              'Deactivate'
+                            ) : (
+                              'Activate'
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditAnnouncement(announcement)}
+                            data-testid={`button-edit-announcement-${announcement.id}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteAnnouncement(announcement.id)}
+                            disabled={actionLoading === `delete-announcement-${announcement.id}`}
+                            data-testid={`button-delete-announcement-${announcement.id}`}
+                          >
+                            {actionLoading === `delete-announcement-${announcement.id}` ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

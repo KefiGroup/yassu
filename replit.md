@@ -18,7 +18,14 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
 - **AI Business Analysis**: AI-powered workflows generate and refine multi-section business plans, with inline editing capabilities for founders. Business plans are auto-populated and editable via markdown.
 - **Team Formation & Collaboration**: Features for finding co-founders, advisors, and ambassadors based on skills and interests. Includes a connection system (like LinkedIn) for users to build their network, send team invitations, and manage join requests.
 - **Collaborator Marketplace**: A dedicated section to discover and filter platform users by roles, skills, interests, clubs, and universities, with clickable profiles.
-- **Admin Dashboard**: A unified interface for administrators to manage badges (Ambassador, Advisor), view all ideas (including private ones), and grant/revoke admin privileges.
+- **Admin Dashboard**: A unified interface for administrators to manage badges (Ambassador, Advisor), view all ideas (including private ones), grant/revoke admin privileges, and create platform announcements.
+- **Platform Announcements**: System for admins to communicate with all users. Features include:
+  - Four announcement types: Maintenance, Event, Update, General
+  - Three priority levels: Normal, Important, Urgent
+  - Scheduled start and end dates for time-limited announcements
+  - Banner bar at top of portal for active announcements (dismissible for non-urgent)
+  - Integration with notification dropdown showing all active announcements
+  - Full CRUD management in Admin panel
 - **Direct Messaging**: Full messaging system with conversation threads, real-time UI, and email notifications for new messages.
 - **Notification System**: Email notifications for connection requests, team invitations, new messages, and weekly digests.
 - **Journey Progress Tracker**: Visual progress tracker for each idea's development stages with independent milestone completion. Each step (Post Idea, Business Plan, Find Advisors, Form Team, Build MVP, Yassu Foundry, Seek Funding) can be completed in any order without sequential dependencies. Features dashed connecting lines to indicate non-linear paths and ring-style in-progress indicators.
