@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -162,8 +163,8 @@ const planSections = [
 
 // Journey steps now support independent completion - each milestone can be achieved in any order
 const journeySteps = [
-  { id: 1, title: 'Post Idea', icon: PenLine, description: 'Share your startup idea', segment: 'idea' },
-  { id: 2, title: 'Business Plan', icon: Brain, description: 'Generate with Yassu AI', segment: 'businessPlan' },
+  { id: 1, title: 'Post Idea', icon: PenLine, description: 'Share your startup idea', segment: 'idea', instructions: 'You can always come back here to improve your idea manually or with AI improvement by clicking "Improve My Idea"' },
+  { id: 2, title: 'Business Plan', icon: Brain, description: 'Generate with Yassu AI', segment: 'businessPlan', instructions: 'To regenerate: Go to Idea Overview > Improve your idea manually or with AI > Click "Regenerate" to create an improved business plan' },
   { id: 3, title: 'Find Advisors', icon: Users, description: 'Get expert guidance', segment: 'team' },
   { id: 4, title: 'Form Team', icon: Users2, description: 'Build your founding team', segment: 'team' },
   { id: 5, title: 'Build MVP', icon: Wrench, description: 'Develop your product', segment: 'mvp' },
@@ -1463,36 +1464,51 @@ export default function IdeaDetail() {
                   const isCompleted = status === 'completed';
                   const isInProgress = status === 'in_progress';
                   
+                  const stepButton = (
+                    <button
+                      onClick={() => scrollToSegment(step.segment)}
+                      className="flex flex-col items-center gap-1 group cursor-pointer"
+                      data-testid={`journey-step-${step.id}`}
+                    >
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:scale-110 group-hover:shadow-md ${
+                          isCompleted
+                            ? 'bg-primary text-primary-foreground'
+                            : isInProgress
+                            ? 'bg-primary/20 text-primary ring-2 ring-primary ring-offset-2'
+                            : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
+                        }`}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : (
+                          <StepIcon className="w-5 h-5" />
+                        )}
+                      </div>
+                      <span className={`text-xs text-center w-20 transition-colors ${
+                        isCompleted ? 'text-foreground font-medium' : 
+                        isInProgress ? 'text-primary font-medium' : 
+                        'text-muted-foreground group-hover:text-foreground'
+                      }`}>
+                        {step.title}
+                      </span>
+                    </button>
+                  );
+                  
                   return (
                     <div key={step.id} className="flex items-center">
-                      <button
-                        onClick={() => scrollToSegment(step.segment)}
-                        className="flex flex-col items-center gap-1 group cursor-pointer"
-                        data-testid={`journey-step-${step.id}`}
-                      >
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:scale-110 group-hover:shadow-md ${
-                            isCompleted
-                              ? 'bg-primary text-primary-foreground'
-                              : isInProgress
-                              ? 'bg-primary/20 text-primary ring-2 ring-primary ring-offset-2'
-                              : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
-                          }`}
-                        >
-                          {isCompleted ? (
-                            <CheckCircle className="w-5 h-5" />
-                          ) : (
-                            <StepIcon className="w-5 h-5" />
-                          )}
-                        </div>
-                        <span className={`text-xs text-center w-20 transition-colors ${
-                          isCompleted ? 'text-foreground font-medium' : 
-                          isInProgress ? 'text-primary font-medium' : 
-                          'text-muted-foreground group-hover:text-foreground'
-                        }`}>
-                          {step.title}
-                        </span>
-                      </button>
+                      {step.instructions ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {stepButton}
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-xs text-center">
+                            <p className="text-sm">{step.instructions}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        stepButton
+                      )}
                       {index < journeySteps.length - 1 && (
                         <div 
                           className="w-12 h-0.5 mx-3 flex-shrink-0 border-t-2 border-dashed border-muted" 
