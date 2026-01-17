@@ -953,9 +953,9 @@ Return valid JSON:
         }
       }
       
-      // Send confirmation email to the idea creator
+      // Send confirmation email to the idea creator (if notifications enabled)
       const creator = await storage.getProfile(req.session.userId);
-      if (creator?.email) {
+      if (creator?.email && creator?.emailNotificationsEnabled !== false) {
         const { sendIdeaCreatedEmail } = await import('./email');
         sendIdeaCreatedEmail(
           creator.email,
@@ -1973,8 +1973,8 @@ Return valid JSON:
         });
         console.log("Team invitation email sent to:", invitee.email);
         
-        // Send confirmation email to the inviter (sender)
-        if (inviter.email && (role === 'advisor' || message?.toLowerCase().includes('advisor'))) {
+        // Send confirmation email to the inviter (sender) if notifications enabled
+        if (inviter.email && inviter.emailNotificationsEnabled !== false && (role === 'advisor' || message?.toLowerCase().includes('advisor'))) {
           sendAdvisorRequestSentEmail(
             inviter.email,
             inviter.fullName || 'there',
@@ -2646,9 +2646,9 @@ Return valid JSON:
         link: '/portal/collaborators',
       });
       
-      // Send email to the requester
+      // Send email to the requester (if notifications enabled)
       const requester = await storage.getProfile(connection.requesterId);
-      if (requester?.email) {
+      if (requester?.email && requester?.emailNotificationsEnabled !== false) {
         const { sendCollaboratorRequestAcceptedEmail } = await import('./email');
         sendCollaboratorRequestAcceptedEmail(
           requester.email,
