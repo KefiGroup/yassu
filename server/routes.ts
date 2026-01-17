@@ -726,8 +726,8 @@ export function registerRoutes(app: Express): void {
 
     try {
       // Check if user is admin
-      const user = await storage.getUser(req.session.userId);
-      if (!user?.isAdmin) {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
         return res.status(403).json({ error: "Admin access required" });
       }
 
