@@ -463,8 +463,27 @@ export const eventRsvps = pgTable("event_rsvps", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const bookingStatusEnum = pgEnum("booking_status", ["pending", "approved", "rejected", "cancelled"]);
+
+export const roadshowBookings = pgTable("roadshow_bookings", {
+  id: serial("id").primaryKey(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  eventId: integer("event_id").references(() => foundryEvents.id, { onDelete: "set null" }),
+  preferredDate: timestamp("preferred_date"),
+  pitchDuration: integer("pitch_duration").default(10),
+  message: text("message"),
+  status: bookingStatusEnum("status").default("pending").notNull(),
+  adminNotes: text("admin_notes"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertFoundryEventSchema = createInsertSchema(foundryEvents).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEventRsvpSchema = createInsertSchema(eventRsvps).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRoadshowBookingSchema = createInsertSchema(roadshowBookings).omit({ id: true, createdAt: true, updatedAt: true, reviewedAt: true });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true, updatedAt: true });
@@ -510,6 +529,8 @@ export type FoundryEvent = typeof foundryEvents.$inferSelect;
 export type InsertFoundryEvent = z.infer<typeof insertFoundryEventSchema>;
 export type EventRsvp = typeof eventRsvps.$inferSelect;
 export type InsertEventRsvp = z.infer<typeof insertEventRsvpSchema>;
+export type RoadshowBooking = typeof roadshowBookings.$inferSelect;
+export type InsertRoadshowBooking = z.infer<typeof insertRoadshowBookingSchema>;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";
