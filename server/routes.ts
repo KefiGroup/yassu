@@ -829,14 +829,15 @@ export function registerRoutes(app: Express): void {
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      // Find all featured ideas without cover images
+      // Find all featured ideas - regenerate all of them
       const featuredIdeas = await db
         .select()
         .from(schema.ideas)
         .where(eq(schema.ideas.isFeatured, true));
 
-      const ideasNeedingImages = featuredIdeas.filter(idea => !idea.coverImage);
-      console.log(`[CoverImage] Found ${ideasNeedingImages.length} featured ideas needing cover images`);
+      // Regenerate ALL featured ideas (not just ones without images)
+      const ideasNeedingImages = featuredIdeas;
+      console.log(`[CoverImage] Found ${ideasNeedingImages.length} featured ideas, regenerating all cover images`);
 
       const results = [];
       for (const idea of ideasNeedingImages) {
