@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -333,6 +333,33 @@ export default function Admin() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to update featured status.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRegenerateCovers = async () => {
+    setActionLoading('regenerate-covers');
+    try {
+      const result = await apiRequest<{ message: string; results: Array<{ id: string; title: string; success: boolean; coverImage?: string }> }>('/admin/ideas/regenerate-covers', {
+        method: 'POST',
+      });
+      
+      const successCount = result.results.filter(r => r.success).length;
+      toast({
+        title: 'Cover Images Generated',
+        description: `Successfully generated ${successCount} of ${result.results.length} cover images.`,
+      });
+      
+      // Refresh the ideas list
+      const ideasData = await apiRequest<Idea[]>('/admin/ideas');
+      setIdeas(ideasData);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to regenerate cover images.',
         variant: 'destructive',
       });
     } finally {
@@ -797,13 +824,30 @@ export default function Admin() {
         <TabsContent value="ideas">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="w-5 h-5" />
-                All Ideas ({ideas.length})
-              </CardTitle>
-              <CardDescription>
-                View all ideas on the platform, including private ones.
-              </CardDescription>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5" />
+                    All Ideas ({ideas.length})
+                  </CardTitle>
+                  <CardDescription>
+                    View all ideas on the platform, including private ones.
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleRegenerateCovers}
+                  disabled={actionLoading === 'regenerate-covers'}
+                  data-testid="button-regenerate-covers"
+                >
+                  {actionLoading === 'regenerate-covers' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                  )}
+                  Regenerate Cover Images
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
