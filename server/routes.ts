@@ -64,6 +64,24 @@ const avatarUpload = multer({
   },
 });
 
+// Document upload for business plans (PDF/DOCX)
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/msword"
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type. Only PDF and DOCX files are allowed."));
+    }
+  },
+});
+
 declare module "express-session" {
   interface SessionData {
     userId?: number;
@@ -468,6 +486,67 @@ export function registerRoutes(app: Express): void {
 
   // Serve uploaded files
   app.use("/uploads", express.static(uploadDir));
+
+  // Upload and parse business plan document (PDF/DOCX)
+  app.post("/api/documents/parse-business-plan", documentUpload.single("document"), async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      let extractedText = "";
+      const fileBuffer = req.file.buffer;
+      const mimeType = req.file.mimetype;
+
+      if (mimeType === "application/pdf") {
+        // Parse PDF
+        const pdfParse = (await import("pdf-parse")).default;
+        const pdfData = await pdfParse(fileBuffer);
+        extractedText = pdfData.text;
+      } else if (
+        mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        mimeType === "application/msword"
+      ) {
+        // Parse DOCX
+        const mammoth = await import("mammoth");
+        const result = await mammoth.extractRawText({ buffer: fileBuffer });
+        extractedText = result.value;
+      }
+
+      if (!extractedText || extractedText.trim().length < 50) {
+        return res.status(400).json({ 
+          error: "Could not extract enough text from the document. Please ensure it contains readable text." 
+        });
+      }
+
+      // Clean up the extracted text
+      extractedText = extractedText
+        .replace(/\s+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+      // Limit to reasonable size for AI processing
+      if (extractedText.length > 50000) {
+        extractedText = extractedText.substring(0, 50000) + "\n\n[Document truncated due to length...]";
+      }
+
+      res.json({ 
+        success: true, 
+        content: extractedText,
+        fileName: req.file.originalname,
+        fileSize: req.file.size
+      });
+    } catch (error) {
+      console.error("Document parsing error:", error);
+      res.status(500).json({ 
+        error: "Failed to parse document. Please try a different file or format." 
+      });
+    }
+  });
 
   app.post("/api/profiles/match-skills", async (req: Request, res: Response) => {
     if (!req.session.userId) {
