@@ -17,6 +17,7 @@ export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [ideaUpdates, setIdeaUpdates] = useState(true);
   const [teamInvites, setTeamInvites] = useState(true);
+  const [messageNotifications, setMessageNotifications] = useState(true);
   const [profileVisibility, setProfileVisibility] = useState(true);
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
   const [isSavingPrivacy, setIsSavingPrivacy] = useState(false);
@@ -32,6 +33,7 @@ export default function Settings() {
       setEmailNotifications(profile.emailNotificationsEnabled ?? true);
       setIdeaUpdates(profile.ideaUpdatesEnabled ?? true);
       setTeamInvites(profile.teamInvitesEnabled ?? true);
+      setMessageNotifications(profile.messageNotificationsEnabled ?? true);
       setProfileVisibility(profile.profilePublic ?? true);
     }
   }, [profile]);
@@ -43,6 +45,7 @@ export default function Settings() {
         emailNotificationsEnabled: emailNotifications,
         ideaUpdatesEnabled: ideaUpdates,
         teamInvitesEnabled: teamInvites,
+        messageNotificationsEnabled: messageNotifications,
       });
       await refreshProfile();
       toast({
@@ -224,6 +227,21 @@ export default function Settings() {
                 checked={teamInvites}
                 onCheckedChange={setTeamInvites}
                 data-testid="switch-team-invites"
+              />
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="message-notifications">Direct Messages</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receive email notifications when someone sends you a message
+                </p>
+              </div>
+              <Switch
+                id="message-notifications"
+                checked={messageNotifications}
+                onCheckedChange={setMessageNotifications}
+                data-testid="switch-message-notifications"
               />
             </div>
             <Button onClick={handleSaveNotifications} disabled={isSavingNotifications} data-testid="button-save-notifications">

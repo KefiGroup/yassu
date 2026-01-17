@@ -111,6 +111,7 @@ export const profiles = pgTable("profiles", {
   emailNotificationsEnabled: boolean("email_notifications_enabled").default(true),
   ideaUpdatesEnabled: boolean("idea_updates_enabled").default(true),
   teamInvitesEnabled: boolean("team_invites_enabled").default(true),
+  messageNotificationsEnabled: boolean("message_notifications_enabled").default(true),
   profilePublic: boolean("profile_public").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

@@ -31,6 +31,7 @@ interface Profile {
   emailNotificationsEnabled: boolean | null;
   ideaUpdatesEnabled: boolean | null;
   teamInvitesEnabled: boolean | null;
+  messageNotificationsEnabled: boolean | null;
   profilePublic: boolean | null;
 }
 

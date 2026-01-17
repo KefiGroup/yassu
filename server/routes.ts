@@ -3787,11 +3787,12 @@ Return valid JSON:
           link: `/portal/messages`,
         });
         
-        // Only send email if recipient has notifications enabled
+        // Only send email if recipient has message notifications enabled
         const recipientEmail = recipientProfile[0]?.email || recipient[0]?.email;
-        const notificationsEnabled = recipientProfile[0]?.emailNotificationsEnabled !== false;
+        const messageNotificationsEnabled = recipientProfile[0]?.messageNotificationsEnabled !== false;
+        const generalNotificationsEnabled = recipientProfile[0]?.emailNotificationsEnabled !== false;
         
-        if (recipientEmail && notificationsEnabled) {
+        if (recipientEmail && messageNotificationsEnabled && generalNotificationsEnabled) {
           const { sendNewMessageEmail } = await import('./email');
           await sendNewMessageEmail(
             recipientEmail,
