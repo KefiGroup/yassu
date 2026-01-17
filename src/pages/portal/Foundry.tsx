@@ -64,7 +64,8 @@ interface RoadshowBooking {
   ideaId: string;
   ideaTitle: string;
   eventId: number | null;
-  preferredDate: string | null;
+  eventTitle: string | null;
+  eventStartTime: string | null;
   pitchDuration: number;
   message: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
@@ -90,10 +91,15 @@ export default function Foundry() {
 
   const [bookingForm, setBookingForm] = useState({
     ideaId: "",
-    preferredDate: "",
+    selectedEventId: "",
     pitchDuration: "10",
     message: "",
   });
+
+  // Filter for upcoming roadshow events that creators can book
+  const upcomingRoadshows = events.filter(
+    (e) => e.eventType === "roadshow" && new Date(e.startTime) > new Date()
+  ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -161,7 +167,7 @@ export default function Foundry() {
         method: "POST",
         body: JSON.stringify({
           ideaId: data.ideaId,
-          preferredDate: data.preferredDate || null,
+          eventId: data.selectedEventId ? parseInt(data.selectedEventId) : null,
           pitchDuration: parseInt(data.pitchDuration),
           message: data.message || null,
         }),
@@ -171,7 +177,7 @@ export default function Foundry() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/roadshow-bookings"] });
       setBookingDialogOpen(false);
-      setBookingForm({ ideaId: "", preferredDate: "", pitchDuration: "10", message: "" });
+      setBookingForm({ ideaId: "", selectedEventId: "", pitchDuration: "10", message: "" });
       toast({ title: "Booking Requested", description: "Your roadshow request has been submitted for approval." });
     },
     onError: (error: any) => {
@@ -695,14 +701,28 @@ export default function Foundry() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="preferred-date">Preferred Date (Optional)</Label>
-                      <Input
-                        id="preferred-date"
-                        type="date"
-                        value={bookingForm.preferredDate}
-                        onChange={(e) => setBookingForm({ ...bookingForm, preferredDate: e.target.value })}
-                        data-testid="input-preferred-date"
-                      />
+                      <Label htmlFor="preferred-roadshow">Preferred Roadshow</Label>
+                      {upcomingRoadshows.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-2">
+                          No upcoming roadshows available. Check back later or contact an admin.
+                        </p>
+                      ) : (
+                        <Select
+                          value={bookingForm.selectedEventId}
+                          onValueChange={(value) => setBookingForm({ ...bookingForm, selectedEventId: value })}
+                        >
+                          <SelectTrigger data-testid="select-preferred-roadshow">
+                            <SelectValue placeholder="Select a roadshow date" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {upcomingRoadshows.map((event) => (
+                              <SelectItem key={event.id} value={String(event.id)}>
+                                {event.title} - {format(new Date(event.startTime), "MMM d, yyyy h:mm a")}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="pitch-duration">Pitch Duration (minutes)</Label>
@@ -766,9 +786,10 @@ export default function Foundry() {
                             <p className="text-sm text-muted-foreground">
                               Requested: {new Date(booking.createdAt).toLocaleDateString()}
                             </p>
-                            {booking.preferredDate && (
+                            {booking.eventId && booking.eventTitle && (
                               <p className="text-sm text-muted-foreground">
-                                Preferred: {new Date(booking.preferredDate).toLocaleDateString()}
+                                Roadshow: {booking.eventTitle}
+                                {booking.eventStartTime && ` - ${format(new Date(booking.eventStartTime), "MMM d, yyyy")}`}
                               </p>
                             )}
                           </div>

@@ -98,7 +98,8 @@ interface RoadshowBooking {
   userFullName: string | null;
   userEmail: string | null;
   eventId: number | null;
-  preferredDate: string | null;
+  eventTitle: string | null;
+  eventStartTime: string | null;
   pitchDuration: number;
   message: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
@@ -1502,9 +1503,10 @@ export default function Admin() {
                               </p>
                               <div className="flex flex-wrap gap-2 mt-2">
                                 <Badge variant="outline">{booking.pitchDuration} min pitch</Badge>
-                                {booking.preferredDate && (
+                                {booking.eventId && booking.eventTitle && (
                                   <Badge variant="secondary">
-                                    Preferred: {new Date(booking.preferredDate).toLocaleDateString()}
+                                    Roadshow: {booking.eventTitle}
+                                    {booking.eventStartTime && ` - ${new Date(booking.eventStartTime).toLocaleDateString()}`}
                                   </Badge>
                                 )}
                                 <Badge variant="outline">

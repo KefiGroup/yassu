@@ -5659,7 +5659,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         ideaId: schema.roadshowBookings.ideaId,
         ideaTitle: schema.ideas.title,
         eventId: schema.roadshowBookings.eventId,
-        preferredDate: schema.roadshowBookings.preferredDate,
+        eventTitle: schema.foundryEvents.title,
+        eventStartTime: schema.foundryEvents.startTime,
         pitchDuration: schema.roadshowBookings.pitchDuration,
         message: schema.roadshowBookings.message,
         status: schema.roadshowBookings.status,
@@ -5668,6 +5669,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       })
         .from(schema.roadshowBookings)
         .innerJoin(schema.ideas, eq(schema.roadshowBookings.ideaId, schema.ideas.id))
+        .leftJoin(schema.foundryEvents, eq(schema.roadshowBookings.eventId, schema.foundryEvents.id))
         .where(eq(schema.roadshowBookings.userId, req.session.userId))
         .orderBy(desc(schema.roadshowBookings.createdAt));
 
@@ -5685,7 +5687,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     }
 
     try {
-      const { ideaId, preferredDate, pitchDuration, message } = req.body;
+      const { ideaId, eventId, pitchDuration, message } = req.body;
 
       if (!ideaId) {
         return res.status(400).json({ error: "Idea ID is required" });
@@ -5732,7 +5734,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         .values({
           ideaId,
           userId: req.session.userId,
-          preferredDate: preferredDate ? new Date(preferredDate) : null,
+          eventId: eventId || null,
           pitchDuration: pitchDuration || 10,
           message: message || null,
           status: "pending",
@@ -5802,7 +5804,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         userFullName: schema.profiles.fullName,
         userEmail: schema.users.email,
         eventId: schema.roadshowBookings.eventId,
-        preferredDate: schema.roadshowBookings.preferredDate,
+        eventTitle: schema.foundryEvents.title,
+        eventStartTime: schema.foundryEvents.startTime,
         pitchDuration: schema.roadshowBookings.pitchDuration,
         message: schema.roadshowBookings.message,
         status: schema.roadshowBookings.status,
@@ -5815,6 +5818,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         .innerJoin(schema.ideas, eq(schema.roadshowBookings.ideaId, schema.ideas.id))
         .innerJoin(schema.users, eq(schema.roadshowBookings.userId, schema.users.id))
         .innerJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+        .leftJoin(schema.foundryEvents, eq(schema.roadshowBookings.eventId, schema.foundryEvents.id))
         .orderBy(desc(schema.roadshowBookings.createdAt));
 
       res.json(bookings);
