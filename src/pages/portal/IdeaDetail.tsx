@@ -2237,7 +2237,7 @@ export default function IdeaDetail() {
         </Card>
       </motion.div>
 
-      {/* SEGMENT: Yassu Foundry - Placeholder for future */}
+      {/* SEGMENT: Yassu Foundry - Events and Roadshows */}
       <motion.div
         ref={foundryRef}
         initial={{ opacity: 0, y: 20 }}
@@ -2262,10 +2262,14 @@ export default function IdeaDetail() {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
                 <Rocket className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">Coming Soon</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                The Yassu Foundry program will provide mentorship, resources, and support to help you scale your startup.
+              <h3 className="font-semibold text-lg mb-2">Join Monthly Roadshows</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-4">
+                Participate in monthly roadshows, workshops, and networking events to accelerate your startup journey.
               </p>
+              <Button onClick={() => navigate('/portal/foundry')} data-testid="button-view-foundry-events">
+                <Rocket className="w-4 h-4 mr-2" />
+                View Upcoming Events
+              </Button>
             </div>
           </CardContent>
         </Card>

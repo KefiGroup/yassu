@@ -429,6 +429,41 @@ export const suggestions = pgTable("suggestions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Foundry Events (Roadshows, Workshops, etc.)
+export const eventTypeEnum = pgEnum("event_type", ["roadshow", "workshop", "office_hours", "demo_day", "networking", "other"]);
+export const rsvpStatusEnum = pgEnum("rsvp_status", ["going", "maybe", "not_going"]);
+
+export const foundryEvents = pgTable("foundry_events", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  eventType: eventTypeEnum("event_type").default("roadshow").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  timezone: text("timezone").default("America/New_York"),
+  zoomMeetingId: text("zoom_meeting_id"),
+  zoomJoinUrl: text("zoom_join_url"),
+  zoomStartUrl: text("zoom_start_url"),
+  zoomPasscode: text("zoom_passcode"),
+  capacity: integer("capacity"),
+  isPublic: boolean("is_public").default(true).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const eventRsvps = pgTable("event_rsvps", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").references(() => foundryEvents.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  status: rsvpStatusEnum("status").default("going").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertFoundryEventSchema = createInsertSchema(foundryEvents).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEventRsvpSchema = createInsertSchema(eventRsvps).omit({ id: true, createdAt: true, updatedAt: true });
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIdeaSchema = createInsertSchema(ideas).omit({ id: true, createdAt: true, updatedAt: true });
@@ -469,6 +504,10 @@ export type Announcement = typeof announcements.$inferSelect;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type Suggestion = typeof suggestions.$inferSelect;
 export type InsertSuggestion = z.infer<typeof insertSuggestionSchema>;
+export type FoundryEvent = typeof foundryEvents.$inferSelect;
+export type InsertFoundryEvent = z.infer<typeof insertFoundryEventSchema>;
+export type EventRsvp = typeof eventRsvps.$inferSelect;
+export type InsertEventRsvp = z.infer<typeof insertEventRsvpSchema>;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";

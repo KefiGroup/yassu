@@ -29,6 +29,7 @@ import {
   Briefcase,
   Settings,
   DollarSign,
+  Rocket,
 } from 'lucide-react';
 
 const mainNavItems = [
@@ -43,6 +44,7 @@ const marketplaceNavItems = [
   { title: 'Ambassadors', url: '/portal/ambassadors', icon: GraduationCap },
   { title: 'Advisors', url: '/portal/advisors', icon: Briefcase },
   { title: 'Resources', url: '/portal/resources', icon: BookOpen },
+  { title: 'Foundry', url: '/portal/foundry', icon: Rocket },
   { title: 'Messages', url: '/portal/messages', icon: MessageSquare },
 ];
 

@@ -4992,4 +4992,432 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       res.status(500).json({ error: "Failed to process your question" });
     }
   });
+
+  // ==========================================
+  // FOUNDRY EVENTS ROUTES
+  // ==========================================
+
+  // Get all upcoming events
+  app.get("/api/foundry/events", async (req: Request, res: Response) => {
+    try {
+      const events = await db.select()
+        .from(schema.foundryEvents)
+        .where(sql`start_time >= NOW()`)
+        .orderBy(schema.foundryEvents.startTime);
+
+      // Get RSVP counts for each event
+      const eventsWithRsvps = await Promise.all(events.map(async (event) => {
+        const rsvps = await db.select()
+          .from(schema.eventRsvps)
+          .where(and(
+            eq(schema.eventRsvps.eventId, event.id),
+            eq(schema.eventRsvps.status, "going")
+          ));
+        
+        let userRsvp = null;
+        if (req.session.userId) {
+          const [rsvp] = await db.select()
+            .from(schema.eventRsvps)
+            .where(and(
+              eq(schema.eventRsvps.eventId, event.id),
+              eq(schema.eventRsvps.userId, req.session.userId)
+            ));
+          userRsvp = rsvp?.status || null;
+        }
+
+        return {
+          ...event,
+          rsvpCount: rsvps.length,
+          userRsvp,
+        };
+      }));
+
+      res.json(eventsWithRsvps);
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
+      res.status(500).json({ error: "Failed to fetch events" });
+    }
+  });
+
+  // Get single event
+  app.get("/api/foundry/events/:id", async (req: Request, res: Response) => {
+    try {
+      const [event] = await db.select()
+        .from(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, parseInt(req.params.id)));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      const rsvps = await db.select({
+        id: schema.eventRsvps.id,
+        userId: schema.eventRsvps.userId,
+        status: schema.eventRsvps.status,
+        userName: schema.profiles.fullName,
+        avatarUrl: schema.profiles.avatarUrl,
+      })
+        .from(schema.eventRsvps)
+        .leftJoin(schema.profiles, eq(schema.eventRsvps.userId, schema.profiles.userId))
+        .where(eq(schema.eventRsvps.eventId, event.id));
+
+      let userRsvp = null;
+      if (req.session.userId) {
+        const [rsvp] = await db.select()
+          .from(schema.eventRsvps)
+          .where(and(
+            eq(schema.eventRsvps.eventId, event.id),
+            eq(schema.eventRsvps.userId, req.session.userId)
+          ));
+        userRsvp = rsvp?.status || null;
+      }
+
+      res.json({ ...event, rsvps, userRsvp });
+    } catch (error) {
+      console.error("Failed to fetch event:", error);
+      res.status(500).json({ error: "Failed to fetch event" });
+    }
+  });
+
+  // Create event (admin only)
+  app.post("/api/foundry/events", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const [admin] = await db.select()
+        .from(schema.userRoles)
+        .where(and(
+          eq(schema.userRoles.userId, req.session.userId),
+          eq(schema.userRoles.role, "admin")
+        ));
+
+      if (!admin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { title, description, eventType, startTime, endTime, timezone, capacity, createZoomMeeting, manualZoomLink } = req.body;
+
+      let zoomMeetingId = null;
+      let zoomJoinUrl = manualZoomLink || null;
+      let zoomStartUrl = null;
+      let zoomPasscode = null;
+
+      // Create Zoom meeting if requested and credentials are configured
+      if (createZoomMeeting) {
+        const { zoomService } = await import("./services/zoom");
+        if (zoomService.isConfigured()) {
+          try {
+            const startDate = new Date(startTime);
+            const endDate = endTime ? new Date(endTime) : null;
+            const duration = endDate ? Math.ceil((endDate.getTime() - startDate.getTime()) / 60000) : 60;
+
+            const meeting = await zoomService.createMeeting({
+              topic: title,
+              startTime: startDate,
+              duration,
+              timezone: timezone || "America/New_York",
+              agenda: description || "",
+            });
+
+            zoomMeetingId = String(meeting.id);
+            zoomJoinUrl = meeting.join_url;
+            zoomStartUrl = meeting.start_url;
+            zoomPasscode = meeting.password;
+          } catch (zoomError) {
+            console.error("Failed to create Zoom meeting:", zoomError);
+            // Continue without Zoom - we'll just save without the meeting link
+          }
+        }
+      }
+
+      const [event] = await db.insert(schema.foundryEvents).values({
+        title,
+        description,
+        eventType: eventType || "roadshow",
+        startTime: new Date(startTime),
+        endTime: endTime ? new Date(endTime) : null,
+        timezone: timezone || "America/New_York",
+        zoomMeetingId,
+        zoomJoinUrl,
+        zoomStartUrl,
+        zoomPasscode,
+        capacity: capacity || null,
+        isPublic: true,
+        createdBy: req.session.userId,
+      }).returning();
+
+      res.json(event);
+    } catch (error) {
+      console.error("Failed to create event:", error);
+      res.status(500).json({ error: "Failed to create event" });
+    }
+  });
+
+  // Update event (admin only)
+  app.patch("/api/foundry/events/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const [admin] = await db.select()
+        .from(schema.userRoles)
+        .where(and(
+          eq(schema.userRoles.userId, req.session.userId),
+          eq(schema.userRoles.role, "admin")
+        ));
+
+      if (!admin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const eventId = parseInt(req.params.id);
+      const { title, description, eventType, startTime, endTime, timezone, capacity, zoomJoinUrl } = req.body;
+
+      const [event] = await db.update(schema.foundryEvents)
+        .set({
+          title,
+          description,
+          eventType,
+          startTime: startTime ? new Date(startTime) : undefined,
+          endTime: endTime ? new Date(endTime) : undefined,
+          timezone,
+          capacity,
+          zoomJoinUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.foundryEvents.id, eventId))
+        .returning();
+
+      res.json(event);
+    } catch (error) {
+      console.error("Failed to update event:", error);
+      res.status(500).json({ error: "Failed to update event" });
+    }
+  });
+
+  // Delete event (admin only)
+  app.delete("/api/foundry/events/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const [admin] = await db.select()
+        .from(schema.userRoles)
+        .where(and(
+          eq(schema.userRoles.userId, req.session.userId),
+          eq(schema.userRoles.role, "admin")
+        ));
+
+      if (!admin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const eventId = parseInt(req.params.id);
+
+      // Delete Zoom meeting if exists
+      const [event] = await db.select()
+        .from(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      if (event?.zoomMeetingId) {
+        const { zoomService } = await import("./services/zoom");
+        if (zoomService.isConfigured()) {
+          try {
+            await zoomService.deleteMeeting(event.zoomMeetingId);
+          } catch (e) {
+            console.error("Failed to delete Zoom meeting:", e);
+          }
+        }
+      }
+
+      await db.delete(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete event:", error);
+      res.status(500).json({ error: "Failed to delete event" });
+    }
+  });
+
+  // RSVP to event
+  app.post("/api/foundry/events/:id/rsvp", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const eventId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!["going", "maybe", "not_going"].includes(status)) {
+        return res.status(400).json({ error: "Invalid RSVP status" });
+      }
+
+      // Check if event exists
+      const [event] = await db.select()
+        .from(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Check capacity if going
+      if (status === "going" && event.capacity) {
+        const goingCount = await db.select()
+          .from(schema.eventRsvps)
+          .where(and(
+            eq(schema.eventRsvps.eventId, eventId),
+            eq(schema.eventRsvps.status, "going")
+          ));
+
+        if (goingCount.length >= event.capacity) {
+          return res.status(400).json({ error: "Event is at capacity" });
+        }
+      }
+
+      // Upsert RSVP
+      const existingRsvp = await db.select()
+        .from(schema.eventRsvps)
+        .where(and(
+          eq(schema.eventRsvps.eventId, eventId),
+          eq(schema.eventRsvps.userId, req.session.userId)
+        ));
+
+      if (existingRsvp.length > 0) {
+        await db.update(schema.eventRsvps)
+          .set({ status, updatedAt: new Date() })
+          .where(eq(schema.eventRsvps.id, existingRsvp[0].id));
+      } else {
+        await db.insert(schema.eventRsvps).values({
+          eventId,
+          userId: req.session.userId,
+          status,
+        });
+      }
+
+      res.json({ success: true, status });
+    } catch (error) {
+      console.error("Failed to RSVP:", error);
+      res.status(500).json({ error: "Failed to RSVP" });
+    }
+  });
+
+  // Send event invite emails (admin only)
+  app.post("/api/foundry/events/:id/send-invites", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const [admin] = await db.select()
+        .from(schema.userRoles)
+        .where(and(
+          eq(schema.userRoles.userId, req.session.userId),
+          eq(schema.userRoles.role, "admin")
+        ));
+
+      if (!admin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const eventId = parseInt(req.params.id);
+
+      // Get event
+      const [event] = await db.select()
+        .from(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Get all users with email notifications enabled (respecting preferences)
+      const usersToNotify = await db.select({
+        email: schema.users.email,
+        fullName: schema.profiles.fullName,
+      })
+        .from(schema.users)
+        .innerJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+        .where(eq(schema.profiles.emailNotificationsEnabled, true));
+
+      // Send emails using Resend
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
+      const eventDate = new Date(event.startTime).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      const eventTime = new Date(event.startTime).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short',
+      });
+
+      let sentCount = 0;
+      for (const user of usersToNotify) {
+        if (!user.email) continue;
+        
+        try {
+          await resend.emails.send({
+            from: "Yassu <noreply@yassu.ai>",
+            to: user.email,
+            subject: `You're Invited: ${event.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #7c3aed;">You're Invited to a Yassu Foundry Event!</h2>
+                <h3>${event.title}</h3>
+                <p><strong>Date:</strong> ${eventDate}</p>
+                <p><strong>Time:</strong> ${eventTime}</p>
+                ${event.description ? `<p>${event.description}</p>` : ''}
+                ${event.zoomJoinUrl ? `
+                  <p style="margin-top: 20px;">
+                    <a href="${event.zoomJoinUrl}" 
+                       style="background-color: #7c3aed; color: white; padding: 12px 24px; 
+                              text-decoration: none; border-radius: 6px; display: inline-block;">
+                      Join Zoom Meeting
+                    </a>
+                  </p>
+                ` : ''}
+                <p style="margin-top: 20px;">
+                  <a href="https://yassu.ai/portal/foundry" 
+                     style="color: #7c3aed;">View all events and RSVP</a>
+                </p>
+                <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;" />
+                <p style="font-size: 12px; color: #666;">
+                  This email was sent by Yassu. You can manage your notification preferences in Settings.
+                </p>
+              </div>
+            `,
+          });
+          sentCount++;
+        } catch (emailError) {
+          console.error(`Failed to send email to ${user.email}:`, emailError);
+        }
+      }
+
+      res.json({ success: true, sentCount });
+    } catch (error) {
+      console.error("Failed to send invites:", error);
+      res.status(500).json({ error: "Failed to send invites" });
+    }
+  });
+
+  // Check if Zoom is configured
+  app.get("/api/foundry/zoom-status", async (req: Request, res: Response) => {
+    const { zoomService } = await import("./services/zoom");
+    res.json({ configured: zoomService.isConfigured() });
+  });
 }
