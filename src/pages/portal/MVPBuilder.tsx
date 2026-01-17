@@ -742,7 +742,7 @@ Be opinionated. Cut anything that's overkill for MVP.`;
           <div className="p-4 border-t bg-background">
             <div className="max-w-3xl mx-auto">
               {/* Next Steps - Prominent instructions after MVP is generated */}
-              {messages.length > 1 && (
+              {messages.length >= 1 && (
                 <div className="mb-4 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border border-primary/20">
                   <p className="font-semibold flex items-center gap-2 mb-3 text-primary">
                     <Rocket className="h-5 w-5" />
