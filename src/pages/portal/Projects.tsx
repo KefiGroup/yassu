@@ -4,7 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import { Lightbulb, Plus, Calendar, ArrowRight } from 'lucide-react';
+import { Lightbulb, Plus, Calendar, ArrowRight, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface Idea {
   id: string;
@@ -42,8 +53,12 @@ const getStageNumber = (stage: string | null | undefined): number => {
 
 export default function Projects() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ideaToDelete, setIdeaToDelete] = useState<Idea | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetch('/api/my-ideas', { credentials: 'include' })
@@ -54,6 +69,44 @@ export default function Projects() {
       })
       .catch(() => setIsLoading(false));
   }, []);
+
+  const handleDeleteClick = (e: React.MouseEvent, idea: Idea) => {
+    e.stopPropagation();
+    setIdeaToDelete(idea);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!ideaToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/ideas/${ideaToDelete.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to delete idea');
+      }
+      
+      setIdeas(ideas.filter(idea => idea.id !== ideaToDelete.id));
+      toast({
+        title: 'Idea Deleted',
+        description: 'Your idea has been permanently deleted.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete the idea. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setIdeaToDelete(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -131,9 +184,20 @@ export default function Projects() {
                       <span>{idea.createdAt ? new Date(idea.createdAt).toLocaleDateString() : 'Recently'}</span>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="w-full">
-                    View Details <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      View Details <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => handleDeleteClick(e, idea)}
+                      data-testid={`button-delete-idea-${idea.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -158,6 +222,43 @@ export default function Projects() {
           </Button>
         </motion.div>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Delete Idea Permanently
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                Are you sure you want to delete <strong>"{ideaToDelete?.title}"</strong>?
+              </p>
+              <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <div className="text-sm text-destructive">
+                  <strong>Warning:</strong> This action cannot be undone. Your idea, business plan, pitch deck, and all associated data will be permanently deleted.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {isDeleting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Deleting...</>
+              ) : (
+                <><Trash2 className="w-4 h-4 mr-2" /> Delete Permanently</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
