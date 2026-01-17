@@ -14,8 +14,32 @@ import { trackReferral, getUserReferrals, getUserReferralStats, getAllReferrals,
 import { getPipelineStats, getPipelineIdeas } from "./pipeline";
 import ideaInterestsRouter from "./idea-interests";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
+import { generateImageBuffer } from "./replit_integrations/image/client";
 
 const objectStorageService = new ObjectStorageService();
+
+// Helper function to generate AI cover image for an idea
+async function generateIdeaCoverImage(ideaId: string, title: string, problem: string): Promise<string | null> {
+  try {
+    // Create a prompt for generating a startup/business concept image
+    const prompt = `A modern, professional, abstract illustration representing a startup concept: "${title}". The visual should be clean, minimalist, and business-appropriate with soft gradients and geometric shapes. Style: tech startup, innovation, entrepreneurship. Colors: professional purples, blues, and warm accents. No text or words in the image.`;
+    
+    // Generate the image
+    const imageBuffer = await generateImageBuffer(prompt, "512x512");
+    
+    // Upload to object storage
+    const fileName = `idea-covers/${ideaId}-${Date.now()}.png`;
+    await objectStorageService.upload(fileName, imageBuffer, "image/png");
+    
+    // Get the public URL
+    const publicUrl = await objectStorageService.getPublicUrl(fileName);
+    
+    return publicUrl;
+  } catch (error) {
+    console.error("Error generating cover image:", error);
+    return null;
+  }
+}
 
 // Stage order for determining the "highest" stage achieved
 const stageOrder = ['idea_posted', 'business_plan', 'find_advisors', 'form_team', 'build_mvp', 'yassu_foundry', 'launched'] as const;
@@ -734,10 +758,27 @@ export function registerRoutes(app: Express): void {
       const { id } = req.params;
       const { isFeatured } = req.body;
 
-      // Update the idea's featured status
+      // First, get the idea to check if it needs a cover image
+      const idea = await storage.getIdea(id);
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      let coverImage = idea.coverImage;
+
+      // If featuring the idea and it doesn't have a cover image, generate one
+      if (isFeatured && !coverImage) {
+        console.log(`Generating cover image for idea: ${idea.title}`);
+        coverImage = await generateIdeaCoverImage(id, idea.title, idea.problem);
+      }
+
+      // Update the idea's featured status and cover image
       const [updated] = await db
         .update(schema.ideas)
-        .set({ isFeatured: isFeatured })
+        .set({ 
+          isFeatured: isFeatured,
+          ...(coverImage && { coverImage })
+        })
         .where(eq(schema.ideas.id, id))
         .returning();
 
