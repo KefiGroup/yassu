@@ -736,9 +736,9 @@ export function registerRoutes(app: Express): void {
 
       // Update the idea's featured status
       const [updated] = await db
-        .update(ideas)
+        .update(schema.ideas)
         .set({ isFeatured: isFeatured })
-        .where(eq(ideas.id, id))
+        .where(eq(schema.ideas.id, id))
         .returning();
 
       if (!updated) {
