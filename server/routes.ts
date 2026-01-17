@@ -4008,7 +4008,7 @@ Return valid JSON:
     }
 
     try {
-      const { ideaId, message, conversationHistory } = req.body;
+      const { ideaId, message, conversationHistory, uploadedPlan } = req.body;
 
       if (!ideaId || !message) {
         return res.status(400).json({ error: "Idea ID and message are required" });
@@ -4020,14 +4020,20 @@ Return valid JSON:
         return res.status(404).json({ error: "Idea not found" });
       }
 
-      // Get business plan sections if available
-      const workflowSections = await db.select()
-        .from(schema.ideaWorkflowSections)
-        .where(eq(schema.ideaWorkflowSections.ideaId, ideaId));
+      // Use uploaded plan if provided, otherwise get from database
+      let businessPlanContext = "";
+      if (uploadedPlan && uploadedPlan.length > 0) {
+        businessPlanContext = uploadedPlan;
+      } else {
+        // Get business plan sections if available
+        const workflowSections = await db.select()
+          .from(schema.ideaWorkflowSections)
+          .where(eq(schema.ideaWorkflowSections.ideaId, ideaId));
 
-      const businessPlanContext = workflowSections.length > 0
-        ? workflowSections.map(s => `## ${s.sectionType}\n${s.content}`).join("\n\n")
-        : "";
+        businessPlanContext = workflowSections.length > 0
+          ? workflowSections.map(s => `## ${s.sectionType}\n${s.content}`).join("\n\n")
+          : "";
+      }
 
       const systemPrompt = `You are the founder's product manager and execution partner.
 

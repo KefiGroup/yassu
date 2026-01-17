@@ -135,6 +135,7 @@ export default function InvestorPitchDeck() {
   const [showHistory, setShowHistory] = useState(false);
   const [showMoreSections, setShowMoreSections] = useState(false);
   const [uploadedPlan, setUploadedPlan] = useState<string>("");
+  const [planSource, setPlanSource] = useState<"system" | "upload">("system");
   
   const [businessPlanPreview, setBusinessPlanPreview] = useState<string[]>([]);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
@@ -290,7 +291,7 @@ export default function InvestorPitchDeck() {
         credentials: "include",
         body: JSON.stringify({ 
           ideaId,
-          uploadedPlan: uploadedPlan || undefined
+          uploadedPlan: planSource === "upload" ? uploadedPlan : undefined
         }),
       });
 
@@ -538,56 +539,128 @@ export default function InvestorPitchDeck() {
         </p>
       </div>
 
-      {businessPlanPreview.length > 0 ? (
-        <Card className="mb-6 border-green-500/20 bg-green-500/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-green-600">
-              <CheckCircle className="w-4 h-4" />
-              Business Plan Loaded
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              {businessPlanPreview.slice(0, showMoreSections ? businessPlanPreview.length : 3).map((section, i) => (
-                <p key={i} className="line-clamp-2">{section}</p>
-              ))}
-            </div>
-            {businessPlanPreview.length > 3 && (
-              <button
-                onClick={() => setShowMoreSections(!showMoreSections)}
-                className="text-sm text-primary flex items-center gap-1 mt-3 hover:underline"
-                data-testid="button-toggle-sections"
-              >
-                {showMoreSections ? (
-                  <>
-                    <ChevronUp className="w-4 h-4" />
-                    Show less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-4 h-4" />
-                    + {businessPlanPreview.length - 3} more sections
-                  </>
-                )}
-              </button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="mb-6 border-amber-500/20 bg-amber-500/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-amber-600">
-              <AlertCircle className="w-4 h-4" />
-              No Business Plan Found
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Complete your business plan first, or upload a refined version below.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Business Plan Source Selection */}
+      <div className="mb-6">
+        <p className="text-sm font-medium mb-3">Choose your business plan source:</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Option 1: Use System Business Plan */}
+          <Card 
+            className={`cursor-pointer transition-all ${
+              planSource === "system" 
+                ? "border-primary ring-2 ring-primary/20" 
+                : "hover:border-muted-foreground/50"
+            } ${businessPlanPreview.length === 0 ? "opacity-50" : ""}`}
+            onClick={() => businessPlanPreview.length > 0 && setPlanSource("system")}
+          >
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                  planSource === "system" ? "border-primary bg-primary" : "border-muted-foreground"
+                }`}>
+                  {planSource === "system" && <CheckCircle className="w-3 h-3 text-primary-foreground" />}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Use System Business Plan
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {businessPlanPreview.length > 0 
+                      ? `${businessPlanPreview.length} sections loaded`
+                      : "No business plan generated yet"
+                    }
+                  </p>
+                  {businessPlanPreview.length > 0 && planSource === "system" && (
+                    <div className="mt-3 p-2 bg-muted rounded-md">
+                      <div className="space-y-1 text-xs text-muted-foreground max-h-24 overflow-hidden">
+                        {businessPlanPreview.slice(0, 2).map((section, i) => (
+                          <p key={i} className="line-clamp-1">{section}</p>
+                        ))}
+                        {businessPlanPreview.length > 2 && (
+                          <p className="text-primary">+ {businessPlanPreview.length - 2} more sections</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Option 2: Upload Your Own */}
+          <Card 
+            className={`cursor-pointer transition-all ${
+              planSource === "upload" 
+                ? "border-primary ring-2 ring-primary/20" 
+                : "hover:border-muted-foreground/50"
+            }`}
+            onClick={() => setPlanSource("upload")}
+          >
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                  planSource === "upload" ? "border-primary bg-primary" : "border-muted-foreground"
+                }`}>
+                  {planSource === "upload" && <CheckCircle className="w-3 h-3 text-primary-foreground" />}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    Upload Your Own
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PDF, Word, or text file (max 10MB)
+                  </p>
+                  {planSource === "upload" && (
+                    <div className="mt-3">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept=".txt,.md,.doc,.docx,.pdf"
+                        className="hidden"
+                      />
+                      {uploadedPlan ? (
+                        <div className="p-2 bg-green-500/10 rounded-md flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span className="text-xs text-green-700">
+                            Uploaded ({Math.round(uploadedPlan.length / 1000)}KB)
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-auto h-6 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fileInputRef.current?.click();
+                            }}
+                          >
+                            Change
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fileInputRef.current?.click();
+                          }}
+                          data-testid="button-upload-plan"
+                        >
+                          <Upload className="w-3 h-3 mr-2" />
+                          Choose File
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       <Card className="mb-6">
         <CardContent className="py-4">
@@ -613,55 +686,15 @@ export default function InvestorPitchDeck() {
         </CardContent>
       </Card>
 
-      {/* Upload your own business plan option */}
-      <Card className="mb-4 border-dashed">
-        <CardContent className="py-4">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            accept=".txt,.md,.doc,.docx,.pdf"
-            className="hidden"
-          />
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Upload className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">Upload Your Own Business Plan</p>
-                <p className="text-xs text-muted-foreground">PDF or Word document (max 10MB)</p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              data-testid="button-upload-plan"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload
-            </Button>
-          </div>
-          {uploadedPlan && (
-            <div className="mt-3 p-2 bg-green-500/10 rounded-md flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-green-700">
-                Business plan uploaded ({Math.round(uploadedPlan.length / 1000)}KB of text extracted)
-              </span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       <Button
         onClick={generateDeck}
         size="lg"
         className="w-full"
-        disabled={businessPlanPreview.length === 0 && !uploadedPlan}
+        disabled={(planSource === "system" && businessPlanPreview.length === 0) || (planSource === "upload" && !uploadedPlan)}
         data-testid="button-generate-pitch-deck"
       >
         <Sparkles className="w-4 h-4 mr-2" />
-        Generate Pitch Deck from Business Plan
+        Generate Pitch Deck from {planSource === "system" ? "System" : "Uploaded"} Business Plan
       </Button>
     </div>
   );

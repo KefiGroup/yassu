@@ -94,6 +94,7 @@ export default function MVPBuilder() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedPlan, setUploadedPlan] = useState<string>("");
+  const [planSource, setPlanSource] = useState<"system" | "upload">("system");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,7 +109,8 @@ export default function MVPBuilder() {
     enabled: !!ideaId,
   });
 
-  const hasBusinessPlan = businessPlan && businessPlan.length > 0 || uploadedPlan.length > 0;
+  const hasSystemPlan = businessPlan && businessPlan.length > 0;
+  const hasBusinessPlan = (planSource === "system" && hasSystemPlan) || (planSource === "upload" && uploadedPlan.length > 0);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -243,6 +245,7 @@ Be opinionated. Cut anything that's overkill for MVP.`;
         body: JSON.stringify({
           ideaId,
           message: messageContent,
+          uploadedPlan: planSource === "upload" ? uploadedPlan : undefined,
           conversationHistory: messages.map(m => ({
             role: m.role,
             content: m.content,
@@ -405,26 +408,130 @@ Be opinionated. Cut anything that's overkill for MVP.`;
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {hasBusinessPlan ? (
-                <>
-                  <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                    <div className="flex items-center gap-3 mb-3">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      <p className="font-medium text-sm">Business Plan Loaded</p>
-                    </div>
-                    <div className="bg-background/50 rounded-md p-3 max-h-48 overflow-y-auto text-xs text-muted-foreground space-y-2">
-                      {businessPlan.slice(0, 3).map((section: any, i: number) => (
-                        <div key={i}>
-                          <span className="font-medium text-foreground">{section.sectionKey}:</span>{' '}
-                          {section.content?.slice(0, 150)}...
-                        </div>
-                      ))}
-                      {businessPlan.length > 3 && (
-                        <p className="text-muted-foreground italic">+ {businessPlan.length - 3} more sections</p>
-                      )}
+              {/* Business Plan Source Selection */}
+              <div className="mb-2">
+                <p className="text-sm font-medium mb-3">Choose your business plan source:</p>
+                <div className="grid grid-cols-1 gap-3">
+                  {/* Option 1: Use System Business Plan */}
+                  <div 
+                    className={`cursor-pointer p-4 rounded-lg border transition-all ${
+                      planSource === "system" 
+                        ? "border-primary ring-2 ring-primary/20" 
+                        : "hover:border-muted-foreground/50"
+                    } ${!hasSystemPlan ? "opacity-50" : ""}`}
+                    onClick={() => hasSystemPlan && setPlanSource("system")}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                        planSource === "system" ? "border-primary bg-primary" : "border-muted-foreground"
+                      }`}>
+                        {planSource === "system" && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Use System Business Plan
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {hasSystemPlan 
+                            ? `${businessPlan.length} sections loaded`
+                            : "No business plan generated yet"
+                          }
+                        </p>
+                        {hasSystemPlan && planSource === "system" && (
+                          <div className="mt-3 p-2 bg-muted rounded-md">
+                            <div className="space-y-1 text-xs text-muted-foreground max-h-24 overflow-hidden">
+                              {businessPlan.slice(0, 2).map((section: any, i: number) => (
+                                <p key={i} className="line-clamp-1">
+                                  <span className="font-medium">{section.sectionKey}:</span> {section.content?.slice(0, 80)}...
+                                </p>
+                              ))}
+                              {businessPlan.length > 2 && (
+                                <p className="text-primary">+ {businessPlan.length - 2} more sections</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
+                  {/* Option 2: Upload Your Own */}
+                  <div 
+                    className={`cursor-pointer p-4 rounded-lg border transition-all ${
+                      planSource === "upload" 
+                        ? "border-primary ring-2 ring-primary/20" 
+                        : "hover:border-muted-foreground/50"
+                    }`}
+                    onClick={() => setPlanSource("upload")}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                        planSource === "upload" ? "border-primary bg-primary" : "border-muted-foreground"
+                      }`}>
+                        {planSource === "upload" && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm flex items-center gap-2">
+                          <Upload className="w-4 h-4" />
+                          Upload Your Own
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PDF, Word, or text file (max 10MB)
+                        </p>
+                        {planSource === "upload" && (
+                          <div className="mt-3">
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleFileUpload}
+                              accept=".txt,.md,.doc,.docx,.pdf"
+                              className="hidden"
+                            />
+                            {uploadedPlan ? (
+                              <div className="p-2 bg-green-500/10 rounded-md flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                <span className="text-xs text-green-700">
+                                  Uploaded ({Math.round(uploadedPlan.length / 1000)}KB)
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="ml-auto h-6 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    fileInputRef.current?.click();
+                                  }}
+                                >
+                                  Change
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  fileInputRef.current?.click();
+                                }}
+                                data-testid="button-upload-business-plan"
+                              >
+                                <Upload className="w-3 h-3 mr-2" />
+                                Choose File
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              {hasBusinessPlan ? (
+                <>
                   <div className="space-y-3">
                     <h3 className="font-medium text-sm">AI will analyze your business plan and:</h3>
                     <ul className="space-y-1.5 text-sm text-muted-foreground">
@@ -462,7 +569,7 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4 mr-2" />
-                        Generate MVP from Business Plan
+                        Generate MVP from {planSource === "system" ? "System" : "Uploaded"} Plan
                       </>
                     )}
                   </Button>
@@ -481,56 +588,6 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                 </>
               ) : (
                 <>
-                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium text-sm">No Business Plan Yet</p>
-                        <p className="text-xs text-muted-foreground">
-                          Generate a business plan first for best results, upload your own, or select features manually.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Upload your own business plan */}
-                  <div className="p-4 border border-dashed rounded-lg">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                      accept=".txt,.md,.doc,.docx,.pdf"
-                      className="hidden"
-                    />
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Upload className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Upload Your Own Business Plan</p>
-                          <p className="text-xs text-muted-foreground">PDF or Word document (max 10MB)</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        data-testid="button-upload-business-plan"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload
-                      </Button>
-                    </div>
-                    {uploadedPlan && (
-                      <div className="mt-3 p-2 bg-green-500/10 rounded-md flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-green-700">
-                          Business plan uploaded ({Math.round(uploadedPlan.length / 1000)}KB of text extracted)
-                        </span>
-                      </div>
-                    )}
-                  </div>
-              
                   <div className="space-y-3">
                     <h3 className="font-medium">What we'll do:</h3>
                     <ul className="space-y-2 text-sm text-muted-foreground">
