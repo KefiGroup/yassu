@@ -233,17 +233,46 @@ export default function InvestorPitchDeck() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const isPdfOrDocx = file.type === "application/pdf" || 
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      file.type === "application/msword";
+
     try {
-      const text = await file.text();
-      setUploadedPlan(text);
-      toast({
-        title: "Business Plan Uploaded",
-        description: "Your refined business plan has been loaded.",
-      });
-    } catch (error) {
+      if (isPdfOrDocx) {
+        // Use backend parser for PDF/DOCX
+        const formData = new FormData();
+        formData.append("document", file);
+        
+        const response = await fetch("/api/documents/parse-business-plan", {
+          method: "POST",
+          body: formData,
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to parse document");
+        }
+        
+        const data = await response.json();
+        setUploadedPlan(data.content);
+        toast({
+          title: "Business Plan Uploaded",
+          description: `Extracted ${Math.round(data.content.length / 1000)}KB of text from ${file.name}`,
+        });
+      } else {
+        // Plain text files
+        const text = await file.text();
+        setUploadedPlan(text);
+        toast({
+          title: "Business Plan Uploaded",
+          description: "Your business plan has been loaded.",
+        });
+      }
+    } catch (error: any) {
       toast({
         title: "Upload Failed",
-        description: "Could not read the file. Please try again.",
+        description: error.message || "Could not read the file. Please try again.",
         variant: "destructive",
       });
     }
@@ -584,40 +613,56 @@ export default function InvestorPitchDeck() {
         </CardContent>
       </Card>
 
+      {/* Upload your own business plan option */}
+      <Card className="mb-4 border-dashed">
+        <CardContent className="py-4">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".txt,.md,.doc,.docx,.pdf"
+            className="hidden"
+          />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Upload className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Upload Your Own Business Plan</p>
+                <p className="text-xs text-muted-foreground">PDF or Word document (max 10MB)</p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              data-testid="button-upload-plan"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Upload
+            </Button>
+          </div>
+          {uploadedPlan && (
+            <div className="mt-3 p-2 bg-green-500/10 rounded-md flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-sm text-green-700">
+                Business plan uploaded ({Math.round(uploadedPlan.length / 1000)}KB of text extracted)
+              </span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Button
         onClick={generateDeck}
         size="lg"
-        className="w-full mb-4"
+        className="w-full"
         disabled={businessPlanPreview.length === 0 && !uploadedPlan}
         data-testid="button-generate-pitch-deck"
       >
         <Sparkles className="w-4 h-4 mr-2" />
         Generate Pitch Deck from Business Plan
       </Button>
-
-      <div className="text-center">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          accept=".txt,.md,.doc,.docx,.pptx,.pdf"
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="text-sm text-muted-foreground hover:text-primary flex items-center gap-2 mx-auto"
-          data-testid="button-upload-plan"
-        >
-          <Upload className="w-4 h-4" />
-          Or upload a refined business plan instead
-        </button>
-        {uploadedPlan && (
-          <p className="text-xs text-green-600 mt-2 flex items-center gap-1 justify-center">
-            <CheckCircle className="w-3 h-3" />
-            Custom plan uploaded ({Math.round(uploadedPlan.length / 1000)}KB)
-          </p>
-        )}
-      </div>
     </div>
   );
 

@@ -504,7 +504,8 @@ export function registerRoutes(app: Express): void {
 
       if (mimeType === "application/pdf") {
         // Parse PDF
-        const pdfParse = (await import("pdf-parse")).default;
+        const pdfParseModule = await import("pdf-parse");
+        const pdfParse = pdfParseModule.default || pdfParseModule;
         const pdfData = await pdfParse(fileBuffer);
         extractedText = pdfData.text;
       } else if (

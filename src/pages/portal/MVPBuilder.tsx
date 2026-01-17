@@ -30,7 +30,8 @@ import {
   Search,
   BarChart,
   Building,
-  CheckCircle2
+  CheckCircle2,
+  Upload
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -92,7 +93,9 @@ export default function MVPBuilder() {
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [uploadedPlan, setUploadedPlan] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: idea } = useQuery<IdeaData>({
     queryKey: ["/api/ideas", ideaId],
@@ -105,7 +108,54 @@ export default function MVPBuilder() {
     enabled: !!ideaId,
   });
 
-  const hasBusinessPlan = businessPlan && businessPlan.length > 0;
+  const hasBusinessPlan = businessPlan && businessPlan.length > 0 || uploadedPlan.length > 0;
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isPdfOrDocx = file.type === "application/pdf" || 
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      file.type === "application/msword";
+
+    try {
+      if (isPdfOrDocx) {
+        const formData = new FormData();
+        formData.append("document", file);
+        
+        const response = await fetch("/api/documents/parse-business-plan", {
+          method: "POST",
+          body: formData,
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to parse document");
+        }
+        
+        const data = await response.json();
+        setUploadedPlan(data.content);
+        toast({
+          title: "Business Plan Uploaded",
+          description: `Extracted ${Math.round(data.content.length / 1000)}KB of text from ${file.name}`,
+        });
+      } else {
+        const text = await file.text();
+        setUploadedPlan(text);
+        toast({
+          title: "Business Plan Uploaded",
+          description: "Your business plan has been loaded.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Could not read the file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -437,10 +487,48 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                       <div>
                         <p className="font-medium text-sm">No Business Plan Yet</p>
                         <p className="text-xs text-muted-foreground">
-                          Generate a business plan first for best results, or select features manually.
+                          Generate a business plan first for best results, upload your own, or select features manually.
                         </p>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Upload your own business plan */}
+                  <div className="p-4 border border-dashed rounded-lg">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".txt,.md,.doc,.docx,.pdf"
+                      className="hidden"
+                    />
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Upload className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Upload Your Own Business Plan</p>
+                          <p className="text-xs text-muted-foreground">PDF or Word document (max 10MB)</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        data-testid="button-upload-business-plan"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload
+                      </Button>
+                    </div>
+                    {uploadedPlan && (
+                      <div className="mt-3 p-2 bg-green-500/10 rounded-md flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-green-700">
+                          Business plan uploaded ({Math.round(uploadedPlan.length / 1000)}KB of text extracted)
+                        </span>
+                      </div>
+                    )}
                   </div>
               
                   <div className="space-y-3">
