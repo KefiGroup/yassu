@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -34,6 +34,7 @@ interface Idea {
   problem: string | null;
   creatorId: number;
   isPublic: boolean;
+  isFeatured: boolean;
   stage: string | null;
   createdAt: string;
 }
@@ -305,6 +306,33 @@ export default function Admin() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to delete idea.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleFeatured = async (ideaId: string, currentFeatured: boolean, ideaTitle: string) => {
+    setActionLoading(`feature-idea-${ideaId}`);
+    try {
+      await apiRequest(`/admin/ideas/${ideaId}/featured`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isFeatured: !currentFeatured }),
+      });
+      
+      // Refresh the ideas list
+      const ideasData = await apiRequest<Idea[]>('/admin/ideas');
+      setIdeas(ideasData);
+      
+      toast({
+        title: currentFeatured ? 'Removed from Homepage' : 'Featured on Homepage',
+        description: `"${ideaTitle}" has been ${currentFeatured ? 'removed from' : 'added to'} the homepage.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update featured status.',
         variant: 'destructive',
       });
     } finally {
@@ -822,6 +850,12 @@ export default function Admin() {
                                 {idea.stage.replace(/_/g, ' ')}
                               </Badge>
                             )}
+                            {idea.isFeatured && (
+                              <Badge className="gap-1 text-xs bg-yellow-500 text-white">
+                                <Star className="w-3 h-3 fill-current" />
+                                Featured
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
                             {idea.problem || 'No problem description'}
@@ -831,6 +865,25 @@ export default function Admin() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
+                          {idea.isPublic && (
+                            <Button 
+                              variant={idea.isFeatured ? "default" : "outline"} 
+                              size="sm"
+                              onClick={() => handleToggleFeatured(idea.id, idea.isFeatured, idea.title)}
+                              disabled={actionLoading === `feature-idea-${idea.id}`}
+                              className={idea.isFeatured ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+                              data-testid={`button-feature-idea-${idea.id}`}
+                            >
+                              {actionLoading === `feature-idea-${idea.id}` ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Star className={`w-4 h-4 mr-1 ${idea.isFeatured ? 'fill-current' : ''}`} />
+                                  {idea.isFeatured ? 'Featured' : 'Feature'}
+                                </>
+                              )}
+                            </Button>
+                          )}
                           <Link to={`/portal/ideas/${idea.id}`}>
                             <Button variant="ghost" size="sm" data-testid={`button-view-idea-${idea.id}`}>
                               <Eye className="w-4 h-4 mr-1" />
