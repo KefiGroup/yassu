@@ -5368,6 +5368,19 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const { title, description, eventType, startTime, endTime, timezone, capacity, createZoomMeeting, manualZoomLink } = req.body;
 
+      // Treat input times as UTC by appending 'Z' if not already present
+      const parseAsUTC = (timeStr: string) => {
+        if (!timeStr) return null;
+        // If it doesn't have timezone info, treat it as UTC
+        if (!timeStr.includes('Z') && !timeStr.includes('+') && !timeStr.includes('-', 10)) {
+          return new Date(timeStr + 'Z');
+        }
+        return new Date(timeStr);
+      };
+
+      const startDateUTC = parseAsUTC(startTime);
+      const endDateUTC = endTime ? parseAsUTC(endTime) : null;
+
       let zoomMeetingId = null;
       let zoomJoinUrl = manualZoomLink || null;
       let zoomStartUrl = null;
@@ -5378,8 +5391,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         const { zoomService } = await import("./services/zoom");
         if (zoomService.isConfigured()) {
           try {
-            const startDate = new Date(startTime);
-            const endDate = endTime ? new Date(endTime) : null;
+            const startDate = startDateUTC;
+            const endDate = endDateUTC;
             const duration = endDate ? Math.ceil((endDate.getTime() - startDate.getTime()) / 60000) : 60;
 
             const meeting = await zoomService.createMeeting({
@@ -5405,8 +5418,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         title,
         description,
         eventType: eventType || "roadshow",
-        startTime: new Date(startTime),
-        endTime: endTime ? new Date(endTime) : null,
+        startTime: startDateUTC!,
+        endTime: endDateUTC,
         timezone: timezone || "America/New_York",
         zoomMeetingId,
         zoomJoinUrl,

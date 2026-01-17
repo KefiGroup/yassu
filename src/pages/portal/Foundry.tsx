@@ -387,27 +387,36 @@ export default function Foundry() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <Input
-                      id="startTime"
-                      type="datetime-local"
-                      value={newEvent.startTime}
-                      onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                      data-testid="input-start-time"
-                    />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Enter times in UTC</span>
                   </div>
-                  <div>
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="datetime-local"
-                      value={newEvent.endTime}
-                      onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                      data-testid="input-end-time"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="startTime">Start Time (UTC)</Label>
+                      <Input
+                        id="startTime"
+                        type="datetime-local"
+                        value={newEvent.startTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                        data-testid="input-start-time"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="endTime">End Time (UTC)</Label>
+                      <Input
+                        id="endTime"
+                        type="datetime-local"
+                        value={newEvent.endTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                        data-testid="input-end-time"
+                      />
+                    </div>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    All event times are displayed in UTC for users worldwide
+                  </p>
                 </div>
                 
                 {zoomStatus?.configured ? (
