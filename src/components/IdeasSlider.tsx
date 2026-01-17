@@ -3,61 +3,78 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Lightbulb } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+import { Link } from "react-router-dom";
+
+interface FeaturedIdea {
+  id: string;
+  title: string;
+  problem: string;
+  stage: string;
+  tags?: string[];
+  creatorName?: string;
+}
 
 const sampleIdeas = [
   {
-    id: 1,
+    id: "sample-1",
     title: "Foot Prints",
-    category: "Tech",
-    categoryColor: "bg-primary",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop",
-    description: "Digital footprint tracking and analytics platform",
+    problem: "Digital footprint tracking and analytics platform for businesses and individuals",
+    stage: "idea_posted",
+    tags: ["Tech"],
   },
   {
-    id: 2,
+    id: "sample-2",
     title: "Trip-Sit for AI Hallucinations",
-    category: "Healthcare",
-    categoryColor: "bg-pink-500",
-    image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=300&fit=crop",
-    description: "AI safety monitoring for healthcare applications",
+    problem: "AI safety monitoring for healthcare applications to prevent misinformation",
+    stage: "idea_posted",
+    tags: ["Healthcare"],
   },
   {
-    id: 3,
+    id: "sample-3",
     title: "User-based App Privacy T&C's",
-    category: "Tech",
-    categoryColor: "bg-primary",
-    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop",
-    description: "Simplified privacy terms generator for apps",
+    problem: "Simplified privacy terms generator for apps that users can actually understand",
+    stage: "idea_posted",
+    tags: ["Tech"],
   },
   {
-    id: 4,
+    id: "sample-4",
     title: "Dating App Through Therapy",
-    category: "Social",
-    categoryColor: "bg-violet-500",
-    image: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&h=300&fit=crop",
-    description: "Relationship building through guided communication",
+    problem: "Relationship building through guided communication and therapy techniques",
+    stage: "idea_posted",
+    tags: ["Social"],
   },
   {
-    id: 5,
+    id: "sample-5",
     title: "Campus Marketplace",
-    category: "Education",
-    categoryColor: "bg-emerald-500",
-    image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&h=300&fit=crop",
-    description: "Peer-to-peer marketplace for university students",
+    problem: "Peer-to-peer marketplace for university students to buy and sell items",
+    stage: "idea_posted",
+    tags: ["Education"],
   },
   {
-    id: 6,
+    id: "sample-6",
     title: "Sustainable Fashion AI",
-    category: "Sustainability",
-    categoryColor: "bg-green-500",
-    image: "https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400&h=300&fit=crop",
-    description: "AI-powered sustainable wardrobe recommendations",
+    problem: "AI-powered sustainable wardrobe recommendations to reduce fashion waste",
+    stage: "idea_posted",
+    tags: ["Sustainability"],
   },
 ];
 
+const stageColors: { [key: string]: string } = {
+  idea_posted: "bg-primary",
+  business_plan: "bg-blue-500",
+  find_advisors: "bg-purple-500",
+  form_team: "bg-violet-500",
+  build_mvp: "bg-orange-500",
+  yassu_foundry: "bg-pink-500",
+  seek_funding: "bg-emerald-500",
+};
+
 const IdeasSlider = () => {
+  const [featuredIdeas, setFeaturedIdeas] = useState<FeaturedIdea[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: "start",
@@ -82,6 +99,24 @@ const IdeasSlider = () => {
   }, [emblaApi]);
 
   useEffect(() => {
+    const fetchFeaturedIdeas = async () => {
+      try {
+        const response = await fetch('/api/ideas/featured');
+        if (response.ok) {
+          const data = await response.json();
+          setFeaturedIdeas(data);
+        }
+      } catch (error) {
+        console.error('Error fetching featured ideas:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedIdeas();
+  }, []);
+
+  useEffect(() => {
     if (!emblaApi) return;
     onSelect();
     emblaApi.on("select", onSelect);
@@ -89,6 +124,9 @@ const IdeasSlider = () => {
       emblaApi.off("select", onSelect);
     };
   }, [emblaApi, onSelect]);
+
+  const ideasToShow = featuredIdeas.length > 0 ? featuredIdeas : sampleIdeas;
+  const showingSamples = featuredIdeas.length === 0;
 
   return (
     <section id="ideas-slider" className="py-24 relative overflow-hidden">
@@ -105,7 +143,7 @@ const IdeasSlider = () => {
           className="mb-12 text-center"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Sample of <span className="text-gradient">Yassu Ideas</span>
+            {showingSamples ? 'Sample of' : 'Featured'} <span className="text-gradient">Yassu Ideas</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Discover innovative startup concepts from university founders across the nation
@@ -115,7 +153,7 @@ const IdeasSlider = () => {
         <div className="relative">
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex gap-6">
-              {sampleIdeas.map((idea, index) => (
+              {ideasToShow.map((idea, index) => (
                 <motion.div
                   key={idea.id}
                   initial={{ opacity: 0, y: 30 }}
@@ -131,30 +169,34 @@ const IdeasSlider = () => {
                         <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
                         <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                       </div>
-                      <img
-                        src={idea.image}
-                        alt={idea.title}
-                        className="w-full h-48 object-cover"
-                      />
+                      <div className="w-full h-48 bg-gradient-to-br from-primary/20 via-pink-500/10 to-violet-500/20 flex items-center justify-center">
+                        <Lightbulb className="w-16 h-16 text-primary/40" />
+                      </div>
                     </div>
                     <div className="p-5 space-y-3">
-                      <Badge className={`${idea.categoryColor} text-white border-0`}>
-                        {idea.category}
+                      <Badge className={`${stageColors[idea.stage] || 'bg-primary'} text-white border-0`}>
+                        {idea.tags?.[0] || idea.stage?.replace(/_/g, ' ') || 'Idea'}
                       </Badge>
                       <h3 className="font-semibold text-lg leading-tight text-foreground">
                         {idea.title}
                       </h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {idea.description}
+                        {idea.problem}
                       </p>
-                      <a
-                        href="#"
-                        className="inline-flex items-center gap-1 text-primary hover:text-primary/80 text-sm font-medium transition-colors group"
-                        data-testid={`link-read-more-${idea.id}`}
-                      >
-                        Read More
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                      </a>
+                      {showingSamples ? (
+                        <span className="inline-flex items-center gap-1 text-muted-foreground text-sm">
+                          Sample Idea
+                        </span>
+                      ) : (
+                        <Link
+                          to={`/portal/ideas/${idea.id}`}
+                          className="inline-flex items-center gap-1 text-primary hover:text-primary/80 text-sm font-medium transition-colors group"
+                          data-testid={`link-idea-${idea.id}`}
+                        >
+                          View Idea
+                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      )}
                     </div>
                   </Card>
                 </motion.div>
