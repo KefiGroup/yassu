@@ -146,6 +146,7 @@ export const ideas = pgTable("ideas", {
   stage: ideaStageEnum("stage").default("idea_posted"),
   universityId: uuid("university_id").references(() => universities.id),
   isPublic: boolean("is_public").default(false),
+  isFeatured: boolean("is_featured").default(false),
   mvpLink: text("mvp_link"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
