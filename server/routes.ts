@@ -5435,4 +5435,117 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     const { zoomService } = await import("./services/zoom");
     res.json({ configured: zoomService.isConfigured() });
   });
+
+  // Send reminder to users who RSVPed "going"
+  app.post("/api/foundry/events/:id/send-reminder", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const [admin] = await db.select()
+        .from(schema.userRoles)
+        .where(and(
+          eq(schema.userRoles.userId, req.session.userId),
+          eq(schema.userRoles.role, "admin")
+        ));
+
+      if (!admin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const eventId = parseInt(req.params.id);
+
+      // Get event
+      const [event] = await db.select()
+        .from(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Get users who RSVPed "going" and have notifications enabled
+      const goingRsvps = await db.select({
+        email: schema.users.email,
+        fullName: schema.profiles.fullName,
+      })
+        .from(schema.eventRsvps)
+        .innerJoin(schema.users, eq(schema.eventRsvps.userId, schema.users.id))
+        .innerJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+        .where(and(
+          eq(schema.eventRsvps.eventId, eventId),
+          eq(schema.eventRsvps.status, "going"),
+          eq(schema.profiles.emailNotificationsEnabled, true)
+        ));
+
+      if (goingRsvps.length === 0) {
+        return res.json({ success: true, sentCount: 0, message: "No users to remind" });
+      }
+
+      // Send reminder emails
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
+      const eventDate = new Date(event.startTime).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      const eventTime = new Date(event.startTime).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short',
+      });
+
+      let sentCount = 0;
+      for (const user of goingRsvps) {
+        if (!user.email) continue;
+        
+        try {
+          await resend.emails.send({
+            from: "Yassu <noreply@yassu.ai>",
+            to: user.email,
+            subject: `Reminder: ${event.title} is coming up!`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #7c3aed;">Event Reminder</h2>
+                <p>Hi ${user.fullName || 'there'},</p>
+                <p>This is a friendly reminder about the upcoming Yassu Foundry event you RSVPed to:</p>
+                <h3>${event.title}</h3>
+                <p><strong>Date:</strong> ${eventDate}</p>
+                <p><strong>Time:</strong> ${eventTime}</p>
+                ${event.description ? `<p>${event.description}</p>` : ''}
+                ${event.zoomJoinUrl ? `
+                  <p style="margin-top: 20px;">
+                    <a href="${event.zoomJoinUrl}" 
+                       style="background-color: #7c3aed; color: white; padding: 12px 24px; 
+                              text-decoration: none; border-radius: 6px; display: inline-block;">
+                      Join Zoom Meeting
+                    </a>
+                  </p>
+                ` : ''}
+                <p style="margin-top: 20px;">We're looking forward to seeing you there!</p>
+                <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;" />
+                <p style="font-size: 12px; color: #666;">
+                  This email was sent by Yassu. You can manage your notification preferences in Settings.
+                </p>
+              </div>
+            `,
+          });
+          sentCount++;
+        } catch (emailError) {
+          console.error(`Failed to send reminder to ${user.email}:`, emailError);
+        }
+      }
+
+      res.json({ success: true, sentCount });
+    } catch (error) {
+      console.error("Failed to send reminders:", error);
+      res.status(500).json({ error: "Failed to send reminders" });
+    }
+  });
 }

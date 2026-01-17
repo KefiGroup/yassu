@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Rocket, Calendar, Clock, Users, Video, Plus, Send, 
+  Rocket, Calendar, Clock, Users, Video, Plus, Send, Bell,
   MapPin, CalendarDays, ChevronLeft, ChevronRight, Check,
   ExternalLink, Loader2
 } from "lucide-react";
@@ -169,6 +169,24 @@ export default function Foundry() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to send invites.", variant: "destructive" });
+    },
+  });
+
+  const sendReminderMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      const res = await apiRequest(`/api/foundry/events/${eventId}/send-reminder`, {
+        method: "POST",
+      });
+      return res;
+    },
+    onSuccess: (data: { sentCount: number }) => {
+      toast({ 
+        title: "Reminders Sent", 
+        description: `Reminders sent to ${data.sentCount} users who RSVPed 'Going'.` 
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to send reminders.", variant: "destructive" });
     },
   });
 
@@ -434,16 +452,28 @@ export default function Foundry() {
                           </Button>
                         )}
                         {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => sendInvitesMutation.mutate(event.id)}
-                            disabled={sendInvitesMutation.isPending}
-                            data-testid={`button-send-invites-${event.id}`}
-                          >
-                            <Send className="w-4 h-4 mr-1" />
-                            Send Invites
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => sendInvitesMutation.mutate(event.id)}
+                              disabled={sendInvitesMutation.isPending}
+                              data-testid={`button-send-invites-${event.id}`}
+                            >
+                              <Send className="w-4 h-4 mr-1" />
+                              Send Invites
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => sendReminderMutation.mutate(event.id)}
+                              disabled={sendReminderMutation.isPending}
+                              data-testid={`button-send-reminder-${event.id}`}
+                            >
+                              <Bell className="w-4 h-4 mr-1" />
+                              Send Reminder
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
