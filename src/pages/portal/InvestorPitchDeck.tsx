@@ -1111,7 +1111,26 @@ export default function InvestorPitchDeck() {
       <div className="flex justify-center mt-6">
         <Button
           size="lg"
-          onClick={() => navigate(`/portal/ideas/${ideaId}`)}
+          onClick={async () => {
+            // Save pitch deck before returning to ensure Step 1 is marked complete
+            try {
+              await fetch(`/api/ideas/${ideaId}/pitch-deck`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  investorMode: pitchContext.investorMode,
+                  deckType: pitchContext.deckType,
+                  targetRaise: pitchContext.targetRaise,
+                  slides: slides.map((s, i) => editedContent[i] || s),
+                  metricsValidation: metricsValidation,
+                }),
+              });
+            } catch (e) {
+              console.error("Failed to save pitch deck:", e);
+            }
+            navigate(`/portal/ideas/${ideaId}`);
+          }}
           data-testid="button-complete-return-idea"
         >
           <CheckCircle className="w-5 h-5 mr-2" />
