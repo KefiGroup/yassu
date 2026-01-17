@@ -83,10 +83,20 @@ export default function Foundry() {
 
   const { data: events = [], isLoading } = useQuery<FoundryEvent[]>({
     queryKey: ["/api/foundry/events"],
+    queryFn: async () => {
+      const res = await fetch("/api/foundry/events", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
 
   const { data: zoomStatus } = useQuery<{ configured: boolean }>({
     queryKey: ["/api/foundry/zoom-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/foundry/zoom-status", { credentials: "include" });
+      if (!res.ok) return { configured: false };
+      return res.json();
+    },
   });
 
   const { data: isAdmin } = useQuery<boolean>({
