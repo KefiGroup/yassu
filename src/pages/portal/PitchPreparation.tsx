@@ -791,6 +791,17 @@ export default function PitchPreparation() {
           </TabsContent>
         </div>
       </Tabs>
+
+      <div className="flex justify-center mt-8 pb-8">
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/portal/ideas/${ideaId}`)}
+          data-testid="button-return-to-idea"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Return to Idea
+        </Button>
+      </div>
     </div>
   );
 
