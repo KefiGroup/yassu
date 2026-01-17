@@ -2,7 +2,7 @@ import express, { Request, Response, Express } from "express";
 import { storage } from "./storage";
 import { pool, db } from "./db";
 import * as schema from "../shared/schema";
-import { eq, sql, desc, or, and } from "drizzle-orm";
+import { eq, sql, desc, or, and, lte, gt, isNull } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
@@ -3146,10 +3146,10 @@ Return valid JSON:
         .where(
           and(
             eq(schema.announcements.isActive, true),
-            sql`${schema.announcements.startsAt} <= ${now}`,
+            lte(schema.announcements.startsAt, now),
             or(
-              sql`${schema.announcements.endsAt} IS NULL`,
-              sql`${schema.announcements.endsAt} > ${now}`
+              isNull(schema.announcements.endsAt),
+              gt(schema.announcements.endsAt, now)
             )
           )
         )
