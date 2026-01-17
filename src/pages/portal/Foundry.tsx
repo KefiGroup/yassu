@@ -21,6 +21,7 @@ import {
   ExternalLink, Loader2, Ticket, Lightbulb
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 interface FoundryEvent {
   id: number;
@@ -57,6 +58,19 @@ const eventTypeColors: Record<string, string> = {
   demo_day: "bg-amber-500",
   networking: "bg-pink-500",
   other: "bg-gray-500",
+};
+
+// Format time in UTC for universal display
+const formatTimeUTC = (dateString: string, formatStr: string = "h:mm a") => {
+  return formatInTimeZone(new Date(dateString), "UTC", formatStr);
+};
+
+const formatDateUTC = (dateString: string, formatStr: string = "MMM d, yyyy") => {
+  return formatInTimeZone(new Date(dateString), "UTC", formatStr);
+};
+
+const formatDateTimeUTC = (dateString: string) => {
+  return formatInTimeZone(new Date(dateString), "UTC", "MMM d, yyyy h:mm a") + " UTC";
 };
 
 interface RoadshowBooking {
@@ -479,10 +493,10 @@ export default function Foundry() {
                       <div className="flex gap-4">
                         <div className="text-center min-w-[60px]">
                           <div className="text-3xl font-bold text-primary">
-                            {format(new Date(event.startTime), "d")}
+                            {formatDateUTC(event.startTime, "d")}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {format(new Date(event.startTime), "MMM")}
+                            {formatDateUTC(event.startTime, "MMM")}
                           </div>
                         </div>
                         <div>
@@ -506,8 +520,9 @@ export default function Foundry() {
                           <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock className="w-4 h-4" />
-                              {format(new Date(event.startTime), "h:mm a")}
-                              {event.endTime && ` - ${format(new Date(event.endTime), "h:mm a")}`}
+                              {formatTimeUTC(event.startTime)}
+                              {event.endTime && ` - ${formatTimeUTC(event.endTime)}`}
+                              <span className="text-xs">(UTC)</span>
                             </span>
                             <span className="flex items-center gap-1">
                               <Users className="w-4 h-4" />
@@ -581,7 +596,10 @@ export default function Foundry() {
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle>{format(currentMonth, "MMMM yyyy")}</CardTitle>
+                <div>
+                  <CardTitle>{format(currentMonth, "MMMM yyyy")}</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">All times shown in UTC</p>
+                </div>
                 <div className="flex items-center gap-2">
                   {isAdmin && (
                     <Button
@@ -717,7 +735,7 @@ export default function Foundry() {
                           <SelectContent>
                             {upcomingRoadshows.map((event) => (
                               <SelectItem key={event.id} value={String(event.id)}>
-                                {event.title} - {format(new Date(event.startTime), "MMM d, yyyy h:mm a")}
+                                {event.title} - {formatDateTimeUTC(event.startTime)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -789,7 +807,7 @@ export default function Foundry() {
                             {booking.eventId && booking.eventTitle && (
                               <p className="text-sm text-muted-foreground">
                                 Roadshow: {booking.eventTitle}
-                                {booking.eventStartTime && ` - ${format(new Date(booking.eventStartTime), "MMM d, yyyy")}`}
+                                {booking.eventStartTime && ` - ${formatDateUTC(booking.eventStartTime)}`}
                               </p>
                             )}
                           </div>
@@ -839,7 +857,7 @@ export default function Foundry() {
               </div>
               <DialogTitle>{selectedEvent.title}</DialogTitle>
               <DialogDescription>
-                {format(new Date(selectedEvent.startTime), "EEEE, MMMM d, yyyy 'at' h:mm a")}
+                {formatInTimeZone(new Date(selectedEvent.startTime), "UTC", "EEEE, MMMM d, yyyy 'at' h:mm a")} UTC
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
