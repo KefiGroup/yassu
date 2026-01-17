@@ -21,16 +21,20 @@ const objectStorageService = new ObjectStorageService();
 // Helper function to generate AI cover image for an idea
 async function generateIdeaCoverImage(ideaId: string, title: string, problem: string): Promise<string | null> {
   try {
+    console.log(`[CoverImage] Generating cover for idea ${ideaId}: "${title}"`);
+    
     // Create a prompt for generating a startup/business concept image
     const prompt = `A modern, professional, abstract illustration representing a startup concept: "${title}". The visual should be clean, minimalist, and business-appropriate with soft gradients and geometric shapes. Style: tech startup, innovation, entrepreneurship. Colors: professional purples, blues, and warm accents. No text or words in the image.`;
     
     // Generate the image
+    console.log(`[CoverImage] Calling AI image generation...`);
     const imageBuffer = await generateImageBuffer(prompt, "512x512");
+    console.log(`[CoverImage] Image generated, size: ${imageBuffer.length} bytes`);
     
     // Upload to object storage using the objectStorageClient
     const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
     if (!bucketId) {
-      console.error("DEFAULT_OBJECT_STORAGE_BUCKET_ID not set");
+      console.error("[CoverImage] DEFAULT_OBJECT_STORAGE_BUCKET_ID not set");
       return null;
     }
     
@@ -39,6 +43,7 @@ async function generateIdeaCoverImage(ideaId: string, title: string, problem: st
     const file = bucket.file(fileName);
     
     // Upload the buffer
+    console.log(`[CoverImage] Uploading to ${fileName}...`);
     await file.save(imageBuffer, {
       contentType: "image/png",
       metadata: {
@@ -51,10 +56,11 @@ async function generateIdeaCoverImage(ideaId: string, title: string, problem: st
     
     // Return the public URL
     const publicUrl = `https://storage.googleapis.com/${bucketId}/${fileName}`;
+    console.log(`[CoverImage] Upload complete: ${publicUrl}`);
     
     return publicUrl;
   } catch (error) {
-    console.error("Error generating cover image:", error);
+    console.error("[CoverImage] Error generating cover image:", error);
     return null;
   }
 }
