@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowRight, Lightbulb } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -18,15 +17,6 @@ interface FeaturedIdea {
 }
 
 
-const stageColors: { [key: string]: string } = {
-  idea_posted: "bg-primary",
-  business_plan: "bg-blue-500",
-  find_advisors: "bg-purple-500",
-  form_team: "bg-violet-500",
-  build_mvp: "bg-orange-500",
-  yassu_foundry: "bg-pink-500",
-  seek_funding: "bg-emerald-500",
-};
 
 const IdeasSlider = () => {
   const [featuredIdeas, setFeaturedIdeas] = useState<FeaturedIdea[]>([]);
@@ -145,9 +135,6 @@ const IdeasSlider = () => {
                       )}
                     </div>
                     <div className="p-5 space-y-3">
-                      <Badge className={`${stageColors[idea.stage] || 'bg-primary'} text-white border-0`}>
-                        {idea.tags?.[0] || idea.stage?.replace(/_/g, ' ') || 'Idea'}
-                      </Badge>
                       <h3 className="font-semibold text-lg leading-tight text-foreground">
                         {idea.title}
                       </h3>

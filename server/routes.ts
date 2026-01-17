@@ -817,6 +817,53 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Regenerate cover images for all featured ideas without images (admin only)
+  app.post("/api/admin/ideas/regenerate-covers", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Find all featured ideas without cover images
+      const featuredIdeas = await db
+        .select()
+        .from(schema.ideas)
+        .where(eq(schema.ideas.isFeatured, true));
+
+      const ideasNeedingImages = featuredIdeas.filter(idea => !idea.coverImage);
+      console.log(`[CoverImage] Found ${ideasNeedingImages.length} featured ideas needing cover images`);
+
+      const results = [];
+      for (const idea of ideasNeedingImages) {
+        console.log(`[CoverImage] Generating for: ${idea.title}`);
+        const coverImage = await generateIdeaCoverImage(idea.id, idea.title, idea.problem);
+        
+        if (coverImage) {
+          await db
+            .update(schema.ideas)
+            .set({ coverImage })
+            .where(eq(schema.ideas.id, idea.id));
+          results.push({ id: idea.id, title: idea.title, success: true, coverImage });
+        } else {
+          results.push({ id: idea.id, title: idea.title, success: false });
+        }
+      }
+
+      res.json({ 
+        message: `Processed ${ideasNeedingImages.length} ideas`,
+        results 
+      });
+    } catch (error) {
+      console.error("Error regenerating cover images:", error);
+      res.status(500).json({ error: "Failed to regenerate cover images" });
+    }
+  });
+
   // Get all referrals (admin only)
   app.get("/api/referrals/all", async (req: Request, res: Response) => {
     if (!req.session.userId) {
