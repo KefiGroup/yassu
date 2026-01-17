@@ -2334,11 +2334,11 @@ export default function IdeaDetail() {
                   </CardContent>
                 </Card>
                 
-                {/* Step 2: Design in Manus - colored if Step 1 is complete */}
-                <Card className={`border-2 transition-colors ${hasPitchDeck ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
+                {/* Step 2: Design in Manus - always accessible */}
+                <Card className={`border-2 transition-colors hover-elevate cursor-pointer ${hasPitchDeck ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${hasPitchDeck ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/20' : 'bg-muted'}`}>
-                      <Presentation className={`w-6 h-6 ${hasPitchDeck ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/30 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
+                      <Presentation className="w-6 h-6 text-primary" />
                     </div>
                     <h4 className="font-semibold mb-2">Step 2: Design in Manus</h4>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -2374,22 +2374,21 @@ export default function IdeaDetail() {
                         const manusUrl = `https://manus.im/invitation/XT9XTFJVZ8SASD?${new URLSearchParams(context).toString()}`;
                         window.open(manusUrl, '_blank');
                       }}
-                      className={hasPitchDeck ? "w-full bg-gradient-to-r from-amber-500 to-orange-500" : "w-full"}
-                      variant={hasPitchDeck ? "default" : "secondary"}
-                      disabled={!hasPitchDeck}
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500"
+                      variant="default"
                       data-testid="button-build-pitch-deck-manus"
                     >
                       <Presentation className="w-4 h-4 mr-2" />
-                      {hasPitchDeck ? 'Open Manus AI' : 'Complete Step 1 First'}
+                      Open Manus AI
                     </Button>
                   </CardContent>
                 </Card>
                 
-                {/* Step 3: Prepare Pitch - colored if Step 1 is complete (ready for preparation) */}
-                <Card className={`border-2 transition-colors ${hasPitchDeck ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
+                {/* Step 3: Prepare Pitch - always accessible */}
+                <Card className={`border-2 transition-colors hover-elevate cursor-pointer ${hasPitchDeck ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${hasPitchDeck ? 'bg-gradient-to-br from-violet-500/30 to-purple-500/20' : 'bg-muted'}`}>
-                      <Mic className={`w-6 h-6 ${hasPitchDeck ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/30 to-purple-500/20 flex items-center justify-center mx-auto mb-3">
+                      <Mic className="w-6 h-6 text-primary" />
                     </div>
                     <h4 className="font-semibold mb-2">Step 3: Prepare Your Pitch</h4>
                     <p className="text-sm text-muted-foreground mb-4">
@@ -2398,12 +2397,11 @@ export default function IdeaDetail() {
                     <Button
                       onClick={() => navigate(`/portal/pitch-preparation?ideaId=${idea?.id}`)}
                       className="w-full"
-                      variant={hasPitchDeck ? "default" : "secondary"}
-                      disabled={!hasPitchDeck}
+                      variant="default"
                       data-testid="button-pitch-preparation"
                     >
                       <Mic className="w-4 h-4 mr-2" />
-                      {hasPitchDeck ? 'Prepare Pitch' : 'Complete Step 1 First'}
+                      Prepare Pitch
                     </Button>
                   </CardContent>
                 </Card>
