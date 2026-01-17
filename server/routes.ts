@@ -4162,6 +4162,7 @@ RULES:
 - Prioritize learning over polish
 - Assume legal/compliance sensitivity if applicable
 - The founder is non-technical but decisive
+- IMPORTANT: If suggesting mobile app development with Expo, ONLY use Expo Go-compatible packages. AVOID suggesting these native-only packages that won't work in Expo Go: react-native-maps, react-native-camera, react-native-ble-plx, react-native-nfc-manager, or any package requiring native code compilation. Instead suggest Expo SDK alternatives like expo-camera, expo-location (without maps), or web-based alternatives.
 
 YOUR TASKS (when asked to generate MVP spec):
 1. Extract the single most important assumption to validate first
