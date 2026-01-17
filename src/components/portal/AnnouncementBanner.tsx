@@ -11,6 +11,8 @@ interface Announcement {
   priority: 'normal' | 'important' | 'urgent';
   startsAt: string;
   endsAt: string | null;
+  eventDate: string | null;
+  eventEndDate: string | null;
   isActive: boolean;
 }
 
@@ -59,6 +61,22 @@ export function AnnouncementBanner() {
     }
   };
 
+  const formatEventDate = (eventDate: string | null, eventEndDate: string | null) => {
+    if (!eventDate) return null;
+    const start = new Date(eventDate);
+    const options: Intl.DateTimeFormatOptions = { 
+      month: 'short', 
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    };
+    if (eventEndDate) {
+      const end = new Date(eventEndDate);
+      return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
+    }
+    return start.toLocaleDateString('en-US', options);
+  };
+
   const getBannerStyles = (priority: string, type: string) => {
     if (priority === 'urgent') {
       return 'bg-red-500 text-white border-red-600';
@@ -94,6 +112,11 @@ export function AnnouncementBanner() {
             <div className="flex-1 min-w-0">
               <span className="font-semibold mr-2">{announcement.title}</span>
               <span className="opacity-90">{announcement.message}</span>
+              {announcement.eventDate && (
+                <span className="ml-2 text-sm opacity-75">
+                  ({formatEventDate(announcement.eventDate, announcement.eventEndDate)})
+                </span>
+              )}
             </div>
           </div>
           {announcement.priority !== 'urgent' && (

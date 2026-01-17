@@ -410,6 +410,8 @@ export const announcements = pgTable("announcements", {
   priority: announcementPriorityEnum("priority").default("normal").notNull(),
   startsAt: timestamp("starts_at").defaultNow().notNull(),
   endsAt: timestamp("ends_at"),
+  eventDate: timestamp("event_date"),
+  eventEndDate: timestamp("event_end_date"),
   isActive: boolean("is_active").default(true).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

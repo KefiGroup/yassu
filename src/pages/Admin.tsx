@@ -52,6 +52,8 @@ interface Announcement {
   priority: 'normal' | 'important' | 'urgent';
   startsAt: string;
   endsAt: string | null;
+  eventDate: string | null;
+  eventEndDate: string | null;
   isActive: boolean;
   createdBy: number;
   createdAt: string;
@@ -93,6 +95,8 @@ export default function Admin() {
     priority: 'normal' as 'normal' | 'important' | 'urgent',
     startsAt: new Date().toISOString().slice(0, 16),
     endsAt: '',
+    eventDate: '',
+    eventEndDate: '',
     isActive: true,
     sendEmail: false,
   });
@@ -310,6 +314,8 @@ export default function Admin() {
       priority: 'normal',
       startsAt: new Date().toISOString().slice(0, 16),
       endsAt: '',
+      eventDate: '',
+      eventEndDate: '',
       isActive: true,
       sendEmail: false,
     });
@@ -326,6 +332,8 @@ export default function Admin() {
       priority: announcement.priority,
       startsAt: new Date(announcement.startsAt).toISOString().slice(0, 16),
       endsAt: announcement.endsAt ? new Date(announcement.endsAt).toISOString().slice(0, 16) : '',
+      eventDate: announcement.eventDate ? new Date(announcement.eventDate).toISOString().slice(0, 16) : '',
+      eventEndDate: announcement.eventEndDate ? new Date(announcement.eventEndDate).toISOString().slice(0, 16) : '',
       isActive: announcement.isActive,
       sendEmail: false,
     });
@@ -347,6 +355,8 @@ export default function Admin() {
       const payload = {
         ...announcementForm,
         endsAt: announcementForm.endsAt || null,
+        eventDate: announcementForm.eventDate || null,
+        eventEndDate: announcementForm.eventEndDate || null,
       };
 
       if (editingAnnouncement) {
@@ -965,6 +975,28 @@ export default function Admin() {
                           onChange={(e) => setAnnouncementForm(prev => ({ ...prev, endsAt: e.target.value }))}
                           data-testid="input-announcement-ends-at"
                         />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Event Date (optional)</label>
+                        <Input
+                          type="datetime-local"
+                          value={announcementForm.eventDate}
+                          onChange={(e) => setAnnouncementForm(prev => ({ ...prev, eventDate: e.target.value }))}
+                          data-testid="input-announcement-event-date"
+                        />
+                        <p className="text-xs text-muted-foreground">When the actual event/maintenance occurs</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Event End Date (optional)</label>
+                        <Input
+                          type="datetime-local"
+                          value={announcementForm.eventEndDate}
+                          onChange={(e) => setAnnouncementForm(prev => ({ ...prev, eventEndDate: e.target.value }))}
+                          data-testid="input-announcement-event-end-date"
+                        />
+                        <p className="text-xs text-muted-foreground">When the event/maintenance ends</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
