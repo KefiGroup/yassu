@@ -88,6 +88,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SKILL_OPTIONS } from '@/lib/profileOptions';
 
 interface Idea {
@@ -1516,7 +1521,7 @@ export default function IdeaDetail() {
           <CardHeader>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <PenLine className="w-4 h-4 text-primary" />
+                <Lightbulb className="w-4 h-4 text-primary" />
               </div>
               <h2 className="font-semibold text-lg">Idea Overview</h2>
             </div>
@@ -1564,18 +1569,25 @@ export default function IdeaDetail() {
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-2xl">{idea.title}</CardTitle>
                       {isOwner && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => {
-                            setNewTitle(idea.title);
-                            setEditingTitle(true);
-                          }}
-                          data-testid="button-edit-title"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => {
+                                setNewTitle(idea.title);
+                                setEditingTitle(true);
+                              }}
+                              data-testid="button-edit-title"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit your project name</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   )}
