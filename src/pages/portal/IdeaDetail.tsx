@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -246,6 +247,11 @@ export default function IdeaDetail() {
   const [showMvpLinkInput, setShowMvpLinkInput] = useState(false);
   const [mvpLinkValue, setMvpLinkValue] = useState('');
   const [savingMvpLink, setSavingMvpLink] = useState(false);
+  
+  // Title editing
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [savingTitle, setSavingTitle] = useState(false);
   
   // Helper function to determine step status INDEPENDENTLY
   // Each step checks only its own signals, no cross-dependencies
@@ -1022,6 +1028,43 @@ export default function IdeaDetail() {
     }
   };
 
+  const handleSaveTitle = async () => {
+    if (!ideaId || !idea || !newTitle.trim()) return;
+    
+    setSavingTitle(true);
+    try {
+      const response = await fetch(`/api/ideas/${ideaId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ title: newTitle.trim() })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update title');
+      }
+      
+      const updatedIdea = await response.json();
+      setIdea(updatedIdea);
+      setEditingTitle(false);
+      setNewTitle('');
+      
+      toast({
+        title: 'Title Updated',
+        description: 'Your project name has been updated successfully.',
+      });
+    } catch (error) {
+      console.error('Save title error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update project name. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingTitle(false);
+    }
+  };
+
   const handleImproveIdea = async () => {
     if (!idea) return;
     
@@ -1480,7 +1523,62 @@ export default function IdeaDetail() {
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="space-y-2">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <CardTitle className="text-2xl">{idea.title}</CardTitle>
+                  {editingTitle ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                        placeholder="Enter project name"
+                        className="text-xl font-semibold h-10 w-64"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveTitle();
+                          if (e.key === 'Escape') {
+                            setEditingTitle(false);
+                            setNewTitle('');
+                          }
+                        }}
+                        data-testid="input-edit-title"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={handleSaveTitle}
+                        disabled={savingTitle || !newTitle.trim()}
+                        data-testid="button-save-title"
+                      >
+                        {savingTitle ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingTitle(false);
+                          setNewTitle('');
+                        }}
+                        data-testid="button-cancel-title"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-2xl">{idea.title}</CardTitle>
+                      {isOwner && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => {
+                            setNewTitle(idea.title);
+                            setEditingTitle(true);
+                          }}
+                          data-testid="button-edit-title"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
                   <Badge className={stageColors[idea.stage] || stageColors.concept}>
                     {idea.stage}
                   </Badge>
