@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Rocket, Calendar, Clock, Users, Video, Plus, Send, Bell,
   MapPin, CalendarDays, ChevronLeft, ChevronRight, Check,
-  ExternalLink, Loader2
+  ExternalLink, Loader2, Ticket, Lightbulb
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 
@@ -59,6 +59,24 @@ const eventTypeColors: Record<string, string> = {
   other: "bg-gray-500",
 };
 
+interface RoadshowBooking {
+  id: number;
+  ideaId: string;
+  ideaTitle: string;
+  eventId: number | null;
+  preferredDate: string | null;
+  pitchDuration: number;
+  message: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  adminNotes: string | null;
+  createdAt: string;
+}
+
+interface UserIdea {
+  id: string;
+  title: string;
+}
+
 export default function Foundry() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -66,8 +84,16 @@ export default function Foundry() {
   const queryClient = useQueryClient();
   
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<FoundryEvent | null>(null);
+
+  const [bookingForm, setBookingForm] = useState({
+    ideaId: "",
+    preferredDate: "",
+    pitchDuration: "10",
+    message: "",
+  });
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -106,6 +132,63 @@ export default function Foundry() {
       if (!res.ok) return false;
       const roles = await res.json();
       return roles.some((r: { role: string }) => r.role === "admin");
+    },
+  });
+
+  // Get user's ideas for booking
+  const { data: userIdeas = [] } = useQuery<UserIdea[]>({
+    queryKey: ["/api/ideas/my"],
+    queryFn: async () => {
+      const res = await fetch("/api/ideas/my", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  // Get user's roadshow bookings
+  const { data: myBookings = [] } = useQuery<RoadshowBooking[]>({
+    queryKey: ["/api/roadshow-bookings"],
+    queryFn: async () => {
+      const res = await fetch("/api/roadshow-bookings", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const createBookingMutation = useMutation({
+    mutationFn: async (data: typeof bookingForm) => {
+      const res = await apiRequest("/api/roadshow-bookings", {
+        method: "POST",
+        body: JSON.stringify({
+          ideaId: data.ideaId,
+          preferredDate: data.preferredDate || null,
+          pitchDuration: parseInt(data.pitchDuration),
+          message: data.message || null,
+        }),
+      });
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roadshow-bookings"] });
+      setBookingDialogOpen(false);
+      setBookingForm({ ideaId: "", preferredDate: "", pitchDuration: "10", message: "" });
+      toast({ title: "Booking Requested", description: "Your roadshow request has been submitted for approval." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to submit booking request.", variant: "destructive" });
+    },
+  });
+
+  const cancelBookingMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      await apiRequest(`/api/roadshow-bookings/${bookingId}`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roadshow-bookings"] });
+      toast({ title: "Booking Cancelled", description: "Your booking request has been cancelled." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to cancel booking.", variant: "destructive" });
     },
   });
 
@@ -360,6 +443,10 @@ export default function Foundry() {
         <TabsList>
           <TabsTrigger value="upcoming" data-testid="tab-upcoming">Upcoming Events</TabsTrigger>
           <TabsTrigger value="calendar" data-testid="tab-calendar">Calendar</TabsTrigger>
+          <TabsTrigger value="book" data-testid="tab-book">
+            <Ticket className="w-4 h-4 mr-1" />
+            Book Roadshow
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="upcoming" className="mt-6">
@@ -566,6 +653,157 @@ export default function Foundry() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="book" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Ticket className="w-5 h-5" />
+                  Request a Roadshow Slot
+                </CardTitle>
+                <CardDescription>
+                  Present your startup idea at a monthly Yassu Foundry roadshow event.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {userIdeas.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Lightbulb className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">You need to create an idea first before booking a roadshow slot.</p>
+                    <Button className="mt-4" onClick={() => navigate("/portal/ideas")} data-testid="button-create-idea">
+                      Create an Idea
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="booking-idea">Select Your Idea</Label>
+                      <Select
+                        value={bookingForm.ideaId}
+                        onValueChange={(value) => setBookingForm({ ...bookingForm, ideaId: value })}
+                      >
+                        <SelectTrigger data-testid="select-booking-idea">
+                          <SelectValue placeholder="Choose an idea to pitch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {userIdeas.map((idea) => (
+                            <SelectItem key={idea.id} value={idea.id}>{idea.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="preferred-date">Preferred Date (Optional)</Label>
+                      <Input
+                        id="preferred-date"
+                        type="date"
+                        value={bookingForm.preferredDate}
+                        onChange={(e) => setBookingForm({ ...bookingForm, preferredDate: e.target.value })}
+                        data-testid="input-preferred-date"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pitch-duration">Pitch Duration (minutes)</Label>
+                      <Select
+                        value={bookingForm.pitchDuration}
+                        onValueChange={(value) => setBookingForm({ ...bookingForm, pitchDuration: value })}
+                      >
+                        <SelectTrigger data-testid="select-pitch-duration">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5 minutes</SelectItem>
+                          <SelectItem value="10">10 minutes</SelectItem>
+                          <SelectItem value="15">15 minutes</SelectItem>
+                          <SelectItem value="20">20 minutes</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="booking-message">Additional Notes (Optional)</Label>
+                      <Textarea
+                        id="booking-message"
+                        placeholder="Any special requirements or information for the organizers..."
+                        value={bookingForm.message}
+                        onChange={(e) => setBookingForm({ ...bookingForm, message: e.target.value })}
+                        data-testid="textarea-booking-message"
+                      />
+                    </div>
+                    <Button
+                      className="w-full"
+                      onClick={() => createBookingMutation.mutate(bookingForm)}
+                      disabled={!bookingForm.ideaId || createBookingMutation.isPending}
+                      data-testid="button-submit-booking"
+                    >
+                      {createBookingMutation.isPending ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>
+                      ) : (
+                        <><Ticket className="w-4 h-4 mr-2" /> Request Roadshow Slot</>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>My Booking Requests</CardTitle>
+                <CardDescription>Track the status of your roadshow booking requests.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {myBookings.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No booking requests yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {myBookings.map((booking) => (
+                      <div key={booking.id} className="border rounded-lg p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h4 className="font-medium">{booking.ideaTitle}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Requested: {new Date(booking.createdAt).toLocaleDateString()}
+                            </p>
+                            {booking.preferredDate && (
+                              <p className="text-sm text-muted-foreground">
+                                Preferred: {new Date(booking.preferredDate).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <Badge
+                            variant={
+                              booking.status === 'approved' ? 'default' :
+                              booking.status === 'pending' ? 'secondary' :
+                              booking.status === 'rejected' ? 'destructive' : 'outline'
+                            }
+                          >
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </Badge>
+                        </div>
+                        {booking.adminNotes && (
+                          <p className="text-sm mt-2 bg-muted p-2 rounded">{booking.adminNotes}</p>
+                        )}
+                        {booking.status === 'pending' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mt-2"
+                            onClick={() => cancelBookingMutation.mutate(booking.id)}
+                            disabled={cancelBookingMutation.isPending}
+                            data-testid={`button-cancel-booking-${booking.id}`}
+                          >
+                            Cancel Request
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 
