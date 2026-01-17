@@ -17,50 +17,6 @@ interface FeaturedIdea {
   coverImage?: string | null;
 }
 
-const sampleIdeas = [
-  {
-    id: "sample-1",
-    title: "Foot Prints",
-    problem: "Digital footprint tracking and analytics platform for businesses and individuals",
-    stage: "idea_posted",
-    tags: ["Tech"],
-  },
-  {
-    id: "sample-2",
-    title: "Trip-Sit for AI Hallucinations",
-    problem: "AI safety monitoring for healthcare applications to prevent misinformation",
-    stage: "idea_posted",
-    tags: ["Healthcare"],
-  },
-  {
-    id: "sample-3",
-    title: "User-based App Privacy T&C's",
-    problem: "Simplified privacy terms generator for apps that users can actually understand",
-    stage: "idea_posted",
-    tags: ["Tech"],
-  },
-  {
-    id: "sample-4",
-    title: "Dating App Through Therapy",
-    problem: "Relationship building through guided communication and therapy techniques",
-    stage: "idea_posted",
-    tags: ["Social"],
-  },
-  {
-    id: "sample-5",
-    title: "Campus Marketplace",
-    problem: "Peer-to-peer marketplace for university students to buy and sell items",
-    stage: "idea_posted",
-    tags: ["Education"],
-  },
-  {
-    id: "sample-6",
-    title: "Sustainable Fashion AI",
-    problem: "AI-powered sustainable wardrobe recommendations to reduce fashion waste",
-    stage: "idea_posted",
-    tags: ["Sustainability"],
-  },
-];
 
 const stageColors: { [key: string]: string } = {
   idea_posted: "bg-primary",
@@ -126,8 +82,12 @@ const IdeasSlider = () => {
     };
   }, [emblaApi, onSelect]);
 
-  const ideasToShow = featuredIdeas.length > 0 ? featuredIdeas : sampleIdeas;
-  const showingSamples = featuredIdeas.length === 0;
+  // Don't show section if no featured ideas
+  if (featuredIdeas.length === 0 && !loading) {
+    return null;
+  }
+  
+  const ideasToShow = featuredIdeas;
 
   return (
     <section id="ideas" className="py-24 relative overflow-hidden">
@@ -144,7 +104,7 @@ const IdeasSlider = () => {
           className="mb-12 text-center"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {showingSamples ? 'Sample of' : 'Featured'} <span className="text-gradient">Yassu Ideas</span>
+            Featured <span className="text-gradient">Yassu Ideas</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Discover innovative startup concepts from university founders across the nation
@@ -194,20 +154,14 @@ const IdeasSlider = () => {
                       <p className="text-sm text-muted-foreground line-clamp-2">
                         {idea.problem}
                       </p>
-                      {showingSamples ? (
-                        <span className="inline-flex items-center gap-1 text-muted-foreground text-sm">
-                          Sample Idea
-                        </span>
-                      ) : (
-                        <Link
-                          to={`/portal/ideas/${idea.id}`}
-                          className="inline-flex items-center gap-1 text-primary hover:text-primary/80 text-sm font-medium transition-colors group"
-                          data-testid={`link-idea-${idea.id}`}
-                        >
-                          View Idea
-                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                      )}
+                      <Link
+                        to={`/portal/ideas/${idea.id}`}
+                        className="inline-flex items-center gap-1 text-primary hover:text-primary/80 text-sm font-medium transition-colors group"
+                        data-testid={`link-idea-${idea.id}`}
+                      >
+                        View Idea
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </Link>
                     </div>
                   </Card>
                 </motion.div>
