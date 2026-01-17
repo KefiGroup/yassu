@@ -388,6 +388,21 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Get user roles
+  app.get("/api/user/roles", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const roles = await storage.getUserRoles(req.session.userId);
+      res.json(roles);
+    } catch (error) {
+      console.error("Get user roles error:", error);
+      res.status(500).json({ error: "Failed to fetch user roles" });
+    }
+  });
+
   app.get("/api/profile", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
