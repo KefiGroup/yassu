@@ -883,31 +883,6 @@ export default function InvestorPitchDeck() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Regenerate
           </Button>
-          <Button
-            onClick={refineDeck}
-            disabled={isRefining}
-            data-testid="button-investor-proof"
-          >
-            {isRefining ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Refining...
-              </>
-            ) : (
-              <>
-                <Shield className="w-4 h-4 mr-2" />
-                Investor-Proof
-              </>
-            )}
-          </Button>
-          <Button
-            variant="default"
-            onClick={() => navigate(`/portal/pitch-preparation?ideaId=${ideaId}`)}
-            data-testid="button-prepare-pitch"
-          >
-            <Mic className="w-4 h-4 mr-2" />
-            Prepare Pitch
-          </Button>
         </div>
       </div>
 
