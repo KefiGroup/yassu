@@ -449,7 +449,16 @@ export default function Foundry() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle>{format(currentMonth, "MMMM yyyy")}</CardTitle>
-                <div className="flex gap-1">
+                <div className="flex items-center gap-2">
+                  {isAdmin && (
+                    <Button
+                      onClick={() => setCreateDialogOpen(true)}
+                      data-testid="button-create-event-calendar"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Event
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="icon"
