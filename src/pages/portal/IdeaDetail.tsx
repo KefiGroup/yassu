@@ -89,11 +89,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { SKILL_OPTIONS } from '@/lib/profileOptions';
 
 interface Idea {
