@@ -3418,6 +3418,55 @@ Return valid JSON:
     }
   });
 
+  // Get foundry events with attendees (admin only)
+  app.get("/api/admin/foundry-events", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Get all events
+      const events = await db.select()
+        .from(schema.foundryEvents)
+        .orderBy(desc(schema.foundryEvents.startTime));
+
+      // Get attendees for each event
+      const eventsWithAttendees = await Promise.all(events.map(async (event) => {
+        const rsvps = await db.select({
+          id: schema.profiles.userId,
+          fullName: schema.profiles.fullName,
+          email: schema.users.email,
+          avatarUrl: schema.profiles.avatarUrl,
+          status: schema.eventRsvps.status,
+        })
+          .from(schema.eventRsvps)
+          .innerJoin(schema.users, eq(schema.eventRsvps.userId, schema.users.id))
+          .innerJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+          .where(eq(schema.eventRsvps.eventId, event.id))
+          .orderBy(schema.eventRsvps.status);
+
+        return {
+          id: event.id,
+          title: event.title,
+          eventType: event.eventType,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          attendees: rsvps,
+        };
+      }));
+
+      res.json(eventsWithAttendees);
+    } catch (error) {
+      console.error("Get foundry events error:", error);
+      res.status(500).json({ error: "Failed to get foundry events" });
+    }
+  });
+
   // Update suggestion status (admin only)
   app.patch("/api/admin/suggestions/:id", async (req: Request, res: Response) => {
     if (!req.session.userId) {

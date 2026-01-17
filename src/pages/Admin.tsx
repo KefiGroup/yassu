@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -73,6 +73,23 @@ interface Suggestion {
   userFullName: string | null;
 }
 
+interface FoundryEventAttendee {
+  id: number;
+  fullName: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+  status: 'going' | 'maybe' | 'not_going';
+}
+
+interface FoundryEventWithAttendees {
+  id: number;
+  title: string;
+  eventType: string;
+  startTime: string;
+  endTime: string | null;
+  attendees: FoundryEventAttendee[];
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -82,6 +99,7 @@ export default function Admin() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [foundryEvents, setFoundryEvents] = useState<FoundryEventWithAttendees[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [ideaSearchQuery, setIdeaSearchQuery] = useState('');
@@ -117,12 +135,13 @@ export default function Admin() {
           return;
         }
         
-        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData] = await Promise.all([
+        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData, foundryEventsData] = await Promise.all([
           apiRequest<ProfileWithBadges[]>('/admin/profiles'),
           apiRequest<Idea[]>('/admin/ideas'),
           apiRequest<AdminUser[]>('/admin/admins'),
           apiRequest<Announcement[]>('/admin/announcements'),
-          apiRequest<Suggestion[]>('/admin/suggestions')
+          apiRequest<Suggestion[]>('/admin/suggestions'),
+          apiRequest<FoundryEventWithAttendees[]>('/admin/foundry-events')
         ]);
         
         setProfiles(profilesData);
@@ -130,6 +149,7 @@ export default function Admin() {
         setAdmins(adminsData);
         setAnnouncements(announcementsData);
         setSuggestions(suggestionsData);
+        setFoundryEvents(foundryEventsData);
       } catch (error) {
         console.error('Admin check failed:', error);
         navigate('/portal');
@@ -536,6 +556,10 @@ export default function Admin() {
                 {suggestions.filter(s => s.status === 'new').length}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="foundry" className="gap-2" data-testid="tab-foundry">
+            <Rocket className="w-4 h-4" />
+            Foundry Events
           </TabsTrigger>
         </TabsList>
 
@@ -1267,6 +1291,130 @@ export default function Admin() {
                   ))
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="foundry">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Rocket className="w-5 h-5" />
+                Foundry Events & Attendees
+              </CardTitle>
+              <CardDescription>
+                View all Yassu Foundry events and their RSVPs.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {foundryEvents.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">No events created yet.</p>
+              ) : (
+                foundryEvents.map((event) => (
+                  <Card key={event.id} className="border">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <CardTitle className="text-lg">{event.title}</CardTitle>
+                          <CardDescription>
+                            {new Date(event.startTime).toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })} at {new Date(event.startTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{event.eventType}</Badge>
+                          <Badge variant="secondary">
+                            {event.attendees.filter(a => a.status === 'going').length} Going
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {event.attendees.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No RSVPs yet</p>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <h4 className="text-sm font-medium text-green-600 mb-2 flex items-center gap-1">
+                                <CheckCircle className="w-4 h-4" />
+                                Going ({event.attendees.filter(a => a.status === 'going').length})
+                              </h4>
+                              <div className="space-y-2">
+                                {event.attendees.filter(a => a.status === 'going').map((attendee) => (
+                                  <div key={attendee.id} className="flex items-center gap-2 text-sm">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={attendee.avatarUrl || undefined} />
+                                      <AvatarFallback className="text-xs">
+                                        {attendee.fullName?.charAt(0) || '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate font-medium">{attendee.fullName || 'Unknown'}</p>
+                                      <p className="truncate text-xs text-muted-foreground">{attendee.email}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-amber-600 mb-2 flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                Maybe ({event.attendees.filter(a => a.status === 'maybe').length})
+                              </h4>
+                              <div className="space-y-2">
+                                {event.attendees.filter(a => a.status === 'maybe').map((attendee) => (
+                                  <div key={attendee.id} className="flex items-center gap-2 text-sm">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={attendee.avatarUrl || undefined} />
+                                      <AvatarFallback className="text-xs">
+                                        {attendee.fullName?.charAt(0) || '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate font-medium">{attendee.fullName || 'Unknown'}</p>
+                                      <p className="truncate text-xs text-muted-foreground">{attendee.email}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-red-600 mb-2 flex items-center gap-1">
+                                <XCircle className="w-4 h-4" />
+                                Not Going ({event.attendees.filter(a => a.status === 'not_going').length})
+                              </h4>
+                              <div className="space-y-2">
+                                {event.attendees.filter(a => a.status === 'not_going').map((attendee) => (
+                                  <div key={attendee.id} className="flex items-center gap-2 text-sm">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={attendee.avatarUrl || undefined} />
+                                      <AvatarFallback className="text-xs">
+                                        {attendee.fullName?.charAt(0) || '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate font-medium">{attendee.fullName || 'Unknown'}</p>
+                                      <p className="truncate text-xs text-muted-foreground">{attendee.email}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>
