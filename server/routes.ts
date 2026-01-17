@@ -5597,4 +5597,230 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       res.status(500).json({ error: "Failed to send reminders" });
     }
   });
+
+  // ============================================
+  // ROADSHOW BOOKING ENDPOINTS
+  // ============================================
+
+  // Get user's roadshow bookings
+  app.get("/api/roadshow-bookings", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const bookings = await db.select({
+        id: schema.roadshowBookings.id,
+        ideaId: schema.roadshowBookings.ideaId,
+        ideaTitle: schema.ideas.title,
+        eventId: schema.roadshowBookings.eventId,
+        preferredDate: schema.roadshowBookings.preferredDate,
+        pitchDuration: schema.roadshowBookings.pitchDuration,
+        message: schema.roadshowBookings.message,
+        status: schema.roadshowBookings.status,
+        adminNotes: schema.roadshowBookings.adminNotes,
+        createdAt: schema.roadshowBookings.createdAt,
+      })
+        .from(schema.roadshowBookings)
+        .innerJoin(schema.ideas, eq(schema.roadshowBookings.ideaId, schema.ideas.id))
+        .where(eq(schema.roadshowBookings.userId, req.session.userId))
+        .orderBy(desc(schema.roadshowBookings.createdAt));
+
+      res.json(bookings);
+    } catch (error) {
+      console.error("Get roadshow bookings error:", error);
+      res.status(500).json({ error: "Failed to get bookings" });
+    }
+  });
+
+  // Create a roadshow booking request
+  app.post("/api/roadshow-bookings", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { ideaId, preferredDate, pitchDuration, message } = req.body;
+
+      if (!ideaId) {
+        return res.status(400).json({ error: "Idea ID is required" });
+      }
+
+      // Check if user owns or is a team member of this idea
+      const [idea] = await db.select()
+        .from(schema.ideas)
+        .where(eq(schema.ideas.id, ideaId));
+
+      if (!idea) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      if (idea.creatorId !== req.session.userId) {
+        // Check if user is a team member
+        const [teamMember] = await db.select()
+          .from(schema.teamMembers)
+          .innerJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+          .where(and(
+            eq(schema.teams.ideaId, ideaId),
+            eq(schema.teamMembers.userId, req.session.userId)
+          ));
+
+        if (!teamMember) {
+          return res.status(403).json({ error: "You must be the idea creator or team member to book a roadshow" });
+        }
+      }
+
+      // Check for existing pending booking
+      const [existingBooking] = await db.select()
+        .from(schema.roadshowBookings)
+        .where(and(
+          eq(schema.roadshowBookings.ideaId, ideaId),
+          eq(schema.roadshowBookings.status, "pending")
+        ));
+
+      if (existingBooking) {
+        return res.status(400).json({ error: "A pending booking request already exists for this idea" });
+      }
+
+      // Create booking
+      const [booking] = await db.insert(schema.roadshowBookings)
+        .values({
+          ideaId,
+          userId: req.session.userId,
+          preferredDate: preferredDate ? new Date(preferredDate) : null,
+          pitchDuration: pitchDuration || 10,
+          message: message || null,
+          status: "pending",
+        })
+        .returning();
+
+      res.json(booking);
+    } catch (error) {
+      console.error("Create roadshow booking error:", error);
+      res.status(500).json({ error: "Failed to create booking" });
+    }
+  });
+
+  // Cancel a roadshow booking
+  app.delete("/api/roadshow-bookings/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const bookingId = parseInt(req.params.id);
+
+      const [booking] = await db.select()
+        .from(schema.roadshowBookings)
+        .where(eq(schema.roadshowBookings.id, bookingId));
+
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      if (booking.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to cancel this booking" });
+      }
+
+      if (booking.status !== "pending") {
+        return res.status(400).json({ error: "Can only cancel pending bookings" });
+      }
+
+      await db.update(schema.roadshowBookings)
+        .set({ status: "cancelled", updatedAt: new Date() })
+        .where(eq(schema.roadshowBookings.id, bookingId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Cancel roadshow booking error:", error);
+      res.status(500).json({ error: "Failed to cancel booking" });
+    }
+  });
+
+  // Admin: Get all roadshow bookings
+  app.get("/api/admin/roadshow-bookings", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const bookings = await db.select({
+        id: schema.roadshowBookings.id,
+        ideaId: schema.roadshowBookings.ideaId,
+        ideaTitle: schema.ideas.title,
+        userId: schema.roadshowBookings.userId,
+        userFullName: schema.profiles.fullName,
+        userEmail: schema.users.email,
+        eventId: schema.roadshowBookings.eventId,
+        preferredDate: schema.roadshowBookings.preferredDate,
+        pitchDuration: schema.roadshowBookings.pitchDuration,
+        message: schema.roadshowBookings.message,
+        status: schema.roadshowBookings.status,
+        adminNotes: schema.roadshowBookings.adminNotes,
+        reviewedBy: schema.roadshowBookings.reviewedBy,
+        reviewedAt: schema.roadshowBookings.reviewedAt,
+        createdAt: schema.roadshowBookings.createdAt,
+      })
+        .from(schema.roadshowBookings)
+        .innerJoin(schema.ideas, eq(schema.roadshowBookings.ideaId, schema.ideas.id))
+        .innerJoin(schema.users, eq(schema.roadshowBookings.userId, schema.users.id))
+        .innerJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+        .orderBy(desc(schema.roadshowBookings.createdAt));
+
+      res.json(bookings);
+    } catch (error) {
+      console.error("Get admin roadshow bookings error:", error);
+      res.status(500).json({ error: "Failed to get bookings" });
+    }
+  });
+
+  // Admin: Update roadshow booking status
+  app.patch("/api/admin/roadshow-bookings/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const { status, adminNotes, eventId } = req.body;
+
+      const [booking] = await db.select()
+        .from(schema.roadshowBookings)
+        .where(eq(schema.roadshowBookings.id, bookingId));
+
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      const updateData: any = {
+        updatedAt: new Date(),
+        reviewedBy: req.session.userId,
+        reviewedAt: new Date(),
+      };
+
+      if (status) updateData.status = status;
+      if (adminNotes !== undefined) updateData.adminNotes = adminNotes;
+      if (eventId !== undefined) updateData.eventId = eventId;
+
+      const [updated] = await db.update(schema.roadshowBookings)
+        .set(updateData)
+        .where(eq(schema.roadshowBookings.id, bookingId))
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Update roadshow booking error:", error);
+      res.status(500).json({ error: "Failed to update booking" });
+    }
+  });
 }
