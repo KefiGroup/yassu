@@ -1365,3 +1365,241 @@ export async function sendAnnouncementEmail(
     html,
   });
 }
+
+export async function sendIdeaCreatedEmail(
+  email: string,
+  userName: string,
+  ideaTitle: string,
+  ideaId: string
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Your Idea Has Been Created!</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Hi ${userName},
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Congratulations! Your startup idea <strong>"${ideaTitle}"</strong> has been successfully created on Yassu.
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Here's what you can do next:
+              </p>
+              
+              <ul style="margin: 0 0 20px; padding-left: 20px; color: #4a4a4a; font-size: 16px; line-height: 1.8;">
+                <li>Generate a business plan with AI assistance</li>
+                <li>Find advisors and co-founders to join your team</li>
+                <li>Create an investor pitch deck</li>
+                <li>Apply for Yassu Foundry events</li>
+              </ul>
+              
+              <table role="presentation" style="margin: 30px 0;">
+                <tr>
+                  <td style="border-radius: 6px; background-color: #7c3aed;">
+                    <a href="${APP_URL}/portal/ideas/${ideaId}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      View Your Idea
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                We're excited to be part of your entrepreneurship journey!
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                &copy; ${new Date().getFullYear()} Yassu. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `Your idea "${ideaTitle}" has been created - Yassu`,
+    html,
+  });
+}
+
+export async function sendAdvisorRequestSentEmail(
+  email: string,
+  userName: string,
+  advisorName: string,
+  ideaTitle: string
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Advisor Request Sent!</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Hi ${userName},
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                You've sent an advisor request to <strong>${advisorName}</strong> for your idea <strong>"${ideaTitle}"</strong>.
+              </p>
+              
+              <div style="margin: 20px 0; padding: 20px; background-color: #f0fdf4; border-radius: 8px; border-left: 4px solid #22c55e;">
+                <p style="margin: 0; color: #166534; font-size: 14px;">
+                  We'll notify you as soon as ${advisorName} responds to your request.
+                </p>
+              </div>
+              
+              <p style="margin: 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                In the meantime, you can continue building your business plan and exploring other potential advisors on the platform.
+              </p>
+              
+              <table role="presentation" style="margin: 30px 0;">
+                <tr>
+                  <td style="border-radius: 6px; background-color: #7c3aed;">
+                    <a href="${APP_URL}/portal/advisors" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      Browse More Advisors
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                &copy; ${new Date().getFullYear()} Yassu. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `Advisor request sent to ${advisorName} - Yassu`,
+    html,
+  });
+}
+
+export async function sendCollaboratorRequestAcceptedEmail(
+  email: string,
+  userName: string,
+  accepterName: string
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding: 40px 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 700;">Yassu</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h2 style="margin: 0 0 20px; color: #22c55e; font-size: 24px; font-weight: 600;">Connection Accepted!</h2>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Hi ${userName},
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                Great news! <strong>${accepterName}</strong> has accepted your collaborator request.
+              </p>
+              
+              <div style="margin: 20px 0; padding: 20px; background-color: #f0fdf4; border-radius: 8px; border-left: 4px solid #22c55e;">
+                <p style="margin: 0; color: #166534; font-size: 14px;">
+                  You can now message ${accepterName} directly and collaborate on projects together!
+                </p>
+              </div>
+              
+              <table role="presentation" style="margin: 30px 0;">
+                <tr>
+                  <td style="border-radius: 6px; background-color: #7c3aed;">
+                    <a href="${APP_URL}/portal/collaborators" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      View Your Connections
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 20px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                Start a conversation and explore how you can work together!
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; text-align: center;">
+                &copy; ${new Date().getFullYear()} Yassu. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `${accepterName} accepted your connection request - Yassu`,
+    html,
+  });
+}

@@ -953,6 +953,20 @@ Return valid JSON:
         }
       }
       
+      // Send confirmation email to the idea creator
+      const creator = await storage.getProfile(req.session.userId);
+      if (creator?.email) {
+        const { sendIdeaCreatedEmail } = await import('./email');
+        sendIdeaCreatedEmail(
+          creator.email,
+          creator.fullName || 'Founder',
+          idea.title,
+          idea.id
+        ).catch(err => {
+          console.error('Failed to send idea created email:', err);
+        });
+      }
+      
       // Send skill match notifications if idea is public
       if (ideaData.isPublic && req.body.desiredTeammates) {
         // Extract skills from desiredTeammates text
@@ -1946,7 +1960,7 @@ Return valid JSON:
           link: `/portal/ideas/${ideaId}`,
         });
         
-        const { sendTeamInvitationEmail } = await import('./email');
+        const { sendTeamInvitationEmail, sendAdvisorRequestSentEmail } = await import('./email');
         sendTeamInvitationEmail(
           invitee.email,
           invitee.fullName || 'there',
@@ -1958,6 +1972,18 @@ Return valid JSON:
           console.error('Failed to send team invitation email:', err);
         });
         console.log("Team invitation email sent to:", invitee.email);
+        
+        // Send confirmation email to the inviter (sender)
+        if (inviter.email && (role === 'advisor' || message?.toLowerCase().includes('advisor'))) {
+          sendAdvisorRequestSentEmail(
+            inviter.email,
+            inviter.fullName || 'there',
+            invitee.fullName || 'the advisor',
+            idea.title
+          ).catch(err => {
+            console.error('Failed to send advisor request confirmation email:', err);
+          });
+        }
       } else {
         console.log("Could not send email - missing data:", { 
           hasInviter: !!inviter, 
@@ -2619,6 +2645,19 @@ Return valid JSON:
         message: `${accepter?.fullName || 'Someone'} accepted your connection request`,
         link: '/portal/collaborators',
       });
+      
+      // Send email to the requester
+      const requester = await storage.getProfile(connection.requesterId);
+      if (requester?.email) {
+        const { sendCollaboratorRequestAcceptedEmail } = await import('./email');
+        sendCollaboratorRequestAcceptedEmail(
+          requester.email,
+          requester.fullName || 'there',
+          accepter?.fullName || 'Someone'
+        ).catch(err => {
+          console.error('Failed to send connection accepted email:', err);
+        });
+      }
       
       res.json(connection);
     } catch (error) {
