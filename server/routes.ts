@@ -705,6 +705,53 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Get featured ideas for homepage (public)
+  app.get("/api/ideas/featured", async (req: Request, res: Response) => {
+    try {
+      const allIdeas = await storage.getIdeasWithCreators();
+      // Filter to only public and featured ideas
+      const featuredIdeas = allIdeas.filter(idea => idea.isPublic && idea.isFeatured);
+      res.json(featuredIdeas);
+    } catch (error) {
+      console.error("Error fetching featured ideas:", error);
+      res.status(500).json({ error: "Failed to fetch featured ideas" });
+    }
+  });
+
+  // Toggle idea featured status (admin only)
+  app.patch("/api/admin/ideas/:id/featured", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { id } = req.params;
+      const { isFeatured } = req.body;
+
+      // Update the idea's featured status
+      const [updated] = await db
+        .update(ideas)
+        .set({ isFeatured: isFeatured })
+        .where(eq(ideas.id, id))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Idea not found" });
+      }
+
+      res.json({ success: true, idea: updated });
+    } catch (error) {
+      console.error("Error toggling featured status:", error);
+      res.status(500).json({ error: "Failed to update featured status" });
+    }
+  });
+
   // Get all referrals (admin only)
   app.get("/api/referrals/all", async (req: Request, res: Response) => {
     if (!req.session.userId) {
