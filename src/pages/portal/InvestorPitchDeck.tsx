@@ -1129,7 +1129,12 @@ export default function InvestorPitchDeck() {
             } catch (e) {
               console.error("Failed to save pitch deck:", e);
             }
-            navigate(`/portal/ideas/${ideaId}`);
+            // Navigate back to idea detail page (fall back to ideas list if no ideaId)
+            if (ideaId) {
+              navigate(`/portal/ideas/${ideaId}`);
+            } else {
+              navigate('/portal/ideas');
+            }
           }}
           data-testid="button-complete-return-idea"
         >
