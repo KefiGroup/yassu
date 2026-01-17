@@ -96,11 +96,6 @@ export default function Foundry() {
     message: "",
   });
 
-  // Filter for upcoming roadshow events that creators can book
-  const upcomingRoadshows = events.filter(
-    (e) => e.eventType === "roadshow" && new Date(e.startTime) > new Date()
-  ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
@@ -121,6 +116,11 @@ export default function Foundry() {
       return res.json();
     },
   });
+
+  // Filter for upcoming roadshow events that creators can book
+  const upcomingRoadshows = events.filter(
+    (e) => e.eventType === "roadshow" && new Date(e.startTime) > new Date()
+  ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
   const { data: zoomStatus } = useQuery<{ configured: boolean }>({
     queryKey: ["/api/foundry/zoom-status"],
