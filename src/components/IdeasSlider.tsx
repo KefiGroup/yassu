@@ -14,6 +14,7 @@ interface FeaturedIdea {
   stage: string;
   tags?: string[];
   creatorName?: string;
+  coverImage?: string | null;
 }
 
 const sampleIdeas = [
@@ -169,9 +170,19 @@ const IdeasSlider = () => {
                         <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
                         <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                       </div>
-                      <div className="w-full h-48 bg-gradient-to-br from-primary/20 via-pink-500/10 to-violet-500/20 flex items-center justify-center">
-                        <Lightbulb className="w-16 h-16 text-primary/40" />
-                      </div>
+                      {idea.coverImage ? (
+                        <div className="w-full h-48 overflow-hidden">
+                          <img 
+                            src={idea.coverImage} 
+                            alt={idea.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-48 bg-gradient-to-br from-primary/20 via-pink-500/10 to-violet-500/20 flex items-center justify-center">
+                          <Lightbulb className="w-16 h-16 text-primary/40" />
+                        </div>
+                      )}
                     </div>
                     <div className="p-5 space-y-3">
                       <Badge className={`${stageColors[idea.stage] || 'bg-primary'} text-white border-0`}>

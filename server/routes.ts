@@ -13,7 +13,7 @@ import { generateSmartMatches, type MatchingNeeds } from "./smart-matching";
 import { trackReferral, getUserReferrals, getUserReferralStats, getAllReferrals, initReferralsTable } from "./referrals";
 import { getPipelineStats, getPipelineIdeas } from "./pipeline";
 import ideaInterestsRouter from "./idea-interests";
-import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
+import { registerObjectStorageRoutes, ObjectStorageService, objectStorageClient } from "./replit_integrations/object_storage";
 import { generateImageBuffer } from "./replit_integrations/image/client";
 
 const objectStorageService = new ObjectStorageService();
@@ -27,12 +27,30 @@ async function generateIdeaCoverImage(ideaId: string, title: string, problem: st
     // Generate the image
     const imageBuffer = await generateImageBuffer(prompt, "512x512");
     
-    // Upload to object storage
-    const fileName = `idea-covers/${ideaId}-${Date.now()}.png`;
-    await objectStorageService.upload(fileName, imageBuffer, "image/png");
+    // Upload to object storage using the objectStorageClient
+    const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+    if (!bucketId) {
+      console.error("DEFAULT_OBJECT_STORAGE_BUCKET_ID not set");
+      return null;
+    }
     
-    // Get the public URL
-    const publicUrl = await objectStorageService.getPublicUrl(fileName);
+    const fileName = `idea-covers/${ideaId}-${Date.now()}.png`;
+    const bucket = objectStorageClient.bucket(bucketId);
+    const file = bucket.file(fileName);
+    
+    // Upload the buffer
+    await file.save(imageBuffer, {
+      contentType: "image/png",
+      metadata: {
+        cacheControl: "public, max-age=31536000",
+      },
+    });
+    
+    // Make it publicly accessible
+    await file.makePublic();
+    
+    // Return the public URL
+    const publicUrl = `https://storage.googleapis.com/${bucketId}/${fileName}`;
     
     return publicUrl;
   } catch (error) {
