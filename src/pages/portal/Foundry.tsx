@@ -137,9 +137,9 @@ export default function Foundry() {
 
   // Get user's ideas for booking
   const { data: userIdeas = [] } = useQuery<UserIdea[]>({
-    queryKey: ["/api/ideas/my"],
+    queryKey: ["/api/my-ideas"],
     queryFn: async () => {
-      const res = await fetch("/api/ideas/my", { credentials: "include" });
+      const res = await fetch("/api/my-ideas", { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },

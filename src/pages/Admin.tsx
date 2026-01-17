@@ -90,6 +90,22 @@ interface FoundryEventWithAttendees {
   attendees: FoundryEventAttendee[];
 }
 
+interface RoadshowBooking {
+  id: number;
+  ideaId: string;
+  ideaTitle: string;
+  userId: number;
+  userFullName: string | null;
+  userEmail: string | null;
+  eventId: number | null;
+  preferredDate: string | null;
+  pitchDuration: number;
+  message: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  adminNotes: string | null;
+  createdAt: string;
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -100,6 +116,7 @@ export default function Admin() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [foundryEvents, setFoundryEvents] = useState<FoundryEventWithAttendees[]>([]);
+  const [roadshowBookings, setRoadshowBookings] = useState<RoadshowBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [ideaSearchQuery, setIdeaSearchQuery] = useState('');
@@ -135,13 +152,14 @@ export default function Admin() {
           return;
         }
         
-        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData, foundryEventsData] = await Promise.all([
+        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData, foundryEventsData, bookingsData] = await Promise.all([
           apiRequest<ProfileWithBadges[]>('/admin/profiles'),
           apiRequest<Idea[]>('/admin/ideas'),
           apiRequest<AdminUser[]>('/admin/admins'),
           apiRequest<Announcement[]>('/admin/announcements'),
           apiRequest<Suggestion[]>('/admin/suggestions'),
-          apiRequest<FoundryEventWithAttendees[]>('/admin/foundry-events')
+          apiRequest<FoundryEventWithAttendees[]>('/admin/foundry-events'),
+          apiRequest<RoadshowBooking[]>('/admin/roadshow-bookings')
         ]);
         
         setProfiles(profilesData);
@@ -150,6 +168,7 @@ export default function Admin() {
         setAnnouncements(announcementsData);
         setSuggestions(suggestionsData);
         setFoundryEvents(foundryEventsData);
+        setRoadshowBookings(bookingsData);
       } catch (error) {
         console.error('Admin check failed:', error);
         navigate('/portal');
@@ -480,6 +499,36 @@ export default function Admin() {
     }
   };
 
+  const handleBookingAction = async (bookingId: number, action: 'approve' | 'reject', adminNotes?: string) => {
+    setActionLoading(`booking-${bookingId}-${action}`);
+    try {
+      await apiRequest(`/admin/roadshow-bookings/${bookingId}/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminNotes: adminNotes || null }),
+      });
+
+      toast({
+        title: action === 'approve' ? 'Booking Approved' : 'Booking Rejected',
+        description: `The roadshow booking has been ${action}d.`,
+      });
+
+      const bookingsData = await apiRequest<RoadshowBooking[]>('/admin/roadshow-bookings');
+      setRoadshowBookings(bookingsData);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || `Failed to ${action} booking.`,
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const pendingBookings = roadshowBookings.filter(b => b.status === 'pending');
+  const processedBookings = roadshowBookings.filter(b => b.status !== 'pending');
+
   const filteredProfiles = profiles.filter((profile) =>
     (profile.fullName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (profile.email?.toLowerCase() || '').includes(searchQuery.toLowerCase())
@@ -560,6 +609,10 @@ export default function Admin() {
           <TabsTrigger value="foundry" className="gap-2" data-testid="tab-foundry">
             <Rocket className="w-4 h-4" />
             Foundry Events
+          </TabsTrigger>
+          <TabsTrigger value="bookings" className="gap-2" data-testid="tab-bookings">
+            <Calendar className="w-4 h-4" />
+            Roadshow Bookings
           </TabsTrigger>
         </TabsList>
 
@@ -1414,6 +1467,117 @@ export default function Admin() {
                     </CardContent>
                   </Card>
                 ))
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="bookings">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Roadshow Booking Requests
+              </CardTitle>
+              <CardDescription>
+                Review and manage requests from teams who want to present at roadshow events.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {pendingBookings.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-amber-500" />
+                    Pending Requests ({pendingBookings.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {pendingBookings.map((booking) => (
+                      <Card key={booking.id} className="border-l-4 border-l-amber-500">
+                        <CardContent className="pt-4">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-lg">{booking.ideaTitle}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Requested by: {booking.userFullName || booking.userEmail || 'Unknown'}
+                              </p>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <Badge variant="outline">{booking.pitchDuration} min pitch</Badge>
+                                {booking.preferredDate && (
+                                  <Badge variant="secondary">
+                                    Preferred: {new Date(booking.preferredDate).toLocaleDateString()}
+                                  </Badge>
+                                )}
+                                <Badge variant="outline">
+                                  Submitted: {new Date(booking.createdAt).toLocaleDateString()}
+                                </Badge>
+                              </div>
+                              {booking.message && (
+                                <p className="text-sm mt-3 p-3 bg-muted rounded-md">{booking.message}</p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleBookingAction(booking.id, 'approve')}
+                                disabled={actionLoading === `booking-${booking.id}-approve`}
+                                data-testid={`button-approve-booking-${booking.id}`}
+                              >
+                                {actionLoading === `booking-${booking.id}-approve` ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <><CheckCircle className="w-4 h-4 mr-1" /> Approve</>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleBookingAction(booking.id, 'reject')}
+                                disabled={actionLoading === `booking-${booking.id}-reject`}
+                                data-testid={`button-reject-booking-${booking.id}`}
+                              >
+                                {actionLoading === `booking-${booking.id}-reject` ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <><XCircle className="w-4 h-4 mr-1" /> Reject</>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {pendingBookings.length === 0 && (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-4" />
+                  <p className="text-muted-foreground">No pending booking requests.</p>
+                </div>
+              )}
+
+              {processedBookings.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Previously Processed</h3>
+                  <div className="space-y-2">
+                    {processedBookings.map((booking) => (
+                      <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <span className="font-medium">{booking.ideaTitle}</span>
+                          <span className="text-sm text-muted-foreground ml-2">
+                            by {booking.userFullName || booking.userEmail}
+                          </span>
+                        </div>
+                        <Badge
+                          variant={booking.status === 'approved' ? 'default' : booking.status === 'rejected' ? 'destructive' : 'outline'}
+                        >
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

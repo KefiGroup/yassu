@@ -5823,4 +5823,86 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       res.status(500).json({ error: "Failed to update booking" });
     }
   });
+
+  // Admin: Approve roadshow booking
+  app.post("/api/admin/roadshow-bookings/:id/approve", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const { adminNotes } = req.body;
+
+      const [booking] = await db.select()
+        .from(schema.roadshowBookings)
+        .where(eq(schema.roadshowBookings.id, bookingId));
+
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      const [updated] = await db.update(schema.roadshowBookings)
+        .set({
+          status: 'approved',
+          adminNotes: adminNotes || null,
+          reviewedBy: req.session.userId,
+          reviewedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.roadshowBookings.id, bookingId))
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Approve roadshow booking error:", error);
+      res.status(500).json({ error: "Failed to approve booking" });
+    }
+  });
+
+  // Admin: Reject roadshow booking
+  app.post("/api/admin/roadshow-bookings/:id/reject", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const { adminNotes } = req.body;
+
+      const [booking] = await db.select()
+        .from(schema.roadshowBookings)
+        .where(eq(schema.roadshowBookings.id, bookingId));
+
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      const [updated] = await db.update(schema.roadshowBookings)
+        .set({
+          status: 'rejected',
+          adminNotes: adminNotes || null,
+          reviewedBy: req.session.userId,
+          reviewedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.roadshowBookings.id, bookingId))
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Reject roadshow booking error:", error);
+      res.status(500).json({ error: "Failed to reject booking" });
+    }
+  });
 }
