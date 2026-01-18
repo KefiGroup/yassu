@@ -2,7 +2,7 @@ import express, { Request, Response, Express } from "express";
 import { storage } from "./storage";
 import { pool, db } from "./db";
 import * as schema from "../shared/schema";
-import { eq, sql, desc, or, and, lte, gt, isNull } from "drizzle-orm";
+import { eq, sql, desc, asc, or, and, lte, gt, isNull } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
