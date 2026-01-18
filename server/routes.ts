@@ -5410,18 +5410,28 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         return res.status(400).json({ error: "Title and start time are required" });
       }
 
-      // Treat input times as UTC by appending 'Z' if not already present
-      const parseAsUTC = (timeStr: string) => {
+      // Convert Pacific Time to UTC
+      // datetime-local gives us "YYYY-MM-DDTHH:MM" format
+      // We interpret this as Pacific Time and convert to UTC
+      const parsePacificToUTC = (timeStr: string) => {
         if (!timeStr) return null;
-        // If it doesn't have timezone info, treat it as UTC
-        if (!timeStr.includes('Z') && !timeStr.includes('+') && !timeStr.includes('-', 10)) {
-          return new Date(timeStr + 'Z');
-        }
-        return new Date(timeStr);
+        // Create a date string with explicit Pacific timezone offset
+        // Pacific Time is UTC-8 (PST) or UTC-7 (PDT)
+        // Using America/Los_Angeles handles DST automatically
+        const pacificDate = new Date(timeStr);
+        // Get the offset for Pacific timezone
+        const pacificStr = new Date(timeStr).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+        const utcStr = new Date(timeStr).toLocaleString('en-US', { timeZone: 'UTC' });
+        const pacificTime = new Date(pacificStr);
+        const utcTime = new Date(utcStr);
+        const offset = utcTime.getTime() - pacificTime.getTime();
+        
+        // The input is in Pacific time, so we need to add the offset to get UTC
+        return new Date(pacificDate.getTime() + offset);
       };
 
-      const startDateUTC = parseAsUTC(startTime);
-      const endDateUTC = endTime ? parseAsUTC(endTime) : null;
+      const startDateUTC = parsePacificToUTC(startTime);
+      const endDateUTC = endTime ? parsePacificToUTC(endTime) : null;
 
       // Validate parsed dates
       if (!startDateUTC || isNaN(startDateUTC.getTime())) {

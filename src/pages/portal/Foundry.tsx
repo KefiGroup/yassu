@@ -391,15 +391,15 @@ export default function Foundry() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium">Enter times in UTC (GMT+0)</span>
+                      <span className="text-sm font-medium">Enter times in US Pacific Time (PT)</span>
                     </div>
                     <Badge variant="outline" className="text-xs">
-                      Current UTC: {new Date().toISOString().slice(11, 16)}
+                      Current PT: {new Date().toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: true })}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="startTime">Start Time (GMT+0)</Label>
+                      <Label htmlFor="startTime">Start Time (Pacific)</Label>
                       <Input
                         id="startTime"
                         type="datetime-local"
@@ -409,7 +409,7 @@ export default function Foundry() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="endTime">End Time (GMT+0)</Label>
+                      <Label htmlFor="endTime">End Time (Pacific)</Label>
                       <Input
                         id="endTime"
                         type="datetime-local"
@@ -420,7 +420,7 @@ export default function Foundry() {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    All times are in UTC (GMT+0) - users worldwide will see times converted to their local timezone
+                    Times entered in Pacific Time (PT) - users worldwide will see times in their local timezone
                   </p>
                 </div>
                 
