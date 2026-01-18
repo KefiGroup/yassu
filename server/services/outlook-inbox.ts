@@ -1,6 +1,6 @@
 import { Client } from '@microsoft/microsoft-graph-client';
 import { db } from '../db';
-import * as schema from '@shared/schema';
+import * as schema from '../../shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 
 let connectionSettings: any;
