@@ -108,6 +108,30 @@ interface RoadshowBooking {
   createdAt: string;
 }
 
+interface InboxConversation {
+  id: number;
+  userId: number | null;
+  userEmail: string;
+  userName: string | null;
+  subject: string;
+  conversationType: 'feedback' | 'support' | 'general';
+  isResolved: boolean;
+  lastMessageAt: string;
+  createdAt: string;
+  unreadCount: number;
+}
+
+interface InboxMessage {
+  id: number;
+  conversationId: number;
+  senderType: 'user' | 'admin';
+  senderId: number | null;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+  senderName: string | null;
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -119,6 +143,11 @@ export default function Admin() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [foundryEvents, setFoundryEvents] = useState<FoundryEventWithAttendees[]>([]);
   const [roadshowBookings, setRoadshowBookings] = useState<RoadshowBooking[]>([]);
+  const [inboxConversations, setInboxConversations] = useState<InboxConversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<InboxConversation | null>(null);
+  const [conversationMessages, setConversationMessages] = useState<InboxMessage[]>([]);
+  const [replyContent, setReplyContent] = useState('');
+  const [inboxLoading, setInboxLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [ideaSearchQuery, setIdeaSearchQuery] = useState('');
@@ -154,14 +183,15 @@ export default function Admin() {
           return;
         }
         
-        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData, foundryEventsData, bookingsData] = await Promise.all([
+        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData, foundryEventsData, bookingsData, inboxData] = await Promise.all([
           apiRequest<ProfileWithBadges[]>('/admin/profiles'),
           apiRequest<Idea[]>('/admin/ideas'),
           apiRequest<AdminUser[]>('/admin/admins'),
           apiRequest<Announcement[]>('/admin/announcements'),
           apiRequest<Suggestion[]>('/admin/suggestions'),
           apiRequest<FoundryEventWithAttendees[]>('/admin/foundry-events'),
-          apiRequest<RoadshowBooking[]>('/admin/roadshow-bookings')
+          apiRequest<RoadshowBooking[]>('/admin/roadshow-bookings'),
+          apiRequest<InboxConversation[]>('/admin/inbox')
         ]);
         
         setProfiles(profilesData);
@@ -171,6 +201,7 @@ export default function Admin() {
         setSuggestions(suggestionsData);
         setFoundryEvents(foundryEventsData);
         setRoadshowBookings(bookingsData);
+        setInboxConversations(inboxData);
       } catch (error) {
         console.error('Admin check failed:', error);
         navigate('/portal');
@@ -181,6 +212,103 @@ export default function Admin() {
     
     checkAdmin();
   }, [navigate, toast]);
+
+  // Computed values
+  const inboxUnreadCount = inboxConversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+
+  // Inbox handlers
+  const handleSelectConversation = async (conversation: InboxConversation) => {
+    // Clear previous messages and show loading state immediately to prevent stale data
+    setConversationMessages([]);
+    setReplyContent('');
+    setSelectedConversation(conversation);
+    setInboxLoading(true);
+    
+    try {
+      const data = await apiRequest<{ conversation: InboxConversation; messages: InboxMessage[] }>(
+        `/admin/inbox/${conversation.id}`
+      );
+      setConversationMessages(data.messages);
+      // Update conversation with fresh data from server
+      setSelectedConversation(data.conversation);
+      // Update conversation unread count to 0 locally
+      setInboxConversations(prev => 
+        prev.map(c => c.id === conversation.id ? { ...c, unreadCount: 0, isResolved: data.conversation.isResolved } : c)
+      );
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load conversation',
+        variant: 'destructive',
+      });
+      setSelectedConversation(null);
+    } finally {
+      setInboxLoading(false);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedConversation || !replyContent.trim()) return;
+    
+    setActionLoading('inbox-reply');
+    try {
+      await apiRequest(`/admin/inbox/${selectedConversation.id}/reply`, {
+        method: 'POST',
+        body: JSON.stringify({ content: replyContent.trim() }),
+      });
+      
+      // Refresh conversation
+      const data = await apiRequest<{ conversation: InboxConversation; messages: InboxMessage[] }>(
+        `/admin/inbox/${selectedConversation.id}`
+      );
+      setConversationMessages(data.messages);
+      setReplyContent('');
+      
+      toast({
+        title: 'Reply Sent',
+        description: 'Your reply has been sent and the user will receive an email.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send reply',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleResolved = async (conversationId: number, currentStatus: boolean) => {
+    setActionLoading(`resolve-${conversationId}`);
+    try {
+      await apiRequest(`/admin/inbox/${conversationId}/resolve`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isResolved: !currentStatus }),
+      });
+      
+      setInboxConversations(prev => 
+        prev.map(c => c.id === conversationId ? { ...c, isResolved: !currentStatus } : c)
+      );
+      
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(prev => prev ? { ...prev, isResolved: !currentStatus } : null);
+      }
+      
+      toast({
+        title: currentStatus ? 'Reopened' : 'Resolved',
+        description: `Conversation has been marked as ${currentStatus ? 'open' : 'resolved'}.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update conversation status',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const handleAwardBadge = async (userId: number, badgeType: 'ambassador' | 'advisor') => {
     setActionLoading(`${userId}-${badgeType}-award`);
@@ -685,6 +813,15 @@ export default function Admin() {
           <TabsTrigger value="bookings" className="gap-2" data-testid="tab-bookings">
             <Calendar className="w-4 h-4" />
             Roadshow Bookings
+          </TabsTrigger>
+          <TabsTrigger value="inbox" className="gap-2" data-testid="tab-inbox">
+            <MessageSquare className="w-4 h-4" />
+            Inbox
+            {inboxUnreadCount > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 px-1.5">
+                {inboxUnreadCount}
+              </Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -1694,6 +1831,172 @@ export default function Admin() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="inbox">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                User Inbox
+              </CardTitle>
+              <CardDescription>
+                Respond to user feedback and suggestions. Replies are sent via email.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 min-h-[500px]">
+                {/* Conversation List */}
+                <div className="w-1/3 border-r pr-4 space-y-2">
+                  {inboxConversations.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No conversations yet</p>
+                  ) : (
+                    inboxConversations.map((conv) => (
+                      <div
+                        key={conv.id}
+                        onClick={() => handleSelectConversation(conv)}
+                        className={`p-3 rounded-lg cursor-pointer transition-colors hover-elevate ${
+                          selectedConversation?.id === conv.id 
+                            ? 'bg-primary/10 border border-primary/30' 
+                            : 'bg-muted/30'
+                        }`}
+                        data-testid={`inbox-conversation-${conv.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium truncate text-sm">
+                                {conv.userName || conv.userEmail}
+                              </span>
+                              {conv.unreadCount > 0 && (
+                                <Badge variant="destructive" className="h-5 px-1.5">
+                                  {conv.unreadCount}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate mt-1">
+                              {conv.subject}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(conv.lastMessageAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            {conv.isResolved && (
+                              <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Resolved
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Conversation Detail */}
+                <div className="flex-1 flex flex-col">
+                  {!selectedConversation ? (
+                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                      Select a conversation to view details
+                    </div>
+                  ) : (
+                    <>
+                      {/* Header */}
+                      <div className="flex items-center justify-between pb-4 border-b mb-4">
+                        <div>
+                          <h3 className="font-semibold">{selectedConversation.subject}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            From: {selectedConversation.userName || 'Anonymous'} ({selectedConversation.userEmail})
+                          </p>
+                        </div>
+                        <Button
+                          variant={selectedConversation.isResolved ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => handleToggleResolved(selectedConversation.id, selectedConversation.isResolved)}
+                          disabled={actionLoading === `resolve-${selectedConversation.id}`}
+                          data-testid="button-toggle-resolved"
+                        >
+                          {actionLoading === `resolve-${selectedConversation.id}` ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : selectedConversation.isResolved ? (
+                            <>
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Reopen
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Mark Resolved
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Messages */}
+                      <div className="flex-1 overflow-y-auto space-y-3 mb-4 max-h-[300px]">
+                        {inboxLoading ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : conversationMessages.length === 0 ? (
+                          <p className="text-muted-foreground text-center py-8">No messages yet</p>
+                        ) : conversationMessages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`p-3 rounded-lg ${
+                              msg.senderType === 'admin' 
+                                ? 'bg-primary/10 ml-8' 
+                                : 'bg-muted mr-8'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-medium">
+                                {msg.senderType === 'admin' 
+                                  ? `Admin${msg.senderName ? ` (${msg.senderName})` : ''}` 
+                                  : selectedConversation.userName || 'User'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(msg.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Reply Input */}
+                      <div className="border-t pt-4">
+                        <textarea
+                          value={replyContent}
+                          onChange={(e) => setReplyContent(e.target.value)}
+                          placeholder="Type your reply..."
+                          className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background"
+                          rows={3}
+                          data-testid="input-inbox-reply"
+                        />
+                        <div className="flex justify-end mt-2">
+                          <Button
+                            onClick={handleSendReply}
+                            disabled={!replyContent.trim() || actionLoading === 'inbox-reply'}
+                            data-testid="button-send-reply"
+                          >
+                            {actionLoading === 'inbox-reply' ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <Send className="w-4 h-4 mr-2" />
+                            )}
+                            Send Reply
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
