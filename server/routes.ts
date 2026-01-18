@@ -3699,6 +3699,7 @@ Return valid JSON:
         return res.status(403).json({ error: "Admin access required" });
       }
 
+      const showArchived = req.query.archived === 'true';
       const conversations = await db.select({
         id: schema.inboxConversations.id,
         userId: schema.inboxConversations.userId,
@@ -3707,10 +3708,12 @@ Return valid JSON:
         subject: schema.inboxConversations.subject,
         conversationType: schema.inboxConversations.conversationType,
         isResolved: schema.inboxConversations.isResolved,
+        isArchived: schema.inboxConversations.isArchived,
         lastMessageAt: schema.inboxConversations.lastMessageAt,
         createdAt: schema.inboxConversations.createdAt,
       })
         .from(schema.inboxConversations)
+        .where(eq(schema.inboxConversations.isArchived, showArchived))
         .orderBy(desc(schema.inboxConversations.lastMessageAt));
 
       // Get unread count for each conversation
@@ -3902,6 +3905,71 @@ Return valid JSON:
     } catch (error) {
       console.error("Toggle resolve error:", error);
       res.status(500).json({ error: "Failed to update conversation" });
+    }
+  });
+
+  // Archive/unarchive a conversation (admin only)
+  app.patch("/api/admin/inbox/:conversationId/archive", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const conversationId = parseInt(req.params.conversationId);
+      const { isArchived } = req.body;
+
+      const [updated] = await db.update(schema.inboxConversations)
+        .set({ isArchived: Boolean(isArchived) })
+        .where(eq(schema.inboxConversations.id, conversationId))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Archive error:", error);
+      res.status(500).json({ error: "Failed to archive conversation" });
+    }
+  });
+
+  // Delete a conversation (admin only)
+  app.delete("/api/admin/inbox/:conversationId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const conversationId = parseInt(req.params.conversationId);
+
+      // Delete messages first (foreign key constraint)
+      await db.delete(schema.inboxMessages)
+        .where(eq(schema.inboxMessages.conversationId, conversationId));
+
+      // Delete the conversation
+      const [deleted] = await db.delete(schema.inboxConversations)
+        .where(eq(schema.inboxConversations.id, conversationId))
+        .returning();
+
+      if (!deleted) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      res.json({ success: true, deleted });
+    } catch (error) {
+      console.error("Delete conversation error:", error);
+      res.status(500).json({ error: "Failed to delete conversation" });
     }
   });
 

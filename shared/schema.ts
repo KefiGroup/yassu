@@ -547,6 +547,7 @@ export const inboxConversations = pgTable("inbox_conversations", {
   subject: text("subject").notNull(),
   conversationType: inboxConversationTypeEnum("conversation_type").default("feedback").notNull(),
   isResolved: boolean("is_resolved").default(false).notNull(),
+  isArchived: boolean("is_archived").default(false).notNull(),
   lastMessageAt: timestamp("last_message_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   outlookConversationId: text("outlook_conversation_id"),

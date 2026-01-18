@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -304,6 +304,69 @@ export default function Admin() {
       toast({
         title: 'Error',
         description: 'Failed to update conversation status',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleArchiveConversation = async (conversationId: number, isArchived: boolean) => {
+    setActionLoading(`archive-${conversationId}`);
+    try {
+      await apiRequest(`/admin/inbox/${conversationId}/archive`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isArchived: !isArchived }),
+      });
+      
+      setInboxConversations(prev => prev.filter(c => c.id !== conversationId));
+      
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(null);
+        setConversationMessages([]);
+      }
+      
+      toast({
+        title: isArchived ? 'Unarchived' : 'Archived',
+        description: `Conversation has been ${isArchived ? 'restored' : 'archived'}.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to archive conversation',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId: number) => {
+    if (!confirm('Are you sure you want to permanently delete this conversation? This cannot be undone.')) {
+      return;
+    }
+    
+    setActionLoading(`delete-${conversationId}`);
+    try {
+      await apiRequest(`/admin/inbox/${conversationId}`, {
+        method: 'DELETE',
+      });
+      
+      setInboxConversations(prev => prev.filter(c => c.id !== conversationId));
+      
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(null);
+        setConversationMessages([]);
+      }
+      
+      toast({
+        title: 'Deleted',
+        description: 'Conversation has been permanently deleted.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete conversation',
         variant: 'destructive',
       });
     } finally {
@@ -1961,27 +2024,58 @@ export default function Admin() {
                             From: {selectedConversation.userName || 'Anonymous'} ({selectedConversation.userEmail})
                           </p>
                         </div>
-                        <Button
-                          variant={selectedConversation.isResolved ? "outline" : "default"}
-                          size="sm"
-                          onClick={() => handleToggleResolved(selectedConversation.id, selectedConversation.isResolved)}
-                          disabled={actionLoading === `resolve-${selectedConversation.id}`}
-                          data-testid="button-toggle-resolved"
-                        >
-                          {actionLoading === `resolve-${selectedConversation.id}` ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : selectedConversation.isResolved ? (
-                            <>
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Reopen
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Mark Resolved
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant={selectedConversation.isResolved ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => handleToggleResolved(selectedConversation.id, selectedConversation.isResolved)}
+                            disabled={actionLoading === `resolve-${selectedConversation.id}`}
+                            data-testid="button-toggle-resolved"
+                          >
+                            {actionLoading === `resolve-${selectedConversation.id}` ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : selectedConversation.isResolved ? (
+                              <>
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Reopen
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Mark Resolved
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleArchiveConversation(selectedConversation.id, selectedConversation.isArchived || false)}
+                            disabled={actionLoading === `archive-${selectedConversation.id}`}
+                            title="Archive"
+                            data-testid="button-archive-conversation"
+                          >
+                            {actionLoading === `archive-${selectedConversation.id}` ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Archive className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDeleteConversation(selectedConversation.id)}
+                            disabled={actionLoading === `delete-${selectedConversation.id}`}
+                            title="Delete"
+                            className="text-destructive hover:text-destructive"
+                            data-testid="button-delete-conversation"
+                          >
+                            {actionLoading === `delete-${selectedConversation.id}` ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
 
                       {/* Messages */}
