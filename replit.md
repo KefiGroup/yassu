@@ -19,6 +19,12 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
 - **Team Formation & Collaboration**: Features for finding co-founders, advisors, and ambassadors based on skills and interests. Includes a connection system (like LinkedIn) for users to build their network, send team invitations, and manage join requests.
 - **Collaborator Marketplace**: A dedicated section to discover and filter platform users by roles, skills, interests, clubs, and universities, with clickable profiles.
 - **Admin Dashboard**: A unified interface for administrators to manage badges (Ambassador, Advisor), view all ideas (including private ones), grant/revoke admin privileges, and create platform announcements.
+- **Admin Inbox**: Built-in inbox system for managing user feedback and support conversations. Features include:
+  - Conversation list with unread message badges
+  - Reply functionality that sends emails to users via Resend
+  - Mark conversations as resolved/reopened
+  - Full message thread history for each conversation
+  - Loading states to prevent stale data display
 - **Platform Announcements**: System for admins to communicate with all users. Features include:
   - Four announcement types: Maintenance, Event, Update, General
   - Three priority levels: Normal, Important, Urgent
