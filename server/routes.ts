@@ -3604,12 +3604,43 @@ Return valid JSON:
         return res.status(400).json({ error: "Please provide a suggestion with at least 10 characters" });
       }
 
+      // Get user info if authenticated
+      let userEmail = "anonymous@yassu.ai";
+      let userName: string | null = null;
+      if (req.session.userId) {
+        const [user] = await db.select().from(schema.users).where(eq(schema.users.id, req.session.userId));
+        if (user) {
+          userEmail = user.email;
+          userName = user.fullName;
+        }
+      }
+
       const [created] = await db.insert(schema.suggestions)
         .values({
           userId: req.session.userId || null,
           suggestion: suggestion.trim(),
         })
         .returning();
+
+      // Create inbox conversation for admin reply capability
+      const [conversation] = await db.insert(schema.inboxConversations)
+        .values({
+          userId: req.session.userId || null,
+          userEmail,
+          userName,
+          subject: `Feedback: ${suggestion.trim().slice(0, 50)}${suggestion.length > 50 ? '...' : ''}`,
+          conversationType: "feedback",
+        })
+        .returning();
+
+      // Add the user's message to the conversation
+      await db.insert(schema.inboxMessages)
+        .values({
+          conversationId: conversation.id,
+          senderType: "user",
+          senderId: req.session.userId || null,
+          content: suggestion.trim(),
+        });
       
       res.json({ success: true, message: "Thank you for your suggestion! The Yassu team will review it." });
     } catch (error) {
@@ -3650,6 +3681,226 @@ Return valid JSON:
     } catch (error) {
       console.error("Get suggestions error:", error);
       res.status(500).json({ error: "Failed to get suggestions" });
+    }
+  });
+
+  // ============ Admin Inbox API ============
+
+  // Get all inbox conversations (admin only)
+  app.get("/api/admin/inbox", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const conversations = await db.select({
+        id: schema.inboxConversations.id,
+        userId: schema.inboxConversations.userId,
+        userEmail: schema.inboxConversations.userEmail,
+        userName: schema.inboxConversations.userName,
+        subject: schema.inboxConversations.subject,
+        conversationType: schema.inboxConversations.conversationType,
+        isResolved: schema.inboxConversations.isResolved,
+        lastMessageAt: schema.inboxConversations.lastMessageAt,
+        createdAt: schema.inboxConversations.createdAt,
+      })
+        .from(schema.inboxConversations)
+        .orderBy(desc(schema.inboxConversations.lastMessageAt));
+
+      // Get unread count for each conversation
+      const conversationsWithUnread = await Promise.all(
+        conversations.map(async (conv) => {
+          const [{ count }] = await db
+            .select({ count: sql<number>`COUNT(*)` })
+            .from(schema.inboxMessages)
+            .where(
+              and(
+                eq(schema.inboxMessages.conversationId, conv.id),
+                eq(schema.inboxMessages.senderType, "user"),
+                eq(schema.inboxMessages.isRead, false)
+              )
+            );
+          return { ...conv, unreadCount: Number(count) };
+        })
+      );
+
+      res.json(conversationsWithUnread);
+    } catch (error) {
+      console.error("Get inbox error:", error);
+      res.status(500).json({ error: "Failed to get inbox" });
+    }
+  });
+
+  // Get a single conversation with messages (admin only)
+  app.get("/api/admin/inbox/:conversationId", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const conversationId = parseInt(req.params.conversationId);
+      if (isNaN(conversationId)) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
+
+      const [conversation] = await db.select()
+        .from(schema.inboxConversations)
+        .where(eq(schema.inboxConversations.id, conversationId));
+
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      // Get all messages for this conversation
+      const messages = await db.select({
+        id: schema.inboxMessages.id,
+        conversationId: schema.inboxMessages.conversationId,
+        senderType: schema.inboxMessages.senderType,
+        senderId: schema.inboxMessages.senderId,
+        content: schema.inboxMessages.content,
+        isRead: schema.inboxMessages.isRead,
+        createdAt: schema.inboxMessages.createdAt,
+        senderName: schema.users.fullName,
+      })
+        .from(schema.inboxMessages)
+        .leftJoin(schema.users, eq(schema.inboxMessages.senderId, schema.users.id))
+        .where(eq(schema.inboxMessages.conversationId, conversationId))
+        .orderBy(asc(schema.inboxMessages.createdAt));
+
+      // Mark user messages as read
+      await db.update(schema.inboxMessages)
+        .set({ isRead: true })
+        .where(
+          and(
+            eq(schema.inboxMessages.conversationId, conversationId),
+            eq(schema.inboxMessages.senderType, "user")
+          )
+        );
+
+      res.json({ conversation, messages });
+    } catch (error) {
+      console.error("Get conversation error:", error);
+      res.status(500).json({ error: "Failed to get conversation" });
+    }
+  });
+
+  // Send a reply in a conversation (admin only)
+  app.post("/api/admin/inbox/:conversationId/reply", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const conversationId = parseInt(req.params.conversationId);
+      const { content } = req.body;
+
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ error: "Reply content is required" });
+      }
+
+      const [conversation] = await db.select()
+        .from(schema.inboxConversations)
+        .where(eq(schema.inboxConversations.id, conversationId));
+
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      // Insert the reply message
+      const [message] = await db.insert(schema.inboxMessages)
+        .values({
+          conversationId,
+          senderType: "admin",
+          senderId: req.session.userId,
+          content: content.trim(),
+          isRead: false,
+        })
+        .returning();
+
+      // Update conversation last message time
+      await db.update(schema.inboxConversations)
+        .set({ lastMessageAt: new Date() })
+        .where(eq(schema.inboxConversations.id, conversationId));
+
+      // Send email to user
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: "Yassu Team <hello@yassu.ai>",
+          to: conversation.userEmail,
+          subject: `Re: ${conversation.subject}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0;">Yassu</h1>
+              </div>
+              <div style="padding: 30px; background: #f9fafb;">
+                <p>Hi${conversation.userName ? ` ${conversation.userName}` : ''},</p>
+                <p>We've responded to your feedback:</p>
+                <div style="background: white; padding: 20px; border-left: 4px solid #6366f1; margin: 20px 0;">
+                  ${content.replace(/\n/g, '<br>')}
+                </div>
+                <p>If you have any follow-up questions, you can reply to this email or submit new feedback through the platform.</p>
+                <p>Best,<br>The Yassu Team</p>
+              </div>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        console.error("Failed to send reply email:", emailError);
+        // Don't fail the request if email fails
+      }
+
+      res.json({ success: true, message });
+    } catch (error) {
+      console.error("Send reply error:", error);
+      res.status(500).json({ error: "Failed to send reply" });
+    }
+  });
+
+  // Toggle conversation resolved status (admin only)
+  app.patch("/api/admin/inbox/:conversationId/resolve", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const conversationId = parseInt(req.params.conversationId);
+      const { isResolved } = req.body;
+
+      const [updated] = await db.update(schema.inboxConversations)
+        .set({ isResolved: Boolean(isResolved) })
+        .where(eq(schema.inboxConversations.id, conversationId))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Toggle resolve error:", error);
+      res.status(500).json({ error: "Failed to update conversation" });
     }
   });
 
