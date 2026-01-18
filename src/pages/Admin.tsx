@@ -1884,10 +1884,15 @@ export default function Admin() {
                             </p>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            {conv.isResolved && (
+                            {conv.isResolved ? (
                               <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
                                 <CheckCircle className="w-3 h-3 mr-1" />
                                 Resolved
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-amber-600 border-amber-600 text-xs">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending
                               </Badge>
                             )}
                           </div>
