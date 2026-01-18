@@ -49,14 +49,12 @@ async function generateIdeaCoverImage(ideaId: string, title: string, problem: st
     },
   });
   
-  // Make it publicly accessible
-  await file.makePublic();
+  // Return the internal path (will be served via API endpoint)
+  // Format: /api/cover-images/bucket/filename
+  const coverPath = `/api/cover-images/${bucketId}/${fileName}`;
+  console.log(`[CoverImage] Upload complete: ${coverPath}`);
   
-  // Return the public URL
-  const publicUrl = `https://storage.googleapis.com/${bucketId}/${fileName}`;
-  console.log(`[CoverImage] Upload complete: ${publicUrl}`);
-  
-  return publicUrl;
+  return coverPath;
 }
 
 // Stage order for determining the "highest" stage achieved
@@ -712,6 +710,33 @@ export function registerRoutes(app: Express): void {
       res.json(resources);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch resources" });
+    }
+  });
+
+  // Serve cover images from object storage
+  app.get("/api/cover-images/:bucket/:folder/:filename", async (req: Request, res: Response) => {
+    try {
+      const bucketName = req.params.bucket;
+      const fileName = `${req.params.folder}/${req.params.filename}`;
+      
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(fileName);
+      
+      const [exists] = await file.exists();
+      if (!exists) {
+        return res.status(404).json({ error: "Image not found" });
+      }
+      
+      const [metadata] = await file.getMetadata();
+      res.set({
+        "Content-Type": metadata.contentType || "image/png",
+        "Cache-Control": "public, max-age=31536000",
+      });
+      
+      file.createReadStream().pipe(res);
+    } catch (error) {
+      console.error("Error serving cover image:", error);
+      res.status(500).json({ error: "Failed to serve image" });
     }
   });
 
