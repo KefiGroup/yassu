@@ -536,5 +536,38 @@ export type InsertEventRsvp = z.infer<typeof insertEventRsvpSchema>;
 export type RoadshowBooking = typeof roadshowBookings.$inferSelect;
 export type InsertRoadshowBooking = z.infer<typeof insertRoadshowBookingSchema>;
 
+// Admin Inbox - for managing user feedback conversations
+export const inboxConversationTypeEnum = pgEnum("inbox_conversation_type", ["feedback", "support", "general"]);
+
+export const inboxConversations = pgTable("inbox_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  userEmail: text("user_email").notNull(),
+  userName: text("user_name"),
+  subject: text("subject").notNull(),
+  conversationType: inboxConversationTypeEnum("conversation_type").default("feedback").notNull(),
+  isResolved: boolean("is_resolved").default(false).notNull(),
+  lastMessageAt: timestamp("last_message_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const inboxMessages = pgTable("inbox_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => inboxConversations.id).notNull(),
+  senderType: text("sender_type").notNull(), // "user" or "admin"
+  senderId: integer("sender_id").references(() => users.id),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertInboxConversationSchema = createInsertSchema(inboxConversations).omit({ id: true, createdAt: true, lastMessageAt: true });
+export const insertInboxMessageSchema = createInsertSchema(inboxMessages).omit({ id: true, createdAt: true });
+
+export type InboxConversation = typeof inboxConversations.$inferSelect;
+export type InsertInboxConversation = z.infer<typeof insertInboxConversationSchema>;
+export type InboxMessage = typeof inboxMessages.$inferSelect;
+export type InsertInboxMessage = z.infer<typeof insertInboxMessageSchema>;
+
 // Chat schema for OpenAI integration
 export * from "./models/chat";
