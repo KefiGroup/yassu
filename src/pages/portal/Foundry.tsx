@@ -240,8 +240,10 @@ export default function Foundry() {
       });
       toast({ title: "Event Created", description: "Your event has been created successfully." });
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to create event.", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Event creation error:", error);
+      const message = error?.message || "Failed to create event.";
+      toast({ title: "Error", description: message, variant: "destructive" });
     },
   });
 

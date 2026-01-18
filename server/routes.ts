@@ -5524,7 +5524,13 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     } catch (error: any) {
       console.error("Failed to create event:", error);
       console.error("Request body:", req.body);
-      res.status(500).json({ error: error?.message || "Failed to create event" });
+      // Return detailed error for debugging
+      const errorMessage = error?.message || "Failed to create event";
+      const errorDetails = error?.code ? ` (code: ${error.code})` : "";
+      res.status(500).json({ 
+        error: errorMessage + errorDetails,
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined
+      });
     }
   });
 
