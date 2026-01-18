@@ -784,10 +784,15 @@ export function registerRoutes(app: Express): void {
 
       let coverImage = idea.coverImage;
 
-      // If featuring the idea and it doesn't have a cover image, generate one
+      // If featuring the idea and it doesn't have a cover image, try to generate one
       if (isFeatured && !coverImage) {
         console.log(`Generating cover image for idea: ${idea.title}`);
-        coverImage = await generateIdeaCoverImage(id, idea.title, idea.problem);
+        try {
+          coverImage = await generateIdeaCoverImage(id, idea.title, idea.problem);
+        } catch (imgError) {
+          console.error(`Failed to generate cover image for ${idea.title}:`, imgError);
+          // Continue without cover image - don't block featuring
+        }
       }
 
       // Update the idea's featured status and cover image
