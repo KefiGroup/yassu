@@ -5405,8 +5405,11 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const { title, description, eventType, startTime, endTime, timezone, capacity, createZoomMeeting, manualZoomLink } = req.body;
 
+      console.log("Creating event with data:", { title, startTime, endTime, eventType });
+
       // Validate required fields
       if (!title || !startTime) {
+        console.log("Missing required fields - title:", title, "startTime:", startTime);
         return res.status(400).json({ error: "Title and start time are required" });
       }
 
@@ -5415,19 +5418,39 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       // We interpret this as Pacific Time and convert to UTC
       const parsePacificToUTC = (timeStr: string) => {
         if (!timeStr) return null;
-        // Create a date string with explicit Pacific timezone offset
-        // Pacific Time is UTC-8 (PST) or UTC-7 (PDT)
-        // Using America/Los_Angeles handles DST automatically
-        const pacificDate = new Date(timeStr);
-        // Get the offset for Pacific timezone
-        const pacificStr = new Date(timeStr).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
-        const utcStr = new Date(timeStr).toLocaleString('en-US', { timeZone: 'UTC' });
-        const pacificTime = new Date(pacificStr);
-        const utcTime = new Date(utcStr);
-        const offset = utcTime.getTime() - pacificTime.getTime();
-        
-        // The input is in Pacific time, so we need to add the offset to get UTC
-        return new Date(pacificDate.getTime() + offset);
+        try {
+          console.log("Parsing time string:", timeStr);
+          
+          // datetime-local format is "YYYY-MM-DDTHH:MM"
+          // Append Pacific timezone offset directly
+          // PST = -08:00, PDT = -07:00
+          
+          // Parse the date parts
+          const match = timeStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+          if (!match) {
+            console.error("Time string doesn't match expected format:", timeStr);
+            return null;
+          }
+          
+          const [, year, month, day, hour, minute] = match;
+          
+          // Determine if we're in PDT (roughly March-November)
+          const monthNum = parseInt(month);
+          const isPDT = monthNum >= 3 && monthNum <= 11;
+          const offset = isPDT ? "-07:00" : "-08:00";
+          
+          // Create ISO string with Pacific timezone
+          const isoWithTz = `${year}-${month}-${day}T${hour}:${minute}:00${offset}`;
+          console.log("Constructed ISO with timezone:", isoWithTz);
+          
+          const result = new Date(isoWithTz);
+          console.log("Parsed date:", result.toISOString());
+          
+          return result;
+        } catch (e) {
+          console.error("Failed to parse Pacific time:", e, timeStr);
+          return null;
+        }
       };
 
       const startDateUTC = parsePacificToUTC(startTime);
@@ -5471,6 +5494,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         }
       }
 
+      console.log("Inserting event with startDateUTC:", startDateUTC, "endDateUTC:", endDateUTC);
+      
       const [event] = await db.insert(schema.foundryEvents).values({
         title,
         description,
@@ -5487,6 +5512,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         createdBy: req.session.userId,
       }).returning();
 
+      console.log("Event created successfully:", event.id);
       res.json(event);
     } catch (error: any) {
       console.error("Failed to create event:", error);

@@ -214,6 +214,7 @@ export default function Foundry() {
 
   const createEventMutation = useMutation({
     mutationFn: async (eventData: typeof newEvent) => {
+      console.log("Creating event with data:", eventData);
       const res = await apiRequest("/api/foundry/events", {
         method: "POST",
         body: JSON.stringify({
