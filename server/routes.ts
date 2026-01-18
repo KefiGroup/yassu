@@ -5419,16 +5419,23 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const parsePacificToUTC = (timeStr: string) => {
         if (!timeStr) return null;
         try {
-          console.log("Parsing time string:", timeStr);
+          console.log("Parsing time string:", timeStr, "type:", typeof timeStr);
           
-          // datetime-local format is "YYYY-MM-DDTHH:MM"
-          // Append Pacific timezone offset directly
-          // PST = -08:00, PDT = -07:00
+          // Try standard datetime-local format first: "YYYY-MM-DDTHH:MM"
+          let match = timeStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
           
-          // Parse the date parts
-          const match = timeStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+          // Fallback: Try to parse any reasonable date format
           if (!match) {
-            console.error("Time string doesn't match expected format:", timeStr);
+            console.log("Standard format didn't match, trying Date constructor");
+            const parsed = new Date(timeStr);
+            if (!isNaN(parsed.getTime())) {
+              // Date parsed successfully, add Pacific offset
+              const monthNum = parsed.getMonth() + 1; // 1-12
+              const isPDT = monthNum >= 3 && monthNum <= 11;
+              const hoursToAdd = isPDT ? 7 : 8;
+              return new Date(parsed.getTime() + hoursToAdd * 60 * 60 * 1000);
+            }
+            console.error("Time string doesn't match any expected format:", timeStr);
             return null;
           }
           
