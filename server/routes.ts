@@ -3904,6 +3904,28 @@ Return valid JSON:
     }
   });
 
+  // Sync emails from Outlook (admin only)
+  app.post("/api/admin/inbox/sync-outlook", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { syncOutlookEmails } = await import("./services/outlook-inbox");
+      const result = await syncOutlookEmails();
+      
+      res.json({ success: true, message: `Synced ${result.new} new conversations, ${result.updated} new messages` });
+    } catch (error: any) {
+      console.error("Outlook sync error:", error);
+      res.status(500).json({ error: error.message || "Failed to sync Outlook emails" });
+    }
+  });
+
   // Get foundry events with attendees (admin only)
   app.get("/api/admin/foundry-events", async (req: Request, res: Response) => {
     if (!req.session.userId) {

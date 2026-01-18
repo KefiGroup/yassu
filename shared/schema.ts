@@ -549,6 +549,7 @@ export const inboxConversations = pgTable("inbox_conversations", {
   isResolved: boolean("is_resolved").default(false).notNull(),
   lastMessageAt: timestamp("last_message_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  outlookConversationId: text("outlook_conversation_id"),
 });
 
 export const inboxMessages = pgTable("inbox_messages", {
@@ -559,6 +560,7 @@ export const inboxMessages = pgTable("inbox_messages", {
   content: text("content").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  outlookMessageId: text("outlook_message_id"),
 });
 
 export const insertInboxConversationSchema = createInsertSchema(inboxConversations).omit({ id: true, createdAt: true, lastMessageAt: true });

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -148,6 +148,7 @@ export default function Admin() {
   const [conversationMessages, setConversationMessages] = useState<InboxMessage[]>([]);
   const [replyContent, setReplyContent] = useState('');
   const [inboxLoading, setInboxLoading] = useState(false);
+  const [outlookSyncing, setOutlookSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [ideaSearchQuery, setIdeaSearchQuery] = useState('');
@@ -307,6 +308,31 @@ export default function Admin() {
       });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleSyncOutlook = async () => {
+    setOutlookSyncing(true);
+    try {
+      const result = await apiRequest<{ success: boolean; message: string }>('/admin/inbox/sync-outlook', {
+        method: 'POST',
+      });
+      
+      const inboxData = await apiRequest<InboxConversation[]>('/admin/inbox');
+      setInboxConversations(inboxData);
+      
+      toast({
+        title: 'Sync Complete',
+        description: result.message,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Sync Failed',
+        description: error.message || 'Failed to sync Outlook emails',
+        variant: 'destructive',
+      });
+    } finally {
+      setOutlookSyncing(false);
     }
   };
 
@@ -1838,13 +1864,30 @@ export default function Admin() {
         <TabsContent value="inbox">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                User Inbox
-              </CardTitle>
-              <CardDescription>
-                Respond to user feedback and suggestions. Replies are sent via email.
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5" />
+                    User Inbox
+                  </CardTitle>
+                  <CardDescription>
+                    Respond to user feedback and suggestions. Replies are sent via email.
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={handleSyncOutlook}
+                  disabled={outlookSyncing}
+                  variant="outline"
+                  data-testid="button-sync-outlook"
+                >
+                  {outlookSyncing ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Mail className="w-4 h-4 mr-2" />
+                  )}
+                  Sync Outlook
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 min-h-[500px]">
