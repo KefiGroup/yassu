@@ -41,7 +41,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-24 relative scroll-mt-40">
+    <section id="how-it-works" className="py-24 relative scroll-mt-24">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/30 to-transparent" />
       
       <div className="container mx-auto px-6 relative z-10">
