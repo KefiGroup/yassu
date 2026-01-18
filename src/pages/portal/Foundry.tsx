@@ -177,7 +177,7 @@ export default function Foundry() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: typeof bookingForm) => {
-      const res = await apiRequest("/api/roadshow-bookings", {
+      const res = await apiRequest("/roadshow-bookings", {
         method: "POST",
         body: JSON.stringify({
           ideaId: data.ideaId,
@@ -215,7 +215,7 @@ export default function Foundry() {
   const createEventMutation = useMutation({
     mutationFn: async (eventData: typeof newEvent) => {
       console.log("Creating event with data:", eventData);
-      const res = await apiRequest("/api/foundry/events", {
+      const res = await apiRequest("/foundry/events", {
         method: "POST",
         body: JSON.stringify({
           ...eventData,
@@ -249,7 +249,7 @@ export default function Foundry() {
 
   const rsvpMutation = useMutation({
     mutationFn: async ({ eventId, status }: { eventId: number; status: string }) => {
-      await apiRequest(`/api/foundry/events/${eventId}/rsvp`, {
+      await apiRequest(`/foundry/events/${eventId}/rsvp`, {
         method: "POST",
         body: JSON.stringify({ status }),
       });
@@ -262,7 +262,7 @@ export default function Foundry() {
 
   const sendInvitesMutation = useMutation({
     mutationFn: async (eventId: number) => {
-      const res = await apiRequest(`/api/foundry/events/${eventId}/send-invites`, {
+      const res = await apiRequest(`/foundry/events/${eventId}/send-invites`, {
         method: "POST",
       });
       return res;
@@ -280,7 +280,7 @@ export default function Foundry() {
 
   const sendReminderMutation = useMutation({
     mutationFn: async (eventId: number) => {
-      const res = await apiRequest(`/api/foundry/events/${eventId}/send-reminder`, {
+      const res = await apiRequest(`/foundry/events/${eventId}/send-reminder`, {
         method: "POST",
       });
       return res;
