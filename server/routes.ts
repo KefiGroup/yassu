@@ -5918,6 +5918,42 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     }
   });
 
+  // Get users eligible for event invites (admin only)
+  app.get("/api/foundry/events/:id/invite-users", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const [admin] = await db.select()
+        .from(schema.userRoles)
+        .where(and(
+          eq(schema.userRoles.userId, req.session.userId),
+          eq(schema.userRoles.role, "admin")
+        ));
+
+      if (!admin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Get all users with email notifications enabled
+      const eligibleUsers = await db.select({
+        id: schema.users.id,
+        email: schema.users.email,
+        fullName: schema.profiles.fullName,
+      })
+        .from(schema.users)
+        .innerJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+        .where(eq(schema.profiles.emailNotificationsEnabled, true));
+
+      res.json(eligibleUsers);
+    } catch (error) {
+      console.error("Failed to get invite users:", error);
+      res.status(500).json({ error: "Failed to get users" });
+    }
+  });
+
   // Send event invite emails (admin only)
   app.post("/api/foundry/events/:id/send-invites", async (req: Request, res: Response) => {
     if (!req.session.userId) {
@@ -5938,6 +5974,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       }
 
       const eventId = parseInt(req.params.id);
+      const { excludedUserIds = [] } = req.body;
 
       // Get event
       const [event] = await db.select()
@@ -5949,13 +5986,17 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       }
 
       // Get all users with email notifications enabled (respecting preferences)
-      const usersToNotify = await db.select({
+      const allUsers = await db.select({
+        id: schema.users.id,
         email: schema.users.email,
         fullName: schema.profiles.fullName,
       })
         .from(schema.users)
         .innerJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
         .where(eq(schema.profiles.emailNotificationsEnabled, true));
+
+      // Filter out excluded users
+      const usersToNotify = allUsers.filter(u => !excludedUserIds.includes(u.id));
 
       // Send emails using Resend
       const { Resend } = await import("resend");

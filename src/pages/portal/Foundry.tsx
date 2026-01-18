@@ -141,6 +141,10 @@ export default function Foundry() {
   const [cancellingEvent, setCancellingEvent] = useState<FoundryEvent | null>(null);
   const [cancelMessage, setCancelMessage] = useState("");
 
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [invitingEvent, setInvitingEvent] = useState<FoundryEvent | null>(null);
+  const [excludedUserIds, setExcludedUserIds] = useState<number[]>([]);
+
   const { data: events = [], isLoading } = useQuery<FoundryEvent[]>({
     queryKey: ["/api/foundry/events"],
     queryFn: async () => {
@@ -279,14 +283,29 @@ export default function Foundry() {
     },
   });
 
+  const { data: inviteUsers = [], isLoading: inviteUsersLoading, refetch: refetchInviteUsers } = useQuery<Array<{ id: number; email: string; fullName: string | null }>>({
+    queryKey: ["/api/foundry/events", invitingEvent?.id, "invite-users"],
+    queryFn: async () => {
+      if (!invitingEvent) return [];
+      const res = await fetch(`/api/foundry/events/${invitingEvent.id}/invite-users`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!invitingEvent && inviteDialogOpen,
+  });
+
   const sendInvitesMutation = useMutation({
-    mutationFn: async (eventId: number) => {
-      const res = await apiRequest(`/foundry/events/${eventId}/send-invites`, {
+    mutationFn: async (data: { eventId: number; excludedUserIds: number[] }) => {
+      const res = await apiRequest(`/foundry/events/${data.eventId}/send-invites`, {
         method: "POST",
+        body: JSON.stringify({ excludedUserIds: data.excludedUserIds }),
       });
       return res;
     },
     onSuccess: (data: { sentCount: number }) => {
+      setInviteDialogOpen(false);
+      setInvitingEvent(null);
+      setExcludedUserIds([]);
       toast({ 
         title: "Invites Sent", 
         description: `Email invites sent to ${data.sentCount} users.` 
@@ -296,6 +315,18 @@ export default function Foundry() {
       toast({ title: "Error", description: "Failed to send invites.", variant: "destructive" });
     },
   });
+
+  const openInviteDialog = (event: FoundryEvent) => {
+    setInvitingEvent(event);
+    setExcludedUserIds([]);
+    setInviteDialogOpen(true);
+  };
+
+  const toggleUserExclusion = (userId: number) => {
+    setExcludedUserIds(prev => 
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
 
   const sendReminderMutation = useMutation({
     mutationFn: async (eventId: number) => {
@@ -706,8 +737,7 @@ export default function Foundry() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => sendInvitesMutation.mutate(event.id)}
-                              disabled={sendInvitesMutation.isPending}
+                              onClick={() => openInviteDialog(event)}
                               data-testid={`button-send-invites-${event.id}`}
                             >
                               <Send className="w-4 h-4 mr-1" />
@@ -1226,6 +1256,112 @@ export default function Foundry() {
               >
                 {cancelEventMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                 Cancel Event
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Invites Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Send Event Invites</DialogTitle>
+            <DialogDescription>
+              {invitingEvent?.title} - Select users to receive invites. Click on a user to exclude them.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+            {inviteUsersLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : inviteUsers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No users with email notifications enabled.
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-2 px-1">
+                  <span>{inviteUsers.length} users eligible</span>
+                  <span>{inviteUsers.length - excludedUserIds.length} will receive invites</span>
+                </div>
+                {inviteUsers.map((user) => {
+                  const isExcluded = excludedUserIds.includes(user.id);
+                  return (
+                    <div
+                      key={user.id}
+                      onClick={() => toggleUserExclusion(user.id)}
+                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                        isExcluded 
+                          ? "bg-muted/50 opacity-60" 
+                          : "bg-card hover-elevate border"
+                      }`}
+                      data-testid={`invite-user-${user.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                          isExcluded ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
+                        }`}>
+                          {(user.fullName || user.email)?.[0]?.toUpperCase() || "?"}
+                        </div>
+                        <div>
+                          <div className={`font-medium ${isExcluded ? "line-through text-muted-foreground" : ""}`}>
+                            {user.fullName || "No name"}
+                          </div>
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                        </div>
+                      </div>
+                      <div>
+                        {isExcluded ? (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Excluded
+                          </Badge>
+                        ) : (
+                          <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
+                            <Check className="w-3 h-3 mr-1" />
+                            Will Send
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-between items-center pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              {excludedUserIds.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExcludedUserIds([])}
+                  data-testid="button-clear-exclusions"
+                >
+                  Clear Exclusions ({excludedUserIds.length})
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setInviteDialogOpen(false)} data-testid="button-invite-cancel">
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (invitingEvent) {
+                    sendInvitesMutation.mutate({
+                      eventId: invitingEvent.id,
+                      excludedUserIds: excludedUserIds,
+                    });
+                  }
+                }}
+                disabled={sendInvitesMutation.isPending || inviteUsers.length === excludedUserIds.length}
+                data-testid="button-send-invites-confirm"
+              >
+                {sendInvitesMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Send to {inviteUsers.length - excludedUserIds.length} Users
               </Button>
             </div>
           </div>
