@@ -52,6 +52,11 @@ export async function syncOutlookEmails() {
   try {
     const client = await getOutlookClient();
     
+    // Get the connected account info
+    const me = await client.api('/me').select('mail,displayName,userPrincipalName').get();
+    const connectedEmail = me.mail || me.userPrincipalName || 'unknown';
+    console.log(`[Outlook Sync] Connected as: ${connectedEmail} (${me.displayName})`);
+    
     // Fetch recent emails from inbox
     const messages = await client
       .api('/me/mailFolders/inbox/messages')
@@ -130,7 +135,7 @@ export async function syncOutlookEmails() {
       syncedCount.updated++;
     }
 
-    return { success: true, ...syncedCount };
+    return { success: true, connectedEmail, ...syncedCount };
   } catch (error) {
     console.error('Outlook sync error:', error);
     throw error;

@@ -3919,7 +3919,7 @@ Return valid JSON:
       const { syncOutlookEmails } = await import("./services/outlook-inbox");
       const result = await syncOutlookEmails();
       
-      res.json({ success: true, message: `Synced ${result.new} new conversations, ${result.updated} new messages` });
+      res.json({ success: true, message: `Synced from ${result.connectedEmail}: ${result.new} new conversations, ${result.updated} new messages` });
     } catch (error: any) {
       console.error("Outlook sync error:", error);
       res.status(500).json({ error: error.message || "Failed to sync Outlook emails" });
