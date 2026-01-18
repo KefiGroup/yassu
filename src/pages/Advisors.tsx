@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
-import { ArrowRight, Linkedin, Briefcase, GraduationCap, Users } from 'lucide-react';
+import { ArrowRight, Briefcase, GraduationCap, Users } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -207,21 +207,19 @@ export default function Advisors() {
                         </div>
                       )}
                       
-                      {advisor.linkedinUrl && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(advisor.linkedinUrl!, '_blank');
-                          }}
-                          data-testid={`button-linkedin-advisor-${advisor.id}`}
-                        >
-                          <Linkedin className="w-4 h-4 mr-2" />
-                          Connect on LinkedIn
-                        </Button>
-                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/signup');
+                        }}
+                        data-testid={`button-connect-advisor-${advisor.id}`}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Connect to Yassu
+                      </Button>
                     </CardContent>
                   </Card>
                 </motion.div>
