@@ -452,6 +452,7 @@ export const foundryEvents = pgTable("foundry_events", {
   zoomPasscode: text("zoom_passcode"),
   capacity: integer("capacity"),
   isPublic: boolean("is_public").default(true).notNull(),
+  isCancelled: boolean("is_cancelled").default(false).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

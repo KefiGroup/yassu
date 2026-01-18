@@ -12,13 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Rocket, Calendar, Clock, Users, Video, Plus, Send, Bell,
   MapPin, CalendarDays, ChevronLeft, ChevronRight, Check,
-  ExternalLink, Loader2, Ticket, Lightbulb, Globe
+  ExternalLink, Loader2, Ticket, Lightbulb, Globe, Edit, XCircle
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
@@ -36,6 +37,7 @@ interface FoundryEvent {
   zoomPasscode: string | null;
   capacity: number | null;
   isPublic: boolean;
+  isCancelled: boolean;
   createdBy: number;
   createdAt: string;
   rsvpCount?: number;
@@ -122,6 +124,23 @@ export default function Foundry() {
     manualZoomLink: "",
   });
 
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<FoundryEvent | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    eventType: "roadshow",
+    startTime: "",
+    endTime: "",
+    capacity: "",
+    sendNotification: false,
+    customMessage: "",
+  });
+
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancellingEvent, setCancellingEvent] = useState<FoundryEvent | null>(null);
+  const [cancelMessage, setCancelMessage] = useState("");
+
   const { data: events = [], isLoading } = useQuery<FoundryEvent[]>({
     queryKey: ["/api/foundry/events"],
     queryFn: async () => {
@@ -131,9 +150,9 @@ export default function Foundry() {
     },
   });
 
-  // Filter for upcoming roadshow events that creators can book
+  // Filter for upcoming roadshow events that creators can book (exclude cancelled)
   const upcomingRoadshows = events.filter(
-    (e) => e.eventType === "roadshow" && new Date(e.startTime) > new Date()
+    (e) => e.eventType === "roadshow" && new Date(e.startTime) > new Date() && !e.isCancelled
   ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
   const { data: zoomStatus } = useQuery<{ configured: boolean }>({
@@ -312,6 +331,76 @@ export default function Foundry() {
       toast({ title: "Error", description: error?.message || "Failed to add Zoom meeting.", variant: "destructive" });
     },
   });
+
+  const editEventMutation = useMutation({
+    mutationFn: async (data: { eventId: number; updates: any; sendNotification: boolean; customMessage: string }) => {
+      const res = await apiRequest(`/foundry/events/${data.eventId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data.updates),
+      });
+      
+      if (data.sendNotification) {
+        await apiRequest(`/foundry/events/${data.eventId}/notify-update`, {
+          method: "POST",
+          body: JSON.stringify({ customMessage: data.customMessage }),
+        });
+      }
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/foundry/events"] });
+      setEditDialogOpen(false);
+      setEditingEvent(null);
+      toast({ title: "Event Updated", description: "The event has been updated successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to update event.", variant: "destructive" });
+    },
+  });
+
+  const cancelEventMutation = useMutation({
+    mutationFn: async (data: { eventId: number; customMessage: string }) => {
+      const res = await apiRequest(`/foundry/events/${data.eventId}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ customMessage: data.customMessage }),
+      });
+      return res;
+    },
+    onSuccess: (data: { sentCount: number }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/foundry/events"] });
+      setCancelDialogOpen(false);
+      setCancellingEvent(null);
+      setCancelMessage("");
+      toast({ 
+        title: "Event Cancelled", 
+        description: `Event cancelled. ${data.sentCount} attendees have been notified.` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to cancel event.", variant: "destructive" });
+    },
+  });
+
+  const openEditDialog = (event: FoundryEvent) => {
+    setEditingEvent(event);
+    setEditForm({
+      title: event.title,
+      description: event.description || "",
+      eventType: event.eventType,
+      startTime: event.startTime.slice(0, 16),
+      endTime: event.endTime?.slice(0, 16) || "",
+      capacity: event.capacity?.toString() || "",
+      sendNotification: false,
+      customMessage: "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const openCancelDialog = (event: FoundryEvent) => {
+    setCancellingEvent(event);
+    setCancelMessage("");
+    setCancelDialogOpen(true);
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -521,12 +610,12 @@ export default function Foundry() {
           ) : (
             <div className="grid gap-4">
               {events.map((event) => (
-                <Card key={event.id} className="hover-elevate" data-testid={`card-event-${event.id}`}>
+                <Card key={event.id} className={`hover-elevate ${event.isCancelled ? "opacity-60" : ""}`} data-testid={`card-event-${event.id}`}>
                   <CardContent className="py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex gap-4">
                         <div className="text-center min-w-[60px]">
-                          <div className="text-3xl font-bold text-primary">
+                          <div className={`text-3xl font-bold ${event.isCancelled ? "text-muted-foreground line-through" : "text-primary"}`}>
                             {formatDateUTC(event.startTime, "d")}
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -535,6 +624,11 @@ export default function Foundry() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
+                            {event.isCancelled && (
+                              <Badge variant="destructive">
+                                CANCELLED
+                              </Badge>
+                            )}
                             <Badge className={`${eventTypeColors[event.eventType]} text-white`}>
                               {eventTypeLabels[event.eventType]}
                             </Badge>
@@ -567,20 +661,22 @@ export default function Foundry() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 items-end">
-                        {event.userRsvp === "going" ? (
-                          <Button variant="outline" size="sm" className="gap-1" disabled>
-                            <Check className="w-4 h-4 text-green-500" />
-                            Going
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "going" })}
-                            disabled={rsvpMutation.isPending}
-                            data-testid={`button-rsvp-${event.id}`}
-                          >
-                            RSVP
-                          </Button>
+                        {!event.isCancelled && (
+                          event.userRsvp === "going" ? (
+                            <Button variant="outline" size="sm" className="gap-1" disabled>
+                              <Check className="w-4 h-4 text-green-500" />
+                              Going
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "going" })}
+                              disabled={rsvpMutation.isPending}
+                              data-testid={`button-rsvp-${event.id}`}
+                            >
+                              RSVP
+                            </Button>
+                          )
                         )}
                         {event.zoomJoinUrl && (
                           <Button
@@ -627,6 +723,26 @@ export default function Foundry() {
                               <Bell className="w-4 h-4 mr-1" />
                               Send Reminder
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(event)}
+                              data-testid={`button-edit-${event.id}`}
+                            >
+                              <Edit className="w-4 h-4 mr-1" />
+                              Edit
+                            </Button>
+                            {!event.isCancelled && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => openCancelDialog(event)}
+                                data-testid={`button-cancel-${event.id}`}
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Cancel
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>
@@ -940,6 +1056,181 @@ export default function Foundry() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Edit Event Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogDescription>Update event details. Optionally notify attendees of changes.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                data-testid="input-edit-title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                rows={3}
+                data-testid="input-edit-description"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-start">Start Time</Label>
+                <Input
+                  id="edit-start"
+                  type="datetime-local"
+                  value={editForm.startTime}
+                  onChange={(e) => setEditForm({ ...editForm, startTime: e.target.value })}
+                  data-testid="input-edit-start"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-end">End Time</Label>
+                <Input
+                  id="edit-end"
+                  type="datetime-local"
+                  value={editForm.endTime}
+                  onChange={(e) => setEditForm({ ...editForm, endTime: e.target.value })}
+                  data-testid="input-edit-end"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-capacity">Capacity</Label>
+              <Input
+                id="edit-capacity"
+                type="number"
+                value={editForm.capacity}
+                onChange={(e) => setEditForm({ ...editForm, capacity: e.target.value })}
+                placeholder="Leave empty for unlimited"
+                data-testid="input-edit-capacity"
+              />
+            </div>
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="send-notification"
+                  checked={editForm.sendNotification}
+                  onCheckedChange={(checked) => setEditForm({ ...editForm, sendNotification: !!checked })}
+                  data-testid="checkbox-send-notification"
+                />
+                <Label htmlFor="send-notification">Send email notification to attendees</Label>
+              </div>
+              {editForm.sendNotification && (
+                <div>
+                  <Label htmlFor="edit-message">Custom Message (optional)</Label>
+                  <Textarea
+                    id="edit-message"
+                    value={editForm.customMessage}
+                    onChange={(e) => setEditForm({ ...editForm, customMessage: e.target.value })}
+                    placeholder="Add a personal message about this update..."
+                    rows={2}
+                    data-testid="input-edit-message"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)} data-testid="button-edit-cancel">
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (editingEvent) {
+                    editEventMutation.mutate({
+                      eventId: editingEvent.id,
+                      updates: {
+                        title: editForm.title,
+                        description: editForm.description || null,
+                        startTime: new Date(editForm.startTime).toISOString(),
+                        endTime: editForm.endTime ? new Date(editForm.endTime).toISOString() : null,
+                        capacity: editForm.capacity ? parseInt(editForm.capacity) : null,
+                      },
+                      sendNotification: editForm.sendNotification,
+                      customMessage: editForm.customMessage,
+                    });
+                  }
+                }}
+                disabled={editEventMutation.isPending}
+                data-testid="button-edit-save"
+              >
+                {editEventMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Event Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Cancel Event</DialogTitle>
+            <DialogDescription>
+              This will cancel the event and notify all attendees who RSVPed as "going".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {cancellingEvent && (
+              <div className="bg-muted p-4 rounded-lg">
+                <h4 className="font-medium">{cancellingEvent.title}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {format(new Date(cancellingEvent.startTime), "PPP 'at' p")}
+                </p>
+                {cancellingEvent.rsvpCount !== undefined && cancellingEvent.rsvpCount > 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {cancellingEvent.rsvpCount} attendee(s) will be notified
+                  </p>
+                )}
+              </div>
+            )}
+            <div>
+              <Label htmlFor="cancel-message">Cancellation Message (optional)</Label>
+              <Textarea
+                id="cancel-message"
+                value={cancelMessage}
+                onChange={(e) => setCancelMessage(e.target.value)}
+                placeholder="Explain why this event is being cancelled..."
+                rows={3}
+                data-testid="input-cancel-message"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCancelDialogOpen(false)} data-testid="button-cancel-back">
+                Go Back
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (cancellingEvent) {
+                    cancelEventMutation.mutate({
+                      eventId: cancellingEvent.id,
+                      customMessage: cancelMessage,
+                    });
+                  }
+                }}
+                disabled={cancelEventMutation.isPending}
+                data-testid="button-confirm-cancel"
+              >
+                {cancelEventMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                Cancel Event
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

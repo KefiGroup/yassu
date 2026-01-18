@@ -5672,6 +5672,188 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     }
   });
 
+  // Cancel event (admin only) - marks as cancelled and sends notification emails
+  app.post("/api/foundry/events/:id/cancel", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const [admin] = await db.select()
+        .from(schema.userRoles)
+        .where(and(
+          eq(schema.userRoles.userId, req.session.userId),
+          eq(schema.userRoles.role, "admin")
+        ));
+
+      if (!admin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const eventId = parseInt(req.params.id);
+      const { customMessage } = req.body;
+
+      // Get the event
+      const [event] = await db.select()
+        .from(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Mark event as cancelled
+      await db.update(schema.foundryEvents)
+        .set({ isCancelled: true, updatedAt: new Date() })
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      // Get all users who RSVPed as "going"
+      const rsvps = await db.select({
+        userId: schema.eventRsvps.userId,
+        email: schema.users.email,
+        fullName: schema.users.fullName,
+      })
+        .from(schema.eventRsvps)
+        .innerJoin(schema.users, eq(schema.eventRsvps.userId, schema.users.id))
+        .where(and(
+          eq(schema.eventRsvps.eventId, eventId),
+          eq(schema.eventRsvps.status, "going")
+        ));
+
+      // Send cancellation emails
+      let sentCount = 0;
+      const { sendEmail } = await import("./services/email");
+      const eventDate = new Date(event.startTime).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      for (const rsvp of rsvps) {
+        try {
+          await sendEmail({
+            to: rsvp.email,
+            subject: `Event Cancelled: ${event.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #dc2626;">Event Cancelled</h2>
+                <p>Hi ${rsvp.fullName || "there"},</p>
+                <p>We regret to inform you that the following event has been cancelled:</p>
+                <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                  <h3 style="margin: 0 0 8px 0;">${event.title}</h3>
+                  <p style="margin: 0; color: #666;">Originally scheduled for: ${eventDate}</p>
+                </div>
+                ${customMessage ? `<div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin: 16px 0;"><p style="margin: 0;"><strong>Message from organizer:</strong></p><p style="margin: 8px 0 0 0;">${customMessage}</p></div>` : ""}
+                <p>We apologize for any inconvenience.</p>
+                <p>Best regards,<br>The Yassu Team</p>
+              </div>
+            `,
+          });
+          sentCount++;
+        } catch (e) {
+          console.error("Failed to send cancellation email to", rsvp.email, e);
+        }
+      }
+
+      res.json({ success: true, sentCount });
+    } catch (error) {
+      console.error("Failed to cancel event:", error);
+      res.status(500).json({ error: "Failed to cancel event" });
+    }
+  });
+
+  // Send event update notification (admin only)
+  app.post("/api/foundry/events/:id/notify-update", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user is admin
+      const [admin] = await db.select()
+        .from(schema.userRoles)
+        .where(and(
+          eq(schema.userRoles.userId, req.session.userId),
+          eq(schema.userRoles.role, "admin")
+        ));
+
+      if (!admin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const eventId = parseInt(req.params.id);
+      const { customMessage, changes } = req.body;
+
+      // Get the event
+      const [event] = await db.select()
+        .from(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Get all users who RSVPed as "going"
+      const rsvps = await db.select({
+        userId: schema.eventRsvps.userId,
+        email: schema.users.email,
+        fullName: schema.users.fullName,
+      })
+        .from(schema.eventRsvps)
+        .innerJoin(schema.users, eq(schema.eventRsvps.userId, schema.users.id))
+        .where(and(
+          eq(schema.eventRsvps.eventId, eventId),
+          eq(schema.eventRsvps.status, "going")
+        ));
+
+      // Send update emails
+      let sentCount = 0;
+      const { sendEmail } = await import("./services/email");
+      const eventDate = new Date(event.startTime).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+
+      for (const rsvp of rsvps) {
+        try {
+          await sendEmail({
+            to: rsvp.email,
+            subject: `Event Update: ${event.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #7c3aed;">Event Updated</h2>
+                <p>Hi ${rsvp.fullName || "there"},</p>
+                <p>There has been an update to an event you're attending:</p>
+                <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                  <h3 style="margin: 0 0 8px 0;">${event.title}</h3>
+                  <p style="margin: 0; color: #666;">Date: ${eventDate}</p>
+                  ${event.zoomJoinUrl ? `<p style="margin: 8px 0 0 0;"><a href="${event.zoomJoinUrl}" style="color: #7c3aed;">Join Zoom Meeting</a></p>` : ""}
+                </div>
+                ${changes ? `<div style="background: #e0f2fe; padding: 16px; border-radius: 8px; margin: 16px 0;"><p style="margin: 0;"><strong>What changed:</strong></p><p style="margin: 8px 0 0 0;">${changes}</p></div>` : ""}
+                ${customMessage ? `<div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin: 16px 0;"><p style="margin: 0;"><strong>Message from organizer:</strong></p><p style="margin: 8px 0 0 0;">${customMessage}</p></div>` : ""}
+                <p>Best regards,<br>The Yassu Team</p>
+              </div>
+            `,
+          });
+          sentCount++;
+        } catch (e) {
+          console.error("Failed to send update email to", rsvp.email, e);
+        }
+      }
+
+      res.json({ success: true, sentCount });
+    } catch (error) {
+      console.error("Failed to send event update notifications:", error);
+      res.status(500).json({ error: "Failed to send notifications" });
+    }
+  });
+
   // RSVP to event
   app.post("/api/foundry/events/:id/rsvp", async (req: Request, res: Response) => {
     if (!req.session.userId) {
