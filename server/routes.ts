@@ -27,7 +27,7 @@ async function generateIdeaCoverImage(ideaId: string, title: string, problem: st
   
   // Generate the image
   console.log(`[CoverImage] Calling AI image generation...`);
-  const imageBuffer = await generateImageBuffer(prompt, "512x512");
+  const imageBuffer = await generateImageBuffer(prompt, "1024x1024");
   console.log(`[CoverImage] Image generated, size: ${imageBuffer.length} bytes`);
   
   // Upload to object storage using the objectStorageClient
