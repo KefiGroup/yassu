@@ -6,7 +6,7 @@ import { eq, and, desc } from 'drizzle-orm';
 let connectionSettings: any;
 
 async function getAccessToken() {
-  if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
+  if (connectionSettings && connectionSettings.settings?.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
     return connectionSettings.settings.access_token;
   }
   
@@ -18,10 +18,14 @@ async function getAccessToken() {
     : null;
 
   if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found');
+    throw new Error('Authentication token not found. Please ensure you are running in a Replit environment.');
   }
 
-  connectionSettings = await fetch(
+  if (!hostname) {
+    throw new Error('Connectors hostname not configured. Please contact support.');
+  }
+
+  const response = await fetch(
     'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=outlook',
     {
       headers: {
@@ -29,13 +33,23 @@ async function getAccessToken() {
         'X_REPLIT_TOKEN': xReplitToken
       }
     }
-  ).then(res => res.json()).then(data => data.items?.[0]);
+  );
+  
+  const data = await response.json();
+  console.log('[Outlook] Connection response:', JSON.stringify(data, null, 2));
+  
+  connectionSettings = data.items?.[0];
 
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
-
-  if (!connectionSettings || !accessToken) {
-    throw new Error('Outlook not connected');
+  if (!connectionSettings) {
+    throw new Error('Outlook not connected. Please connect your Outlook account in the Replit Integrations panel, then click "Use in App" to link it to Yassu.');
   }
+
+  const accessToken = connectionSettings.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
+
+  if (!accessToken) {
+    throw new Error('Outlook access token not found. Please reconnect your Outlook account in the Integrations panel.');
+  }
+  
   return accessToken;
 }
 
