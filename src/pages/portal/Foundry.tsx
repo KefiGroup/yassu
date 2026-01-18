@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Rocket, Calendar, Clock, Users, Video, Plus, Send, Bell,
   MapPin, CalendarDays, ChevronLeft, ChevronRight, Check,
-  ExternalLink, Loader2, Ticket, Lightbulb
+  ExternalLink, Loader2, Ticket, Lightbulb, Globe
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
@@ -388,13 +388,18 @@ export default function Foundry() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Enter times in UTC</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Enter times in UTC (GMT+0)</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Current UTC: {new Date().toISOString().slice(11, 16)}
+                    </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="startTime">Start Time (UTC)</Label>
+                      <Label htmlFor="startTime">Start Time (GMT+0)</Label>
                       <Input
                         id="startTime"
                         type="datetime-local"
@@ -404,7 +409,7 @@ export default function Foundry() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="endTime">End Time (UTC)</Label>
+                      <Label htmlFor="endTime">End Time (GMT+0)</Label>
                       <Input
                         id="endTime"
                         type="datetime-local"
@@ -415,7 +420,7 @@ export default function Foundry() {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    All event times are displayed in UTC for users worldwide
+                    All times are in UTC (GMT+0) - users worldwide will see times converted to their local timezone
                   </p>
                 </div>
                 
