@@ -296,6 +296,23 @@ export default function Foundry() {
     },
   });
 
+  const addZoomMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      const res = await apiRequest(`/foundry/events/${eventId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ createZoomMeeting: true }),
+      });
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/foundry/events"] });
+      toast({ title: "Zoom Added", description: "Zoom meeting has been created for this event." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to add Zoom meeting.", variant: "destructive" });
+    },
+  });
+
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -578,6 +595,18 @@ export default function Foundry() {
                         )}
                         {isAdmin && (
                           <>
+                            {!event.zoomJoinUrl && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => addZoomMutation.mutate(event.id)}
+                                disabled={addZoomMutation.isPending}
+                                data-testid={`button-add-zoom-${event.id}`}
+                              >
+                                <Video className="w-4 h-4 mr-1" />
+                                {addZoomMutation.isPending ? "Adding..." : "Add Zoom"}
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"

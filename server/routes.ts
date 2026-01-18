@@ -5554,7 +5554,51 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       }
 
       const eventId = parseInt(req.params.id);
-      const { title, description, eventType, startTime, endTime, timezone, capacity, zoomJoinUrl } = req.body;
+      const { title, description, eventType, startTime, endTime, timezone, capacity, zoomJoinUrl, createZoomMeeting } = req.body;
+
+      // Get the existing event first
+      const [existingEvent] = await db.select()
+        .from(schema.foundryEvents)
+        .where(eq(schema.foundryEvents.id, eventId));
+
+      if (!existingEvent) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      let zoomMeetingId = existingEvent.zoomMeetingId;
+      let zoomJoinUrlValue = zoomJoinUrl || existingEvent.zoomJoinUrl;
+      let zoomStartUrl = existingEvent.zoomStartUrl;
+      let zoomPasscode = existingEvent.zoomPasscode;
+
+      // Create Zoom meeting if requested and not already exists
+      if (createZoomMeeting && !existingEvent.zoomMeetingId) {
+        const { zoomService } = await import("./services/zoom");
+        if (zoomService.isConfigured()) {
+          try {
+            const eventStartTime = startTime ? new Date(startTime) : existingEvent.startTime;
+            const eventEndTime = endTime ? new Date(endTime) : existingEvent.endTime;
+            const duration = eventEndTime ? Math.ceil((eventEndTime.getTime() - eventStartTime.getTime()) / 60000) : 60;
+
+            const meeting = await zoomService.createMeeting({
+              topic: title || existingEvent.title,
+              startTime: eventStartTime,
+              duration,
+              timezone: timezone || existingEvent.timezone || "America/New_York",
+              agenda: description || existingEvent.description || "",
+            });
+
+            zoomMeetingId = String(meeting.id);
+            zoomJoinUrlValue = meeting.join_url;
+            zoomStartUrl = meeting.start_url;
+            zoomPasscode = meeting.password;
+          } catch (e) {
+            console.error("Failed to create Zoom meeting:", e);
+            return res.status(500).json({ error: "Failed to create Zoom meeting" });
+          }
+        } else {
+          return res.status(400).json({ error: "Zoom API not configured" });
+        }
+      }
 
       const [event] = await db.update(schema.foundryEvents)
         .set({
@@ -5565,7 +5609,10 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           endTime: endTime ? new Date(endTime) : undefined,
           timezone,
           capacity,
-          zoomJoinUrl,
+          zoomMeetingId,
+          zoomJoinUrl: zoomJoinUrlValue,
+          zoomStartUrl,
+          zoomPasscode,
           updatedAt: new Date(),
         })
         .where(eq(schema.foundryEvents.id, eventId))
