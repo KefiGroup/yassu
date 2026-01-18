@@ -842,16 +842,21 @@ export function registerRoutes(app: Express): void {
       const results = [];
       for (const idea of ideasNeedingImages) {
         console.log(`[CoverImage] Generating for: ${idea.title}`);
-        const coverImage = await generateIdeaCoverImage(idea.id, idea.title, idea.problem);
-        
-        if (coverImage) {
-          await db
-            .update(schema.ideas)
-            .set({ coverImage })
-            .where(eq(schema.ideas.id, idea.id));
-          results.push({ id: idea.id, title: idea.title, success: true, coverImage });
-        } else {
-          results.push({ id: idea.id, title: idea.title, success: false });
+        try {
+          const coverImage = await generateIdeaCoverImage(idea.id, idea.title, idea.problem);
+          
+          if (coverImage) {
+            await db
+              .update(schema.ideas)
+              .set({ coverImage })
+              .where(eq(schema.ideas.id, idea.id));
+            results.push({ id: idea.id, title: idea.title, success: true, coverImage });
+          } else {
+            results.push({ id: idea.id, title: idea.title, success: false, error: "No image returned" });
+          }
+        } catch (genError: any) {
+          console.error(`[CoverImage] Error for ${idea.title}:`, genError);
+          results.push({ id: idea.id, title: idea.title, success: false, error: genError.message });
         }
       }
 
@@ -859,9 +864,9 @@ export function registerRoutes(app: Express): void {
         message: `Processed ${ideasNeedingImages.length} ideas`,
         results 
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error regenerating cover images:", error);
-      res.status(500).json({ error: "Failed to regenerate cover images" });
+      res.status(500).json({ error: error.message || "Failed to regenerate cover images" });
     }
   });
 

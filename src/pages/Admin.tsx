@@ -343,15 +343,31 @@ export default function Admin() {
   const handleRegenerateCovers = async () => {
     setActionLoading('regenerate-covers');
     try {
-      const result = await apiRequest<{ message: string; results: Array<{ id: string; title: string; success: boolean; coverImage?: string }> }>('/admin/ideas/regenerate-covers', {
+      const result = await apiRequest<{ message: string; results: Array<{ id: string; title: string; success: boolean; coverImage?: string; error?: string }> }>('/admin/ideas/regenerate-covers', {
         method: 'POST',
       });
       
       const successCount = result.results.filter(r => r.success).length;
-      toast({
-        title: 'Cover Images Generated',
-        description: `Successfully generated ${successCount} of ${result.results.length} cover images.`,
-      });
+      const failedResults = result.results.filter(r => !r.success);
+      
+      if (successCount > 0) {
+        toast({
+          title: 'Cover Images Generated',
+          description: `Successfully generated ${successCount} of ${result.results.length} cover images.`,
+        });
+      } else if (failedResults.length > 0) {
+        const errorMsg = failedResults[0]?.error || 'Unknown error';
+        toast({
+          title: 'Image Generation Failed',
+          description: `Error: ${errorMsg}`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'No Featured Ideas',
+          description: 'No featured ideas found to generate images for.',
+        });
+      }
       
       // Refresh the ideas list
       const ideasData = await apiRequest<Idea[]>('/admin/ideas');
