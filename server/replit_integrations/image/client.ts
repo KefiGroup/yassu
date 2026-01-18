@@ -15,11 +15,12 @@ export async function generateImageBuffer(
   prompt: string,
   size: "1024x1024" | "512x512" | "256x256" = "1024x1024"
 ): Promise<Buffer> {
+  // Note: response_format parameter is NOT supported for gpt-image-1
+  // The response format is always base64 by default
   const response = await openai.images.generate({
     model: "gpt-image-1",
     prompt,
     size,
-    response_format: "b64_json",
   });
   const base64 = response.data[0]?.b64_json ?? "";
   if (!base64) {
