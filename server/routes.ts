@@ -5405,6 +5405,11 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const { title, description, eventType, startTime, endTime, timezone, capacity, createZoomMeeting, manualZoomLink } = req.body;
 
+      // Validate required fields
+      if (!title || !startTime) {
+        return res.status(400).json({ error: "Title and start time are required" });
+      }
+
       // Treat input times as UTC by appending 'Z' if not already present
       const parseAsUTC = (timeStr: string) => {
         if (!timeStr) return null;
@@ -5417,6 +5422,11 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const startDateUTC = parseAsUTC(startTime);
       const endDateUTC = endTime ? parseAsUTC(endTime) : null;
+
+      // Validate parsed dates
+      if (!startDateUTC || isNaN(startDateUTC.getTime())) {
+        return res.status(400).json({ error: "Invalid start time format" });
+      }
 
       let zoomMeetingId = null;
       let zoomJoinUrl = manualZoomLink || null;
@@ -5468,9 +5478,10 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       }).returning();
 
       res.json(event);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create event:", error);
-      res.status(500).json({ error: "Failed to create event" });
+      console.error("Request body:", req.body);
+      res.status(500).json({ error: error?.message || "Failed to create event" });
     }
   });
 
