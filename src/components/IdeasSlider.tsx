@@ -80,7 +80,7 @@ const IdeasSlider = () => {
   const ideasToShow = featuredIdeas;
 
   return (
-    <section id="ideas" className="py-24 relative overflow-hidden scroll-mt-20">
+    <section id="ideas" className="py-24 relative overflow-hidden scroll-mt-28">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-pink-300/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
