@@ -9,9 +9,9 @@ const Navbar = () => {
       transition={{ duration: 0.5 }}
       className="fixed top-0 left-0 right-0 z-50 glass-strong"
     >
-      <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="container mx-auto px-6 py-2 flex items-center justify-between">
         <a href="/" className="flex items-center" data-testid="link-nav-home">
-          <img src="/yassu-logo.png" alt="Yassu" className="h-24 w-auto" />
+          <img src="/yassu-logo.png" alt="Yassu" className="h-12 w-auto" />
         </a>
 
         <div className="hidden md:flex items-center gap-8">
