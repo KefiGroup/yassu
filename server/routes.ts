@@ -5201,11 +5201,58 @@ Return as valid JSON:
           suggestionText = message;
         }
 
+        // Get user info for email notification
+        let userEmail = null;
+        let userName = null;
+        if (req.session.userId) {
+          const [userInfo] = await db.select({
+            email: schema.users.email,
+            fullName: schema.profiles.fullName,
+          })
+            .from(schema.users)
+            .leftJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+            .where(eq(schema.users.id, req.session.userId));
+          if (userInfo) {
+            userEmail = userInfo.email;
+            userName = userInfo.fullName;
+          }
+        }
+
         await db.insert(schema.suggestions)
           .values({
             userId: req.session.userId || null,
             suggestion: suggestionText,
           });
+
+        // Send email notification to hello@yassu.ai with user's email for follow-up
+        try {
+          const { Resend } = await import("resend");
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          
+          await resend.emails.send({
+            from: "Yassu Feedback <hello@yassu.ai>",
+            to: "hello@yassu.ai",
+            replyTo: userEmail || undefined,
+            subject: `New User Feedback: ${suggestionText.substring(0, 50)}${suggestionText.length > 50 ? '...' : ''}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #7c3aed;">New User Feedback Received</h2>
+                <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                  <p style="margin: 0 0 8px 0;"><strong>From:</strong> ${userName || 'Anonymous User'}</p>
+                  ${userEmail ? `<p style="margin: 0 0 8px 0;"><strong>Email:</strong> <a href="mailto:${userEmail}">${userEmail}</a></p>` : '<p style="margin: 0 0 8px 0;"><strong>Email:</strong> Not logged in</p>'}
+                  <p style="margin: 0;"><strong>Submitted:</strong> ${new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}</p>
+                </div>
+                <h3 style="margin-bottom: 8px;">Feedback:</h3>
+                <div style="background: #fff; border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px;">
+                  <p style="margin: 0; white-space: pre-wrap;">${suggestionText}</p>
+                </div>
+                ${userEmail ? `<p style="margin-top: 20px; font-size: 14px; color: #666;">You can reply directly to this email to respond to the user.</p>` : ''}
+              </div>
+            `,
+          });
+        } catch (emailError) {
+          console.error("Failed to send feedback notification email:", emailError);
+        }
 
         return res.json({
           success: true,
@@ -6020,7 +6067,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         
         try {
           await resend.emails.send({
-            from: "Yassu <noreply@yassu.ai>",
+            from: "Yassu <hello@yassu.ai>",
             to: user.email,
             subject: `You're Invited: ${event.title}`,
             html: `
@@ -6140,7 +6187,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         
         try {
           await resend.emails.send({
-            from: "Yassu <noreply@yassu.ai>",
+            from: "Yassu <hello@yassu.ai>",
             to: user.email,
             subject: `Reminder: ${event.title} is coming up!`,
             html: `
