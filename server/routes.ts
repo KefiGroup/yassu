@@ -22,8 +22,15 @@ const objectStorageService = new ObjectStorageService();
 async function generateIdeaCoverImage(ideaId: string, title: string, problem: string | null): Promise<string> {
   console.log(`[CoverImage] Generating cover for idea ${ideaId}: "${title}"`);
   
-  // Create a prompt for generating a startup/business concept image
-  const prompt = `A modern, professional, abstract illustration representing a startup concept: "${title}". The visual should be clean, minimalist, and business-appropriate with soft gradients and geometric shapes. Style: tech startup, innovation, entrepreneurship. Colors: professional purples, blues, and warm accents. No text or words in the image.`;
+  // Create a unique prompt based on the idea's title and problem
+  const contextHint = problem ? ` solving this problem: ${problem.substring(0, 100)}` : "";
+  const prompt = `Create a unique, modern flat illustration for a business called "${title}"${contextHint}. 
+Style: clean corporate illustration with people, objects, and scenes relevant to the specific business concept. 
+Use a cohesive color palette of soft purples, blues, teals, and warm accents.
+Show professionals or customers interacting with the product/service.
+NO rockets, NO spaceships, NO launch imagery unless the business is specifically about space.
+NO text, NO words, NO logos in the image.
+Make it look like a professional SaaS or app marketing illustration.`;
   
   // Generate the image
   console.log(`[CoverImage] Calling AI image generation...`);
