@@ -63,7 +63,7 @@ const teamMembers = [
 
 const Team = () => {
   return (
-    <section id="team" className="py-24 relative scroll-mt-28">
+    <section id="team" className="py-24 relative scroll-mt-32">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/30 to-transparent" />
 
       <div className="container mx-auto px-6 relative z-10">
