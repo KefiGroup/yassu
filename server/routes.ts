@@ -1100,19 +1100,33 @@ Return valid JSON:
       
       const openai = new OpenAI({ apiKey, baseURL });
 
-      const completion = await openai.chat.completions.create({
+      const completionOptions: any = {
         model: modelName,
         messages: [
           { role: "system", content: "You are an expert startup advisor. Always respond with valid JSON only." },
           { role: "user", content: prompt }
         ],
-        response_format: { type: "json_object" },
         temperature: 0.7,
         max_tokens: 1000,
-      });
+      };
+      
+      // Only add response_format for OpenAI (Gemini doesn't support it)
+      if (!useGemini) {
+        completionOptions.response_format = { type: "json_object" };
+      }
+
+      const completion = await openai.chat.completions.create(completionOptions);
 
       const responseText = completion.choices[0]?.message?.content || '{}';
-      const improved = JSON.parse(responseText);
+      
+      // Extract JSON from response (handle potential markdown code blocks from Gemini)
+      let jsonContent = responseText;
+      const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1].trim();
+      }
+      
+      const improved = JSON.parse(jsonContent);
 
       res.json({
         problem: improved.problem || null,
@@ -4869,19 +4883,32 @@ Make the content compelling, specific to this startup, and investor-ready. Use m
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const response = await client.chat.completions.create({
+      const completionOptions: any = {
         model: modelName,
         messages: [{ role: "user", content: prompt }],
         max_tokens: 8192,
-        response_format: { type: "json_object" },
-      });
+      };
+      
+      // Only add response_format for OpenAI (Gemini doesn't support it)
+      if (!useGemini) {
+        completionOptions.response_format = { type: "json_object" };
+      }
+
+      const response = await client.chat.completions.create(completionOptions);
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to generate pitch deck" });
       }
 
-      const parsed = JSON.parse(content);
+      // Extract JSON from response (handle potential markdown code blocks from Gemini)
+      let jsonContent = content;
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1].trim();
+      }
+
+      const parsed = JSON.parse(jsonContent);
       res.json(parsed);
     } catch (error) {
       console.error("Pitch deck generation error:", error);
@@ -5100,20 +5127,33 @@ Return a JSON object with this EXACT structure:
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const response = await client.chat.completions.create({
+      const completionOptions: any = {
         model,
         messages: [{ role: "user", content: prompt }],
         max_tokens: 2048,
         temperature: 0.3,
-        response_format: { type: "json_object" },
-      });
+      };
+      
+      // Only add response_format for OpenAI (Gemini doesn't support it)
+      if (!useGemini) {
+        completionOptions.response_format = { type: "json_object" };
+      }
+
+      const response = await client.chat.completions.create(completionOptions);
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to analyze business plan" });
       }
 
-      const parsed = JSON.parse(content);
+      // Extract JSON from response (handle potential markdown code blocks from Gemini)
+      let jsonContent = content;
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1].trim();
+      }
+
+      const parsed = JSON.parse(jsonContent);
       res.json({
         success: true,
         ideaTitle: idea.title,
@@ -5343,20 +5383,33 @@ Return ONLY valid JSON with this structure:
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const response = await client.chat.completions.create({
+      const completionOptions: any = {
         model: modelName,
         messages: [{ role: "user", content: prompt }],
         max_tokens: 8192,
         temperature: 0.3,
-        response_format: { type: "json_object" },
-      });
+      };
+      
+      // Only add response_format for OpenAI (Gemini doesn't support it)
+      if (!useGemini) {
+        completionOptions.response_format = { type: "json_object" };
+      }
+
+      const response = await client.chat.completions.create(completionOptions);
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to generate pitch deck" });
       }
 
-      const parsed = JSON.parse(content);
+      // Extract JSON from response (handle potential markdown code blocks from Gemini)
+      let jsonContent = content;
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1].trim();
+      }
+
+      const parsed = JSON.parse(jsonContent);
       res.json(parsed);
     } catch (error) {
       console.error("Investor pitch deck generation error:", error);
@@ -5427,20 +5480,33 @@ Return the refined deck as valid JSON:
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const response = await client.chat.completions.create({
+      const completionOptions: any = {
         model: modelName,
         messages: [{ role: "user", content: prompt }],
         max_tokens: 8192,
         temperature: 0.2,
-        response_format: { type: "json_object" },
-      });
+      };
+      
+      // Only add response_format for OpenAI (Gemini doesn't support it)
+      if (!useGemini) {
+        completionOptions.response_format = { type: "json_object" };
+      }
+
+      const response = await client.chat.completions.create(completionOptions);
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to refine pitch deck" });
       }
 
-      const parsed = JSON.parse(content);
+      // Extract JSON from response (handle potential markdown code blocks from Gemini)
+      let jsonContent = content;
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1].trim();
+      }
+
+      const parsed = JSON.parse(jsonContent);
       res.json(parsed);
     } catch (error) {
       console.error("Investor pitch deck refinement error:", error);
@@ -5568,20 +5634,33 @@ Return as valid JSON:
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const response = await client.chat.completions.create({
+      const completionOptions: any = {
         model: modelName,
         messages: [{ role: "user", content: prompt }],
         max_tokens: 12000,
         temperature: 0.4,
-        response_format: { type: "json_object" },
-      });
+      };
+      
+      // Only add response_format for OpenAI (Gemini doesn't support it)
+      if (!useGemini) {
+        completionOptions.response_format = { type: "json_object" };
+      }
+
+      const response = await client.chat.completions.create(completionOptions);
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to generate preparation" });
       }
 
-      const parsed = JSON.parse(content);
+      // Extract JSON from response (handle potential markdown code blocks from Gemini)
+      let jsonContent = content;
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1].trim();
+      }
+
+      const parsed = JSON.parse(jsonContent);
       res.json({ success: true, data: parsed });
     } catch (error) {
       console.error("Pitch preparation generation error:", error);
