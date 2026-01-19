@@ -1083,8 +1083,8 @@ Return valid JSON:
 }`;
 
       const OpenAI = (await import('openai')).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
       const openai = new OpenAI({ apiKey, baseURL });
 
       const completion = await openai.chat.completions.create({
@@ -4719,8 +4719,8 @@ Use markdown formatting with clear headers.
 Be concise, practical, and encouraging. Focus on what's achievable.`;
 
       const OpenAI = (await import("openai")).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -4831,8 +4831,8 @@ Format your response as valid JSON:
 Make the content compelling, specific to this startup, and investor-ready. Use markdown formatting (bold, bullets, headers) in the content.`;
 
       const OpenAI = (await import("openai")).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -4902,8 +4902,8 @@ If you're updating the slide, include a JSON block at the end of your response l
 Be concise and actionable in your feedback.`;
 
       const OpenAI = (await import("openai")).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5044,8 +5044,8 @@ Return a JSON object with this EXACT structure:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5279,8 +5279,8 @@ Return ONLY valid JSON with this structure:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5355,8 +5355,8 @@ Return the refined deck as valid JSON:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5488,8 +5488,8 @@ Return as valid JSON:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5612,7 +5612,7 @@ Return as valid JSON:
         ? relevantTopics.map(t => `## ${t.title}\n${t.content}`).join('\n\n')
         : getHelpContext();
 
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
       }
