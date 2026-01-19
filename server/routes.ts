@@ -4718,7 +4718,7 @@ Be concise, practical, and encouraging. Focus on what's achievable.`;
 
       const OpenAI = (await import("openai")).default;
       const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -4830,7 +4830,7 @@ Make the content compelling, specific to this startup, and investor-ready. Use m
 
       const OpenAI = (await import("openai")).default;
       const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -4901,7 +4901,7 @@ Be concise and actionable in your feedback.`;
 
       const OpenAI = (await import("openai")).default;
       const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5043,7 +5043,7 @@ Return a JSON object with this EXACT structure:
 
       const OpenAI = (await import("openai")).default;
       const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5278,7 +5278,7 @@ Return ONLY valid JSON with this structure:
 
       const OpenAI = (await import("openai")).default;
       const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5354,7 +5354,7 @@ Return the refined deck as valid JSON:
 
       const OpenAI = (await import("openai")).default;
       const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5487,7 +5487,7 @@ Return as valid JSON:
 
       const OpenAI = (await import("openai")).default;
       const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
