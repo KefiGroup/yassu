@@ -914,9 +914,9 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
     try {
       const client = getAIClient();
       const response = await client.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: getModelName(),
         messages: [{ role: "user", content: section.prompt }],
-        max_completion_tokens: 8192,
+        max_tokens: 8192,
       });
       
       const content = response.choices[0]?.message?.content || `## ${section.title}\n\nGeneration failed. Please try again.`;
@@ -996,9 +996,9 @@ Keep it to ~400 words. Make it compelling enough to hook an investor or co-found
 
   const client = getAIClient();
   const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: getModelName(),
     messages: [{ role: "user", content: prompt }],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   return response.choices[0]?.message?.content || "## Executive Summary\n\nGeneration pending...";
