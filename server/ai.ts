@@ -1,17 +1,16 @@
 import OpenAI from "openai";
 
-// Create AI client using Gemini API (OpenAI-compatible interface)
+// Create AI client using OpenAI API
 function getAIClient(): OpenAI {
-  // Use Replit AI Integrations - prefer Gemini over OpenAI
-  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  const baseURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+  // Use Replit AI Integrations for OpenAI
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
   
   console.log('[AI Client] Initializing with baseURL:', baseURL);
   console.log('[AI Client] API key present:', !!apiKey);
-  console.log('[AI Client] Using Gemini:', baseURL?.includes('gemini') ? 'yes' : 'no');
   
   if (!apiKey) {
-    throw new Error("No AI API key found. Please configure AI Integrations.");
+    throw new Error("No OpenAI API key found. Please configure AI Integrations.");
   }
   
   return new OpenAI({
