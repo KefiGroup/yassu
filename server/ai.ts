@@ -2,11 +2,12 @@ import OpenAI from "openai";
 
 // Create AI client using OpenAI API
 function getAIClient(): OpenAI {
-  // Use Replit AI Integrations if available, otherwise fall back to standard OpenAI
-  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  // Prioritize user's direct OpenAI key, fall back to Replit AI Integrations
+  const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  // When using direct OpenAI key, don't use any base URL (connect to OpenAI directly)
+  const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
   
-  console.log('[AI Client] Initializing with baseURL:', baseURL);
+  console.log('[AI Client] Using direct OpenAI:', !!process.env.OPENAI_API_KEY);
   console.log('[AI Client] API key present:', !!apiKey);
   
   if (!apiKey) {
