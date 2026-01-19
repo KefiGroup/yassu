@@ -5045,6 +5045,9 @@ Return a JSON object with this EXACT structure:
       const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
       const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
+      console.log("Pitch deck analyze - Using AI integration:", !!process.env.AI_INTEGRATIONS_OPENAI_API_KEY);
+      console.log("Pitch deck analyze - Base URL set:", !!baseURL, baseURL ? baseURL.substring(0, 50) : "none");
+      
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
       }
@@ -5052,7 +5055,7 @@ Return a JSON object with this EXACT structure:
       const client = new OpenAI({ apiKey, baseURL });
 
       const response = await client.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 2048,
         temperature: 0.3,
