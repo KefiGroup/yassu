@@ -1083,50 +1083,21 @@ Return valid JSON:
 }`;
 
       const OpenAI = (await import('openai')).default;
-      // Use Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const modelName = useGemini ? "gemini-2.5-flash" : "gpt-4o";
-      
-      if (!apiKey) {
-        return res.status(500).json({ error: "AI service not configured" });
-      }
-      
-      const openai = new OpenAI({ apiKey, baseURL });
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      const completionOptions: any = {
-        model: modelName,
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
         messages: [
           { role: "system", content: "You are an expert startup advisor. Always respond with valid JSON only." },
           { role: "user", content: prompt }
         ],
+        response_format: { type: "json_object" },
         temperature: 0.7,
         max_tokens: 1000,
-      };
-      
-      // Only add response_format for OpenAI (Gemini doesn't support it)
-      if (!useGemini) {
-        completionOptions.response_format = { type: "json_object" };
-      }
-
-      const completion = await openai.chat.completions.create(completionOptions);
+      });
 
       const responseText = completion.choices[0]?.message?.content || '{}';
-      
-      // Extract JSON from response (handle potential markdown code blocks from Gemini)
-      let jsonContent = responseText;
-      const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1].trim();
-      }
-      
-      const improved = JSON.parse(jsonContent);
+      const improved = JSON.parse(responseText);
 
       res.json({
         problem: improved.problem || null,
@@ -4746,16 +4717,8 @@ Use markdown formatting with clear headers.
 Be concise, practical, and encouraging. Focus on what's achievable.`;
 
       const OpenAI = (await import("openai")).default;
-      // Use Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const modelName = useGemini ? "gemini-2.5-flash" : "gpt-4o-mini";
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -4777,7 +4740,7 @@ Be concise, practical, and encouraging. Focus on what's achievable.`;
       res.setHeader("Connection", "keep-alive");
 
       const stream = await client.chat.completions.create({
-        model: modelName,
+        model: "gpt-4o-mini",
         messages,
         max_tokens: 4096,
         stream: true,
@@ -4866,16 +4829,8 @@ Format your response as valid JSON:
 Make the content compelling, specific to this startup, and investor-ready. Use markdown formatting (bold, bullets, headers) in the content.`;
 
       const OpenAI = (await import("openai")).default;
-      // Use Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const modelName = useGemini ? "gemini-2.5-flash" : "gpt-4o-mini";
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -4883,32 +4838,19 @@ Make the content compelling, specific to this startup, and investor-ready. Use m
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const completionOptions: any = {
-        model: modelName,
+      const response = await client.chat.completions.create({
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 8192,
-      };
-      
-      // Only add response_format for OpenAI (Gemini doesn't support it)
-      if (!useGemini) {
-        completionOptions.response_format = { type: "json_object" };
-      }
-
-      const response = await client.chat.completions.create(completionOptions);
+        response_format: { type: "json_object" },
+      });
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to generate pitch deck" });
       }
 
-      // Extract JSON from response (handle potential markdown code blocks from Gemini)
-      let jsonContent = content;
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1].trim();
-      }
-
-      const parsed = JSON.parse(jsonContent);
+      const parsed = JSON.parse(content);
       res.json(parsed);
     } catch (error) {
       console.error("Pitch deck generation error:", error);
@@ -4958,16 +4900,8 @@ If you're updating the slide, include a JSON block at the end of your response l
 Be concise and actionable in your feedback.`;
 
       const OpenAI = (await import("openai")).default;
-      // Use Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const modelName = useGemini ? "gemini-2.5-flash" : "gpt-4o-mini";
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -4989,7 +4923,7 @@ Be concise and actionable in your feedback.`;
       res.setHeader("Connection", "keep-alive");
 
       const stream = await client.chat.completions.create({
-        model: modelName,
+        model: "gpt-4o-mini",
         messages,
         max_tokens: 2048,
         stream: true,
@@ -5108,18 +5042,8 @@ Return a JSON object with this EXACT structure:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      // Try Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const model = useGemini ? "gemini-2.5-flash" : "gpt-4o-mini";
-      
-      console.log("Pitch deck analyze - Using Gemini:", useGemini, "Model:", model);
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5127,33 +5051,20 @@ Return a JSON object with this EXACT structure:
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const completionOptions: any = {
-        model,
+      const response = await client.chat.completions.create({
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 2048,
         temperature: 0.3,
-      };
-      
-      // Only add response_format for OpenAI (Gemini doesn't support it)
-      if (!useGemini) {
-        completionOptions.response_format = { type: "json_object" };
-      }
-
-      const response = await client.chat.completions.create(completionOptions);
+        response_format: { type: "json_object" },
+      });
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to analyze business plan" });
       }
 
-      // Extract JSON from response (handle potential markdown code blocks from Gemini)
-      let jsonContent = content;
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1].trim();
-      }
-
-      const parsed = JSON.parse(jsonContent);
+      const parsed = JSON.parse(content);
       res.json({
         success: true,
         ideaTitle: idea.title,
@@ -5366,16 +5277,8 @@ Return ONLY valid JSON with this structure:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      // Use Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const modelName = useGemini ? "gemini-2.5-flash" : "gpt-4o";
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5383,33 +5286,20 @@ Return ONLY valid JSON with this structure:
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const completionOptions: any = {
-        model: modelName,
+      const response = await client.chat.completions.create({
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 8192,
         temperature: 0.3,
-      };
-      
-      // Only add response_format for OpenAI (Gemini doesn't support it)
-      if (!useGemini) {
-        completionOptions.response_format = { type: "json_object" };
-      }
-
-      const response = await client.chat.completions.create(completionOptions);
+        response_format: { type: "json_object" },
+      });
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to generate pitch deck" });
       }
 
-      // Extract JSON from response (handle potential markdown code blocks from Gemini)
-      let jsonContent = content;
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1].trim();
-      }
-
-      const parsed = JSON.parse(jsonContent);
+      const parsed = JSON.parse(content);
       res.json(parsed);
     } catch (error) {
       console.error("Investor pitch deck generation error:", error);
@@ -5463,16 +5353,8 @@ Return the refined deck as valid JSON:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      // Use Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const modelName = useGemini ? "gemini-2.5-flash" : "gpt-4o";
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5480,33 +5362,20 @@ Return the refined deck as valid JSON:
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const completionOptions: any = {
-        model: modelName,
+      const response = await client.chat.completions.create({
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 8192,
         temperature: 0.2,
-      };
-      
-      // Only add response_format for OpenAI (Gemini doesn't support it)
-      if (!useGemini) {
-        completionOptions.response_format = { type: "json_object" };
-      }
-
-      const response = await client.chat.completions.create(completionOptions);
+        response_format: { type: "json_object" },
+      });
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to refine pitch deck" });
       }
 
-      // Extract JSON from response (handle potential markdown code blocks from Gemini)
-      let jsonContent = content;
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1].trim();
-      }
-
-      const parsed = JSON.parse(jsonContent);
+      const parsed = JSON.parse(content);
       res.json(parsed);
     } catch (error) {
       console.error("Investor pitch deck refinement error:", error);
@@ -5617,16 +5486,8 @@ Return as valid JSON:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      // Use Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const modelName = useGemini ? "gemini-2.5-flash" : "gpt-4o";
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5634,33 +5495,20 @@ Return as valid JSON:
 
       const client = new OpenAI({ apiKey, baseURL });
 
-      const completionOptions: any = {
-        model: modelName,
+      const response = await client.chat.completions.create({
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 12000,
         temperature: 0.4,
-      };
-      
-      // Only add response_format for OpenAI (Gemini doesn't support it)
-      if (!useGemini) {
-        completionOptions.response_format = { type: "json_object" };
-      }
-
-      const response = await client.chat.completions.create(completionOptions);
+        response_format: { type: "json_object" },
+      });
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
         return res.status(500).json({ error: "Failed to generate preparation" });
       }
 
-      // Extract JSON from response (handle potential markdown code blocks from Gemini)
-      let jsonContent = content;
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1].trim();
-      }
-
-      const parsed = JSON.parse(jsonContent);
+      const parsed = JSON.parse(content);
       res.json({ success: true, data: parsed });
     } catch (error) {
       console.error("Pitch preparation generation error:", error);
@@ -5762,20 +5610,14 @@ Return as valid JSON:
         ? relevantTopics.map(t => `## ${t.title}\n${t.content}`).join('\n\n')
         : getHelpContext();
 
-      // Use Gemini first, then OpenAI as fallback
-      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
-      
-      const useGemini = !!geminiKey && !!geminiURL;
-      const apiKey = useGemini ? geminiKey : openaiKey;
-      const baseURL = useGemini ? geminiURL : openaiURL;
-      const modelName = useGemini ? "gemini-2.5-flash" : "gpt-4o";
-      
+      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
       }
+
+      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || (
+        process.env.AI_INTEGRATIONS_OPENAI_API_KEY ? "https://ai.replit.dev/v1" : undefined
+      );
 
       const OpenAI = (await import('openai')).default;
       const client = new OpenAI({ apiKey, baseURL });
@@ -5823,7 +5665,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       messages.push({ role: 'user', content: message });
 
       const response = await client.chat.completions.create({
-        model: modelName,
+        model: "gpt-4o",
         messages,
         max_tokens: 800,
         temperature: 0.7,

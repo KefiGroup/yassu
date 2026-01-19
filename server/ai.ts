@@ -1,42 +1,22 @@
 import OpenAI from "openai";
 
-// Track whether we're using Gemini or OpenAI
-let isUsingGemini = false;
-
-// Create AI client - prioritizes Gemini, falls back to OpenAI
+// Create AI client using OpenAI API
 function getAIClient(): OpenAI {
-  // Check for Gemini first (more reliable)
-  const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-  const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+  // Use Replit AI Integrations if available, otherwise fall back to standard OpenAI
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  const baseURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
   
-  // Fall back to OpenAI if Gemini not available
-  const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  const openaiURL = process.env.OPENAI_BASE_URL || process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
-  
-  // Prefer Gemini if available
-  const useGemini = !!geminiKey && !!geminiURL;
-  isUsingGemini = useGemini;
-  
-  const apiKey = useGemini ? geminiKey : openaiKey;
-  const baseURL = useGemini ? geminiURL : openaiURL;
-  
-  console.log('[AI Client] Using:', useGemini ? 'Gemini' : 'OpenAI');
   console.log('[AI Client] Initializing with baseURL:', baseURL);
   console.log('[AI Client] API key present:', !!apiKey);
   
   if (!apiKey) {
-    throw new Error("No AI API key found. Please set OPENAI_API_KEY, AI_INTEGRATIONS_OPENAI_API_KEY, or AI_INTEGRATIONS_GEMINI_API_KEY environment variable.");
+    throw new Error("No OpenAI API key found. Please set OPENAI_API_KEY or AI_INTEGRATIONS_OPENAI_API_KEY environment variable.");
   }
   
   return new OpenAI({
     apiKey,
     baseURL,
   });
-}
-
-// Get the model name based on which provider we're using
-function getModelName(): string {
-  return isUsingGemini ? "gemini-2.5-flash" : "gpt-4o";
 }
 
 interface IdeaInput {
@@ -914,9 +894,9 @@ export async function generateBusinessPlan(idea: IdeaInput): Promise<BusinessPla
     try {
       const client = getAIClient();
       const response = await client.chat.completions.create({
-        model: getModelName(),
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: section.prompt }],
-        max_tokens: 8192,
+        max_completion_tokens: 8192,
       });
       
       const content = response.choices[0]?.message?.content || `## ${section.title}\n\nGeneration failed. Please try again.`;
@@ -996,9 +976,9 @@ Keep it to ~400 words. Make it compelling enough to hook an investor or co-found
 
   const client = getAIClient();
   const response = await client.chat.completions.create({
-    model: getModelName(),
+    model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
-    max_tokens: 8192,
+    max_completion_tokens: 8192,
   });
 
   return response.choices[0]?.message?.content || "## Executive Summary\n\nGeneration pending...";
