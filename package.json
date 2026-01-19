@@ -86,7 +86,7 @@
     "mammoth": "^1.11.0",
     "multer": "^2.0.2",
     "next-themes": "^0.3.0",
-    "openai": "^6.15.0",
+    "openai": "^6.16.0",
     "p-limit": "^7.2.0",
     "p-retry": "^7.1.1",
     "passport": "^0.7.0",
