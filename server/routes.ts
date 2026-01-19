@@ -5042,11 +5042,18 @@ Return a JSON object with this EXACT structure:
 }`;
 
       const OpenAI = (await import("openai")).default;
-      const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
+      // Try Gemini first, then OpenAI as fallback
+      const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+      const geminiURL = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+      const openaiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+      const openaiURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL;
       
-      console.log("Pitch deck analyze - Using AI integration:", !!process.env.AI_INTEGRATIONS_OPENAI_API_KEY);
-      console.log("Pitch deck analyze - Base URL set:", !!baseURL, baseURL ? baseURL.substring(0, 50) : "none");
+      const useGemini = !!geminiKey && !!geminiURL;
+      const apiKey = useGemini ? geminiKey : openaiKey;
+      const baseURL = useGemini ? geminiURL : openaiURL;
+      const model = useGemini ? "gemini-2.5-flash" : "gpt-4o-mini";
+      
+      console.log("Pitch deck analyze - Using Gemini:", useGemini, "Model:", model);
       
       if (!apiKey) {
         return res.status(500).json({ error: "AI service not configured" });
@@ -5055,7 +5062,7 @@ Return a JSON object with this EXACT structure:
       const client = new OpenAI({ apiKey, baseURL });
 
       const response = await client.chat.completions.create({
-        model: "gpt-4o-mini",
+        model,
         messages: [{ role: "user", content: prompt }],
         max_tokens: 2048,
         temperature: 0.3,
