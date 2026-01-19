@@ -2017,14 +2017,14 @@ export default function Admin() {
                   ) : (
                     <>
                       {/* Header */}
-                      <div className="flex items-center justify-between pb-4 border-b mb-4">
-                        <div>
-                          <h3 className="font-semibold">{selectedConversation.subject}</h3>
-                          <p className="text-sm text-muted-foreground">
+                      <div className="flex items-center justify-between gap-4 pb-4 border-b mb-4">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold truncate">{selectedConversation.subject}</h3>
+                          <p className="text-sm text-muted-foreground truncate">
                             From: {selectedConversation.userName || 'Anonymous'} ({selectedConversation.userEmail})
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <Button
                             variant={selectedConversation.isResolved ? "outline" : "default"}
                             size="sm"
