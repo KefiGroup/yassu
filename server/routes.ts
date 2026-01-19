@@ -5617,9 +5617,7 @@ Return as valid JSON:
         return res.status(500).json({ error: "AI service not configured" });
       }
 
-      const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || (
-        process.env.AI_INTEGRATIONS_OPENAI_API_KEY ? "https://ai.replit.dev/v1" : undefined
-      );
+      const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
 
       const OpenAI = (await import('openai')).default;
       const client = new OpenAI({ apiKey, baseURL });
