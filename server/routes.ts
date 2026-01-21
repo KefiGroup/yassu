@@ -5013,16 +5013,17 @@ Analyze this business plan and determine:
 4. Extract the key pitch elements
 
 DECISION CRITERIA:
-- Recommend ANGEL if: early-stage, pre-product, limited traction, founder-story driven, raising under $500K
-- Recommend VC if: has product, some traction, large TAM, raising $500K+, needs institutional backing
+- All pitch decks target ANGEL INVESTORS
+- University founders typically raise from angels who value: founder story, passion, market insight, and early conviction
+- Focus on personal credibility, vision, and specific use of funds
 
 Return a JSON object with this EXACT structure:
 {
   "analysis": {
-    "investorMode": "angel" or "vc",
-    "investorModeReason": "Brief explanation of why this investor type is recommended",
+    "investorMode": "angel",
+    "investorModeReason": "Angel investors are ideal for university founders - they value founder story, passion, and early conviction over established metrics",
     "deckType": "full",
-    "deckTypeReason": "Full 11-slide deck for formal investor presentations",
+    "deckTypeReason": "Full 10-slide deck for investor meetings",
     "fundraisingStage": "pre_seed" or "seed",
     "targetRaise": "Specific amount like $250K or $1.5M",
     "raiseReason": "Brief explanation of raise amount recommendation"
@@ -5171,35 +5172,32 @@ Return a JSON object with this EXACT structure:
         }
       }
 
-      const isAngel = investorMode === "angel";
-      const slideCount = 11;
+      // Always target Angel Investors for university founders
+      const slideCount = 10;
       const maxBullets = 4;
 
-      const slideStructure = `1. Title & Hook
-2. Problem
-3. Solution
-4. Why Now
-5. Market Opportunity
-6. Product
-7. Business Model
-8. Traction
-9. Competition
-10. Team
-11. The Ask`;
+      const slideStructure = `1. Title & Hook - Company name, one powerful tagline, founder introduction
+2. Problem - The pain point you're solving, who suffers, and why it matters personally to you
+3. Solution - Your unique approach, what makes it different, the "aha moment"
+4. Market Opportunity - Who are your customers, market size, growth trends
+5. Product - What you're building, key features, current stage
+6. Business Model - How you make money, pricing, unit economics if available
+7. Traction - What you've accomplished so far, early wins, validation signals
+8. Competition - Competitive landscape, why you'll win, your unfair advantage
+9. Team - Founder story, why YOU are the right person to build this, relevant experience
+10. The Ask - Funding amount, specific use of funds, key milestones, call to action`;
 
-      const investorTone = isAngel
-        ? `ANGEL INVESTOR OPTIMIZATION:
-- Emphasize founder credibility and story
-- Focus on narrative clarity and emotional resonance
-- Highlight clear first milestone post-investment
-- Use simple language and intuitive framing
-- Show early conviction signals`
-        : `VC INVESTOR OPTIMIZATION:
-- Emphasize scale potential and repeatability
-- Focus on market size, "Why Now" timing, and defensibility
-- Highlight competitive positioning with institutional tone
-- Show metrics discipline and wedge + expansion strategy
-- Use professional, data-driven language`;
+      const investorTone = `ANGEL INVESTOR OPTIMIZATION (for university founders):
+- Lead with your founder story - why YOU specifically are obsessed with this problem
+- Emphasize personal connection to the problem and unique insight
+- Show passion and determination - angels invest in founders first, ideas second
+- Be specific about what you'll accomplish with the funding (first 12-18 months)
+- Highlight early conviction signals: customer conversations, waitlists, prototypes, advisors
+- Use authentic, conversational language - not corporate jargon
+- Show you understand the risks and have thought through them
+- Make the "Why Now" clear - what's changed that makes this possible today
+- Include a clear, actionable ask: exact amount, specific use breakdown, timeline
+- End with momentum: what have you already started doing with your own resources`;
 
       const prompt = `You are a top-tier investor who has reviewed 10,000+ pitch decks. Your task is to generate investor-grade pitch deck content.
 
@@ -5219,7 +5217,7 @@ ${teamContext}
 ${businessPlanNotes ? `ADDITIONAL NOTES:\n${businessPlanNotes}\n` : ""}
 ${ideaContext ? `BUSINESS PLAN CONTEXT:\n${ideaContext}\n` : ""}
 
-Generate an 11-slide FULL PITCH DECK for formal investor meetings with separate Team and The Ask slides.
+Generate a 10-slide PITCH DECK for angel investor meetings.
 
 REQUIRED SLIDES:
 ${slideStructure}
@@ -5228,12 +5226,12 @@ For EACH slide, generate using this EXACT structure:
 {
   "slideNumber": <number>,
   "slideTitle": "<title>",
-  "investorBelief": "<what the investor must believe after this slide>",
-  "primaryHeadline": "<ONE strong sentence - the main slide title>",
+  "investorBelief": "<what the angel investor must believe after this slide>",
+  "primaryHeadline": "<ONE compelling sentence - focus on founder story and vision>",
   "supportingSubheadline": "<one clarifying sentence, optional>",
   "keyPoints": ["<bullet 1>", "<bullet 2>", "<bullet 3>", "<bullet 4>"],
   "suggestedVisual": "<e.g. bar chart, comparison table, funnel, timeline, icon row>",
-  "presenterNotes": "<clarifying context for the presenter, not for slide>"
+  "presenterNotes": "<what to SAY when presenting this slide - be conversational>"
 }
 
 Also generate a metrics validation table:
@@ -5242,35 +5240,39 @@ Also generate a metrics validation table:
     {
       "slideNumber": <number>,
       "slideTitle": "<title>",
-      "metricsRequired": "<what data investors will look for>",
-      "proxyMetrics": "<acceptable alternatives for early stage>",
+      "metricsRequired": "<what angels look for - often qualitative signals>",
+      "proxyMetrics": "<early-stage alternatives: customer conversations, waitlist size, prototype feedback>",
       "riskLevel": "<Low|Medium|High>",
-      "sensitivityNotes": "<investor concerns>"
+      "sensitivityNotes": "<what concerns an angel might have and how to address>"
     }
   ]
 }
 
-CRITICAL RULES:
-- No paragraphs on slides - bullet points only
-- No buzzwords or vague claims
-- Slide-ready language only
-- Maximum ${maxBullets} bullet points per slide
-- Each bullet must be specific and evidence-based where possible
+CRITICAL RULES FOR ANGEL INVESTORS:
+- Lead with founder story and personal connection to the problem
+- No corporate jargon - use authentic, passionate language
+- Show you've done the work: customer interviews, research, early prototypes
+- Be specific about the ask: exact amount and exactly how you'll use it
+- Maximum ${maxBullets} bullet points per slide - keep it simple
+- Angels invest in PEOPLE first - make your credibility shine
 
-TEAM SLIDE INSTRUCTIONS (Slide 10):
+TEAM SLIDE INSTRUCTIONS (Slide 9):
 - CRITICAL: Use the EXACT NAMES from the "ACTUAL TEAM PROFILES" section above
+- Lead with founder's PERSONAL story and connection to the problem
 - The first bullet point MUST include the founder's full name (e.g., "Pauline Teo - Entrepreneur & Mentor...")
 - Copy the founder's headline/background VERBATIM as their credential line
-- Include all key skills mentioned in their profile
-- For each team member, include their ACTUAL NAME and role
-- Do NOT use generic phrases like "Founder with experience" - use their actual name and credentials
-- Show "founder-market fit" - why this specific person is built to win this market
+- Show "founder-market fit" - why this specific person is uniquely positioned to solve this problem
+- Include relevant experience, skills, and what drives you
+- If early stage: mention advisors or mentors you've connected with
+- Be authentic about what you bring and what gaps you're looking to fill
 
-THE ASK SLIDE INSTRUCTIONS (Slide 11):
-- State the exact funding amount being raised
-- Outline how funds will be allocated (product development %, marketing %, operations %, etc.)
-- Include key milestones that will be achieved with this funding
-- End with a clear call-to-action for investors
+THE ASK SLIDE INSTRUCTIONS (Slide 10):
+- State the exact funding amount (angels typically invest $25K-$250K individually)
+- Break down use of funds into 3-4 specific categories with percentages
+- List 3 key milestones you'll hit in 12-18 months with this funding
+- Include clear next steps: "Let's schedule a follow-up call this week"
+- Optional: mention if you have soft commits or a lead investor
+- End with your contact info and availability
 
 Return ONLY valid JSON with this structure:
 {
@@ -5322,32 +5324,31 @@ Return ONLY valid JSON with this structure:
         return res.status(400).json({ error: "Slides are required for refinement" });
       }
 
-      const isAngel = pitchContext?.investorMode === "angel";
-
       const slidesJson = JSON.stringify(slides, null, 2);
 
-      const prompt = `You are a ruthless investor editor. Your job is to investor-proof this pitch deck.
+      const prompt = `You are an experienced angel investor and pitch coach. Your job is to make this pitch deck irresistible to angel investors.
 
 CURRENT DECK:
 ${slidesJson}
 
-INVESTOR MODE: ${isAngel ? "Angel (focus on founder story, clarity, emotional resonance)" : "VC (focus on scale, metrics, defensibility)"}
-DECK TYPE: Full Deck (11 slides for formal meetings - Team and The Ask are SEPARATE slides)
+TARGET: Angel Investors (focus on founder story, authentic passion, clear vision, specific use of funds)
+DECK FORMAT: 10 slides for angel meetings
 
-YOUR TASK:
-1. Tighten ALL headlines - make them punchier and more memorable
-2. Remove ALL vague claims - replace with specific signals or delete
-3. Eliminate buzzwords and fluff
-4. Add "Why Now" logic if missing from any slide
-5. Ensure each slide has ONE clear investor belief it must create
-6. Make key points concrete and evidence-based
+YOUR TASK FOR ANGEL INVESTOR OPTIMIZATION:
+1. Strengthen the founder story and personal connection throughout
+2. Tighten ALL headlines - make them punchier and more memorable
+3. Remove ALL corporate jargon - replace with authentic, passionate language
+4. Add "Why Now" logic if missing - what makes this moment special
+5. Make the Ask slide crystal clear: exact amount, specific use, clear milestones
+6. Ensure each slide creates ONE clear "I want to back this founder" moment
 
-CRITICAL RULES:
+CRITICAL RULES FOR ANGEL DECKS:
 - Return ONLY the refined slides, no explanations
 - Keep the exact same JSON structure
 - Maximum 4 key points per slide
-- Each headline must pass the "so what?" test
-- No slide should have more than one core message
+- Every slide should reinforce why THIS founder is the right person
+- Make it conversational - angels invest in people they like and trust
+- Be specific about early traction signals (even small ones count)
 
 Return the refined deck as valid JSON:
 {
@@ -5398,12 +5399,11 @@ Return the refined deck as valid JSON:
         return res.status(400).json({ error: "Pitch deck slides are required" });
       }
 
-      const isAngel = investorMode === "angel";
       const slidesJson = JSON.stringify(pitchDeckSlides, null, 2);
 
-      const prompt = `You are a senior venture investor and pitch coach who has sat through hundreds of founder presentations.
+      const prompt = `You are an experienced angel investor and pitch coach who has invested in 50+ early-stage startups.
 
-Your task is to prepare this founder for their investor pitch - not to create slides, but to help them DELIVER the pitch, handle objections, and survive live Q&A.
+Your task is to prepare this university founder for their angel investor pitch - not to create slides, but to help them DELIVER the pitch with authenticity, handle objections gracefully, and build genuine connection with potential angel investors.
 
 PITCH DECK SLIDES:
 ${slidesJson}
@@ -5411,7 +5411,8 @@ ${slidesJson}
 BUSINESS PLAN CONTEXT:
 ${businessPlan || "Not provided"}
 
-INVESTOR MODE: ${isAngel ? "Angel Investors (focus on founder story, vision, personal conviction)" : "Institutional VCs (focus on scale, metrics, defensibility, returns)"}
+TARGET AUDIENCE: Angel Investors who invest $25K-$250K in early-stage startups
+FOCUS: Founder story, authentic passion, vision clarity, personal connection to problem, specific use of funds
 
 Generate a comprehensive pitch preparation package with three sections:
 
@@ -5451,7 +5452,7 @@ CRITICAL RULES:
 - Be TOUGH. Real investors are skeptical.
 - No polite phrasing in objections. Use real investor language.
 - Delivery scripts should sound SPOKEN, not written
-- Focus on ${isAngel ? "founder conviction and narrative clarity" : "metrics, scale potential, and market opportunity"}
+- Focus on founder conviction, narrative clarity, and authentic passion
 
 Return as valid JSON:
 {
@@ -5634,7 +5635,7 @@ Your personality:
 Yassu helps student founders go from idea to launch. Key features include:
 - **Posting Ideas**: Users create startup ideas with Problem, Solution, Target Users, and Why Now sections
 - **AI Business Plan**: Generates comprehensive 9-section business plans tailored to business type
-- **Pitch Deck Generator**: Creates investor-ready slide decks (10-slide full or 6-slide warm intro)
+- **Pitch Deck Generator**: Creates investor-ready 10-slide pitch decks optimized for angel investors
 - **Pitch Preparation**: Scripts, objection handling, Q&A prep for investor meetings
 - **MVP Builder**: Feature prioritization, technical specs, and design requirements
 - **Team Building**: Find co-founders, advisors, and collaborators by skills/interests
