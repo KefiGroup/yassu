@@ -70,7 +70,6 @@ import {
   Check,
   AlertTriangle,
   Upload,
-  DollarSign,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -109,6 +108,7 @@ interface Idea {
   isPublic: boolean;
   mvpLink: string | null;
   tags?: string[];
+  lookingFor?: string[];
 }
 
 interface PotentialTeamMember {
@@ -2320,7 +2320,28 @@ export default function IdeaDetail() {
               )}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            {/* Looking For / Roles Needed */}
+            {idea.lookingFor && idea.lookingFor.length > 0 && (
+              <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-primary" />
+                  Looking for Collaborators
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {idea.lookingFor.map((role: string, index: number) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary"
+                      className="bg-primary/10 text-primary border-primary/20"
+                    >
+                      {role}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {ideaTeam ? (
               <div className="text-center py-8">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
