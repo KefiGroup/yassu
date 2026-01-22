@@ -3618,14 +3618,7 @@ Return valid JSON:
         }
       }
 
-      const [created] = await db.insert(schema.suggestions)
-        .values({
-          userId: req.session.userId || null,
-          suggestion: suggestion.trim(),
-        })
-        .returning();
-
-      // Create inbox conversation for admin reply capability
+      // Create inbox conversation for admin reply capability first
       const [conversation] = await db.insert(schema.inboxConversations)
         .values({
           userId: req.session.userId || null,
@@ -3644,6 +3637,15 @@ Return valid JSON:
           senderId: req.session.userId || null,
           content: suggestion.trim(),
         });
+
+      // Create suggestion with link to inbox conversation
+      const [created] = await db.insert(schema.suggestions)
+        .values({
+          userId: req.session.userId || null,
+          suggestion: suggestion.trim(),
+          inboxConversationId: conversation.id,
+        })
+        .returning();
       
       res.json({ success: true, message: "Thank you for your suggestion! The Yassu team will review it." });
     } catch (error) {
@@ -3672,6 +3674,7 @@ Return valid JSON:
         adminNotes: schema.suggestions.adminNotes,
         reviewedBy: schema.suggestions.reviewedBy,
         reviewedAt: schema.suggestions.reviewedAt,
+        inboxConversationId: schema.suggestions.inboxConversationId,
         createdAt: schema.suggestions.createdAt,
         userEmail: schema.users.email,
         userFullName: schema.users.fullName,
@@ -5563,10 +5566,32 @@ Return as valid JSON:
           }
         }
 
+        // Create inbox conversation for admin reply capability
+        const [conversation] = await db.insert(schema.inboxConversations)
+          .values({
+            userId: req.session.userId || null,
+            userEmail: userEmail || "anonymous@yassu.ai",
+            userName,
+            subject: `Feedback: ${suggestionText.slice(0, 50)}${suggestionText.length > 50 ? '...' : ''}`,
+            conversationType: "feedback",
+          })
+          .returning();
+
+        // Add the user's message to the conversation
+        await db.insert(schema.inboxMessages)
+          .values({
+            conversationId: conversation.id,
+            senderType: "user",
+            senderId: req.session.userId || null,
+            content: suggestionText,
+          });
+
+        // Create suggestion with link to inbox conversation
         await db.insert(schema.suggestions)
           .values({
             userId: req.session.userId || null,
             suggestion: suggestionText,
+            inboxConversationId: conversation.id,
           });
 
         // Send email notification to hello@yassu.ai with user's email for follow-up

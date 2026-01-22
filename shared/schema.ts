@@ -431,6 +431,7 @@ export const suggestions = pgTable("suggestions", {
   adminNotes: text("admin_notes"),
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
+  inboxConversationId: integer("inbox_conversation_id").references(() => inboxConversations.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

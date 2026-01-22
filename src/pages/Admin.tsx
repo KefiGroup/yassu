@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive, Reply } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -69,6 +69,7 @@ interface Suggestion {
   adminNotes: string | null;
   reviewedBy: number | null;
   reviewedAt: string | null;
+  inboxConversationId: number | null;
   createdAt: string;
   userEmail: string | null;
   userFullName: string | null;
@@ -150,6 +151,7 @@ export default function Admin() {
   const [inboxLoading, setInboxLoading] = useState(false);
   const [outlookSyncing, setOutlookSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('badges');
   const [searchQuery, setSearchQuery] = useState('');
   const [ideaSearchQuery, setIdeaSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -868,7 +870,7 @@ export default function Admin() {
         </p>
       </motion.div>
 
-      <Tabs defaultValue="badges" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="badges" className="gap-2" data-testid="tab-badges">
             <Award className="w-4 h-4" />
@@ -1581,12 +1583,24 @@ export default function Admin() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <p className="text-sm">{suggestion.suggestion}</p>
-                          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                            <span>
-                              {suggestion.userFullName || suggestion.userEmail || 'Anonymous User'}
-                            </span>
-                            <span>-</span>
-                            <span>{new Date(suggestion.createdAt).toLocaleDateString()}</span>
+                          <div className="flex flex-col gap-1 mt-2">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="font-medium">
+                                {suggestion.userFullName || 'Anonymous User'}
+                              </span>
+                              <span>-</span>
+                              <span>{new Date(suggestion.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            {suggestion.userEmail && (
+                              <a 
+                                href={`mailto:${suggestion.userEmail}`}
+                                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                data-testid={`link-email-${suggestion.id}`}
+                              >
+                                <Mail className="w-3 h-3" />
+                                {suggestion.userEmail}
+                              </a>
+                            )}
                           </div>
                         </div>
                         <Badge
@@ -1679,6 +1693,25 @@ export default function Admin() {
                           <XCircle className="w-4 h-4 mr-1" />
                           Dismiss
                         </Button>
+                        {suggestion.inboxConversationId && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={async () => {
+                              const conversation = inboxConversations.find(c => c.id === suggestion.inboxConversationId);
+                              if (conversation) {
+                                await handleSelectConversation(conversation);
+                              } else {
+                                toast({ title: 'Opening inbox...', description: 'Navigating to conversation' });
+                              }
+                              setActiveTab('inbox');
+                            }}
+                            data-testid={`button-reply-inbox-${suggestion.id}`}
+                          >
+                            <Reply className="w-4 h-4 mr-1" />
+                            Reply in Inbox
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))
