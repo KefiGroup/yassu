@@ -228,6 +228,11 @@ export const joinRequests = pgTable("join_requests", {
   role: text("role"), // Desired role
   timeCommitment: text("time_commitment"), // Hours/week
   experience: text("experience"), // Relevant experience
+  // Interest type: 'collaborate' or 'invest'
+  interestType: text("interest_type").default("collaborate"),
+  // Investor-specific fields
+  investorType: text("investor_type"), // Angel, VC, etc.
+  investmentRange: text("investment_range"), // $10k-$25k, etc.
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

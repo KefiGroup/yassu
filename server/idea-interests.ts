@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { pool } from './db';
-import { requireAuth } from './middleware';
-import { sendJoinRequestEmail } from './email';
+import { requireAuth, requireAdmin } from './middleware';
+import { sendJoinRequestEmail, sendInvestorAcknowledgementEmail, sendAdminInvestorNotificationEmail } from './email';
 
 const router = Router();
 
@@ -10,11 +10,13 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
   try {
     const { ideaId } = req.params;
     const userId = req.user?.id;
-    const { message, motivation, role, timeCommitment, experience } = req.body;
+    const { message, motivation, role, timeCommitment, experience, interestType, investorType, investmentRange } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    const isInvestor = interestType === 'invest';
 
     // Get idea details with creator info
     const ideaResult = await pool.query(
@@ -35,57 +37,114 @@ router.post('/api/ideas/:ideaId/interest', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Cannot express interest in your own idea' });
     }
 
-    // Check if already expressed interest
+    // Check if already expressed interest (with same type)
     const existingInterest = await pool.query(
-      'SELECT id, status FROM join_requests WHERE idea_id = $1 AND user_id = $2',
-      [ideaId, userId]
+      'SELECT id, status, interest_type FROM join_requests WHERE idea_id = $1 AND user_id = $2 AND interest_type = $3',
+      [ideaId, userId, interestType || 'collaborate']
     );
 
     if (existingInterest.rows[0]) {
       return res.status(400).json({ 
-        error: 'You have already expressed interest in this idea',
+        error: `You have already expressed ${isInvestor ? 'investment' : 'collaboration'} interest in this idea`,
         status: existingInterest.rows[0].status
       });
     }
 
     // Get applicant details
     const applicantResult = await pool.query(
-      `SELECT full_name, skills FROM profiles WHERE user_id = $1`,
+      `SELECT p.full_name, p.skills, u.email FROM profiles p JOIN users u ON p.user_id = u.id WHERE p.user_id = $1`,
       [userId]
     );
     const applicant = applicantResult.rows[0];
 
     // Create interest record with application details
     const result = await pool.query(
-      `INSERT INTO join_requests (idea_id, user_id, message, motivation, role, time_commitment, experience, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+      `INSERT INTO join_requests (idea_id, user_id, message, motivation, role, time_commitment, experience, status, interest_type, investor_type, investment_range)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8, $9, $10)
        RETURNING *`,
-      [ideaId, userId, message || null, motivation || null, role || null, timeCommitment || null, experience || null]
+      [ideaId, userId, message || null, motivation || null, role || null, timeCommitment || null, experience || null, interestType || 'collaborate', investorType || null, investmentRange || null]
     );
 
-    // Send email notification to idea creator
-    if (idea.owner_email) {
-      sendJoinRequestEmail(
-        idea.owner_email,
-        idea.owner_name || 'there',
-        applicant?.full_name || 'A Yassu member',
+    if (isInvestor) {
+      // For investors: notify admin only, send acknowledgement to investor
+      if (applicant?.email) {
+        sendInvestorAcknowledgementEmail(
+          applicant.email,
+          applicant.full_name || 'there',
+          idea.title
+        ).catch(err => {
+          console.error('Failed to send investor acknowledgement email:', err);
+        });
+      }
+
+      // Notify admin about investor interest
+      sendAdminInvestorNotificationEmail(
         idea.title,
-        role || 'Team Member',
-        applicant?.skills || [],
-        motivation || message || 'I would love to join your team!'
+        applicant?.full_name || 'Unknown',
+        applicant?.email || 'Unknown',
+        investorType || 'Not specified',
+        investmentRange || 'Not specified',
+        motivation || message || 'No message provided'
       ).catch(err => {
-        console.error('Failed to send join request email:', err);
+        console.error('Failed to send admin investor notification:', err);
+      });
+
+      res.json({ 
+        success: true, 
+        interest: result.rows[0],
+        message: 'Investment interest submitted! The Yassu team will contact you within 3 working days.'
+      });
+    } else {
+      // For collaborators: notify idea creator as before
+      if (idea.owner_email) {
+        sendJoinRequestEmail(
+          idea.owner_email,
+          idea.owner_name || 'there',
+          applicant?.full_name || 'A Yassu member',
+          idea.title,
+          role || 'Team Member',
+          applicant?.skills || [],
+          motivation || message || 'I would love to join your team!'
+        ).catch(err => {
+          console.error('Failed to send join request email:', err);
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        interest: result.rows[0],
+        message: 'Interest expressed successfully! The creator will review your request.'
       });
     }
-
-    res.json({ 
-      success: true, 
-      interest: result.rows[0],
-      message: 'Interest expressed successfully! The creator will review your request.'
-    });
   } catch (error) {
     console.error('Error expressing interest:', error);
     res.status(500).json({ error: 'Failed to express interest' });
+  }
+});
+
+// Admin: Get all investor interests
+router.get('/api/admin/investor-interests', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+        jr.*,
+        i.title as idea_title,
+        u.email,
+        p.full_name,
+        p.university,
+        p.linkedin_url
+      FROM join_requests jr
+      JOIN ideas i ON jr.idea_id = i.id
+      JOIN users u ON jr.user_id = u.id
+      LEFT JOIN profiles p ON jr.user_id = p.user_id
+      WHERE jr.interest_type = 'invest'
+      ORDER BY jr.created_at DESC`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching investor interests:', error);
+    res.status(500).json({ error: 'Failed to fetch investor interests' });
   }
 });
 

@@ -1603,3 +1603,146 @@ export async function sendCollaboratorRequestAcceptedEmail(
     html,
   });
 }
+
+// Send acknowledgement email to investor who expressed interest
+export async function sendInvestorAcknowledgementEmail(
+  email: string,
+  investorName: string,
+  ideaTitle: string
+): Promise<void> {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Investment Interest Received - Yassu</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #16a34a 0%, #059669 100%); padding: 40px 30px; text-align: center; }
+        .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 600; }
+        .content { padding: 40px 30px; }
+        .highlight-box { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .footer { background: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb; }
+        .footer p { color: #6b7280; font-size: 14px; margin: 5px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Investment Interest Received</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${investorName},</p>
+          
+          <p>Thank you for expressing your interest in investing in <strong>"${ideaTitle}"</strong> on Yassu.</p>
+          
+          <div class="highlight-box">
+            <p style="margin: 0;"><strong>What happens next?</strong></p>
+            <p style="margin: 10px 0 0 0;">The Yassu team will review your interest and contact you within <strong>3 working days</strong> to discuss the opportunity further.</p>
+          </div>
+          
+          <p>In the meantime, feel free to explore other innovative ideas on our platform.</p>
+          
+          <p>Best regards,<br>The Yassu Team</p>
+        </div>
+        <div class="footer">
+          <p>Yassu - Where Elite University Talent Builds Together</p>
+          <p>&copy; ${new Date().getFullYear()} Yassu. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `Investment Interest Received - ${ideaTitle} | Yassu`,
+    html,
+  });
+}
+
+// Send notification to admin about new investor interest
+export async function sendAdminInvestorNotificationEmail(
+  ideaTitle: string,
+  investorName: string,
+  investorEmail: string,
+  investorType: string,
+  investmentRange: string,
+  motivation: string
+): Promise<void> {
+  const adminEmail = 'paulinet77@gmail.com'; // Admin email
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Investor Interest - Yassu Admin</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #16a34a 0%, #059669 100%); padding: 40px 30px; text-align: center; }
+        .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 600; }
+        .content { padding: 40px 30px; }
+        .info-box { background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .info-row { display: flex; margin-bottom: 10px; }
+        .info-label { font-weight: 600; width: 140px; color: #6b7280; }
+        .info-value { flex: 1; }
+        .footer { background: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb; }
+        .footer p { color: #6b7280; font-size: 14px; margin: 5px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>New Investor Interest</h1>
+        </div>
+        <div class="content">
+          <p>A new investor has expressed interest in a startup idea on Yassu.</p>
+          
+          <div class="info-box">
+            <div class="info-row">
+              <span class="info-label">Idea:</span>
+              <span class="info-value"><strong>${ideaTitle}</strong></span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Investor Name:</span>
+              <span class="info-value">${investorName}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span>
+              <span class="info-value"><a href="mailto:${investorEmail}">${investorEmail}</a></span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Investor Type:</span>
+              <span class="info-value">${investorType}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Investment Range:</span>
+              <span class="info-value">${investmentRange}</span>
+            </div>
+          </div>
+          
+          <p><strong>Their Message:</strong></p>
+          <p style="background: #f0fdf4; padding: 15px; border-radius: 8px; font-style: italic;">"${motivation}"</p>
+          
+          <p style="margin-top: 30px; color: #6b7280;">Please contact the investor within 3 working days as promised.</p>
+        </div>
+        <div class="footer">
+          <p>Yassu Admin Notification</p>
+          <p>&copy; ${new Date().getFullYear()} Yassu. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail({
+    to: adminEmail,
+    subject: `[ACTION REQUIRED] New Investor Interest: ${ideaTitle}`,
+    html,
+  });
+}
