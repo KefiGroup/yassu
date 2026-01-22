@@ -70,6 +70,7 @@ import {
   Check,
   AlertTriangle,
   Upload,
+  ExternalLink,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -2464,19 +2465,28 @@ export default function IdeaDetail() {
                     <p className="text-sm text-muted-foreground mb-4">
                       {hasMvpFeatures 
                         ? 'Your MVP spec is ready. Copy and build with Manus AI.'
-                        : 'Complete Step 1 first to generate your MVP spec.'
+                        : 'Copy your specs and build with Manus AI.'
                       }
                     </p>
-                    <Button
-                      onClick={handleViewMvpSpec}
-                      className={hasMvpFeatures ? "w-full bg-orange-500 hover:bg-orange-600 text-white" : "w-full"}
-                      variant={hasMvpFeatures ? "default" : "secondary"}
-                      disabled={!hasMvpFeatures}
-                      data-testid="button-view-mvp-spec"
-                    >
-                      <Code className="w-4 h-4 mr-2" />
-                      {hasMvpFeatures ? 'View MVP Spec' : 'Complete Step 1 First'}
-                    </Button>
+                    {hasMvpFeatures ? (
+                      <Button
+                        onClick={handleViewMvpSpec}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                        data-testid="button-view-mvp-spec"
+                      >
+                        <Code className="w-4 h-4 mr-2" />
+                        View MVP Spec
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => window.open('https://manus.im', '_blank')}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                        data-testid="button-open-manus-mvp"
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Open Manus AI
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
                 
