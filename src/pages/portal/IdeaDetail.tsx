@@ -1802,7 +1802,8 @@ export default function IdeaDetail() {
               
               {/* Express Interest Buttons - Only show if not creator */}
               {user && idea.createdBy !== user.id && (
-                <div>
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Express Interest</p>
                   {!hasExpressedInterest ? (
                     <div className="flex gap-2 flex-wrap">
                       <Button
