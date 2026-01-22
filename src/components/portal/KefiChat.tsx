@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, HelpCircle, MessageSquarePlus, ArrowLeft } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, HelpCircle, MessageSquarePlus, ArrowLeft, Camera, Image, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -52,6 +52,9 @@ export function KefiChat() {
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Listen for external open events
   useEffect(() => {
@@ -90,6 +93,8 @@ export function KefiChat() {
     setMode('select');
     setFeedbackText('');
     setFeedbackSubmitted(false);
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
   };
 
   const handleSelectMode = (selectedMode: 'help' | 'feedback') => {
@@ -103,7 +108,29 @@ export function KefiChat() {
     setMode('select');
     setFeedbackText('');
     setFeedbackSubmitted(false);
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
     setMessages([{ id: 'welcome', role: 'assistant', content: HELP_WELCOME_MESSAGE }]);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setScreenshotFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearScreenshot = () => {
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmitFeedback = async () => {
@@ -111,12 +138,43 @@ export function KefiChat() {
 
     setIsSubmittingFeedback(true);
     try {
+      let attachmentUrl: string | undefined;
+      
+      if (screenshotFile) {
+        const urlResponse = await fetch('/api/uploads/request-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: `feedback-${Date.now()}-${screenshotFile.name}`,
+            size: screenshotFile.size,
+            contentType: screenshotFile.type
+          })
+        });
+        
+        if (urlResponse.ok) {
+          const { uploadURL, objectPath } = await urlResponse.json();
+          
+          const uploadResult = await fetch(uploadURL, {
+            method: 'PUT',
+            headers: { 'Content-Type': screenshotFile.type },
+            body: screenshotFile
+          });
+          
+          if (uploadResult.ok) {
+            attachmentUrl = `/objects${objectPath}`;
+          }
+        }
+      }
+      
       await api.post('/help/chat', {
         message: `I have a suggestion: ${feedbackText.trim()}`,
-        conversationHistory: []
+        conversationHistory: [],
+        attachmentUrl
       });
       setFeedbackSubmitted(true);
       setFeedbackText('');
+      clearScreenshot();
     } catch (error) {
       console.error('Feedback submission error:', error);
     } finally {
@@ -338,10 +396,50 @@ export function KefiChat() {
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
                     placeholder="What would you like to see improved or added to Yassu?"
-                    className="flex-1 resize-none mb-4"
+                    className="flex-1 resize-none mb-3"
                     disabled={isSubmittingFeedback}
                     data-testid="textarea-kefi-feedback"
                   />
+                  
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept="image/*"
+                    className="hidden"
+                    data-testid="input-kefi-screenshot"
+                  />
+                  
+                  {screenshotPreview ? (
+                    <div className="relative mb-3 rounded-lg border overflow-hidden">
+                      <img 
+                        src={screenshotPreview} 
+                        alt="Screenshot preview" 
+                        className="w-full h-24 object-cover"
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={clearScreenshot}
+                        data-testid="button-kefi-remove-screenshot"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mb-3 w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isSubmittingFeedback}
+                      data-testid="button-kefi-add-screenshot"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Add Screenshot (optional)
+                    </Button>
+                  )}
                   
                   <Button
                     onClick={handleSubmitFeedback}

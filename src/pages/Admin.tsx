@@ -131,6 +131,7 @@ interface InboxMessage {
   isRead: boolean;
   createdAt: string;
   senderName: string | null;
+  attachmentUrl: string | null;
 }
 
 export default function Admin() {
@@ -2139,6 +2140,20 @@ export default function Admin() {
                               </span>
                             </div>
                             <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            {msg.attachmentUrl && (
+                              <a 
+                                href={msg.attachmentUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block mt-2"
+                              >
+                                <img 
+                                  src={msg.attachmentUrl} 
+                                  alt="Attached screenshot" 
+                                  className="max-w-xs rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                />
+                              </a>
+                            )}
                           </div>
                         ))}
                       </div>

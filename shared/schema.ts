@@ -568,6 +568,7 @@ export const inboxMessages = pgTable("inbox_messages", {
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   outlookMessageId: text("outlook_message_id"),
+  attachmentUrl: text("attachment_url"), // Screenshot/image attachment
 });
 
 export const insertInboxConversationSchema = createInsertSchema(inboxConversations).omit({ id: true, createdAt: true, lastMessageAt: true });

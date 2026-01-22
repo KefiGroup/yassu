@@ -3897,6 +3897,7 @@ Return valid JSON:
         isRead: schema.inboxMessages.isRead,
         createdAt: schema.inboxMessages.createdAt,
         senderName: schema.users.fullName,
+        attachmentUrl: schema.inboxMessages.attachmentUrl,
       })
         .from(schema.inboxMessages)
         .leftJoin(schema.users, eq(schema.inboxMessages.senderId, schema.users.id))
@@ -5642,7 +5643,7 @@ Return as valid JSON:
   // Kefi Help Assistant endpoint
   app.post("/api/help/chat", async (req: Request, res: Response) => {
     try {
-      const { message, conversationHistory = [] } = req.body;
+      const { message, conversationHistory = [], attachmentUrl } = req.body;
       
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: "Message is required" });
@@ -5701,6 +5702,7 @@ Return as valid JSON:
             senderType: "user",
             senderId: req.session.userId || null,
             content: suggestionText,
+            attachmentUrl: attachmentUrl || null,
           });
 
         // Create suggestion with link to inbox conversation

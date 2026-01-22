@@ -25,6 +25,7 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - Mark conversations as resolved/reopened
   - Full message thread history for each conversation
   - Loading states to prevent stale data display
+  - Screenshot attachment support - users can attach screenshots when submitting feedback via Kefi chat
 - **Platform Announcements**: System for admins to communicate with all users. Features include:
   - Four announcement types: Maintenance, Event, Update, General
   - Three priority levels: Normal, Important, Urgent
