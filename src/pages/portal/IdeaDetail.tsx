@@ -70,6 +70,7 @@ import {
   Check,
   AlertTriangle,
   Upload,
+  DollarSign,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -228,6 +229,7 @@ export default function IdeaDetail() {
   const [interestCount, setInterestCount] = useState({ total_count: 0, pending_count: 0, accepted_count: 0 });
   const [expressingInterest, setExpressingInterest] = useState(false);
   const [applicationFormOpen, setApplicationFormOpen] = useState(false);
+  const [investInterestFormOpen, setInvestInterestFormOpen] = useState(false);
   const [improveIdeaDialogOpen, setImproveIdeaDialogOpen] = useState(false);
   const [improvingIdea, setImprovingIdea] = useState(false);
   const [improvedIdea, setImprovedIdea] = useState<{ problem?: string; solution?: string; targetUser?: string; whyNow?: string } | null>(null);
@@ -1789,23 +1791,34 @@ export default function IdeaDetail() {
                 </div>
               </div>
               
-              {/* Express Interest Button - Only show if not creator */}
+              {/* Express Interest Buttons - Only show if not creator */}
               {user && idea.createdBy !== user.id && (
                 <div>
                   {!hasExpressedInterest ? (
-                    <>
+                    <div className="flex gap-2 flex-wrap">
                       <Button
                         onClick={() => setApplicationFormOpen(true)}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                        data-testid="button-express-interest-collaborate"
                       >
                         <Users2 className="w-4 h-4 mr-2" />
-                        Express Interest
+                        Collaborate
+                      </Button>
+                      <Button
+                        onClick={() => setInvestInterestFormOpen(true)}
+                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                        data-testid="button-express-interest-invest"
+                      >
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        Invest
                       </Button>
                       
+                      {/* Collaborate Form */}
                       <ApplicationForm
                         open={applicationFormOpen}
                         onOpenChange={setApplicationFormOpen}
                         ideaTitle={idea.title}
+                        interestType="collaborate"
                         onSubmit={async (application) => {
                           try {
                             const response = await fetch(`/api/ideas/${ideaId}/interest`, {
@@ -1821,7 +1834,6 @@ export default function IdeaDetail() {
                                 title: 'Application Submitted!',
                                 description: 'The creator will review your application.'
                               });
-                              // Refresh interest count
                               const countResponse = await fetch(`/api/ideas/${ideaId}/interest-count`);
                               if (countResponse.ok) {
                                 const countData = await countResponse.json();
@@ -1842,7 +1854,49 @@ export default function IdeaDetail() {
                           }
                         }}
                       />
-                    </>
+                      
+                      {/* Invest Form */}
+                      <ApplicationForm
+                        open={investInterestFormOpen}
+                        onOpenChange={setInvestInterestFormOpen}
+                        ideaTitle={idea.title}
+                        interestType="invest"
+                        onSubmit={async (application) => {
+                          try {
+                            const response = await fetch(`/api/ideas/${ideaId}/interest`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(application)
+                            });
+                            
+                            if (response.ok) {
+                              setHasExpressedInterest(true);
+                              setInterestStatus('pending');
+                              toast({
+                                title: 'Investment Interest Submitted!',
+                                description: 'The founder will review your interest and get in touch.'
+                              });
+                              const countResponse = await fetch(`/api/ideas/${ideaId}/interest-count`);
+                              if (countResponse.ok) {
+                                const countData = await countResponse.json();
+                                setInterestCount(countData);
+                              }
+                            } else {
+                              const error = await response.json();
+                              toast({
+                                title: 'Error',
+                                description: error.error || 'Failed to submit interest',
+                                variant: 'destructive'
+                              });
+                              throw new Error(error.error);
+                            }
+                          } catch (error) {
+                            console.error('Error submitting interest:', error);
+                            throw error;
+                          }
+                        }}
+                      />
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="gap-1">
