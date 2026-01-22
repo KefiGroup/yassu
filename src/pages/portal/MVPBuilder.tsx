@@ -932,6 +932,17 @@ Be opinionated. Cut anything that's overkill for MVP.`;
                       </p>
                     </div>
                   </div>
+                  
+                  <div className="mt-4 pt-4 border-t text-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate(`/portal/ideas/${ideaId}`)}
+                      data-testid="button-go-back-to-idea"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Go Back to Idea
+                    </Button>
+                  </div>
                 </div>
               )}
               
