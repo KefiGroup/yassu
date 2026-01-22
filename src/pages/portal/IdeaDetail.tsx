@@ -69,6 +69,7 @@ import {
   Copy,
   Check,
   AlertTriangle,
+  Upload,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -252,6 +253,9 @@ export default function IdeaDetail() {
   const [mvpSpecContent, setMvpSpecContent] = useState<string>('');
   const [loadingMvpSpec, setLoadingMvpSpec] = useState(false);
   const [mvpSpecCopied, setMvpSpecCopied] = useState(false);
+  const [uploadingSlides, setUploadingSlides] = useState(false);
+  const [uploadedSlidesUrl, setUploadedSlidesUrl] = useState<string | null>(null);
+  const slidesInputRef = useRef<HTMLInputElement>(null);
   
   // Title editing
   const [editingTitle, setEditingTitle] = useState(false);
@@ -408,6 +412,9 @@ export default function IdeaDetail() {
           if (pitchResponse.ok) {
             const pitchData = await pitchResponse.json();
             setHasPitchDeck(!!pitchData.id);
+            if (pitchData.finalDeckUrl) {
+              setUploadedSlidesUrl(pitchData.finalDeckUrl);
+            }
           }
         } catch (e) {
           // Pitch deck endpoint may not exist yet, that's ok
@@ -952,6 +959,56 @@ export default function IdeaDetail() {
     }
     const manusUrl = 'https://manus.im/invitation/XT9XTFJVZ8SASD';
     window.open(manusUrl, '_blank');
+  };
+
+  const handleUploadSlides = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !ideaId) return;
+
+    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.ms-powerpoint'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid File Type',
+        description: 'Please upload a PDF or PowerPoint file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingSlides(true);
+    try {
+      const formData = new FormData();
+      formData.append('slides', file);
+
+      const response = await fetch(`/api/ideas/${ideaId}/pitch-deck/upload`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload slides');
+      }
+
+      const data = await response.json();
+      setUploadedSlidesUrl(data.fileUrl);
+      toast({
+        title: 'Slides Uploaded!',
+        description: 'Your pitch deck slides have been saved.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Upload Failed',
+        description: error.message || 'Could not upload slides. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingSlides(false);
+      if (slidesInputRef.current) {
+        slidesInputRef.current.value = '';
+      }
+    }
   };
 
   const handleDownloadWord = () => {
@@ -2502,15 +2559,18 @@ export default function IdeaDetail() {
                   </CardContent>
                 </Card>
                 
-                {/* Step 2: Design in Manus - always accessible */}
-                <Card className={`border-2 transition-colors hover-elevate cursor-pointer ${hasPitchDeck ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/30'}`}>
+                {/* Step 2: Design & Upload - always accessible */}
+                <Card className={`border-2 transition-colors ${uploadedSlidesUrl ? 'border-primary/50 bg-primary/5' : 'border-dashed border-muted-foreground/30'}`}>
                   <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/30 to-orange-500/20 flex items-center justify-center mx-auto mb-3">
-                      <Presentation className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-3">
+                      <Presentation className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 2: Design in Manus</h4>
+                    <h4 className="font-semibold mb-2 flex items-center justify-center gap-2">
+                      Step 2: Design & Upload
+                      {uploadedSlidesUrl && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    </h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Paste your export into Manus to create polished slides.
+                      Design your deck in Manus, then upload it here.
                     </p>
                     <Button
                       onClick={async () => {
@@ -2549,6 +2609,67 @@ export default function IdeaDetail() {
                       <Presentation className="w-4 h-4 mr-2" />
                       Open Manus AI
                     </Button>
+                    
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          then upload here
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <input
+                      type="file"
+                      ref={slidesInputRef}
+                      onChange={handleUploadSlides}
+                      accept=".pdf,.pptx,.ppt"
+                      className="hidden"
+                    />
+                    {uploadedSlidesUrl ? (
+                      <div className="space-y-2">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => window.open(uploadedSlidesUrl, '_blank')}
+                          data-testid="button-view-uploaded-slides"
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          View Uploaded Slides
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => slidesInputRef.current?.click()}
+                          disabled={uploadingSlides}
+                        >
+                          Replace File
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => slidesInputRef.current?.click()}
+                        disabled={uploadingSlides}
+                        data-testid="button-upload-slides"
+                      >
+                        {uploadingSlides ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload Slides (PDF/PPTX)
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
                 

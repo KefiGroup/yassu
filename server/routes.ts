@@ -1415,6 +1415,52 @@ Return valid JSON:
     }
   });
 
+  // Upload pitch deck slides (PDF/PPTX)
+  app.post("/api/ideas/:id/pitch-deck/upload", documentUpload.single("slides"), async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea || idea.createdBy !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      // Get the file URL
+      const fileUrl = `/uploads/${req.file.filename}`;
+      
+      // Update the pitch deck with the uploaded file URL
+      const deck = await storage.updatePitchDeck(req.params.id, { 
+        finalDeckUrl: fileUrl 
+      });
+
+      if (!deck) {
+        // If no pitch deck exists yet, create a minimal one
+        await storage.savePitchDeck({
+          ideaId: req.params.id,
+          investorMode: "angel",
+          deckType: "full",
+          slides: "[]",
+          finalDeckUrl: fileUrl,
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        fileUrl,
+        message: "Slides uploaded successfully" 
+      });
+    } catch (error) {
+      console.error("Upload pitch deck slides error:", error);
+      res.status(500).json({ error: "Failed to upload slides" });
+    }
+  });
+
   // Get pitch preparation for an idea
   app.get("/api/ideas/:id/pitch-preparation", async (req: Request, res: Response) => {
     if (!req.session.userId) {
