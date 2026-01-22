@@ -748,6 +748,34 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Serve pitch deck files from object storage
+  app.get("/api/pitch-deck-files/:bucket/:folder/:filename", async (req: Request, res: Response) => {
+    try {
+      const bucketName = req.params.bucket;
+      const fileName = `${req.params.folder}/${req.params.filename}`;
+      
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(fileName);
+      
+      const [exists] = await file.exists();
+      if (!exists) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      
+      const [metadata] = await file.getMetadata();
+      res.set({
+        "Content-Type": metadata.contentType || "application/pdf",
+        "Cache-Control": "public, max-age=31536000",
+        "Content-Disposition": "inline",
+      });
+      
+      file.createReadStream().pipe(res);
+    } catch (error) {
+      console.error("Error serving pitch deck file:", error);
+      res.status(500).json({ error: "Failed to serve file" });
+    }
+  });
+
   app.get("/api/ideas", async (req: Request, res: Response) => {
     try {
       // Marketplace: only show public ideas (don't pass userId)
@@ -1431,8 +1459,28 @@ Return valid JSON:
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      // Get the file URL
-      const fileUrl = `/uploads/${req.file.filename}`;
+      // Upload to object storage
+      const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      if (!bucketId) {
+        return res.status(500).json({ error: "Object storage not configured" });
+      }
+
+      const ext = req.file.originalname.split('.').pop() || 'pdf';
+      const fileName = `pitch-decks/${req.params.id}-${Date.now()}.${ext}`;
+      const bucket = objectStorageClient.bucket(bucketId);
+      const file = bucket.file(fileName);
+
+      console.log(`[PitchDeck] Uploading slides to ${fileName}...`);
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          cacheControl: "public, max-age=31536000",
+        },
+      });
+
+      // Return the internal path (will be served via object storage API)
+      const fileUrl = `/api/pitch-deck-files/${bucketId}/${fileName}`;
+      console.log(`[PitchDeck] Upload complete: ${fileUrl}`);
       
       // Update the pitch deck with the uploaded file URL
       const deck = await storage.updatePitchDeck(req.params.id, { 
