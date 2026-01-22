@@ -248,6 +248,10 @@ export default function IdeaDetail() {
   const [showMvpLinkInput, setShowMvpLinkInput] = useState(false);
   const [mvpLinkValue, setMvpLinkValue] = useState('');
   const [savingMvpLink, setSavingMvpLink] = useState(false);
+  const [showMvpSpecModal, setShowMvpSpecModal] = useState(false);
+  const [mvpSpecContent, setMvpSpecContent] = useState<string>('');
+  const [loadingMvpSpec, setLoadingMvpSpec] = useState(false);
+  const [mvpSpecCopied, setMvpSpecCopied] = useState(false);
   
   // Title editing
   const [editingTitle, setEditingTitle] = useState(false);
@@ -891,6 +895,63 @@ export default function IdeaDetail() {
     } finally {
       setSavingMvpLink(false);
     }
+  };
+
+  const handleViewMvpSpec = async () => {
+    if (!ideaId) return;
+    
+    setShowMvpSpecModal(true);
+    setLoadingMvpSpec(true);
+    
+    try {
+      const response = await apiRequest(`/ideas/${ideaId}/workflows/mvp_design`) as { content?: string } | null;
+      if (response && response.content) {
+        setMvpSpecContent(response.content);
+      } else {
+        setMvpSpecContent('No MVP specification found. Please generate one using the MVP Builder first.');
+      }
+    } catch (error) {
+      console.error('Error fetching MVP spec:', error);
+      setMvpSpecContent('Unable to load MVP specification. Please try again.');
+    } finally {
+      setLoadingMvpSpec(false);
+    }
+  };
+
+  const handleCopyMvpSpec = async () => {
+    try {
+      await navigator.clipboard.writeText(mvpSpecContent);
+      setMvpSpecCopied(true);
+      setTimeout(() => setMvpSpecCopied(false), 2000);
+      toast({
+        title: 'Copied!',
+        description: 'MVP specification copied to clipboard.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Copy Failed',
+        description: 'Could not copy to clipboard. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleOpenManusAI = async () => {
+    if (!idea) return;
+    try {
+      await apiRequest('/api/referrals/track', {
+        method: 'POST',
+        body: JSON.stringify({
+          platform: 'manus',
+          ideaId: idea.id,
+          ideaTitle: idea.title,
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to track referral:', e);
+    }
+    const manusUrl = 'https://manus.im/invitation/XT9XTFJVZ8SASD';
+    window.open(manusUrl, '_blank');
   };
 
   const handleDownloadWord = () => {
@@ -2264,43 +2325,25 @@ export default function IdeaDetail() {
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${hasMvpFeatures ? 'bg-gradient-to-br from-purple-500/30 to-pink-500/20' : 'bg-muted'}`}>
                       <Code className={`w-6 h-6 ${hasMvpFeatures ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
-                    <h4 className="font-semibold mb-2">Step 2: Build with Manus</h4>
+                    <h4 className="font-semibold mb-2 flex items-center justify-center gap-2">
+                      Step 2: Build with Manus
+                      {hasMvpFeatures && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    </h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Take specs to Manus AI to build and deploy your product.
+                      {hasMvpFeatures 
+                        ? 'Your MVP spec is ready. Copy and build with Manus AI.'
+                        : 'Complete Step 1 first to generate your MVP spec.'
+                      }
                     </p>
                     <Button
-                      onClick={async () => {
-                        if (!idea) return;
-                        try {
-                          await apiRequest('/api/referrals/track', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                              platform: 'manus',
-                              ideaId: idea.id,
-                              ideaTitle: idea.title,
-                            }),
-                          });
-                        } catch (e) {
-                          console.error('Failed to track referral:', e);
-                        }
-                        const context = {
-                          source: 'yassu',
-                          ref: user?.email || 'yassu-platform',
-                          project: idea.title,
-                          problem: idea.problem,
-                          solution: idea.solution || '',
-                          users: idea.targetUser || '',
-                        };
-                        const manusUrl = `https://manus.im/invitation/XT9XTFJVZ8SASD?${new URLSearchParams(context).toString()}`;
-                        window.open(manusUrl, '_blank');
-                      }}
-                      className={hasMvpFeatures ? "w-full bg-gradient-to-r from-purple-600 to-pink-600" : "w-full"}
+                      onClick={handleViewMvpSpec}
+                      className={hasMvpFeatures ? "w-full bg-orange-500 hover:bg-orange-600 text-white" : "w-full"}
                       variant={hasMvpFeatures ? "default" : "secondary"}
                       disabled={!hasMvpFeatures}
-                      data-testid="button-build-mvp-manus"
+                      data-testid="button-view-mvp-spec"
                     >
                       <Code className="w-4 h-4 mr-2" />
-                      {hasMvpFeatures ? 'Open Manus AI' : 'Complete Step 1 First'}
+                      {hasMvpFeatures ? 'View MVP Spec' : 'Complete Step 1 First'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -2860,6 +2903,59 @@ export default function IdeaDetail() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MVP Spec Modal */}
+      <Dialog open={showMvpSpecModal} onOpenChange={setShowMvpSpecModal}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Code className="w-5 h-5" />
+              Your MVP Specification
+            </DialogTitle>
+            <DialogDescription>
+              Copy this spec and paste it into Manus AI to build your product.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto border rounded-md p-4 bg-muted/30 font-mono text-sm whitespace-pre-wrap min-h-[300px]">
+            {loadingMvpSpec ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              mvpSpecContent
+            )}
+          </div>
+          <DialogFooter className="flex-shrink-0 flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCopyMvpSpec}
+              disabled={loadingMvpSpec || !mvpSpecContent}
+              className="flex-1"
+              data-testid="button-copy-mvp-spec"
+            >
+              {mvpSpecCopied ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy MVP Spec
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleOpenManusAI}
+              className="flex-1 bg-primary"
+              data-testid="button-open-manus-ai"
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              Open Manus AI
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
