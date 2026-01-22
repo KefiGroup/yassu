@@ -2478,14 +2478,20 @@ export default function IdeaDetail() {
                         View MVP Spec
                       </Button>
                     ) : (
-                      <Button
-                        onClick={() => window.open('https://manus.im', '_blank')}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                        data-testid="button-open-manus-mvp"
+                      <a
+                        href="https://manus.im/invitation/XT9XTFJVZ8SASD"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full"
                       >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Open Manus AI
-                      </Button>
+                        <Button
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                          data-testid="button-open-manus-mvp"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Open Manus AI
+                        </Button>
+                      </a>
                     )}
                   </CardContent>
                 </Card>
