@@ -471,6 +471,7 @@ export function registerRoutes(app: Express): void {
 
     try {
       const data = { ...req.body };
+      console.log('[profile-update] User ID:', req.session.userId);
       console.log('[profile-update] Received data:', JSON.stringify(data, null, 2));
       
       // Validate yassuRole if provided
@@ -481,10 +482,30 @@ export function registerRoutes(app: Express): void {
         }
       }
       
-      const profile = await storage.updateProfile(req.session.userId, data);
+      // First try to update, if no profile exists, create one
+      let profile = await storage.updateProfile(req.session.userId, data);
+      
+      // If profile doesn't exist, create it
+      if (!profile) {
+        console.log('[profile-update] No existing profile found, creating new one for user:', req.session.userId);
+        const user = await storage.getUser(req.session.userId);
+        profile = await storage.createProfile(req.session.userId, {
+          ...data,
+          email: user?.email || data.email,
+          verificationStatus: "pending",
+          onboardingCompleted: false,
+          skills: data.skills || [],
+          interests: data.interests || []
+        });
+      }
+      
+      if (!profile) {
+        console.error('[profile-update] Failed to create/update profile for user:', req.session.userId);
+        return res.status(500).json({ error: "Failed to save profile" });
+      }
       
       // Send skill match notifications if skills were updated
-      if (data.skills && data.skills.length > 0 && profile.email) {
+      if (data.skills && data.skills.length > 0 && profile?.email) {
         // Find public ideas that match the user's skills
         const matchingIdeas = await storage.findIdeasBySkills(data.skills, req.session.userId);
         
@@ -513,7 +534,9 @@ export function registerRoutes(app: Express): void {
       
       res.json(profile);
     } catch (error) {
-      res.status(500).json({ error: "Failed to update profile" });
+      console.error('[profile-update] Error:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: `Failed to update profile: ${message}` });
     }
   });
 
