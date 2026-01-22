@@ -1574,7 +1574,15 @@ export default function IdeaDetail() {
           <CardContent>
             <div className="overflow-x-auto pb-2">
               <div className="flex items-center justify-center min-w-max">
-                {journeySteps.map((step, index) => {
+                {journeySteps
+                  .filter(step => {
+                    // Steps 5, 6, 7 (MVP, Foundry, Funding) are only visible to creator and team members
+                    if (step.id >= 5 && !(isOwner || isTeamMember)) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((step, index, filteredSteps) => {
                   const StepIcon = step.icon;
                   const status = getStepStatus(step.id);
                   const isCompleted = status === 'completed';
@@ -1625,7 +1633,7 @@ export default function IdeaDetail() {
                       ) : (
                         stepButton
                       )}
-                      {index < journeySteps.length - 1 && (
+                      {index < filteredSteps.length - 1 && (
                         <div 
                           className="w-12 h-0.5 mx-3 flex-shrink-0 border-t-2 border-dashed border-muted" 
                         />
@@ -2389,7 +2397,8 @@ export default function IdeaDetail() {
         </Card>
       </motion.div>
 
-      {/* SEGMENT: MVP */}
+      {/* SEGMENT: MVP - Only visible to creator and team members */}
+      {(isOwner || isTeamMember) && (
       <motion.div
         ref={mvpRef}
         initial={{ opacity: 0, y: 20 }}
@@ -2548,8 +2557,10 @@ export default function IdeaDetail() {
           </CardContent>
         </Card>
       </motion.div>
+      )}
 
-      {/* SEGMENT: Yassu Foundry - Events and Roadshows */}
+      {/* SEGMENT: Yassu Foundry - Events and Roadshows - Only visible to creator and team members */}
+      {(isOwner || isTeamMember) && (
       <motion.div
         ref={foundryRef}
         initial={{ opacity: 0, y: 20 }}
@@ -2586,8 +2597,10 @@ export default function IdeaDetail() {
           </CardContent>
         </Card>
       </motion.div>
+      )}
 
-      {/* SEGMENT: Launch / Funding */}
+      {/* SEGMENT: Launch / Funding - Only visible to creator and team members */}
+      {(isOwner || isTeamMember) && (
       <motion.div
         ref={fundingRef}
         initial={{ opacity: 0, y: 20 }}
@@ -2791,6 +2804,7 @@ export default function IdeaDetail() {
           </CardContent>
         </Card>
       </motion.div>
+      )}
 
       <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
