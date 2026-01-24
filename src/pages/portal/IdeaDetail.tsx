@@ -71,6 +71,7 @@ import {
   AlertTriangle,
   Upload,
   ExternalLink,
+  X,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -2785,25 +2786,48 @@ export default function IdeaDetail() {
                       className="hidden"
                     />
                     {uploadedSlidesUrl ? (
-                      <div className="space-y-2">
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => window.open(uploadedSlidesUrl, '_blank')}
-                          data-testid="button-view-uploaded-slides"
-                        >
-                          <FileText className="w-4 h-4 mr-2" />
-                          View Uploaded Slides
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs"
-                          onClick={() => slidesInputRef.current?.click()}
-                          disabled={uploadingSlides}
-                        >
-                          Replace File
-                        </Button>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400">
+                          <CheckCircle className="w-5 h-5" />
+                          <span className="font-medium">Deck Uploaded</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => window.open(uploadedSlidesUrl, '_blank')}
+                            data-testid="button-view-deck"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View Deck
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={async () => {
+                              if (!ideaId) return;
+                              try {
+                                await apiRequest(`/api/ideas/${ideaId}/pitch-deck/remove-file`, {
+                                  method: 'DELETE',
+                                });
+                                setUploadedSlidesUrl(null);
+                                toast({
+                                  title: 'Deck Removed',
+                                  description: 'Your uploaded deck has been removed.',
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: 'Error',
+                                  description: 'Failed to remove deck. Please try again.',
+                                  variant: 'destructive',
+                                });
+                              }
+                            }}
+                            data-testid="button-remove-deck"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <Button

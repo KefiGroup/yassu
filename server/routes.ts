@@ -1598,6 +1598,51 @@ Return valid JSON:
     }
   });
 
+  // Remove uploaded pitch deck file
+  app.delete("/api/ideas/:id/pitch-deck/remove-file", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const idea = await storage.getIdea(req.params.id);
+      if (!idea || idea.createdBy !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      // Get the current pitch deck to find the file URL
+      const deck = await storage.getPitchDeck(req.params.id);
+      if (deck?.finalDeckUrl) {
+        // Try to delete from object storage
+        try {
+          const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+          if (bucketId) {
+            // Extract the file path from the URL
+            const urlMatch = deck.finalDeckUrl.match(/pitch-decks\/(.+)$/);
+            if (urlMatch) {
+              const fileName = `pitch-decks/${urlMatch[1]}`;
+              const bucket = objectStorageClient.bucket(bucketId);
+              const file = bucket.file(fileName);
+              await file.delete().catch(() => {
+                console.log("File may not exist or already deleted");
+              });
+            }
+          }
+        } catch (e) {
+          console.log("Could not delete file from storage:", e);
+        }
+      }
+
+      // Update the pitch deck to remove the file URL
+      await storage.updatePitchDeck(req.params.id, { finalDeckUrl: null });
+
+      res.json({ success: true, message: "Deck file removed" });
+    } catch (error) {
+      console.error("Remove pitch deck file error:", error);
+      res.status(500).json({ error: "Failed to remove deck file" });
+    }
+  });
+
   // Get pitch preparation for an idea
   app.get("/api/ideas/:id/pitch-preparation", async (req: Request, res: Response) => {
     if (!req.session.userId) {
