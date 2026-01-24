@@ -1120,7 +1120,7 @@ export default function IdeaDetail() {
   <h2>BUSINESS PLAN</h2>
   <p class="prepared-by">Prepared by: ${founderName}</p>
   <p class="date">${formattedDate}</p>
-  <p class="powered-by">Powered by Yassu</p>
+  <p class="powered-by">Powered by Yassu.ai</p>
 </div>
 
 <div class="toc">
