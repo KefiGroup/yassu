@@ -195,7 +195,7 @@ export default function MyIdeas() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
-                        {idea.stage}
+                        {idea.stage?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Idea Posted'}
                       </Badge>
                       {ideaInterestCount > 0 && (
                         <Badge variant="outline" className="text-xs">

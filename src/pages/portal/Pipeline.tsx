@@ -269,7 +269,7 @@ const IdeaList = ({ ideas, getStageColor, getStageIcon }: IdeaListProps) => {
                   <Badge variant="outline" className={getStageColor(idea.stage)}>
                     <span className="flex items-center gap-1">
                       {getStageIcon(idea.stage)}
-                      {idea.stage.replace('_', ' ')}
+                      {idea.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </span>
                   </Badge>
                 </div>
