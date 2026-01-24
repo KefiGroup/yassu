@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, HelpCircle, MessageSquarePlus, ArrowLeft, Camera, Image, Trash2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, HelpCircle, MessageSquarePlus, ArrowLeft, Camera, Image, Trash2, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,7 +23,7 @@ interface Message {
   content: string;
 }
 
-type ChatMode = 'select' | 'help' | 'feedback';
+type ChatMode = 'select' | 'help' | 'feedback' | 'bug';
 
 const HELP_WELCOME_MESSAGE = `Hi! I'm Kefi, your Yassu assistant.
 
@@ -41,6 +41,10 @@ Share your suggestions, feature requests, or any feedback to help us improve Yas
 
 Type your feedback below and we'll make sure the team sees it.`;
 
+const BUG_WELCOME_MESSAGE = `Found something that's not working?
+
+Please describe what you were trying to do, what happened, and what you expected to happen. Adding a screenshot helps us fix things faster!`;
+
 // Global event for opening chat from header
 export const openKefiChat = () => {
   window.dispatchEvent(new CustomEvent('openKefiChat'));
@@ -52,9 +56,13 @@ export function KefiChat() {
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [bugText, setBugText] = useState('');
+  const [bugSubmitted, setBugSubmitted] = useState(false);
+  const [isSubmittingBug, setIsSubmittingBug] = useState(false);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bugInputRef = useRef<HTMLInputElement>(null);
   
   // Listen for external open events
   useEffect(() => {
@@ -93,11 +101,13 @@ export function KefiChat() {
     setMode('select');
     setFeedbackText('');
     setFeedbackSubmitted(false);
+    setBugText('');
+    setBugSubmitted(false);
     setScreenshotFile(null);
     setScreenshotPreview(null);
   };
 
-  const handleSelectMode = (selectedMode: 'help' | 'feedback') => {
+  const handleSelectMode = (selectedMode: 'help' | 'feedback' | 'bug') => {
     setMode(selectedMode);
     if (selectedMode === 'help') {
       setMessages([{ id: 'welcome', role: 'assistant', content: HELP_WELCOME_MESSAGE }]);
@@ -108,6 +118,8 @@ export function KefiChat() {
     setMode('select');
     setFeedbackText('');
     setFeedbackSubmitted(false);
+    setBugText('');
+    setBugSubmitted(false);
     setScreenshotFile(null);
     setScreenshotPreview(null);
     setMessages([{ id: 'welcome', role: 'assistant', content: HELP_WELCOME_MESSAGE }]);
@@ -179,6 +191,55 @@ export function KefiChat() {
       console.error('Feedback submission error:', error);
     } finally {
       setIsSubmittingFeedback(false);
+    }
+  };
+
+  const handleSubmitBug = async () => {
+    if (!bugText.trim() || isSubmittingBug) return;
+
+    setIsSubmittingBug(true);
+    try {
+      let attachmentUrl: string | undefined;
+      
+      if (screenshotFile) {
+        const urlResponse = await fetch('/api/uploads/request-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: `bug-${Date.now()}-${screenshotFile.name}`,
+            size: screenshotFile.size,
+            contentType: screenshotFile.type
+          })
+        });
+        
+        if (urlResponse.ok) {
+          const { uploadURL, objectPath } = await urlResponse.json();
+          
+          const uploadResult = await fetch(uploadURL, {
+            method: 'PUT',
+            headers: { 'Content-Type': screenshotFile.type },
+            body: screenshotFile
+          });
+          
+          if (uploadResult.ok) {
+            attachmentUrl = `/objects${objectPath}`;
+          }
+        }
+      }
+      
+      await api.post('/help/chat', {
+        message: `BUG REPORT: ${bugText.trim()}`,
+        conversationHistory: [],
+        attachmentUrl
+      });
+      setBugSubmitted(true);
+      setBugText('');
+      clearScreenshot();
+    } catch (error) {
+      console.error('Bug submission error:', error);
+    } finally {
+      setIsSubmittingBug(false);
     }
   };
 
@@ -267,7 +328,7 @@ export function KefiChat() {
               <MessageCircle className="h-5 w-5" />
               <span className="font-semibold">Kefi</span>
               <span className="text-sm opacity-80">
-                {mode === 'help' ? 'Help' : mode === 'feedback' ? 'Feedback' : 'Your Assistant'}
+                {mode === 'help' ? 'Help' : mode === 'feedback' ? 'Feedback' : mode === 'bug' ? 'Bug Report' : 'Your Assistant'}
               </span>
             </div>
             <Button
@@ -313,6 +374,19 @@ export function KefiChat() {
                   <div className="text-center">
                     <div className="font-medium">Submit Feedback</div>
                     <div className="text-xs text-muted-foreground">Share suggestions or ideas</div>
+                  </div>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="h-auto py-4 px-4 flex flex-col items-center gap-2 hover-elevate"
+                  onClick={() => handleSelectMode('bug')}
+                  data-testid="button-kefi-mode-bug"
+                >
+                  <Bug className="h-8 w-8 text-destructive" />
+                  <div className="text-center">
+                    <div className="font-medium">Report a Bug</div>
+                    <div className="text-xs text-muted-foreground">Something not working right?</div>
                   </div>
                 </Button>
               </div>
@@ -483,6 +557,116 @@ export function KefiChat() {
                     <Button
                       onClick={handleBackToSelect}
                       data-testid="button-kefi-back-home"
+                    >
+                      Back to Menu
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Bug Report Mode */}
+          {mode === 'bug' && (
+            <div className="flex-1 flex flex-col p-4">
+              {!bugSubmitted ? (
+                <>
+                  <div className="bg-destructive/10 rounded-lg p-4 mb-4 border border-destructive/20">
+                    <p className="text-sm" dangerouslySetInnerHTML={{ __html: formatMarkdown(BUG_WELCOME_MESSAGE) }} />
+                  </div>
+                  
+                  <Textarea
+                    value={bugText}
+                    onChange={(e) => setBugText(e.target.value)}
+                    placeholder="Describe the bug: what happened and what did you expect?"
+                    className="flex-1 resize-none mb-3"
+                    disabled={isSubmittingBug}
+                    data-testid="textarea-kefi-bug"
+                  />
+                  
+                  <input
+                    type="file"
+                    ref={bugInputRef}
+                    onChange={handleFileSelect}
+                    accept="image/*"
+                    className="hidden"
+                    data-testid="input-kefi-bug-screenshot"
+                  />
+                  
+                  {screenshotPreview ? (
+                    <div className="relative mb-3 rounded-lg border overflow-hidden">
+                      <img 
+                        src={screenshotPreview} 
+                        alt="Screenshot preview" 
+                        className="w-full h-24 object-cover"
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={clearScreenshot}
+                        data-testid="button-kefi-remove-bug-screenshot"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mb-3 w-full"
+                      onClick={() => bugInputRef.current?.click()}
+                      disabled={isSubmittingBug}
+                      data-testid="button-kefi-add-bug-screenshot"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Add Screenshot (recommended)
+                    </Button>
+                  )}
+                  
+                  <Button
+                    onClick={handleSubmitBug}
+                    disabled={!bugText.trim() || isSubmittingBug}
+                    className="w-full"
+                    variant="destructive"
+                    data-testid="button-kefi-submit-bug"
+                  >
+                    {isSubmittingBug ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Bug className="h-4 w-4 mr-2" />
+                        Submit Bug Report
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+                  <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4">
+                    <Bug className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Bug Reported!</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Thank you for helping us improve Yassu! Our team will investigate this issue.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setBugSubmitted(false);
+                        setBugText('');
+                      }}
+                      data-testid="button-kefi-another-bug"
+                    >
+                      Report Another
+                    </Button>
+                    <Button
+                      onClick={handleBackToSelect}
+                      data-testid="button-kefi-back-home-bug"
                     >
                       Back to Menu
                     </Button>
