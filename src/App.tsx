@@ -46,6 +46,7 @@ const InvestorPitchDeck = lazy(() => import("./pages/portal/InvestorPitchDeck"))
 const PitchPreparation = lazy(() => import("./pages/portal/PitchPreparation"));
 const Foundry = lazy(() => import("./pages/portal/Foundry"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Search = lazy(() => import("./pages/portal/Search"));
 
 const queryClient = new QueryClient();
 
@@ -122,6 +123,7 @@ const App = () => {
                   <Route path="pitch-preparation" element={<PitchPreparation />} />
                   <Route path="foundry" element={<Foundry />} />
                   <Route path="admin" element={<Admin />} />
+                  <Route path="search" element={<Search />} />
                 </Route>
                 
                 <Route path="*" element={<NotFound />} />

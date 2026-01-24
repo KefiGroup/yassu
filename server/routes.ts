@@ -726,6 +726,50 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Search users (authenticated)
+  app.get("/api/users/search", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const query = String(req.query.q || '').toLowerCase().trim();
+      if (!query) {
+        return res.json([]);
+      }
+      
+      const profiles = await db.select({
+        id: schema.profiles.userId,
+        fullName: schema.profiles.fullName,
+        avatarUrl: schema.profiles.avatarUrl,
+        skills: schema.profiles.skills,
+        universityName: schema.universities.name,
+      })
+        .from(schema.profiles)
+        .leftJoin(schema.universities, eq(schema.profiles.universityId, schema.universities.id))
+        .where(
+          or(
+            sql`LOWER(${schema.profiles.fullName}) LIKE ${'%' + query + '%'}`,
+            sql`LOWER(${schema.profiles.bio}) LIKE ${'%' + query + '%'}`
+          )
+        )
+        .limit(20);
+      
+      const results = profiles.map(p => ({
+        id: p.id,
+        fullName: p.fullName,
+        avatarUrl: p.avatarUrl,
+        skills: p.skills || [],
+        university: p.universityName,
+      }));
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Search users error:", error);
+      res.status(500).json({ error: "Failed to search users" });
+    }
+  });
+
   app.get("/api/universities", async (_req: Request, res: Response) => {
     try {
       const universities = await storage.getUniversities();
@@ -828,6 +872,28 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error("Error fetching user's ideas:", error);
       res.status(500).json({ error: "Failed to fetch ideas" });
+    }
+  });
+
+  // Search ideas (public)
+  app.get("/api/ideas/search", async (req: Request, res: Response) => {
+    try {
+      const query = String(req.query.q || '').toLowerCase().trim();
+      if (!query) {
+        return res.json([]);
+      }
+      
+      const allIdeas = await storage.getIdeasWithCreators();
+      const results = allIdeas.filter(idea => 
+        idea.title?.toLowerCase().includes(query) ||
+        idea.problem?.toLowerCase().includes(query) ||
+        idea.solution?.toLowerCase().includes(query)
+      ).slice(0, 20);
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Search ideas error:", error);
+      res.status(500).json({ error: "Failed to search ideas" });
     }
   });
 
