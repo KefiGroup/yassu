@@ -121,6 +121,8 @@ export interface IStorage {
   getConnections(userId: number): Promise<(Connection & { profile: Profile })[]>;
   acceptConnection(connectionId: string, userId: number): Promise<Connection | undefined>;
   acceptConnectionByToken(requestId: string, token: string): Promise<Connection | undefined>;
+  getConnectionByToken(requestId: string, token: string): Promise<Connection | undefined>;
+  rejectConnectionByToken(requestId: string, token: string): Promise<Connection | undefined>;
   rejectConnection(connectionId: string, userId: number): Promise<Connection | undefined>;
   cancelConnection(connectionId: string, userId: number): Promise<void>;
   removeConnection(connectionId: string, userId: number): Promise<void>;
@@ -1126,6 +1128,33 @@ export class DatabaseStorage implements IStorage {
     
     const [updated] = await db.update(schema.connections)
       .set({ status: 'accepted', respondedAt: new Date(), acceptToken: null })
+      .where(eq(schema.connections.id, requestId))
+      .returning();
+    return updated;
+  }
+
+  async getConnectionByToken(requestId: string, token: string): Promise<Connection | undefined> {
+    const [connection] = await db.select().from(schema.connections)
+      .where(and(
+        eq(schema.connections.id, requestId),
+        eq(schema.connections.acceptToken, token),
+        eq(schema.connections.status, 'pending')
+      ));
+    return connection;
+  }
+
+  async rejectConnectionByToken(requestId: string, token: string): Promise<Connection | undefined> {
+    const [connection] = await db.select().from(schema.connections)
+      .where(and(
+        eq(schema.connections.id, requestId),
+        eq(schema.connections.acceptToken, token),
+        eq(schema.connections.status, 'pending')
+      ));
+    
+    if (!connection) return undefined;
+    
+    const [updated] = await db.update(schema.connections)
+      .set({ status: 'rejected', respondedAt: new Date(), acceptToken: null })
       .where(eq(schema.connections.id, requestId))
       .returning();
     return updated;

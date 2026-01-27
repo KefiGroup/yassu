@@ -954,7 +954,7 @@ export async function sendConnectionRequestEmail(
   acceptToken?: string
 ): Promise<void> {
   const acceptUrl = connectionId && acceptToken 
-    ? `${APP_URL}/api/connections/accept?requestId=${connectionId}&token=${acceptToken}`
+    ? `${APP_URL}/accept-connection?requestId=${connectionId}&token=${acceptToken}`
     : `${APP_URL}/portal/collaborators`;
   
   const html = `

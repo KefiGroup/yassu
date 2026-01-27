@@ -47,6 +47,7 @@ const PitchPreparation = lazy(() => import("./pages/portal/PitchPreparation"));
 const Foundry = lazy(() => import("./pages/portal/Foundry"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Search = lazy(() => import("./pages/portal/Search"));
+const AcceptConnection = lazy(() => import("./pages/portal/AcceptConnection"));
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => {
                 <Route path="/ambassadors" element={<AmbassadorsPage />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/accept-connection" element={<AcceptConnection />} />
                 
                 {/* Portal Routes */}
                 <Route path="/portal" element={<PortalLayout />}>

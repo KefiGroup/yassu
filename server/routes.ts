@@ -3053,18 +3053,61 @@ Return valid JSON:
     }
   });
 
-  // Accept a connection request via email token (public route, no auth required)
-  app.get("/api/connections/accept", async (req: Request, res: Response) => {
+  // Preview connection request for the accept page (public, validates token)
+  app.get("/api/connections/preview", async (req: Request, res: Response) => {
     try {
       const { requestId, token } = req.query;
       
       if (!requestId || !token || typeof requestId !== 'string' || typeof token !== 'string') {
-        return res.redirect('/portal/collaborators?error=invalid_link');
+        return res.status(400).json({ error: "Invalid link" });
+      }
+
+      const connection = await storage.getConnectionByToken(requestId, token);
+      if (!connection) {
+        return res.status(404).json({ error: "Connection request not found or already handled" });
+      }
+      
+      // Get the requester's profile
+      const requester = await storage.getProfile(connection.requesterId);
+      if (!requester) {
+        return res.status(404).json({ error: "Requester profile not found" });
+      }
+
+      // Get university info if available
+      let university = null;
+      if (requester.universityId) {
+        university = await storage.getUniversity(requester.universityId);
+      }
+      
+      res.json({
+        id: requester.userId,
+        fullName: requester.fullName || 'Unknown User',
+        email: requester.email,
+        bio: requester.bio,
+        avatarUrl: requester.avatarUrl,
+        skills: requester.skills || [],
+        interests: requester.interests || [],
+        university: university ? { name: university.name, shortName: university.shortName } : null,
+        message: connection.message
+      });
+    } catch (error) {
+      console.error("Preview connection error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  // Accept connection via token (POST for the frontend page)
+  app.post("/api/connections/accept-with-token", async (req: Request, res: Response) => {
+    try {
+      const { requestId, token } = req.body;
+      
+      if (!requestId || !token) {
+        return res.status(400).json({ error: "Invalid request" });
       }
 
       const connection = await storage.acceptConnectionByToken(requestId, token);
       if (!connection) {
-        return res.redirect('/portal/collaborators?error=invalid_or_expired');
+        return res.status(404).json({ error: "Connection request not found or already handled" });
       }
       
       // Get profiles for notifications
@@ -3084,11 +3127,11 @@ Return valid JSON:
       
       // Create a welcome message in the conversation
       if (requester && recipient) {
-        await storage.sendDirectMessage(
-          connection.recipientId,
-          connection.requesterId,
-          `Hi ${requester.fullName?.split(' ')[0] || 'there'}! I just accepted your connection request. Looking forward to connecting!`
-        );
+        await db.insert(schema.directMessages).values({
+          senderId: connection.recipientId,
+          recipientId: connection.requesterId,
+          content: `Hi ${requester.fullName?.split(' ')[0] || 'there'}! I just accepted your connection request. Looking forward to connecting!`
+        });
       }
       
       // Send email to the requester (if notifications enabled)
@@ -3103,11 +3146,31 @@ Return valid JSON:
         });
       }
       
-      // Redirect to messages page
-      return res.redirect('/portal/messages?accepted=true');
+      res.json({ success: true });
     } catch (error) {
       console.error("Accept connection by token error:", error);
-      return res.redirect('/portal/collaborators?error=server_error');
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  // Reject connection via token (POST for the frontend page)
+  app.post("/api/connections/reject-with-token", async (req: Request, res: Response) => {
+    try {
+      const { requestId, token } = req.body;
+      
+      if (!requestId || !token) {
+        return res.status(400).json({ error: "Invalid request" });
+      }
+
+      const connection = await storage.rejectConnectionByToken(requestId, token);
+      if (!connection) {
+        return res.status(404).json({ error: "Connection request not found or already handled" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Reject connection by token error:", error);
+      res.status(500).json({ error: "Server error" });
     }
   });
 
