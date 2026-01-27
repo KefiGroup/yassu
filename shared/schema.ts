@@ -376,6 +376,7 @@ export const connections = pgTable("connections", {
   recipientId: integer("recipient_id").references(() => users.id).notNull(),
   status: connectionStatusEnum("status").default("pending").notNull(),
   message: text("message"),
+  acceptToken: text("accept_token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   respondedAt: timestamp("responded_at"),
 });

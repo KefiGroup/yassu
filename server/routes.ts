@@ -2988,7 +2988,9 @@ Return valid JSON:
           recipient.email,
           recipient.fullName || 'there',
           sender.fullName || 'Someone',
-          message
+          message,
+          connection.id,
+          connection.acceptToken || undefined
         ).catch(err => {
           console.error('Failed to send connection request email:', err);
         });
@@ -3048,6 +3050,64 @@ Return valid JSON:
     } catch (error) {
       console.error("Get connections error:", error);
       res.status(500).json({ error: "Failed to get connections" });
+    }
+  });
+
+  // Accept a connection request via email token (public route, no auth required)
+  app.get("/api/connections/accept", async (req: Request, res: Response) => {
+    try {
+      const { requestId, token } = req.query;
+      
+      if (!requestId || !token || typeof requestId !== 'string' || typeof token !== 'string') {
+        return res.redirect('/portal/collaborators?error=invalid_link');
+      }
+
+      const connection = await storage.acceptConnectionByToken(requestId, token);
+      if (!connection) {
+        return res.redirect('/portal/collaborators?error=invalid_or_expired');
+      }
+      
+      // Get profiles for notifications
+      const [requester, recipient] = await Promise.all([
+        storage.getProfile(connection.requesterId),
+        storage.getProfile(connection.recipientId)
+      ]);
+      
+      // Notify the requester that their connection was accepted
+      await storage.createNotification({
+        userId: connection.requesterId,
+        type: 'connection_accepted',
+        title: 'Connection Accepted',
+        message: `${recipient?.fullName || 'Someone'} accepted your connection request`,
+        link: '/portal/collaborators',
+      });
+      
+      // Create a welcome message in the conversation
+      if (requester && recipient) {
+        await storage.sendDirectMessage(
+          connection.recipientId,
+          connection.requesterId,
+          `Hi ${requester.fullName?.split(' ')[0] || 'there'}! I just accepted your connection request. Looking forward to connecting!`
+        );
+      }
+      
+      // Send email to the requester (if notifications enabled)
+      if (requester?.email && requester?.emailNotificationsEnabled !== false) {
+        const { sendCollaboratorRequestAcceptedEmail } = await import('./email');
+        sendCollaboratorRequestAcceptedEmail(
+          requester.email,
+          requester.fullName || 'there',
+          recipient?.fullName || 'Someone'
+        ).catch(err => {
+          console.error('Failed to send connection accepted email:', err);
+        });
+      }
+      
+      // Redirect to messages page
+      return res.redirect('/portal/messages?accepted=true');
+    } catch (error) {
+      console.error("Accept connection by token error:", error);
+      return res.redirect('/portal/collaborators?error=server_error');
     }
   });
 

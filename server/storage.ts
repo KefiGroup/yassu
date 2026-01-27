@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { db } from "./db";
 import { eq, desc, and, or, sql, inArray } from "drizzle-orm";
 import * as schema from "../shared/schema";
@@ -119,6 +120,7 @@ export interface IStorage {
   getPendingConnectionRequests(userId: number, direction: 'received' | 'sent'): Promise<(Connection & { profile: Profile })[]>;
   getConnections(userId: number): Promise<(Connection & { profile: Profile })[]>;
   acceptConnection(connectionId: string, userId: number): Promise<Connection | undefined>;
+  acceptConnectionByToken(requestId: string, token: string): Promise<Connection | undefined>;
   rejectConnection(connectionId: string, userId: number): Promise<Connection | undefined>;
   cancelConnection(connectionId: string, userId: number): Promise<void>;
   removeConnection(connectionId: string, userId: number): Promise<void>;
@@ -970,6 +972,9 @@ export class DatabaseStorage implements IStorage {
 
   // Connection system implementation
   async sendConnectionRequest(requesterId: number, recipientId: number, message?: string): Promise<Connection> {
+    // Generate secure random token for email CTA
+    const acceptToken = crypto.randomBytes(32).toString('hex');
+    
     // Check if connection already exists (in either direction)
     const existing = await db.select().from(schema.connections)
       .where(or(
@@ -997,6 +1002,7 @@ export class DatabaseStorage implements IStorage {
             recipientId, 
             status: 'pending', 
             message, 
+            acceptToken,
             createdAt: new Date(),
             respondedAt: null 
           })
@@ -1008,7 +1014,7 @@ export class DatabaseStorage implements IStorage {
     
     try {
       const [connection] = await db.insert(schema.connections)
-        .values({ requesterId, recipientId, message, status: 'pending' })
+        .values({ requesterId, recipientId, message, status: 'pending', acceptToken })
         .returning();
       return connection;
     } catch (error: any) {
@@ -1101,8 +1107,26 @@ export class DatabaseStorage implements IStorage {
     if (!connection) return undefined;
     
     const [updated] = await db.update(schema.connections)
-      .set({ status: 'accepted', respondedAt: new Date() })
+      .set({ status: 'accepted', respondedAt: new Date(), acceptToken: null })
       .where(eq(schema.connections.id, connectionId))
+      .returning();
+    return updated;
+  }
+
+  async acceptConnectionByToken(requestId: string, token: string): Promise<Connection | undefined> {
+    // Validate token and accept connection
+    const [connection] = await db.select().from(schema.connections)
+      .where(and(
+        eq(schema.connections.id, requestId),
+        eq(schema.connections.acceptToken, token),
+        eq(schema.connections.status, 'pending')
+      ));
+    
+    if (!connection) return undefined;
+    
+    const [updated] = await db.update(schema.connections)
+      .set({ status: 'accepted', respondedAt: new Date(), acceptToken: null })
+      .where(eq(schema.connections.id, requestId))
       .returning();
     return updated;
   }

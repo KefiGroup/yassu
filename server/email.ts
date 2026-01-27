@@ -949,8 +949,14 @@ export async function sendConnectionRequestEmail(
   recipientEmail: string,
   recipientName: string,
   senderName: string,
-  personalMessage?: string
+  personalMessage?: string,
+  connectionId?: string,
+  acceptToken?: string
 ): Promise<void> {
+  const acceptUrl = connectionId && acceptToken 
+    ? `${APP_URL}/api/connections/accept?requestId=${connectionId}&token=${acceptToken}`
+    : `${APP_URL}/portal/collaborators`;
+  
   const html = `
 <!DOCTYPE html>
 <html>
@@ -995,8 +1001,8 @@ export async function sendConnectionRequestEmail(
               <table role="presentation" style="margin: 30px 0;">
                 <tr>
                   <td style="border-radius: 6px; background-color: #7c3aed;">
-                    <a href="${APP_URL}/portal/messages" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
-                      View Request
+                    <a href="${acceptUrl}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                      Accept Connection
                     </a>
                   </td>
                 </tr>
