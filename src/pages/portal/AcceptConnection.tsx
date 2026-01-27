@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,14 +21,14 @@ interface RequesterProfile {
 type PageState = 'loading' | 'show_profile' | 'accepting' | 'rejecting' | 'accepted' | 'rejected' | 'error';
 
 export default function AcceptConnection() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [state, setState] = useState<PageState>('loading');
   const [profile, setProfile] = useState<RequesterProfile | null>(null);
   const [error, setError] = useState<string>('');
   
-  const params = new URLSearchParams(window.location.search);
-  const requestId = params.get('requestId');
-  const token = params.get('token');
+  const requestId = searchParams.get('requestId');
+  const token = searchParams.get('token');
 
   useEffect(() => {
     if (!requestId || !token) {
@@ -108,7 +108,7 @@ export default function AcceptConnection() {
               </div>
               <h2 className="text-xl font-semibold mb-2">Connection Not Available</h2>
               <p className="text-muted-foreground mb-6">{error}</p>
-              <Button onClick={() => setLocation('/portal/collaborators')} data-testid="button-go-to-collaborators">
+              <Button onClick={() => navigate('/portal/collaborators')} data-testid="button-go-to-collaborators">
                 Go to Collaborators
               </Button>
             </div>
@@ -206,13 +206,13 @@ export default function AcceptConnection() {
               <div className="flex gap-3">
                 <Button 
                   variant="outline"
-                  onClick={() => setLocation('/portal/collaborators')}
+                  onClick={() => navigate('/portal/collaborators')}
                   data-testid="button-view-connections"
                 >
                   View Connections
                 </Button>
                 <Button 
-                  onClick={() => setLocation('/portal/messages')}
+                  onClick={() => navigate('/portal/messages')}
                   data-testid="button-send-message"
                 >
                   Send Message
@@ -231,7 +231,7 @@ export default function AcceptConnection() {
                 You have declined the connection request from {profile.fullName}.
               </p>
               <Button 
-                onClick={() => setLocation('/portal/collaborators')}
+                onClick={() => navigate('/portal/collaborators')}
                 data-testid="button-back-to-collaborators"
               >
                 Back to Collaborators
