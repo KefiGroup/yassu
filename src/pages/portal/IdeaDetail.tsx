@@ -1153,7 +1153,7 @@ export default function IdeaDetail() {
     const a = document.createElement('a');
     a.href = url;
     const timestamp = Date.now();
-    a.download = `${idea.title.replace(/[^a-zA-Z0-9]/g, '_')}_Business_Plan_${timestamp}.docx`;
+    a.download = `${idea.title.replace(/[^a-zA-Z0-9]/g, '_')}_Business_Plan_${timestamp}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1161,7 +1161,7 @@ export default function IdeaDetail() {
 
     toast({
       title: 'Download Started',
-      description: 'Your business plan is being downloaded as a Word document.',
+      description: 'Your business plan is being downloaded as a Word document (.doc format).',
     });
   };
 
