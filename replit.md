@@ -33,7 +33,11 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - Banner bar at top of portal for active announcements (dismissible for non-urgent)
   - Integration with notification dropdown showing all active announcements
   - Full CRUD management in Admin panel
-- **Direct Messaging**: Full messaging system with conversation threads, real-time UI, and email notifications for new messages.
+- **Direct Messaging**: Full messaging system with conversation threads, real-time UI, and email notifications for new messages. Features include:
+  - Unread message count badge in sidebar (refreshes every 30 seconds)
+  - Red dot indicator when sidebar is collapsed
+  - Delayed email notifications for unread messages after 10 minutes
+  - Respects user's notification preferences (messageNotificationsEnabled)
 - **Notification System**: Email notifications for connection requests, team invitations, new messages, and weekly digests.
 - **Journey Progress Tracker**: Visual progress tracker for each idea's development stages with independent milestone completion. Each step (Post Idea, Business Plan, Find Advisors, Form Team, Build MVP, Yassu Foundry, Seek Funding) can be completed in any order without sequential dependencies. Features dashed connecting lines to indicate non-linear paths and ring-style in-progress indicators.
 - **Investor Pitch Deck Generator**: AI-powered one-click generator for creating investor-grade pitch decks. Features include:
