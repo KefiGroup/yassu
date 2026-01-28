@@ -10,6 +10,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
 import { ensureTables } from "./ensure-tables";
 import { setupOAuth } from "./oauth";
+import { startBackgroundJobs } from "./background-jobs";
 
 const app = express();
 const server = createServer(app);
@@ -118,6 +119,9 @@ server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
   // Ensure tables exist before seeding
   void ensureTables()
     .then(() => seedDatabase())
+    .then(() => {
+      startBackgroundJobs();
+    })
     .catch(err => console.error("Database setup error:", err));
   
   console.log("OAuth providers configured:");

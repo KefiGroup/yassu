@@ -1,6 +1,8 @@
 import { useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
@@ -65,8 +67,16 @@ const sponsorNavItems = [
 export function PortalSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const collapsed = state === 'collapsed';
+
+  const { data: unreadData } = useQuery<{ unreadCount: number }>({
+    queryKey: ['/api/messages/unread/count'],
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
+  const unreadCount = unreadData?.unreadCount || 0;
 
   const isActive = (path: string) => {
     if (path === '/portal') {
@@ -119,9 +129,23 @@ export function PortalSidebar() {
                     asChild
                     isActive={isActive(item.url)}
                   >
-                    <NavLink to={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                    <NavLink to={item.url} className="flex items-center justify-between w-full">
+                      <span className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </span>
+                      {item.title === 'Messages' && unreadCount > 0 && !collapsed && (
+                        <Badge 
+                          variant="destructive" 
+                          className="h-5 min-w-5 px-1.5 text-xs"
+                          data-testid="badge-unread-messages"
+                        >
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </Badge>
+                      )}
+                      {item.title === 'Messages' && unreadCount > 0 && collapsed && (
+                        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
