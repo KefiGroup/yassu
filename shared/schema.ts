@@ -388,6 +388,7 @@ export const directMessages = pgTable("direct_messages", {
   recipientId: integer("recipient_id").references(() => users.id).notNull(),
   content: text("content").notNull(),
   read: boolean("read").default(false).notNull(),
+  emailNotificationSent: boolean("email_notification_sent").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -503,7 +504,7 @@ export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, creat
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUniversitySchema = createInsertSchema(universities).omit({ id: true, createdAt: true });
 export const insertConnectionSchema = createInsertSchema(connections).omit({ id: true, createdAt: true, respondedAt: true });
-export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({ id: true, createdAt: true, read: true });
+export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({ id: true, createdAt: true, read: true, emailNotificationSent: true });
 export const insertTeamMessageSchema = createInsertSchema(teamMessages).omit({ id: true, createdAt: true });
 export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSuggestionSchema = createInsertSchema(suggestions).omit({ id: true, createdAt: true, reviewedAt: true });
