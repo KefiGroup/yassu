@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest } from '@/lib/api';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -19,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Search, Bell, LogOut, User, Settings, Home, Shield, Megaphone, Calendar, Wrench, Info, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Search, Bell, LogOut, User, Settings, Home, Shield, Megaphone, Calendar, Wrench, Info, AlertTriangle, HelpCircle, MessageSquare } from 'lucide-react';
 import { openKefiChat } from '@/components/portal/KefiChat';
 import { Badge } from '@/components/ui/badge';
 
@@ -39,6 +40,13 @@ export function PortalHeader() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+
+  // Fetch unread message count with auto-refresh
+  const { data: unreadData } = useQuery<{ unreadCount: number }>({
+    queryKey: ['/api/messages/unread/count'],
+    enabled: !!user,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
   useEffect(() => {
     async function checkAdminStatus() {
@@ -133,8 +141,10 @@ export function PortalHeader() {
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative" data-testid="button-notifications">
               <Bell className="h-4 w-4" />
-              {announcements.length > 0 && (
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
+              {(announcements.length > 0 || (unreadData?.unreadCount ?? 0) > 0) && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1">
+                  {(announcements.length + (unreadData?.unreadCount ?? 0)) > 99 ? '99+' : announcements.length + (unreadData?.unreadCount ?? 0)}
+                </span>
               )}
             </Button>
           </PopoverTrigger>
@@ -142,10 +152,35 @@ export function PortalHeader() {
             <div className="space-y-3">
               <h4 className="font-medium flex items-center justify-between">
                 Notifications
-                {announcements.length > 0 && (
-                  <Badge variant="secondary" className="text-xs">{announcements.length}</Badge>
+                {(announcements.length > 0 || (unreadData?.unreadCount ?? 0) > 0) && (
+                  <Badge variant="secondary" className="text-xs">{announcements.length + (unreadData?.unreadCount ?? 0)}</Badge>
                 )}
               </h4>
+
+              {/* Unread Messages Section */}
+              {(unreadData?.unreadCount ?? 0) > 0 && (
+                <div
+                  onClick={() => navigate('/portal/messages')}
+                  className="p-2 rounded-md border bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer"
+                  data-testid="notification-unread-messages"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex-shrink-0">
+                      <MessageSquare className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-sm">New Messages</span>
+                      <p className="text-xs text-muted-foreground">
+                        You have {unreadData?.unreadCount} unread message{unreadData?.unreadCount !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <Badge variant="default" className="shrink-0">
+                      {unreadData?.unreadCount}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+
               {announcements.length > 0 ? (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {announcements.map((announcement) => (
@@ -181,11 +216,11 @@ export function PortalHeader() {
                     </div>
                   ))}
                 </div>
-              ) : (
+              ) : (unreadData?.unreadCount ?? 0) === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
                   No new notifications
                 </div>
-              )}
+              ) : null}
             </div>
           </PopoverContent>
         </Popover>

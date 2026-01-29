@@ -717,14 +717,14 @@ export default function Messages() {
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
-                                  <p className="font-medium truncate">{conversation.partnerName}</p>
+                                  <p className={`truncate ${conversation.unreadCount > 0 ? 'font-bold' : 'font-medium'}`}>{conversation.partnerName}</p>
                                   {conversation.unreadCount > 0 && (
                                     <Badge variant="default" className="shrink-0">
                                       {conversation.unreadCount}
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-sm text-muted-foreground truncate">
+                                <p className={`text-sm truncate ${conversation.unreadCount > 0 ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
                                   {conversation.lastMessage || 'No messages yet'}
                                 </p>
                                 {conversation.lastMessageAt && (
@@ -773,14 +773,14 @@ export default function Messages() {
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
-                                  <p className="font-medium truncate">{teamChat.teamName}</p>
+                                  <p className={`truncate ${teamChat.unreadCount > 0 ? 'font-bold' : 'font-medium'}`}>{teamChat.teamName}</p>
                                   {teamChat.unreadCount > 0 && (
                                     <Badge variant="default" className="shrink-0">
                                       {teamChat.unreadCount}
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-sm text-muted-foreground truncate">
+                                <p className={`text-sm truncate ${teamChat.unreadCount > 0 ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
                                   {teamChat.lastMessage 
                                     ? `${teamChat.lastMessageSender}: ${teamChat.lastMessage}`
                                     : 'No messages yet'}
