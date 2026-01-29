@@ -391,9 +391,13 @@ export async function sendNewMessageEmail(
     senderName: string;
     messagePreview: string;
     senderAvatar?: string | null;
+    senderId?: number;
   }
 ): Promise<void> {
-  const messagesLink = `${APP_URL}/portal/messages`;
+  // Include senderId in the link to open the conversation directly
+  const messagesLink = data.senderId 
+    ? `${APP_URL}/portal/messages?userId=${data.senderId}` 
+    : `${APP_URL}/portal/messages`;
   
   const html = `
 <!DOCTYPE html>

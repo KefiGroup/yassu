@@ -67,6 +67,7 @@ export async function processUnreadMessageNotifications(): Promise<void> {
             recipientName: recipient.fullName || 'there',
             senderName: sender.fullName || 'Someone',
             messagePreview,
+            senderId: msg.senderId,
           });
 
           console.log(`[Background Job] Sent message notification to ${recipient.email}`);

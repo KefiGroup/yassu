@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -98,11 +98,15 @@ function formatTime(dateString: string | null): string {
 
 export default function Messages() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   
   // Tab state
   const [activeTab, setActiveTab] = useState<'dms' | 'teams'>('dms');
+  
+  // Track if we've handled the URL param
+  const [urlUserHandled, setUrlUserHandled] = useState(false);
   
   // DM state
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -143,6 +147,57 @@ export default function Messages() {
     fetchConversations();
     fetchTeamChats();
   }, []);
+
+  // Handle userId URL parameter to open specific conversation
+  useEffect(() => {
+    const userId = searchParams.get('userId');
+    if (userId && !urlUserHandled && conversations.length > 0 && !loading) {
+      const targetUserId = parseInt(userId, 10);
+      const existingConversation = conversations.find(c => c.partnerId === targetUserId);
+      
+      if (existingConversation) {
+        // Open existing conversation
+        selectConversation(existingConversation);
+        setUrlUserHandled(true);
+        // Clear the URL parameter
+        setSearchParams({}, { replace: true });
+      } else {
+        // Create a new conversation placeholder and fetch user info
+        fetchUserAndCreateConversation(targetUserId);
+        setUrlUserHandled(true);
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [conversations, loading, searchParams, urlUserHandled]);
+
+  const fetchUserAndCreateConversation = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/profiles/${userId}`, { credentials: 'include' });
+      if (response.ok) {
+        const profile = await response.json();
+        // Create a temporary conversation entry and select it
+        const tempConversation: Conversation = {
+          partnerId: userId,
+          partnerName: profile.fullName || 'User',
+          partnerAvatar: profile.avatarUrl,
+          partnerHeadline: profile.headline,
+          lastMessage: '',
+          lastMessageAt: null,
+          unreadCount: 0,
+        };
+        setConversations(prev => {
+          // Only add if not already exists
+          if (!prev.find(c => c.partnerId === userId)) {
+            return [tempConversation, ...prev];
+          }
+          return prev;
+        });
+        selectConversation(tempConversation);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
