@@ -4590,6 +4590,27 @@ Return valid JSON:
     }
   });
   
+  // Get unread message count - MUST be before :userId route
+  app.get("/api/messages/unread/count", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` })
+        .from(schema.directMessages)
+        .where(
+          sql`${schema.directMessages.recipientId} = ${req.session.userId} 
+              AND ${schema.directMessages.read} = false`
+        );
+      
+      res.json({ unreadCount: Number(result[0]?.count || 0) });
+    } catch (error) {
+      console.error("Failed to get unread count:", error);
+      res.status(500).json({ error: "Failed to get unread count" });
+    }
+  });
+  
   // Get messages with a specific user
   app.get("/api/messages/:userId", async (req: Request, res: Response) => {
     if (!req.session.userId) {
@@ -4708,27 +4729,6 @@ Return valid JSON:
     } catch (error) {
       console.error("Failed to send message:", error);
       res.status(500).json({ error: "Failed to send message" });
-    }
-  });
-  
-  // Get unread message count
-  app.get("/api/messages/unread/count", async (req: Request, res: Response) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-    
-    try {
-      const result = await db.select({ count: sql<number>`count(*)` })
-        .from(schema.directMessages)
-        .where(
-          sql`${schema.directMessages.recipientId} = ${req.session.userId} 
-              AND ${schema.directMessages.read} = false`
-        );
-      
-      res.json({ unreadCount: Number(result[0]?.count || 0) });
-    } catch (error) {
-      console.error("Failed to get unread count:", error);
-      res.status(500).json({ error: "Failed to get unread count" });
     }
   });
 
