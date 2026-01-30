@@ -48,18 +48,22 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ email, password, fullName }),
       }),
-    login: (email: string, password: string) =>
-      apiRequest<{ user: { id: number; email: string; fullName: string } }>("/auth/login", {
+    login: (email: string, password: string, rememberMe: boolean = false) =>
+      apiRequest<{ user: { id: number; email: string; fullName: string }; sessionTimeout: number | null }>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       }),
     logout: () =>
       apiRequest<{ success: boolean }>("/auth/logout", { method: "POST" }),
+    ping: () =>
+      apiRequest<{ success: boolean; lastActivity: number }>("/auth/ping", { method: "POST" }),
     me: () =>
       apiRequest<{
         user: { id: number; email: string; fullName: string };
         profile: any;
         roles: { role: string }[];
+        sessionTimeout: number | null;
+        lastActivity: number;
       }>("/auth/me"),
   },
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Rocket, Mail, Lock, User } from 'lucide-react';
+import { Rocket, Mail, Lock, User, ShieldAlert } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { z } from 'zod';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -19,13 +21,17 @@ const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+  
+  const logoutReason = searchParams.get('reason');
 
   useEffect(() => {
     if (!loading && user) {
@@ -92,7 +98,7 @@ const Auth = () => {
     if (!validateLogin()) return;
     
     setIsLoading(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(email, password, rememberMe);
     setIsLoading(false);
     
     if (error) {
@@ -169,6 +175,16 @@ const Auth = () => {
           <p className="text-muted-foreground mt-2">The New-Age Marketplace for University-Native Company Creation</p>
         </div>
 
+        {logoutReason === 'inactivity' && (
+          <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
+            <ShieldAlert className="h-4 w-4 text-amber-500" />
+            <AlertTitle className="text-amber-600 dark:text-amber-400">Session Expired</AlertTitle>
+            <AlertDescription className="text-muted-foreground">
+              For your security, you have been logged out due to inactivity. Please sign in again to continue.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Card className="glass-strong border-border/50">
           <CardHeader>
             <CardTitle className="text-center">Get Started</CardTitle>
@@ -219,6 +235,21 @@ const Auth = () => {
                     {errors.password && (
                       <p className="text-sm text-destructive">{errors.password}</p>
                     )}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="remember-me" 
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      data-testid="checkbox-remember-me"
+                    />
+                    <Label 
+                      htmlFor="remember-me" 
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Remember me for 30 days
+                    </Label>
                   </div>
 
                   <Button 

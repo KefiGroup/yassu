@@ -45,11 +45,15 @@ interface AuthContextType {
   roles: UserRole[];
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: Error | null }>;
+  signOut: (reason?: 'manual' | 'inactivity') => Promise<void>;
   refreshProfile: () => Promise<void>;
   hasRole: (role: string) => boolean;
   isVerified: boolean;
+  sessionTimeout: number | null;
+  serverLastActivity: number | null;
+  updateActivity: () => void;
+  setServerLastActivity: (time: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,6 +63,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sessionTimeout, setSessionTimeout] = useState<number | null>(null);
+  const [serverLastActivity, setServerLastActivity] = useState<number | null>(null);
+  const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
+
+  const updateActivity = () => {
+    setLastActivityTime(Date.now());
+  };
 
   const fetchUserData = async () => {
     try {
@@ -74,11 +85,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(data.user);
       setProfile(data.profile);
       setRoles(data.roles as UserRole[]);
+      setSessionTimeout(data.sessionTimeout);
+      setServerLastActivity(data.lastActivity);
+      setLastActivityTime(Date.now());
     } catch (error) {
       console.log('[AuthContext] Auth failed:', error);
       setUser(null);
       setProfile(null);
       setRoles([]);
+      setSessionTimeout(null);
+      setServerLastActivity(null);
     } finally {
       console.log('[AuthContext] Setting loading to false');
       setLoading(false);
@@ -111,10 +127,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
-      const data = await api.auth.login(email, password);
+      const data = await api.auth.login(email, password, rememberMe);
       setUser(data.user);
+      setSessionTimeout(data.sessionTimeout);
+      setLastActivityTime(Date.now());
       await fetchUserData();
       return { error: null };
     } catch (error) {
@@ -122,7 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (reason: 'manual' | 'inactivity' = 'manual') => {
     try {
       await api.auth.logout();
     } catch {
@@ -130,6 +148,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setProfile(null);
       setRoles([]);
+      setSessionTimeout(null);
+      
+      // Redirect with reason if inactivity logout
+      if (reason === 'inactivity') {
+        window.location.href = '/auth?reason=inactivity';
+      }
     }
   };
 
@@ -156,6 +180,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         refreshProfile,
         hasRole,
         isVerified,
+        sessionTimeout,
+        serverLastActivity,
+        updateActivity,
+        setServerLastActivity,
       }}
     >
       {children}

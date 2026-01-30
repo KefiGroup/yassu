@@ -12,6 +12,14 @@ import { ensureTables } from "./ensure-tables";
 import { setupOAuth } from "./oauth";
 import { startBackgroundJobs } from "./background-jobs";
 
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+    rememberMe?: boolean;
+    lastActivity?: number;
+  }
+}
+
 const app = express();
 const server = createServer(app);
 
@@ -61,6 +69,42 @@ app.use(
 
 // Setup OAuth (Google, Apple)
 setupOAuth(app);
+
+// Session activity tracking and inactivity enforcement middleware
+app.use((req, res, next) => {
+  // Skip for non-authenticated requests or login/register endpoints
+  if (!req.session?.userId || 
+      req.path === '/api/auth/login' || 
+      req.path === '/api/auth/register' ||
+      req.path === '/api/auth/logout') {
+    return next();
+  }
+  
+  // Check if session has inactivity timeout (not "remember me")
+  if (!req.session.rememberMe && req.session.lastActivity) {
+    const now = Date.now();
+    const inactivityLimit = 60 * 60 * 1000; // 1 hour
+    
+    if (now - req.session.lastActivity > inactivityLimit) {
+      // Session expired due to inactivity - destroy session
+      console.log(`[Session] User ${req.session.userId} session expired due to inactivity`);
+      return req.session.destroy((err) => {
+        if (err) console.error('Failed to destroy expired session:', err);
+        res.clearCookie('connect.sid', {
+          path: '/',
+          secure: true,
+          httpOnly: true,
+          sameSite: 'none'
+        });
+        return res.status(401).json({ error: 'Session expired due to inactivity' });
+      });
+    }
+  }
+  
+  // Update last activity timestamp
+  req.session.lastActivity = Date.now();
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

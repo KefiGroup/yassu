@@ -39,6 +39,13 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - Delayed email notifications for unread messages after 10 minutes
   - Respects user's notification preferences (messageNotificationsEnabled)
 - **Notification System**: Email notifications for connection requests, team invitations, new messages, and weekly digests.
+- **Session Security & Auto-Logout**: Automatic session management for user security. Features include:
+  - "Remember me for 30 days" checkbox on login for extended sessions
+  - 1-hour inactivity timeout for regular sessions (not "remember me")
+  - Warning popup 3 minutes before automatic logout with countdown timer
+  - "Stay Logged In" button to extend session
+  - Security message displayed on login page after inactivity logout
+  - Activity tracking via mouse, keyboard, touch, and scroll events
 - **Journey Progress Tracker**: Visual progress tracker for each idea's development stages with independent milestone completion. Each step (Post Idea, Business Plan, Find Advisors, Form Team, Build MVP, Yassu Foundry, Seek Funding) can be completed in any order without sequential dependencies. Features dashed connecting lines to indicate non-linear paths and ring-style in-progress indicators.
 - **Investor Pitch Deck Generator**: AI-powered one-click generator for creating investor-grade pitch decks. Features include:
   - Auto-analysis of business plan to determine investor type (Angel vs VC) and raise amount

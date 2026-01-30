@@ -133,6 +133,8 @@ const documentUpload = multer({
 declare module "express-session" {
   interface SessionData {
     userId?: number;
+    rememberMe?: boolean;
+    lastActivity?: number;
   }
 }
 
@@ -184,24 +186,51 @@ export function registerRoutes(app: Express): void {
         });
 
       req.session.userId = user.id;
+      req.session.rememberMe = false; // New accounts default to non-remember-me
+      req.session.lastActivity = Date.now();
+      
       // Explicitly save session before responding
       req.session.save((err) => {
         if (err) {
           console.error('Session save error:', err);
           return res.status(500).json({ error: 'Failed to save session' });
         }
-        res.json({ user: { id: user.id, email: user.email, fullName: user.fullName } });
+        res.json({ 
+          user: { id: user.id, email: user.email, fullName: user.fullName },
+          sessionTimeout: 60 * 60 * 1000 // 1 hour for new accounts
+        });
       });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ error: "Failed to register" });
     }
   });
+  
+  // Session ping endpoint - extends session activity
+  app.post("/api/auth/ping", (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    // Update last activity timestamp
+    req.session.lastActivity = Date.now();
+    
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session ping save error:', err);
+        return res.status(500).json({ error: 'Failed to update session' });
+      }
+      res.json({ 
+        success: true, 
+        lastActivity: req.session.lastActivity 
+      });
+    });
+  });
 
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      const { email, password } = req.body;
-      console.log(`[Login] Attempt for email: ${email}`);
+      const { email, password, rememberMe } = req.body;
+      console.log(`[Login] Attempt for email: ${email}, rememberMe: ${rememberMe}`);
       
       const user = await storage.getUserByEmail(email);
       if (!user) {
@@ -215,6 +244,12 @@ export function registerRoutes(app: Express): void {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
+      // Set session duration based on rememberMe
+      // Remember me: 30 days, Otherwise: 1 hour for inactivity timeout
+      const sessionMaxAge = rememberMe 
+        ? 30 * 24 * 60 * 60 * 1000  // 30 days
+        : 60 * 60 * 1000;           // 1 hour
+
       // Regenerate session to prevent session fixation
       req.session.regenerate((regenerateErr) => {
         if (regenerateErr) {
@@ -223,7 +258,15 @@ export function registerRoutes(app: Express): void {
         }
         
         req.session.userId = user.id;
-        console.log(`[Login] Session created for user ${user.id} (${user.email}), session: ${req.session.id}`);
+        req.session.rememberMe = rememberMe || false;
+        req.session.lastActivity = Date.now();
+        
+        // Update cookie maxAge based on rememberMe
+        if (req.session.cookie) {
+          req.session.cookie.maxAge = sessionMaxAge;
+        }
+        
+        console.log(`[Login] Session created for user ${user.id} (${user.email}), session: ${req.session.id}, rememberMe: ${rememberMe}`);
         
         // Explicitly save session before responding
         req.session.save((err) => {
@@ -231,7 +274,10 @@ export function registerRoutes(app: Express): void {
             console.error('Session save error:', err);
             return res.status(500).json({ error: 'Failed to save session' });
           }
-          res.json({ user: { id: user.id, email: user.email, fullName: user.fullName } });
+          res.json({ 
+            user: { id: user.id, email: user.email, fullName: user.fullName },
+            sessionTimeout: rememberMe ? null : 60 * 60 * 1000 // null means no timeout tracking needed
+          });
         });
       });
     } catch (error) {
@@ -406,6 +452,13 @@ export function registerRoutes(app: Express): void {
       `, [req.session.userId]);
       const roles = rolesResult.rows.map(r => r.role);
       
+      // Update lastActivity on every authenticated request
+      req.session.lastActivity = Date.now();
+      
+      // Determine session timeout based on rememberMe setting
+      const rememberMe = req.session.rememberMe || false;
+      const sessionTimeout = rememberMe ? null : 60 * 60 * 1000; // null for remember me, 1 hour otherwise
+      
       res.json({
         user: { id: row.id, email: row.email, fullName: row.fullName },
         profile: {
@@ -429,6 +482,8 @@ export function registerRoutes(app: Express): void {
           onboardingCompleted: row.onboardingCompleted,
         },
         roles: roles,
+        sessionTimeout: sessionTimeout,
+        lastActivity: req.session.lastActivity || Date.now(),
       });
     } catch (error) {
       console.error("Auth check error:", error);
