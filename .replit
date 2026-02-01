@@ -9,7 +9,7 @@ channel = "stable-25_05"
 [deployment]
 deploymentTarget = "autoscale"
 run = ["node", "dist/index.cjs"]
-build = ["bash", "-c", "npm install && npm run build && npx drizzle-kit push --force"]
+build = ["sh", "-c", "npm install && npm run build && npx drizzle-kit push --force"]
 
 [workflows]
 runButton = "Project"
