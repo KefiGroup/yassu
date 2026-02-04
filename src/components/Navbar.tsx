@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
+  const { user } = useAuth();
+  
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
@@ -33,16 +36,26 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <a href="/auth" data-testid="link-nav-sign-in">
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" data-testid="button-nav-sign-in">
-              Sign In
-            </Button>
-          </a>
-          <a href="/auth" data-testid="link-nav-get-started">
-            <Button variant="hero" size="sm" data-testid="button-nav-get-started">
-              Get Started
-            </Button>
-          </a>
+          {user ? (
+            <a href="/portal" data-testid="link-nav-dashboard">
+              <Button variant="hero" size="sm" data-testid="button-nav-dashboard">
+                My Dashboard
+              </Button>
+            </a>
+          ) : (
+            <>
+              <a href="/auth" data-testid="link-nav-sign-in">
+                <Button variant="ghost" size="sm" className="hidden sm:inline-flex" data-testid="button-nav-sign-in">
+                  Sign In
+                </Button>
+              </a>
+              <a href="/auth" data-testid="link-nav-get-started">
+                <Button variant="hero" size="sm" data-testid="button-nav-get-started">
+                  Get Started
+                </Button>
+              </a>
+            </>
+          )}
         </div>
       </div>
     </motion.nav>
