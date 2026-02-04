@@ -93,7 +93,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string):
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -182,7 +182,7 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -281,7 +281,7 @@ export async function sendTeamInvitationEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -365,7 +365,7 @@ export async function sendInviteAcceptedEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -462,7 +462,7 @@ export async function sendNewMessageEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -557,7 +557,7 @@ export async function sendSkillMatchEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -658,7 +658,7 @@ export async function sendJoinRequestEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -748,7 +748,7 @@ export async function sendRequestAcceptedEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -844,7 +844,7 @@ export async function sendRequestRejectedEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -930,7 +930,7 @@ export async function sendRequestPendingEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -1030,7 +1030,7 @@ export async function sendConnectionRequestEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
             </td>
           </tr>
@@ -1253,7 +1253,7 @@ export async function sendWeeklyDigestEmail(
                 © ${new Date().getFullYear()} Yassu. All rights reserved.
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                Where Elite University Talent Builds Together
+                Where Ideas Meet Builders
               </p>
               <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px; text-align: center;">
                 You're receiving this because you're a member of Yassu.
@@ -1658,7 +1658,7 @@ export async function sendInvestorAcknowledgementEmail(
           <p>Best regards,<br>The Yassu Team</p>
         </div>
         <div class="footer">
-          <p>Yassu - Where Elite University Talent Builds Together</p>
+          <p>Yassu - Where Ideas Meet Builders</p>
           <p>&copy; ${new Date().getFullYear()} Yassu. All rights reserved.</p>
         </div>
       </div>

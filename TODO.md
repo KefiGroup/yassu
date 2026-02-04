@@ -1,6 +1,6 @@
 # Yassu Development TODO
 **Last Updated:** January 6, 2026  
-**Project:** Yassu - Where Elite University Talent Builds Together  
+**Project:** Yassu - Where Ideas Meet Builders  
 **Vision:** AI-powered ecosystem connecting student entrepreneurs, collaborators, and investors
 
 ---
@@ -118,46 +118,46 @@ Instead of implementing separate "Next Steps Engine," "Team Role Suggester," and
 - [ ] Daily cron job for automated matching (pending setup)
 - [ ] Enhanced matching algorithm (can be improved)
 
-**Week 1 Outcome:** ✅ **ACHIEVED** - Creators get AI-guided transformation from vague idea to structured business plan. Platform feels intelligent fr125	### **Week 2: The Vibrant Talent Marketplace**
-126	**Goal:** Make Yassu the best place for students to find their next big thing
-127	
-128	#### Feature 2.1: Collaborator Profiles 2.0
-129	- [x] Add `availability` field to users table (Full-time, Part-time, Advisor, Not Available) ✅ Already exists
-130	- [x] ~~LinkedIn OAuth integration~~ ❌ REMOVED (Jan 6, 2026)
-131	  - Built incorrect feature ("Connect LinkedIn to profile" instead of "Sign in with LinkedIn")
-132	  - Caused critical production bug (all users unable to log in for 4 hours)
-133	  - Root cause: Database schema mismatch - code querying non-existent columns
-134	  - Completely removed from codebase and database (commit 6e18173)
-135	  - **Decision:** Email/password authentication is sufficient for MVP
-136	  - **Note:** Social login (LinkedIn/Google) is complex and requires proper planning
-137	  - **Lesson:** Clarify requirements before implementation, test with actual user account
-138	  - **Status:** Login verified working with paulinet77@gmail.com ✅
-139	  - **See:** INCIDENT_REPORT_2026-01-06.md for full details
-140	- [x] Add `portfolio` section to profile schema ✅ COMPLETED
-141	- [x] Create automatic portfolio linking to Yassu projects ✅ COMPLETED
-142	  - [x] Backend API endpoint `/api/profile/:userId/portfolio`
-143	  - [x] getUserPortfolio method in storage.ts
-144	  - [x] PortfolioSection component created
-145	  - [x] Integrated into Profile page
-146	  - [x] Shows created ideas and collaborating ideas
-147	  - [x] Team size calculation
-148	  - [x] Clickable project cards
-149	  - [x] Deployed and tested (commit 6a48fe0)
-150	- [x] **AI-Driven Skill Extraction & Standardization** ✅ COMPLETED
-151	  - [x] Standardized AI prompt to use official skills list
-152	  - [x] Automated skill tagging for ideas during report generation
-153	  - [x] Bidirectional skill match notifications (User update & Idea creation)
-154	  - [x] Enhanced matching engine for precision collaborator suggestions
-155	- [x] **Collaborator Matching UI/UX Improvements** ✅ COMPLETED
-156	  - [x] Clickable profile cards for potential collaborators
-157	  - [x] Full profile detail view (bio, headline, all skills)
-158	  - [x] "Invite" and "Pass" functionality for project owners
-159	  - [x] Team invitation email notification (Email #3)
-160	- [ ] Design enhanced profile UI layout
-161	- [ ] Implement profile editing for new fields
-162	- [ ] Add availability badge to profile cards
-163	- [ ] Test profile display in marketplace
-164	- [ ] Deploy to staging environmentAdvisor (5-10 hrs/week)
+**Week 1 Outcome:** ✅ **ACHIEVED** - Creators get AI-guided transformation from vague idea to structured business plan. Platform feels intelligent fr125        ### **Week 2: The Vibrant Talent Marketplace**
+126     **Goal:** Make Yassu the best place for students to find their next big thing
+127     
+128     #### Feature 2.1: Collaborator Profiles 2.0
+129     - [x] Add `availability` field to users table (Full-time, Part-time, Advisor, Not Available) ✅ Already exists
+130     - [x] ~~LinkedIn OAuth integration~~ ❌ REMOVED (Jan 6, 2026)
+131       - Built incorrect feature ("Connect LinkedIn to profile" instead of "Sign in with LinkedIn")
+132       - Caused critical production bug (all users unable to log in for 4 hours)
+133       - Root cause: Database schema mismatch - code querying non-existent columns
+134       - Completely removed from codebase and database (commit 6e18173)
+135       - **Decision:** Email/password authentication is sufficient for MVP
+136       - **Note:** Social login (LinkedIn/Google) is complex and requires proper planning
+137       - **Lesson:** Clarify requirements before implementation, test with actual user account
+138       - **Status:** Login verified working with paulinet77@gmail.com ✅
+139       - **See:** INCIDENT_REPORT_2026-01-06.md for full details
+140     - [x] Add `portfolio` section to profile schema ✅ COMPLETED
+141     - [x] Create automatic portfolio linking to Yassu projects ✅ COMPLETED
+142       - [x] Backend API endpoint `/api/profile/:userId/portfolio`
+143       - [x] getUserPortfolio method in storage.ts
+144       - [x] PortfolioSection component created
+145       - [x] Integrated into Profile page
+146       - [x] Shows created ideas and collaborating ideas
+147       - [x] Team size calculation
+148       - [x] Clickable project cards
+149       - [x] Deployed and tested (commit 6a48fe0)
+150     - [x] **AI-Driven Skill Extraction & Standardization** ✅ COMPLETED
+151       - [x] Standardized AI prompt to use official skills list
+152       - [x] Automated skill tagging for ideas during report generation
+153       - [x] Bidirectional skill match notifications (User update & Idea creation)
+154       - [x] Enhanced matching engine for precision collaborator suggestions
+155     - [x] **Collaborator Matching UI/UX Improvements** ✅ COMPLETED
+156       - [x] Clickable profile cards for potential collaborators
+157       - [x] Full profile detail view (bio, headline, all skills)
+158       - [x] "Invite" and "Pass" functionality for project owners
+159       - [x] Team invitation email notification (Email #3)
+160     - [ ] Design enhanced profile UI layout
+161     - [ ] Implement profile editing for new fields
+162     - [ ] Add availability badge to profile cards
+163     - [ ] Test profile display in marketplace
+164     - [ ] Deploy to staging environmentAdvisor (5-10 hrs/week)
 - ⚪ Not Available
 
 #### Feature 2.2: Reputation System (V1)
