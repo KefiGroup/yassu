@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { LogOut } from "lucide-react";
 
 const Navbar = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   
   return (
     <motion.nav
@@ -37,11 +38,22 @@ const Navbar = () => {
 
         <div className="flex items-center gap-3">
           {user ? (
-            <a href="/portal" data-testid="link-nav-dashboard">
-              <Button variant="hero" size="sm" data-testid="button-nav-dashboard">
-                My Dashboard
+            <>
+              <a href="/portal" data-testid="link-nav-dashboard">
+                <Button variant="hero" size="sm" data-testid="button-nav-dashboard">
+                  My Dashboard
+                </Button>
+              </a>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => signOut('manual')}
+                data-testid="button-nav-logout"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Logout
               </Button>
-            </a>
+            </>
           ) : (
             <>
               <a href="/auth" data-testid="link-nav-sign-in">
