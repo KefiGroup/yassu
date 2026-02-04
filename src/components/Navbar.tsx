@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
 
 const Navbar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
   
   return (
     <motion.nav
@@ -37,7 +37,9 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {user ? (
+          {loading ? (
+            <div className="h-8 w-24 bg-muted/50 rounded animate-pulse" />
+          ) : user ? (
             <>
               <a href="/portal" data-testid="link-nav-dashboard">
                 <Button variant="hero" size="sm" data-testid="button-nav-dashboard">
@@ -51,7 +53,7 @@ const Navbar = () => {
                 data-testid="button-nav-logout"
               >
                 <LogOut className="h-4 w-4 mr-1" />
-                Logout
+                Sign Out
               </Button>
             </>
           ) : (
