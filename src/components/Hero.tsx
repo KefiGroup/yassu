@@ -31,7 +31,7 @@ const Hero = () => {
             className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight mb-6"
           >
             Ideas Meet Builders.
-            <span className="block text-gradient">Companies Are Born.</span>
+            <span className="block text-gradient">Companies Are&nbsp;Born.</span>
           </motion.h1>
 
           <motion.p
