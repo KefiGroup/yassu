@@ -17,6 +17,7 @@ interface Profile {
   skills: string[] | null;
   universityId: string | null;
   university?: { name: string; shortName: string | null } | null;
+  industries?: { id: number; name: string; slug: string }[];
 }
 
 export default function Advisors() {
@@ -104,6 +105,15 @@ export default function Advisors() {
                       <p className="text-sm text-muted-foreground line-clamp-2">
                         {advisor.bio}
                       </p>
+                    )}
+                    {advisor.industries && advisor.industries.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {advisor.industries.map((ind) => (
+                          <Badge key={ind.id} variant="outline" className="text-xs">
+                            {ind.name}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
                     {advisor.skills && advisor.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1">

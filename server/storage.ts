@@ -57,6 +57,8 @@ export interface IStorage {
   addIdeaIndustries(ideaId: string, industryIds: number[]): Promise<void>;
   getIdeaIndustries(ideaId: string): Promise<schema.Industry[]>;
   removeIdeaIndustries(ideaId: string): Promise<void>;
+  getProfileIndustries(profileId: number): Promise<schema.Industry[]>;
+  setProfileIndustries(profileId: number, industryIds: number[]): Promise<void>;
   
   getTeams(userId?: number): Promise<Team[]>;
   getUserTeams(userId: number): Promise<Team[]>;
@@ -604,6 +606,26 @@ export class DatabaseStorage implements IStorage {
 
   async removeIdeaIndustries(ideaId: string): Promise<void> {
     await db.delete(schema.ideaIndustries).where(eq(schema.ideaIndustries.ideaId, ideaId));
+  }
+
+  async getProfileIndustries(profileId: number): Promise<schema.Industry[]> {
+    const rows = await db
+      .select({
+        id: schema.industries.id,
+        name: schema.industries.name,
+        slug: schema.industries.slug,
+      })
+      .from(schema.profileIndustries)
+      .innerJoin(schema.industries, eq(schema.profileIndustries.industryId, schema.industries.id))
+      .where(eq(schema.profileIndustries.profileId, profileId));
+    return rows;
+  }
+
+  async setProfileIndustries(profileId: number, industryIds: number[]): Promise<void> {
+    await db.delete(schema.profileIndustries).where(eq(schema.profileIndustries.profileId, profileId));
+    if (industryIds.length === 0) return;
+    const values = industryIds.map(industryId => ({ profileId, industryId }));
+    await db.insert(schema.profileIndustries).values(values).onConflictDoNothing();
   }
 
   async getTeams(userId?: number): Promise<Team[]> {

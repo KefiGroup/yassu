@@ -179,6 +179,47 @@ Return valid JSON array only, e.g.: ["Technology & Software", "AI & Machine Lear
   }
 }
 
+async function classifyProfileIndustries(bio: string, skills: string[], interests: string[]): Promise<string[]> {
+  try {
+    const industryNames = schema.PREDEFINED_INDUSTRIES.map(i => i.name);
+    const prompt = `You are an expert at identifying professional industry experience. Based on the person's profile below, select 1-3 industries they have experience in from the EXACT list provided. Return ONLY a JSON object with an "industries" array.
+
+PROFILE:
+Bio: ${bio || 'Not provided'}
+Skills: ${skills.length > 0 ? skills.join(', ') : 'Not provided'}
+Interests: ${interests.length > 0 ? interests.join(', ') : 'Not provided'}
+
+AVAILABLE INDUSTRIES (choose ONLY from this list):
+${industryNames.join(', ')}
+
+Return valid JSON only, e.g.: {"industries": ["Technology & Software", "AI & Machine Learning"]}`;
+
+    const OpenAI = (await import('openai')).default;
+    const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
+    const openai = new OpenAI({ apiKey, baseURL });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You identify professional industry experience from profiles. Always respond with a valid JSON object containing an 'industries' array." },
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 200,
+    });
+
+    const responseText = completion.choices[0]?.message?.content || '{}';
+    const parsed = JSON.parse(responseText);
+    const industries: string[] = Array.isArray(parsed) ? parsed : (parsed.industries || parsed.categories || []);
+    return industries.filter(name => industryNames.includes(name)).slice(0, 5);
+  } catch (error) {
+    console.error("AI profile industry classification error:", error);
+    return [];
+  }
+}
+
 export function registerRoutes(app: Express): void {
   // Initialize referrals table and seed industries
   initReferralsTable().catch(console.error);
@@ -759,7 +800,11 @@ export function registerRoutes(app: Express): void {
   app.get("/api/advisors", async (_req: Request, res: Response) => {
     try {
       const advisors = await storage.getProfilesByYassuRole("advisor");
-      res.json(advisors);
+      const enriched = await Promise.all(advisors.map(async (advisor) => {
+        const industries = await storage.getProfileIndustries(advisor.id);
+        return { ...advisor, industries };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Fetch advisors error:", error);
       res.status(500).json({ error: "Failed to fetch advisors" });
@@ -769,7 +814,11 @@ export function registerRoutes(app: Express): void {
   app.get("/api/ambassadors", async (_req: Request, res: Response) => {
     try {
       const ambassadors = await storage.getProfilesByYassuRole("ambassador");
-      res.json(ambassadors);
+      const enriched = await Promise.all(ambassadors.map(async (amb) => {
+        const industries = await storage.getProfileIndustries(amb.id);
+        return { ...amb, industries };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Fetch ambassadors error:", error);
       res.status(500).json({ error: "Failed to fetch ambassadors" });
@@ -792,7 +841,11 @@ export function registerRoutes(app: Express): void {
         clubType,
         search,
       });
-      res.json(collaborators);
+      const enriched = await Promise.all(collaborators.map(async (collab) => {
+        const industries = await storage.getProfileIndustries(collab.id);
+        return { ...collab, industries };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Fetch collaborators error:", error);
       res.status(500).json({ error: "Failed to fetch collaborators" });
@@ -2970,6 +3023,78 @@ Return valid JSON:
     } catch (error) {
       console.error("Fetch badges error:", error);
       res.status(500).json({ error: "Failed to fetch badges" });
+    }
+  });
+
+  app.get("/api/profile/industries", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const profile = await storage.getProfile(req.session.userId);
+      if (!profile) {
+        return res.json([]);
+      }
+      const industries = await storage.getProfileIndustries(profile.id);
+      res.json(industries);
+    } catch (error) {
+      console.error("Fetch profile industries error:", error);
+      res.status(500).json({ error: "Failed to fetch profile industries" });
+    }
+  });
+
+  app.post("/api/profile/industries", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { industryIds } = req.body;
+      if (!Array.isArray(industryIds)) {
+        return res.status(400).json({ error: "industryIds must be an array" });
+      }
+      if (industryIds.length > 5) {
+        return res.status(400).json({ error: "Maximum 5 industries allowed" });
+      }
+
+      const profile = await storage.getProfile(req.session.userId);
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      await storage.setProfileIndustries(profile.id, industryIds);
+      const updatedIndustries = await storage.getProfileIndustries(profile.id);
+      res.json(updatedIndustries);
+    } catch (error) {
+      console.error("Save profile industries error:", error);
+      res.status(500).json({ error: "Failed to save profile industries" });
+    }
+  });
+
+  app.post("/api/profile/industries/suggest", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const profile = await storage.getProfile(req.session.userId);
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      const suggestedNames = await classifyProfileIndustries(
+        profile.bio || '',
+        profile.skills || [],
+        profile.interests || []
+      );
+
+      const allIndustries = await storage.getIndustries();
+      const suggested = allIndustries.filter(ind => suggestedNames.includes(ind.name));
+      res.json(suggested);
+    } catch (error) {
+      console.error("AI industry suggestion error:", error);
+      res.status(500).json({ error: "Failed to generate suggestions" });
     }
   });
 

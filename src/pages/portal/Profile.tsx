@@ -19,11 +19,16 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Save, Loader2, Camera, Award, PartyPopper } from 'lucide-react';
+import { Save, Loader2, Camera, Award, PartyPopper, Factory, Sparkles, X, Check, ChevronDown } from 'lucide-react';
 import { GroupedMultiSelect } from '@/components/GroupedMultiSelect';
 import { SKILL_CATEGORIES, INTEREST_CATEGORIES } from '@/lib/profileOptions';
 import { AvatarUploadDialog } from '@/components/AvatarUploadDialog';
 import { PortfolioSection } from '@/components/PortfolioSection';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { apiRequest } from '@/lib/api';
 
 interface ProfileBadge {
@@ -49,6 +54,13 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [allIndustries, setAllIndustries] = useState<{ id: number; name: string; slug: string }[]>([]);
+  const [selectedIndustryIds, setSelectedIndustryIds] = useState<number[]>([]);
+  const [suggestedIndustries, setSuggestedIndustries] = useState<{ id: number; name: string; slug: string }[]>([]);
+  const [suggestingIndustries, setSuggestingIndustries] = useState(false);
+  const [industriesLoaded, setIndustriesLoaded] = useState(false);
+  const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false);
+  const [savingIndustries, setSavingIndustries] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('welcome') === 'true') {
@@ -99,6 +111,25 @@ export default function Profile() {
     }
     if (user) {
       fetchBadges();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    async function fetchIndustries() {
+      try {
+        const [all, saved] = await Promise.all([
+          apiRequest<{ id: number; name: string; slug: string }[]>('/industries'),
+          apiRequest<{ id: number; name: string; slug: string }[]>('/profile/industries'),
+        ]);
+        setAllIndustries(all);
+        setSelectedIndustryIds(saved.map(i => i.id));
+        setIndustriesLoaded(true);
+      } catch {
+        setIndustriesLoaded(true);
+      }
+    }
+    if (user) {
+      fetchIndustries();
     }
   }, [user]);
 
@@ -184,6 +215,70 @@ export default function Profile() {
 
   const handleInterestsChange = (interests: string[]) => {
     setFormData({ ...formData, interests });
+  };
+
+  const handleSuggestIndustries = async () => {
+    setSuggestingIndustries(true);
+    try {
+      const suggested = await apiRequest<{ id: number; name: string; slug: string }[]>('/profile/industries/suggest', { method: 'POST' });
+      const filtered = suggested.filter(s => !selectedIndustryIds.includes(s.id));
+      setSuggestedIndustries(filtered);
+    } catch {
+      toast({ title: 'Could not generate suggestions', variant: 'destructive' });
+    } finally {
+      setSuggestingIndustries(false);
+    }
+  };
+
+  const handleAddIndustry = async (industryId: number) => {
+    if (selectedIndustryIds.length >= 5) {
+      toast({ title: 'Maximum 5 industries', description: 'Remove one before adding another.', variant: 'destructive' });
+      return;
+    }
+    const newIds = [...selectedIndustryIds, industryId];
+    setSelectedIndustryIds(newIds);
+    setSuggestedIndustries(prev => prev.filter(s => s.id !== industryId));
+    setSavingIndustries(true);
+    try {
+      await apiRequest('/profile/industries', { method: 'POST', body: JSON.stringify({ industryIds: newIds }) });
+    } catch {
+      toast({ title: 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSavingIndustries(false);
+    }
+  };
+
+  const handleRemoveIndustry = async (industryId: number) => {
+    const newIds = selectedIndustryIds.filter(id => id !== industryId);
+    setSelectedIndustryIds(newIds);
+    setSavingIndustries(true);
+    try {
+      await apiRequest('/profile/industries', { method: 'POST', body: JSON.stringify({ industryIds: newIds }) });
+    } catch {
+      toast({ title: 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSavingIndustries(false);
+    }
+  };
+
+  const handleAddAllSuggested = async () => {
+    const available = 5 - selectedIndustryIds.length;
+    const toAdd = suggestedIndustries.slice(0, available);
+    const newIds = [...selectedIndustryIds, ...toAdd.map(s => s.id)];
+    setSelectedIndustryIds(newIds);
+    setSuggestedIndustries([]);
+    setSavingIndustries(true);
+    try {
+      await apiRequest('/profile/industries', { method: 'POST', body: JSON.stringify({ industryIds: newIds }) });
+    } catch {
+      toast({ title: 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSavingIndustries(false);
+    }
+  };
+
+  const handleDismissSuggestion = (industryId: number) => {
+    setSuggestedIndustries(prev => prev.filter(s => s.id !== industryId));
   };
 
   const getInitials = (name: string) => {
@@ -508,6 +603,134 @@ export default function Profile() {
               placeholder="Select or add interests..."
               badgeVariant="outline"
             />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Factory className="w-4 h-4 text-muted-foreground" />
+                  <Label>Industries</Label>
+                </div>
+                <span className="text-xs text-muted-foreground">{selectedIndustryIds.length}/5</span>
+              </div>
+
+              {selectedIndustryIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedIndustryIds.map(id => {
+                    const ind = allIndustries.find(i => i.id === id);
+                    if (!ind) return null;
+                    return (
+                      <Badge key={id} variant="secondary" className="gap-1 pl-2 pr-1" data-testid={`badge-industry-${ind.slug}`}>
+                        <Check className="w-3 h-3" />
+                        {ind.name}
+                        <button
+                          onClick={() => handleRemoveIndustry(id)}
+                          className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                          data-testid={`button-remove-industry-${ind.slug}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+
+              {suggestedIndustries.length > 0 && (
+                <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Suggested for you
+                    </div>
+                    <button
+                      onClick={handleAddAllSuggested}
+                      className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition-colors"
+                      data-testid="button-add-all-industries"
+                    >
+                      <Check className="w-3 h-3" />
+                      Add all
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestedIndustries.map(ind => (
+                      <Badge
+                        key={ind.id}
+                        variant="outline"
+                        className="gap-1 pl-2 pr-1 cursor-pointer border-amber-300 dark:border-amber-700"
+                        data-testid={`badge-suggested-${ind.slug}`}
+                      >
+                        <button onClick={() => handleAddIndustry(ind.id)} className="flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          {ind.name}
+                        </button>
+                        <button
+                          onClick={() => handleDismissSuggestion(ind.id)}
+                          className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Click to add, or x to dismiss</p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Popover open={industryDropdownOpen} onOpenChange={setIndustryDropdownOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex-1 justify-between"
+                      disabled={selectedIndustryIds.length >= 5}
+                      data-testid="button-add-industry"
+                    >
+                      <span className="text-muted-foreground">Add more industries...</span>
+                      <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-0" align="start">
+                    <div className="p-2 max-h-64 overflow-y-auto space-y-0.5">
+                      {allIndustries
+                        .filter(ind => !selectedIndustryIds.includes(ind.id))
+                        .map(ind => (
+                          <div
+                            key={ind.id}
+                            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors"
+                            onClick={() => {
+                              handleAddIndustry(ind.id);
+                              if (selectedIndustryIds.length >= 4) setIndustryDropdownOpen(false);
+                            }}
+                            data-testid={`option-industry-${ind.slug}`}
+                          >
+                            <span>{ind.name}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {!suggestingIndustries && suggestedIndustries.length === 0 && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleSuggestIndustries}
+                    disabled={suggestingIndustries || (!formData.bio && formData.skills.length === 0 && formData.interests.length === 0)}
+                    data-testid="button-suggest-industries"
+                    title="AI suggest industries"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </Button>
+                )}
+                {suggestingIndustries && (
+                  <Button variant="outline" size="icon" disabled>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </Button>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground">Industries are auto-detected from your profile. Add or remove as needed.</p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
