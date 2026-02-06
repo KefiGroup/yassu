@@ -171,6 +171,12 @@ export const ideaIndustries = pgTable("idea_industries", {
   industryId: integer("industry_id").references(() => industries.id, { onDelete: "cascade" }).notNull(),
 });
 
+export const profileIndustries = pgTable("profile_industries", {
+  id: serial("id").primaryKey(),
+  profileId: integer("profile_id").references(() => profiles.id, { onDelete: "cascade" }).notNull(),
+  industryId: integer("industry_id").references(() => industries.id, { onDelete: "cascade" }).notNull(),
+});
+
 export const ideaNextSteps = pgTable("idea_next_steps", {
   id: uuid("id").primaryKey().defaultRandom(),
   ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
@@ -597,6 +603,7 @@ export const insertIndustrySchema = createInsertSchema(industries).omit({ id: tr
 export type Industry = typeof industries.$inferSelect;
 export type InsertIndustry = z.infer<typeof insertIndustrySchema>;
 export type IdeaIndustry = typeof ideaIndustries.$inferSelect;
+export type ProfileIndustry = typeof profileIndustries.$inferSelect;
 
 export const PREDEFINED_INDUSTRIES = [
   { name: "Technology & Software", slug: "technology-software" },
