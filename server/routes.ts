@@ -141,7 +141,7 @@ declare module "express-session" {
 async function classifyIdeaIndustries(title: string, problem: string, solution?: string | null): Promise<string[]> {
   try {
     const industryNames = schema.PREDEFINED_INDUSTRIES.map(i => i.name);
-    const prompt = `You are an expert startup classifier. Based on the startup idea below, select 1-3 industries that best fit this idea from the EXACT list provided. Return ONLY a JSON array of industry names.
+    const prompt = `You are an expert startup classifier. Based on the startup idea below, select the single BEST industry that fits this idea from the EXACT list provided. Return ONLY a JSON array with exactly 1 industry name.
 
 IDEA:
 Title: ${title}
@@ -151,7 +151,7 @@ ${solution ? `Solution: ${solution}` : ''}
 AVAILABLE INDUSTRIES (choose ONLY from this list):
 ${industryNames.join(', ')}
 
-Return valid JSON array only, e.g.: ["Technology & Software", "AI & Machine Learning"]`;
+Return valid JSON array with exactly 1 industry, e.g.: ["Technology & Software"]`;
 
     const OpenAI = (await import('openai')).default;
     const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
