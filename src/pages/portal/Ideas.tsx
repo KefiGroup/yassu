@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { motion } from 'framer-motion';
-import { Lightbulb, Plus, Search, Calendar, Building, Factory, ChevronDown, X } from 'lucide-react';
+import { Lightbulb, Plus, Search, Calendar, Building, Factory, ChevronDown, X, Check } from 'lucide-react';
 
 interface Industry {
   id: number;
@@ -67,7 +67,7 @@ export default function Ideas() {
   const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
+  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
   const [industryFilterOpen, setIndustryFilterOpen] = useState(false);
 
   useEffect(() => {
@@ -96,8 +96,8 @@ export default function Ideas() {
       idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       idea.problem.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesIndustry =
-      selectedIndustry === 'all' ||
-      idea.industries?.some((ind) => ind.slug === selectedIndustry);
+      selectedIndustries.length === 0 ||
+      idea.industries?.some((ind) => selectedIndustries.includes(ind.slug));
     return matchesSearch && matchesIndustry;
   });
 
@@ -127,10 +127,20 @@ export default function Ideas() {
     return sortedEntries;
   };
 
-  const selectedIndustryName =
-    selectedIndustry === 'all'
+  const toggleIndustry = (slug: string) => {
+    setSelectedIndustries((prev) =>
+      prev.includes(slug)
+        ? prev.filter((s) => s !== slug)
+        : [...prev, slug]
+    );
+  };
+
+  const filterLabel =
+    selectedIndustries.length === 0
       ? 'All Industries'
-      : industries.find((i) => i.slug === selectedIndustry)?.name || 'All Industries';
+      : selectedIndustries.length === 1
+        ? industries.find((i) => i.slug === selectedIndustries[0])?.name || 'All Industries'
+        : `${selectedIndustries.length} Industries`;
 
   const getIndustryCount = (slug: string) => {
     if (slug === 'all') return ideas.length;
@@ -239,58 +249,73 @@ export default function Ideas() {
             >
               <div className="flex items-center gap-2">
                 <Factory className="w-4 h-4" />
-                <span className="truncate">{selectedIndustryName}</span>
+                <span className="truncate">{filterLabel}</span>
               </div>
               <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-72 p-0" align="end">
             <div className="p-3 space-y-1">
-              <h4 className="font-medium text-sm mb-2">Filter by Industry</h4>
-              <div
-                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm cursor-pointer transition-colors ${selectedIndustry === 'all' ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
-                onClick={() => {
-                  setSelectedIndustry('all');
-                  setIndustryFilterOpen(false);
-                }}
-                data-testid="filter-industry-all"
-              >
-                <span>All Industries</span>
-                <Badge variant="secondary" className="text-xs">{ideas.length}</Badge>
-              </div>
-              <div className="max-h-64 overflow-y-auto space-y-0.5 mt-1">
-                {industriesWithIdeas.map((ind) => (
-                  <div
-                    key={ind.id}
-                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm cursor-pointer transition-colors ${selectedIndustry === ind.slug ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
-                    onClick={() => {
-                      setSelectedIndustry(ind.slug);
-                      setIndustryFilterOpen(false);
-                    }}
-                    data-testid={`filter-industry-${ind.slug}`}
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-sm">Filter by Industry</h4>
+                {selectedIndustries.length > 0 && (
+                  <button
+                    onClick={() => setSelectedIndustries([])}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="button-clear-all-industries"
                   >
-                    <span>{ind.name}</span>
-                    <Badge variant="secondary" className="text-xs">{getIndustryCount(ind.slug)}</Badge>
-                  </div>
-                ))}
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <div className="max-h-64 overflow-y-auto space-y-0.5">
+                {industriesWithIdeas.map((ind) => {
+                  const isSelected = selectedIndustries.includes(ind.slug);
+                  return (
+                    <div
+                      key={ind.id}
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer transition-colors ${isSelected ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
+                      onClick={() => toggleIndustry(ind.slug)}
+                      data-testid={`filter-industry-${ind.slug}`}
+                    >
+                      <div className={`flex items-center justify-center w-4 h-4 rounded border shrink-0 ${isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
+                        {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                      </div>
+                      <span className="flex-1">{ind.name}</span>
+                      <Badge variant="secondary" className="text-xs">{getIndustryCount(ind.slug)}</Badge>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </PopoverContent>
         </Popover>
       </motion.div>
 
-      {selectedIndustry !== 'all' && (
-        <div className="flex items-center gap-2">
-          <Badge variant="default" className="gap-1 pl-2 pr-1">
-            {selectedIndustryName}
-            <button
-              onClick={() => setSelectedIndustry('all')}
-              className="ml-1 rounded-full p-0.5 hover:bg-primary-foreground/20"
-              data-testid="button-clear-industry-filter"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </Badge>
+      {selectedIndustries.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {selectedIndustries.map((slug) => {
+            const ind = industries.find((i) => i.slug === slug);
+            return (
+              <Badge key={slug} variant="default" className="gap-1 pl-2 pr-1">
+                {ind?.name || slug}
+                <button
+                  onClick={() => toggleIndustry(slug)}
+                  className="ml-1 rounded-full p-0.5 hover:bg-primary-foreground/20"
+                  data-testid={`button-remove-industry-${slug}`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            );
+          })}
+          <button
+            onClick={() => setSelectedIndustries([])}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="button-clear-industry-filter"
+          >
+            Clear all
+          </button>
         </div>
       )}
 
@@ -348,7 +373,7 @@ export default function Ideas() {
           <Lightbulb className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No ideas found</h3>
           <p className="text-muted-foreground mb-6">
-            {searchQuery || selectedIndustry !== 'all'
+            {searchQuery || selectedIndustries.length > 0
               ? 'Try adjusting your filters'
               : 'Be the first to post an idea!'}
           </p>
