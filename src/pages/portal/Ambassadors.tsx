@@ -17,6 +17,7 @@ interface Profile {
   skills: string[] | null;
   universityId: string | null;
   university?: { name: string; shortName: string | null } | null;
+  industries?: { id: number; name: string; slug: string }[];
 }
 
 export default function Ambassadors() {
@@ -104,6 +105,15 @@ export default function Ambassadors() {
                       <p className="text-sm text-muted-foreground line-clamp-2">
                         {ambassador.bio}
                       </p>
+                    )}
+                    {ambassador.industries && ambassador.industries.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {ambassador.industries.map((ind) => (
+                          <Badge key={ind.id} variant="outline" className="text-xs">
+                            {ind.name}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
                     {ambassador.skills && ambassador.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1">

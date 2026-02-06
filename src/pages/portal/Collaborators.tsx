@@ -49,6 +49,7 @@ interface Collaborator {
   clubType: string | null;
   roles: string[];
   university?: { name: string; shortName: string | null } | null;
+  industries?: { id: number; name: string; slug: string }[];
 }
 
 export default function Collaborators() {
@@ -276,7 +277,17 @@ export default function Collaborators() {
                         {collab.bio}
                       </p>
                     )}
-                    
+
+                    {collab.industries && collab.industries.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {collab.industries.map((ind) => (
+                          <Badge key={ind.id} variant="outline" className="text-xs">
+                            {ind.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
                     {collab.skills && collab.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {collab.skills.slice(0, 3).map((skill, i) => (

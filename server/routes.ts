@@ -225,6 +225,38 @@ export function registerRoutes(app: Express): void {
   initReferralsTable().catch(console.error);
   storage.seedIndustries().catch(console.error);
 
+  // Auto-classify any unclassified ideas on startup (non-blocking)
+  (async () => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      const allIdeas = await storage.getIdeas();
+      for (const idea of allIdeas) {
+        const existing = await storage.getIdeaIndustries(idea.id);
+        if (existing.length === 0) {
+          console.log(`[auto-classify] Classifying idea: ${idea.title}`);
+          try {
+            const industryNames = await classifyIdeaIndustries(idea.title, idea.problem, idea.solution);
+            if (industryNames.length > 0) {
+              const allIndustries = await storage.getIndustries();
+              const industryIds = industryNames
+                .map(name => allIndustries.find(i => i.name === name)?.id)
+                .filter((id): id is number => id !== undefined);
+              if (industryIds.length > 0) {
+                await storage.addIdeaIndustries(idea.id, industryIds);
+                console.log(`[auto-classify] Classified "${idea.title}" into: ${industryNames.join(', ')}`);
+              }
+            }
+          } catch (err) {
+            console.error(`[auto-classify] Failed for "${idea.title}":`, err);
+          }
+        }
+      }
+      console.log('[auto-classify] Completed industry classification check');
+    } catch (err) {
+      console.error('[auto-classify] Error during startup classification:', err);
+    }
+  })();
+
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
 
