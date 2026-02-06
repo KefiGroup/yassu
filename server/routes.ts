@@ -138,9 +138,51 @@ declare module "express-session" {
   }
 }
 
+async function classifyIdeaIndustries(title: string, problem: string, solution?: string | null): Promise<string[]> {
+  try {
+    const industryNames = schema.PREDEFINED_INDUSTRIES.map(i => i.name);
+    const prompt = `You are an expert startup classifier. Based on the startup idea below, select 1-3 industries that best fit this idea from the EXACT list provided. Return ONLY a JSON array of industry names.
+
+IDEA:
+Title: ${title}
+Problem: ${problem}
+${solution ? `Solution: ${solution}` : ''}
+
+AVAILABLE INDUSTRIES (choose ONLY from this list):
+${industryNames.join(', ')}
+
+Return valid JSON array only, e.g.: ["Technology & Software", "AI & Machine Learning"]`;
+
+    const OpenAI = (await import('openai')).default;
+    const apiKey = process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    const baseURL = process.env.OPENAI_API_KEY ? undefined : (process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL);
+    const openai = new OpenAI({ apiKey, baseURL });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You classify startup ideas into industries. Always respond with a valid JSON array of industry names only." },
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 200,
+    });
+
+    const responseText = completion.choices[0]?.message?.content || '{}';
+    const parsed = JSON.parse(responseText);
+    const industries: string[] = Array.isArray(parsed) ? parsed : (parsed.industries || parsed.categories || []);
+    return industries.filter(name => industryNames.includes(name)).slice(0, 3);
+  } catch (error) {
+    console.error("AI industry classification error:", error);
+    return [];
+  }
+}
+
 export function registerRoutes(app: Express): void {
-  // Initialize referrals table
+  // Initialize referrals table and seed industries
   initReferralsTable().catch(console.error);
+  storage.seedIndustries().catch(console.error);
 
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
@@ -898,11 +940,25 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  app.get("/api/industries", async (_req: Request, res: Response) => {
+    try {
+      const industries = await storage.getIndustries();
+      res.json(industries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch industries" });
+    }
+  });
+
   app.get("/api/ideas", async (req: Request, res: Response) => {
     try {
-      // Marketplace: only show public ideas (don't pass userId)
       const ideas = await storage.getIdeasWithCreators();
-      res.json(ideas);
+      const ideasWithIndustries = await Promise.all(
+        ideas.map(async (idea) => {
+          const industries = await storage.getIdeaIndustries(idea.id);
+          return { ...idea, industries };
+        })
+      );
+      res.json(ideasWithIndustries);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch ideas" });
     }
@@ -1022,6 +1078,45 @@ export function registerRoutes(app: Express): void {
   });
 
   // Regenerate cover images for all featured ideas without images (admin only)
+  app.post("/api/admin/ideas/classify-industries", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const allIdeas = await storage.getIdeasWithCreators();
+      let classified = 0;
+      const allIndustries = await storage.getIndustries();
+
+      for (const idea of allIdeas) {
+        const existing = await storage.getIdeaIndustries(idea.id);
+        if (existing.length > 0) continue;
+
+        const industryNames = await classifyIdeaIndustries(idea.title, idea.problem, idea.solution);
+        if (industryNames.length > 0) {
+          const matchedIds = allIndustries
+            .filter(ind => industryNames.includes(ind.name))
+            .map(ind => ind.id);
+          if (matchedIds.length > 0) {
+            await storage.addIdeaIndustries(idea.id, matchedIds);
+            classified++;
+            console.log(`[Industry Backfill] "${idea.title}" -> ${industryNames.join(', ')}`);
+          }
+        }
+      }
+
+      res.json({ message: `Classified ${classified} ideas into industries`, total: allIdeas.length });
+    } catch (error: any) {
+      console.error("Industry classification backfill error:", error);
+      res.status(500).json({ error: error.message || "Failed to classify ideas" });
+    }
+  });
+
   app.post("/api/admin/ideas/regenerate-covers", async (req: Request, res: Response) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -1125,8 +1220,11 @@ export function registerRoutes(app: Express): void {
         }
       }
       
-      const tags = await storage.getIdeaTags(req.params.id);
-      res.json({ ...idea, tags: tags.map(t => t.tag) });
+      const [tags, industries] = await Promise.all([
+        storage.getIdeaTags(req.params.id),
+        storage.getIdeaIndustries(req.params.id),
+      ]);
+      res.json({ ...idea, tags: tags.map(t => t.tag), industries });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch idea" });
     }
@@ -1323,6 +1421,22 @@ Return valid JSON:
           await storage.addIdeaTag(idea.id, tag);
         }
       }
+      
+      // AI-classify the idea into industries (non-blocking)
+      classifyIdeaIndustries(ideaData.title, ideaData.problem, ideaData.solution)
+        .then(async (industryNames) => {
+          if (industryNames.length > 0) {
+            const allIndustries = await storage.getIndustries();
+            const matchedIds = allIndustries
+              .filter(ind => industryNames.includes(ind.name))
+              .map(ind => ind.id);
+            if (matchedIds.length > 0) {
+              await storage.addIdeaIndustries(idea.id, matchedIds);
+              console.log(`[Industry] Classified idea "${idea.title}" into: ${industryNames.join(', ')}`);
+            }
+          }
+        })
+        .catch(err => console.error("Industry classification failed:", err));
       
       // Send confirmation email to the idea creator (if notifications enabled)
       const creator = await storage.getProfile(req.session.userId);

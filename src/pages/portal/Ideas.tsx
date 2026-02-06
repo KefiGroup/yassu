@@ -1,20 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/lib/api';
+import { api, apiRequest } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { motion } from 'framer-motion';
-import { Lightbulb, Plus, Search, Calendar, Building } from 'lucide-react';
+import { Lightbulb, Plus, Search, Calendar, Building, Factory, ChevronDown, X } from 'lucide-react';
+
+interface Industry {
+  id: number;
+  name: string;
+  slug: string;
+}
 
 interface Idea {
   id: string;
@@ -27,6 +31,7 @@ interface Idea {
   universityId: string | null;
   creatorName: string | null;
   creatorAvatarUrl: string | null;
+  industries: Industry[];
 }
 
 interface University {
@@ -35,45 +40,47 @@ interface University {
   shortName: string | null;
 }
 
-const stageOptions = [
-  { value: 'all', label: 'All Stages' },
-  { value: 'idea_posted', label: 'Post Idea' },
-  { value: 'business_plan', label: 'Business Plan' },
-  { value: 'find_advisors', label: 'Find Advisors and Collaborators' },
-  { value: 'form_team', label: 'Form Team' },
-  { value: 'build_mvp', label: 'Build MVP' },
-  { value: 'yassu_foundry', label: 'Yassu Foundry' },
-  { value: 'launched', label: 'Launched' },
-];
-
 const stageLabels: Record<string, string> = {
   idea_posted: 'Post Idea',
   business_plan: 'Business Plan',
-  find_advisors: 'Find Advisors and Collaborators',
+  find_advisors: 'Find Advisors',
   form_team: 'Form Team',
   build_mvp: 'Build MVP',
   yassu_foundry: 'Yassu Foundry',
   launched: 'Launched',
 };
 
+const stageColors: Record<string, string> = {
+  idea_posted: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  business_plan: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
+  find_advisors: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+  form_team: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+  build_mvp: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+  yassu_foundry: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300',
+  launched: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+};
+
 export default function Ideas() {
   const navigate = useNavigate();
   const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [industries, setIndustries] = useState<Industry[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [stageFilter, setStageFilter] = useState('all');
-  const [universityFilter, setUniversityFilter] = useState('all');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
+  const [industryFilterOpen, setIndustryFilterOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [ideasData, unisData] = await Promise.all([
+        const [ideasData, unisData, industriesData] = await Promise.all([
           api.ideas.list(),
-          api.universities.list()
+          api.universities.list(),
+          apiRequest<Industry[]>('/industries'),
         ]);
         setIdeas(ideasData);
         setUniversities(unisData);
+        setIndustries(industriesData);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -85,23 +92,103 @@ export default function Ideas() {
   }, []);
 
   const filteredIdeas = ideas.filter((idea) => {
-    const matchesSearch = 
+    const matchesSearch =
       idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       idea.problem.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStage = stageFilter === 'all' || idea.stage === stageFilter;
-    const matchesUniversity = universityFilter === 'all' || idea.universityId === universityFilter;
-    return matchesSearch && matchesStage && matchesUniversity;
+    const matchesIndustry =
+      selectedIndustry === 'all' ||
+      idea.industries?.some((ind) => ind.slug === selectedIndustry);
+    return matchesSearch && matchesIndustry;
   });
 
-  const stageColors: Record<string, string> = {
-    idea_posted: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    business_plan: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
-    find_advisors: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-    form_team: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-    build_mvp: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
-    yassu_foundry: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300',
-    launched: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  const groupedByIndustry = () => {
+    const groups: Record<string, Idea[]> = {};
+
+    for (const idea of filteredIdeas) {
+      if (!idea.industries || idea.industries.length === 0) {
+        if (!groups['Uncategorized']) groups['Uncategorized'] = [];
+        groups['Uncategorized'].push(idea);
+      } else {
+        for (const ind of idea.industries) {
+          if (!groups[ind.name]) groups[ind.name] = [];
+          if (!groups[ind.name].find(i => i.id === idea.id)) {
+            groups[ind.name].push(idea);
+          }
+        }
+      }
+    }
+
+    const sortedEntries = Object.entries(groups).sort(([a], [b]) => {
+      if (a === 'Uncategorized') return 1;
+      if (b === 'Uncategorized') return -1;
+      return a.localeCompare(b);
+    });
+
+    return sortedEntries;
   };
+
+  const selectedIndustryName =
+    selectedIndustry === 'all'
+      ? 'All Industries'
+      : industries.find((i) => i.slug === selectedIndustry)?.name || 'All Industries';
+
+  const getIndustryCount = (slug: string) => {
+    if (slug === 'all') return ideas.length;
+    return ideas.filter(idea => idea.industries?.some(ind => ind.slug === slug)).length;
+  };
+
+  const industriesWithIdeas = industries.filter(ind => getIndustryCount(ind.slug) > 0);
+
+  const renderIdeaCard = (idea: Idea) => (
+    <Card
+      className="h-full cursor-pointer hover:shadow-md hover:border-primary/20 transition-all"
+      onClick={() => navigate(`/portal/ideas/${idea.id}`)}
+      data-testid={`card-idea-${idea.id}`}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-lg line-clamp-2">{idea.title}</CardTitle>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+          <Badge className={stageColors[idea.stage || 'idea_posted'] || 'bg-muted'}>
+            {stageLabels[idea.stage || 'idea_posted'] || 'Post Idea'}
+          </Badge>
+          {idea.industries?.map((ind) => (
+            <Badge key={ind.id} variant="outline" className="text-xs">
+              {ind.name}
+            </Badge>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground line-clamp-3">
+          {idea.problem}
+        </p>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:text-foreground transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/portal/users/${idea.createdBy}`);
+            }}
+            data-testid={`link-creator-${idea.id}`}
+          >
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={idea.creatorAvatarUrl || undefined} />
+              <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+                {idea.creatorName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <span className="hover:underline">{idea.creatorName || 'Creator'}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            <span>{new Date(idea.createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -112,14 +199,17 @@ export default function Ideas() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Ideas Marketplace</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Lightbulb className="w-6 h-6 text-primary" />
+            Ideas Marketplace
+          </h1>
           <p className="text-muted-foreground">
-            Discover startup ideas and find the right one to join
+            Discover startup ideas and join teams building the future
           </p>
         </div>
         <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-post-idea">
           <Plus className="w-4 h-4 mr-2" />
-          Post Idea
+          Post Your Idea
         </Button>
       </motion.div>
 
@@ -127,44 +217,82 @@ export default function Ideas() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
-        className="flex flex-col sm:flex-row gap-4"
+        className="flex flex-col sm:flex-row gap-3"
       >
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search ideas..."
+            placeholder="Search by title, problem, or tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
             data-testid="input-search-ideas"
           />
         </div>
-        <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-full sm:w-40" data-testid="select-stage-filter">
-            <SelectValue placeholder="Stage" />
-          </SelectTrigger>
-          <SelectContent>
-            {stageOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={universityFilter} onValueChange={setUniversityFilter}>
-          <SelectTrigger className="w-full sm:w-48" data-testid="select-university-filter">
-            <SelectValue placeholder="University" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Universities</SelectItem>
-            {universities.map((uni) => (
-              <SelectItem key={uni.id} value={uni.id}>
-                {uni.shortName || uni.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        <Popover open={industryFilterOpen} onOpenChange={setIndustryFilterOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="gap-2 min-w-[180px] justify-between"
+              data-testid="button-industry-filter"
+            >
+              <div className="flex items-center gap-2">
+                <Factory className="w-4 h-4" />
+                <span className="truncate">{selectedIndustryName}</span>
+              </div>
+              <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-0" align="end">
+            <div className="p-3 space-y-1">
+              <h4 className="font-medium text-sm mb-2">Filter by Industry</h4>
+              <div
+                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm cursor-pointer transition-colors ${selectedIndustry === 'all' ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
+                onClick={() => {
+                  setSelectedIndustry('all');
+                  setIndustryFilterOpen(false);
+                }}
+                data-testid="filter-industry-all"
+              >
+                <span>All Industries</span>
+                <Badge variant="secondary" className="text-xs">{ideas.length}</Badge>
+              </div>
+              <div className="max-h-64 overflow-y-auto space-y-0.5 mt-1">
+                {industriesWithIdeas.map((ind) => (
+                  <div
+                    key={ind.id}
+                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm cursor-pointer transition-colors ${selectedIndustry === ind.slug ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}
+                    onClick={() => {
+                      setSelectedIndustry(ind.slug);
+                      setIndustryFilterOpen(false);
+                    }}
+                    data-testid={`filter-industry-${ind.slug}`}
+                  >
+                    <span>{ind.name}</span>
+                    <Badge variant="secondary" className="text-xs">{getIndustryCount(ind.slug)}</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </motion.div>
+
+      {selectedIndustry !== 'all' && (
+        <div className="flex items-center gap-2">
+          <Badge variant="default" className="gap-1 pl-2 pr-1">
+            {selectedIndustryName}
+            <button
+              onClick={() => setSelectedIndustry('all')}
+              className="ml-1 rounded-full p-0.5 hover:bg-primary-foreground/20"
+              data-testid="button-clear-industry-filter"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </Badge>
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -181,61 +309,32 @@ export default function Ideas() {
           ))}
         </div>
       ) : filteredIdeas.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredIdeas.map((idea, index) => (
+        <div className="space-y-8">
+          {groupedByIndustry().map(([industryName, industryIdeas]) => (
             <motion.div
-              key={idea.id}
+              key={industryName}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.05 * index }}
+              transition={{ duration: 0.4 }}
+              className="space-y-4"
             >
-              <Card
-                className="h-full cursor-pointer hover:shadow-md hover:border-primary/20 transition-all"
-                onClick={() => navigate(`/portal/ideas/${idea.id}`)}
-                data-testid={`card-idea-${idea.id}`}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-lg line-clamp-2">{idea.title}</CardTitle>
-                    <Badge className={stageColors[idea.stage || 'idea_posted'] || 'bg-muted'}>
-                      {stageLabels[idea.stage || 'idea_posted'] || 'Post Idea'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {idea.problem}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <div 
-                      className="flex items-center gap-2 cursor-pointer hover:text-foreground transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/portal/users/${idea.createdBy}`);
-                      }}
-                      data-testid={`link-creator-${idea.id}`}
-                    >
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src={idea.creatorAvatarUrl || undefined} />
-                        <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
-                          {idea.creatorName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="hover:underline">{idea.creatorName || 'Creator'}</span>
-                    </div>
-                    {idea.universityId && (
-                      <div className="flex items-center gap-1">
-                        <Building className="w-3 h-3" />
-                        <span>{universities.find(u => u.id === idea.universityId)?.shortName || 'University'}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="w-3 h-3" />
-                    <span>{new Date(idea.createdAt).toLocaleDateString()}</span>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center gap-2">
+                <Factory className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">{industryName}</h2>
+                <Badge variant="secondary" className="text-xs">{industryIdeas.length}</Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {industryIdeas.map((idea) => (
+                  <motion.div
+                    key={idea.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {renderIdeaCard(idea)}
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -249,7 +348,7 @@ export default function Ideas() {
           <Lightbulb className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No ideas found</h3>
           <p className="text-muted-foreground mb-6">
-            {searchQuery || stageFilter !== 'all' || universityFilter !== 'all'
+            {searchQuery || selectedIndustry !== 'all'
               ? 'Try adjusting your filters'
               : 'Be the first to post an idea!'}
           </p>

@@ -52,6 +52,12 @@ export interface IStorage {
   getIdeaTags(ideaId: string): Promise<{ tag: string }[]>;
   addIdeaTag(ideaId: string, tag: string): Promise<void>;
   
+  getIndustries(): Promise<schema.Industry[]>;
+  seedIndustries(): Promise<void>;
+  addIdeaIndustries(ideaId: string, industryIds: number[]): Promise<void>;
+  getIdeaIndustries(ideaId: string): Promise<schema.Industry[]>;
+  removeIdeaIndustries(ideaId: string): Promise<void>;
+  
   getTeams(userId?: number): Promise<Team[]>;
   getUserTeams(userId: number): Promise<Team[]>;
   getTeam(id: string): Promise<Team | undefined>;
@@ -546,6 +552,7 @@ export class DatabaseStorage implements IStorage {
     
     // Delete related records (order matters for foreign key constraints)
     await db.delete(schema.ideaWorkflowSections).where(eq(schema.ideaWorkflowSections.ideaId, id));
+    await db.delete(schema.ideaIndustries).where(eq(schema.ideaIndustries.ideaId, id));
     await db.delete(schema.ideaTags).where(eq(schema.ideaTags.ideaId, id));
     await db.delete(schema.teamInvites).where(eq(schema.teamInvites.ideaId, id));
     await db.delete(schema.joinRequests).where(eq(schema.joinRequests.ideaId, id));
@@ -562,6 +569,41 @@ export class DatabaseStorage implements IStorage {
 
   async addIdeaTag(ideaId: string, tag: string): Promise<void> {
     await db.insert(schema.ideaTags).values({ ideaId, tag }).onConflictDoNothing();
+  }
+
+  async getIndustries(): Promise<schema.Industry[]> {
+    return db.select().from(schema.industries).orderBy(schema.industries.name);
+  }
+
+  async seedIndustries(): Promise<void> {
+    for (const industry of schema.PREDEFINED_INDUSTRIES) {
+      await db.insert(schema.industries)
+        .values({ name: industry.name, slug: industry.slug })
+        .onConflictDoNothing();
+    }
+  }
+
+  async addIdeaIndustries(ideaId: string, industryIds: number[]): Promise<void> {
+    if (industryIds.length === 0) return;
+    const values = industryIds.map(industryId => ({ ideaId, industryId }));
+    await db.insert(schema.ideaIndustries).values(values).onConflictDoNothing();
+  }
+
+  async getIdeaIndustries(ideaId: string): Promise<schema.Industry[]> {
+    const rows = await db
+      .select({
+        id: schema.industries.id,
+        name: schema.industries.name,
+        slug: schema.industries.slug,
+      })
+      .from(schema.ideaIndustries)
+      .innerJoin(schema.industries, eq(schema.ideaIndustries.industryId, schema.industries.id))
+      .where(eq(schema.ideaIndustries.ideaId, ideaId));
+    return rows;
+  }
+
+  async removeIdeaIndustries(ideaId: string): Promise<void> {
+    await db.delete(schema.ideaIndustries).where(eq(schema.ideaIndustries.ideaId, ideaId));
   }
 
   async getTeams(userId?: number): Promise<Team[]> {

@@ -159,6 +159,18 @@ export const ideaTags = pgTable("idea_tags", {
   tag: text("tag").notNull(),
 });
 
+export const industries = pgTable("industries", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+});
+
+export const ideaIndustries = pgTable("idea_industries", {
+  id: serial("id").primaryKey(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  industryId: integer("industry_id").references(() => industries.id, { onDelete: "cascade" }).notNull(),
+});
+
 export const ideaNextSteps = pgTable("idea_next_steps", {
   id: uuid("id").primaryKey().defaultRandom(),
   ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
@@ -580,6 +592,29 @@ export type InboxConversation = typeof inboxConversations.$inferSelect;
 export type InsertInboxConversation = z.infer<typeof insertInboxConversationSchema>;
 export type InboxMessage = typeof inboxMessages.$inferSelect;
 export type InsertInboxMessage = z.infer<typeof insertInboxMessageSchema>;
+
+export const insertIndustrySchema = createInsertSchema(industries).omit({ id: true });
+export type Industry = typeof industries.$inferSelect;
+export type InsertIndustry = z.infer<typeof insertIndustrySchema>;
+export type IdeaIndustry = typeof ideaIndustries.$inferSelect;
+
+export const PREDEFINED_INDUSTRIES = [
+  { name: "Technology & Software", slug: "technology-software" },
+  { name: "Healthcare & Biotech", slug: "healthcare-biotech" },
+  { name: "Finance & Fintech", slug: "finance-fintech" },
+  { name: "Education & EdTech", slug: "education-edtech" },
+  { name: "E-commerce & Retail", slug: "ecommerce-retail" },
+  { name: "AI & Machine Learning", slug: "ai-machine-learning" },
+  { name: "Clean Energy & CleanTech", slug: "clean-energy-cleantech" },
+  { name: "Consumer Products", slug: "consumer-products" },
+  { name: "B2B Services", slug: "b2b-services" },
+  { name: "Food & Beverage", slug: "food-beverage" },
+  { name: "Real Estate & PropTech", slug: "real-estate-proptech" },
+  { name: "Transportation & Mobility", slug: "transportation-mobility" },
+  { name: "Media & Entertainment", slug: "media-entertainment" },
+  { name: "Social Impact & Nonprofit", slug: "social-impact-nonprofit" },
+  { name: "Gaming & Esports", slug: "gaming-esports" },
+] as const;
 
 // Chat schema for OpenAI integration
 export * from "./models/chat";
