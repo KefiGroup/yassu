@@ -172,7 +172,7 @@ Return valid JSON array with exactly 1 industry, e.g.: ["Technology & Software"]
     const responseText = completion.choices[0]?.message?.content || '{}';
     const parsed = JSON.parse(responseText);
     const industries: string[] = Array.isArray(parsed) ? parsed : (parsed.industries || parsed.categories || []);
-    return industries.filter(name => industryNames.includes(name)).slice(0, 3);
+    return industries.filter(name => industryNames.includes(name)).slice(0, 1);
   } catch (error) {
     console.error("AI industry classification error:", error);
     return [];
@@ -248,6 +248,16 @@ export function registerRoutes(app: Express): void {
             }
           } catch (err) {
             console.error(`[auto-classify] Failed for "${idea.title}":`, err);
+          }
+        } else if (existing.length > 1) {
+          console.log(`[auto-classify] Trimming "${idea.title}" from ${existing.length} industries to 1`);
+          try {
+            const keepId = existing[0].id;
+            await storage.removeIdeaIndustries(idea.id);
+            await storage.addIdeaIndustries(idea.id, [keepId]);
+            console.log(`[auto-classify] Trimmed "${idea.title}" to: ${existing[0].name}`);
+          } catch (err) {
+            console.error(`[auto-classify] Failed trimming "${idea.title}":`, err);
           }
         }
       }
