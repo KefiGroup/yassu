@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Linkedin } from "lucide-react";
-import ricardoImg from "@assets/image_1770467530921.png";
+import ricardoImg from "../../attached_assets/image_1770467530921.png";
 
 const teamMembers = [
   {
