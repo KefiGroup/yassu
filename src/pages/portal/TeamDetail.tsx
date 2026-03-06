@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackEvent } from '@/lib/analytics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -268,6 +269,7 @@ Let me know if you'd like to learn more about the project!`;
       });
       
       if (response.ok) {
+        trackEvent('team_invitation_sent', { role: inviteTarget.role });
         toast({
           title: 'Invitation sent!',
           description: `Your invitation has been sent to ${inviteTarget.fullName || 'the user'}.`,
@@ -466,6 +468,9 @@ Let me know if you'd like to learn more about the project!`;
       });
       
       if (response.ok) {
+        if (action === 'accepted') {
+          trackEvent('team_member_joined', { team_id: id, method: 'request_approved' });
+        }
         toast({
           title: action === 'accepted' ? 'Request Approved' : 'Request Rejected',
           description: action === 'accepted' 

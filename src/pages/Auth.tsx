@@ -111,6 +111,7 @@ const Auth = () => {
         variant: 'destructive',
       });
     } else {
+      trackEvent('login', { method: 'email' });
       toast({
         title: 'Welcome back!',
         description: 'You have successfully signed in.',

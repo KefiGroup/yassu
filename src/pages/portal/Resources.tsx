@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { trackEvent } from '@/lib/analytics';
 import { 
   Search, ExternalLink, Star, Lightbulb, Target, Users, 
   Rocket, DollarSign, TrendingUp, Compass, Zap
@@ -480,6 +481,7 @@ export default function Resources() {
                       rel="noopener noreferrer"
                       className="block hover-elevate rounded-md"
                       data-testid={`link-resource-${stage.id}-${index}`}
+                      onClick={() => trackEvent('resource_clicked', { name: resource.name, stage: stage.id })}
                     >
                       <Card className={`h-full ${resource.featured ? 'border-primary/40 bg-primary/[0.03]' : ''}`}>
                         <CardHeader className="pb-2">

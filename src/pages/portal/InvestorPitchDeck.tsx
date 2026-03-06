@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -358,6 +359,7 @@ export default function InvestorPitchDeck() {
         console.error("Failed to save pitch deck:", saveErr);
       }
       
+      trackEvent('pitch_deck_generated', { idea_id: searchParams.get('ideaId') });
       toast({
         title: "Pitch Deck Generated",
         description: `Your 11-slide pitch deck is ready for review.`,

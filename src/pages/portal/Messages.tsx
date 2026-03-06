@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackEvent } from '@/lib/analytics';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -339,6 +340,7 @@ export default function Messages() {
       
       if (response.ok) {
         const message = await response.json();
+        trackEvent('message_sent', { type: 'direct' });
         setMessages(prev => [...prev, message]);
         setNewMessage('');
         setConversations(prev => prev.map(c => 
@@ -466,6 +468,7 @@ export default function Messages() {
         throw new Error(error.error || 'Failed to send connection request');
       }
       
+      trackEvent('connection_request_sent', { context: 'new_conversation' });
       toast({
         title: 'Connection Request Sent',
         description: `A connection request has been sent to ${pendingMessageUser.fullName}. They will need to accept it to connect.`,
@@ -507,6 +510,7 @@ export default function Messages() {
         throw new Error(error.error || 'Failed to send connection request');
       }
       
+      trackEvent('connection_request_sent', { context: 'existing_conversation' });
       toast({
         title: 'Connection Request Sent',
         description: `A connection request has been sent to ${selectedConversation.partnerName}.`,

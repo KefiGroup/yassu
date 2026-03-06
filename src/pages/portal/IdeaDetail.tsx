@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, apiRequest } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 
 import { AITeamRoleSuggester } from '@/components/portal/AITeamRoleSuggester';
 import { ApplicationForm } from '@/components/portal/ApplicationForm';
@@ -656,6 +657,7 @@ export default function IdeaDetail() {
               createdAt: workflow.createdAt,
               sections: JSON.parse(planArtifact.content),
             });
+            trackEvent('business_plan_generated', { idea_id: id });
             toast({
               title: 'Business Plan Ready',
               description: 'Your AI-generated business plan is complete!',

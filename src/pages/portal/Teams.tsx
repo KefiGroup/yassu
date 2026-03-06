@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackEvent } from '@/lib/analytics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,6 +117,9 @@ export default function Teams() {
       });
       
       if (response.ok) {
+        if (status === 'accepted') {
+          trackEvent('team_member_joined', { method: 'invitation_accepted' });
+        }
         toast({
           title: status === 'accepted' ? 'Invitation accepted!' : 'Invitation declined',
           description: status === 'accepted' 
