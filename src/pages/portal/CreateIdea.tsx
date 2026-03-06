@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -177,6 +178,7 @@ export default function CreateIdea() {
         console.log('Auto-improve skipped:', improveError);
       }
 
+      trackEvent('idea_created', { idea_id: idea.id, title: formData.title });
       toast({
         title: 'Idea saved!',
         description: 'Your idea has been created and refined by AI.',

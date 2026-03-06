@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -137,6 +138,7 @@ const Auth = () => {
         variant: 'destructive',
       });
     } else {
+      trackEvent('sign_up', { method: 'email' });
       toast({
         title: 'Account created!',
         description: 'Welcome to Yassu. Let\'s complete your profile first.',
