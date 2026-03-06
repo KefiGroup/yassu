@@ -82,3 +82,4 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
 - **connect-pg-simple**: PostgreSQL session store for Express.js.
 - **driver.js**: (Presumed for guided tours or feature introductions based on recent additions).
 - **dotenv**: For managing environment variables.
+- **Google Analytics**: Tracking via gtag.js (Measurement ID: G-T0ELVMWHE7) loaded in index.html.
