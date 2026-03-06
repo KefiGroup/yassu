@@ -7,6 +7,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InactivityWarning } from "@/components/InactivityWarning";
+import { usePageTitle } from "@/hooks/usePageTitle";
+
+function PageTitleUpdater() {
+  usePageTitle();
+  return null;
+}
 
 const Maintenance = lazy(() => import("./pages/Maintenance"));
 const Index = lazy(() => import("./pages/Index"));
@@ -84,6 +90,7 @@ const App = () => {
           <Sonner />
           <InactivityWarning />
           <BrowserRouter>
+            <PageTitleUpdater />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
