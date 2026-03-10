@@ -42,7 +42,7 @@ const stageOptions = [
   { value: 'find_advisors', label: 'Find Advisors and Collaborators' },
   { value: 'form_team', label: 'Form Team' },
   { value: 'build_mvp', label: 'Build MVP' },
-  { value: 'yassu_foundry', label: 'Yassu Foundry' },
+  { value: 'yassu_foundry', label: 'Bruin Foundry' },
   { value: 'launched', label: 'Launched' },
 ];
 
@@ -52,7 +52,7 @@ const stageLabels: Record<string, string> = {
   find_advisors: 'Find Advisors and Collaborators',
   form_team: 'Form Team',
   build_mvp: 'Build MVP',
-  yassu_foundry: 'Yassu Foundry',
+  yassu_foundry: 'Bruin Foundry',
   launched: 'Launched',
 };
 

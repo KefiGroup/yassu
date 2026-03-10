@@ -318,7 +318,7 @@ Looking forward to hearing from you!`;
     find_advisors: 'Find Advisors and Collaborators',
     form_team: 'Form Team',
     build_mvp: 'Build MVP',
-    yassu_foundry: 'Yassu Foundry',
+    yassu_foundry: 'Bruin Foundry',
     launched: 'Launched',
   };
 

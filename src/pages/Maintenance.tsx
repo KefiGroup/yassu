@@ -84,8 +84,8 @@ export default function Maintenance() {
         {/* Contact */}
         <p className="text-sm text-gray-500">
           Questions? Reach out to us at{' '}
-          <a href="mailto:hello@yassu.ai" className="text-purple-600 hover:underline">
-            hello@yassu.ai
+          <a href="mailto:hello@yassu.co" className="text-purple-600 hover:underline">
+            hello@yassu.co
           </a>
         </p>
       </motion.div>

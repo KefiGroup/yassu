@@ -32,7 +32,7 @@ const stageLabels: Record<string, string> = {
   find_advisors: 'Find Advisors',
   form_team: 'Form Team',
   build_mvp: 'Build MVP',
-  yassu_foundry: 'Yassu Foundry',
+  yassu_foundry: 'Bruin Foundry',
   launched: 'Launched',
 };
 

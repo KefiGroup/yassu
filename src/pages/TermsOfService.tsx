@@ -117,7 +117,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">9. Intellectual Property</h2>
             <p>
-              All Bruin Entrepreneurs Platform trademarks, logos, software, and platform designs are owned by Yassu or its licensors. You may not use them without prior written permission.
+              All Bruin Entrepreneurs Platform trademarks, logos, software, and platform designs are owned by Bruin Entrepreneurs or its licensors. You may not use them without prior written permission.
             </p>
           </section>
 

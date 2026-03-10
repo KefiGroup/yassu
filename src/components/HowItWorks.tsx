@@ -4,7 +4,7 @@ import { Lightbulb, FileText, Users, UsersRound, Wrench, Presentation, TrendingU
 const steps = [
   {
     icon: Lightbulb,
-    title: "Post an Idea (Yassu!)",
+    title: "Post Your Idea",
     description: "Explain what your idea is and what problem it solves.",
   },
   {
@@ -29,7 +29,7 @@ const steps = [
   },
   {
     icon: Presentation,
-    title: "Present in Yassu Foundry",
+    title: "Present in Bruin Foundry",
     description: "Showcase your progress and get feedback from the Yassu community.",
   },
   {

@@ -1,6 +1,6 @@
 /**
  * Welcome Modal Component
- * Shows when a new user first logs in, introducing them to Yassu
+ * Shows when a new user first logs in, introducing them to Bruin Entrepreneurs
  */
 
 import { useState, useEffect } from "react";

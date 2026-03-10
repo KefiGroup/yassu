@@ -97,7 +97,7 @@ const IdeasSlider = () => {
             Featured <span className="text-gradient">Member Ideas</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Discover innovative startup concepts from university founders across the nation
+            Discover innovative startup concepts from Bruin Entrepreneurs members
           </p>
         </motion.div>
 
