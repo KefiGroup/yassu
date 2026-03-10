@@ -74,7 +74,7 @@ export default function Advisors() {
             className="text-center mb-16"
           >
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              Yassu <span className="text-gradient">Advisors</span>
+              Bruin <span className="text-gradient">Advisors</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Experienced professionals who mentor the next generation of university founders.
@@ -148,7 +148,7 @@ export default function Advisors() {
               className="text-center py-12"
             >
               <p className="text-muted-foreground text-lg mb-6" data-testid="text-empty-advisors">
-                No advisors have joined yet. Be the first to become a Yassu Advisor!
+                No advisors have joined yet. Be the first to become a Bruin Advisor!
               </p>
               <Button variant="hero" size="lg" asChild data-testid="button-become-advisor-empty">
                 <a href="/portal" data-testid="link-become-advisor-empty">

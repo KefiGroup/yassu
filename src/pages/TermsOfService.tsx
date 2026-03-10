@@ -14,7 +14,7 @@ export default function TermsOfService() {
             Welcome to <strong>Bruin Entrepreneurs Platform</strong> ("Bruin Entrepreneurs Platform", "we", "our", or "us"). These Terms of Service ("Terms") govern your access to and use of the Bruin Entrepreneurs Platform website, platform, and related services (collectively, the "Services").
           </p>
           <p>
-            By accessing or using Yassu, you agree to be bound by these Terms. If you do not agree, you must not use the Services.
+            By accessing or using the Bruin Entrepreneurs Platform, you agree to be bound by these Terms. If you do not agree, you must not use the Services.
           </p>
 
           <section>
@@ -22,7 +22,7 @@ export default function TermsOfService() {
             <p>
               The Bruin Entrepreneurs Platform is intended for users who are at least <strong>18 years old</strong>, or who have legal parental or guardian consent where required by law.
             </p>
-            <p>By using Yassu, you represent that you meet these requirements.</p>
+            <p>By using the Bruin Entrepreneurs Platform, you represent that you meet these requirements.</p>
           </section>
 
           <section>
@@ -34,7 +34,7 @@ export default function TermsOfService() {
               <li>All activity that occurs under your account</li>
             </ul>
             <p className="mt-4">
-              Certain features may require <strong>verification</strong>, including university affiliation or club membership. Verification confirms eligibility only and does <strong>not</strong> constitute endorsement, certification, or validation by Yassu.
+              Certain features may require <strong>verification</strong>, including university affiliation or club membership. Verification confirms eligibility only and does <strong>not</strong> constitute endorsement, certification, or validation by the Bruin Entrepreneurs Platform.
             </p>
             <p>
               We reserve the right to suspend or terminate accounts that provide false, misleading, or incomplete information.
@@ -47,7 +47,7 @@ export default function TermsOfService() {
               You retain ownership of all content you submit to the Bruin Entrepreneurs Platform, including profiles, ideas, messages, documents, and uploads ("User Content").
             </p>
             <p>
-              By submitting User Content, you grant Yassu a <strong>non-exclusive, worldwide, royalty-free license</strong> to host, store, process, display, and use such content solely to operate, improve, and provide the Services.
+              By submitting User Content, you grant the Bruin Entrepreneurs Platform a <strong>non-exclusive, worldwide, royalty-free license</strong> to host, store, process, display, and use such content solely to operate, improve, and provide the Services.
             </p>
             <p>You represent and warrant that:</p>
             <ul className="list-disc pl-6 space-y-2">
@@ -58,19 +58,19 @@ export default function TermsOfService() {
 
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">4. AI-Generated Content</h2>
-            <p>Yassu may provide AI-generated content, insights, workflows, or recommendations.</p>
+            <p>The Bruin Entrepreneurs Platform may provide AI-generated content, insights, workflows, or recommendations.</p>
             <p>You acknowledge and agree that:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>AI outputs are provided for <strong>informational purposes only</strong></li>
               <li>Outputs may be inaccurate, incomplete, or outdated</li>
               <li>You are solely responsible for verifying information before relying on it</li>
             </ul>
-            <p className="mt-4">Yassu does <strong>not</strong> provide legal, medical, financial, or investment advice.</p>
+            <p className="mt-4">The Bruin Entrepreneurs Platform does <strong>not</strong> provide legal, medical, financial, or investment advice.</p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">5. Marketplace, Teams, and Projects</h2>
-            <p>Yassu facilitates discovery, collaboration, and execution but is <strong>not a party</strong> to:</p>
+            <p>The Bruin Entrepreneurs Platform facilitates discovery, collaboration, and execution but is <strong>not a party</strong> to:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Agreements between users</li>
               <li>Team arrangements</li>
@@ -81,7 +81,7 @@ export default function TermsOfService() {
 
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">6. No Guarantees</h2>
-            <p>Yassu does not guarantee:</p>
+            <p>The Bruin Entrepreneurs Platform does not guarantee:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Funding or investment</li>
               <li>Employment or hiring outcomes</li>
@@ -99,7 +99,7 @@ export default function TermsOfService() {
               <li>Upload malicious software or harmful content</li>
               <li>Scrape, reverse engineer, or disrupt the platform</li>
               <li>Harass, spam, or exploit other users</li>
-              <li>Use Yassu for unlawful, deceptive, or abusive activities</li>
+              <li>Use the Bruin Entrepreneurs Platform for unlawful, deceptive, or abusive activities</li>
             </ul>
           </section>
 
@@ -111,13 +111,13 @@ export default function TermsOfService() {
               <li>Your conduct poses legal, security, or reputational risk</li>
               <li>Required by law or regulation</li>
             </ul>
-            <p className="mt-4">You may stop using Yassu at any time.</p>
+            <p className="mt-4">You may stop using the Bruin Entrepreneurs Platform at any time.</p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">9. Intellectual Property</h2>
             <p>
-              All Yassu trademarks, logos, software, and platform designs are owned by Yassu or its licensors. You may not use them without prior written permission.
+              All Bruin Entrepreneurs Platform trademarks, logos, software, and platform designs are owned by Yassu or its licensors. You may not use them without prior written permission.
             </p>
           </section>
 
@@ -131,7 +131,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">11. Limitation of Liability</h2>
             <p>
-              To the maximum extent permitted by law, Yassu shall not be liable for any indirect, incidental, consequential, or special damages, including loss of data, profits, or opportunities.
+              To the maximum extent permitted by law, The Bruin Entrepreneurs Platform shall not be liable for any indirect, incidental, consequential, or special damages, including loss of data, profits, or opportunities.
             </p>
           </section>
 
@@ -145,7 +145,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">13. Changes to These Terms</h2>
             <p>
-              We may update these Terms from time to time. Continued use of Yassu after changes take effect constitutes acceptance of the updated Terms.
+              We may update these Terms from time to time. Continued use of the Bruin Entrepreneurs Platform after changes take effect constitutes acceptance of the updated Terms.
             </p>
           </section>
 

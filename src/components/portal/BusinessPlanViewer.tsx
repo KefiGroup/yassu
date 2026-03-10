@@ -359,7 +359,7 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Yassu Business Plan
+            Bruin Business Plan
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -377,7 +377,7 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Yassu Business Plan
+            Bruin Business Plan
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center py-8">
@@ -424,7 +424,7 @@ export default function BusinessPlanViewer({ ideaId }: BusinessPlanViewerProps) 
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Yassu Business Plan
+              Bruin Business Plan
             </CardTitle>
             <div className="flex items-center gap-2">
               {workflowRun.status === 'running' ? (

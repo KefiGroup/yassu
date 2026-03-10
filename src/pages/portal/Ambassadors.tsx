@@ -45,9 +45,9 @@ export default function Ambassadors() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-2xl font-bold text-foreground">Yassu Ambassadors</h1>
+        <h1 className="text-2xl font-bold text-foreground">Bruin Ambassadors</h1>
         <p className="text-muted-foreground">
-          Connect with undergrad students who represent Yassu on their campus
+          Connect with undergrad students who represent Bruin Entrepreneurs on their campus
         </p>
       </motion.div>
 

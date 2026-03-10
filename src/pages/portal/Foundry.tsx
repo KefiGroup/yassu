@@ -454,7 +454,7 @@ export default function Foundry() {
             <Rocket className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Yassu Foundry</h1>
+            <h1 className="text-2xl font-bold">Bruin Foundry</h1>
             <p className="text-muted-foreground">Monthly roadshows, workshops, and networking events</p>
           </div>
         </div>
@@ -880,7 +880,7 @@ export default function Foundry() {
                   Request a Roadshow Slot
                 </CardTitle>
                 <CardDescription>
-                  Present your startup idea at a monthly Yassu Foundry roadshow event.
+                  Present your startup idea at a monthly Bruin Foundry roadshow event.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

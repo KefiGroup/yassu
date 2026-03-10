@@ -45,7 +45,7 @@ export default function Advisors() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-2xl font-bold text-foreground">Yassu Advisors</h1>
+        <h1 className="text-2xl font-bold text-foreground">Bruin Advisors</h1>
         <p className="text-muted-foreground">
           Connect with experienced professionals who mentor student founders
         </p>

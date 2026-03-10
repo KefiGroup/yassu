@@ -11,7 +11,7 @@ export default function PrivacyPolicy() {
         
         <div className="prose prose-lg dark:prose-invert max-w-none space-y-8">
           <p>
-            Yassu ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, and protect information when you use the Yassu platform.
+            Bruin Entrepreneurs Platform ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, and protect information when you use the Bruin Entrepreneurs Platform.
           </p>
 
           <section>
@@ -64,7 +64,7 @@ export default function PrivacyPolicy() {
             <ul className="list-disc pl-6 space-y-2">
               <li>Service providers (hosting, analytics, AI infrastructure)</li>
               <li>Legal authorities if required by law</li>
-              <li>Parties necessary to protect Yassu's rights, users, or platform integrity</li>
+              <li>Parties necessary to protect Bruin Entrepreneurs Platform's rights, users, or platform integrity</li>
             </ul>
             <p className="mt-4">We do <strong>not</strong> sell or rent personal information.</p>
           </section>
@@ -110,7 +110,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">9. International Users</h2>
             <p>
-              Your information may be processed in the United States or other jurisdictions. By using Yassu, you consent to such processing.
+              Your information may be processed in the United States or other jurisdictions. By using the Bruin Entrepreneurs Platform, you consent to such processing.
             </p>
           </section>
 

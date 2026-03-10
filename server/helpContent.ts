@@ -11,9 +11,9 @@ export const helpTopics: HelpTopic[] = [
   {
     id: "getting-started",
     category: "Getting Started",
-    title: "How to get started on Yassu",
+    title: "How to get started on Bruin Entrepreneurs Platform",
     keywords: ["start", "begin", "new", "first", "how to use", "getting started"],
-    content: `To get started on Yassu:
+    content: `To get started on Bruin Entrepreneurs Platform:
 1. Complete your profile with your skills, interests, and university
 2. Post your first startup idea
 3. Generate an AI-powered business plan
@@ -68,7 +68,7 @@ A complete profile helps others find you as a potential co-founder or team membe
     keywords: ["public", "private", "visibility", "hide", "show", "share"],
     content: `Your ideas can be either public or private:
 - **Private**: Only you can see the idea. Great for early-stage brainstorming.
-- **Public**: Visible to all Yassu users. Helps you find co-founders and get feedback.
+- **Public**: Visible to all Bruin Entrepreneurs Platform users. Helps you find co-founders and get feedback.
 Toggle visibility anytime from your idea's detail page.`
   },
 
@@ -78,7 +78,7 @@ Toggle visibility anytime from your idea's detail page.`
     category: "Business Plan",
     title: "What is the AI Business Plan?",
     keywords: ["business plan", "AI", "generate", "what is", "overview"],
-    content: `The AI Business Plan is Yassu's powerful tool that generates comprehensive business plans for your startup idea. It includes 9 sections:
+    content: `The AI Business Plan is Bruin Entrepreneurs Platform's powerful tool that generates comprehensive business plans for your startup idea. It includes 9 sections:
 1. Executive Summary
 2. Problem & Solution
 3. Target Audience
@@ -333,10 +333,10 @@ You'll receive email notifications for new messages.`
     category: "Badges",
     title: "What are Ambassador and Advisor badges?",
     keywords: ["badge", "ambassador", "advisor", "verified", "special"],
-    content: `Yassu offers special badges:
-- **Ambassador**: Community leaders who promote Yassu at their university
+    content: `Bruin Entrepreneurs Platform offers special badges:
+- **Ambassador**: Community leaders who promote Bruin Entrepreneurs Platform at their university
 - **Advisor**: Experienced mentors who guide student founders
-Badges are granted by Yassu admins and appear on your profile. Contact an admin if you're interested in becoming an Ambassador or Advisor.`
+Badges are granted by Bruin Entrepreneurs Platform admins and appear on your profile. Contact an admin if you're interested in becoming an Ambassador or Advisor.`
   },
 
   // Announcements
@@ -387,7 +387,7 @@ You'll be redirected to the login page.`
 3. Find Advisors
 4. Form Team
 5. Build MVP
-6. Yassu Foundry
+6. Bruin Entrepreneurs Platform Foundry
 7. Seek Funding
 Each step can be completed in any order. Track your progress from your idea's detail page.`
   },
@@ -400,7 +400,7 @@ Each step can be completed in any order. Track your progress from your idea's de
     keywords: ["privacy", "who can see", "visible", "hidden"],
     content: `Your idea visibility depends on its setting:
 - **Private ideas**: Only visible to you
-- **Public ideas**: Visible to all Yassu users
+- **Public ideas**: Visible to all Bruin Entrepreneurs Platform users
 Team members can always see ideas they're part of. Admins can view all ideas for moderation purposes.`
   },
   {
@@ -411,7 +411,7 @@ Team members can always see ideas they're part of. Admins can view all ideas for
     content: `For platform support:
 1. Try asking Kefi (that's me!) your question first
 2. Check the platform announcements for known issues
-3. Contact the Yassu team through the platform
+3. Contact the Bruin Entrepreneurs Platform team through the platform
 We're here to help you on your founder journey!`
   },
   {
@@ -419,21 +419,21 @@ We're here to help you on your founder journey!`
     category: "Support",
     title: "How to submit a suggestion",
     keywords: ["suggestion", "feedback", "improve", "feature request", "idea for yassu", "recommend"],
-    content: `You can submit suggestions for improving Yassu directly through me (Kefi)! 
+    content: `You can submit suggestions for improving Bruin Entrepreneurs Platform directly through me (Kefi)! 
 Just tell me your suggestion by saying something like:
 - "I have a suggestion: [your idea]"
 - "I'd like to suggest: [your improvement idea]"
 - "Feature request: [what you'd like to see]"
-The Yassu team reviews all suggestions and uses them to make the platform better for everyone.`
+The Bruin Entrepreneurs Platform team reviews all suggestions and uses them to make the platform better for everyone.`
   },
 
   // Platform Navigation
   {
     id: "platform-navigation",
     category: "Navigation",
-    title: "How to navigate the Yassu platform",
+    title: "How to navigate the Bruin Entrepreneurs Platform platform",
     keywords: ["navigate", "sidebar", "menu", "sections", "where", "find"],
-    content: `The Yassu platform has these main sections in the sidebar:
+    content: `The Bruin Entrepreneurs Platform platform has these main sections in the sidebar:
 
 **Main:**
 - My Dashboard - Overview of your ideas, join requests, and people to invite
@@ -443,7 +443,7 @@ The Yassu team reviews all suggestions and uses them to make the platform better
 **Marketplace:**
 - Ideas - Browse all public startup ideas
 - Collaborators - Find co-founders by skills and interests
-- Ambassadors - View Yassu community leaders
+- Ambassadors - View Bruin Entrepreneurs Platform community leaders
 - Advisors - Find experienced mentors
 - Resources - Platform resources and guides
 - Messages - Your direct messages
@@ -478,17 +478,17 @@ The Yassu team reviews all suggestions and uses them to make the platform better
   {
     id: "manus-overview",
     category: "Manus Integration",
-    title: "What is Manus and how does Yassu integrate with it?",
+    title: "What is Manus and how does Bruin Entrepreneurs Platform integrate with it?",
     keywords: ["manus", "manus.im", "AI design", "integration", "what is manus"],
     content: `Manus (manus.im) is an AI agent that creates professional designs and presentations instantly.
 
-**How Yassu integrates with Manus:**
+**How Bruin Entrepreneurs Platform integrates with Manus:**
 1. **MVP Builder** - Copy your MVP specifications and paste into Manus to design your app
 2. **Pitch Deck** - Copy your slide content and paste into Manus to create beautiful presentations
 3. **Business Plan sections** - Export any section for Manus to turn into professional documents
 
 **How to use:**
-1. Generate your content in Yassu (business plan, MVP specs, pitch deck)
+1. Generate your content in Bruin Entrepreneurs Platform (business plan, MVP specs, pitch deck)
 2. Click the "Copy" or "Open Manus AI" button
 3. Manus will create professional designs based on your content
 
@@ -501,7 +501,7 @@ It's instant - no need to spend weeks designing yourself!`
     keywords: ["manus mvp", "build mvp", "manus app", "design mvp", "create app"],
     content: `To build your MVP with Manus:
 
-**Step 1: Plan Your MVP in Yassu**
+**Step 1: Plan Your MVP in Bruin Entrepreneurs Platform**
 1. Go to your idea and click "Build MVP" section
 2. Generate MVP specifications from your business plan
 3. AI will create feature list, user stories, and technical requirements
@@ -513,7 +513,7 @@ It's instant - no need to spend weeks designing yourself!`
 
 **Step 3: Link Your MVP**
 1. Once Manus creates your design, copy the project link
-2. Paste it back in Yassu to track your progress
+2. Paste it back in Bruin Entrepreneurs Platform to track your progress
 
 Build instantly with Manus AI instead of spending weeks on development!`
   },
@@ -586,16 +586,16 @@ You can also download the entire business plan as a Word document using the "Dow
   {
     id: "full-journey-flow",
     category: "Journey Progress",
-    title: "Complete startup journey on Yassu",
+    title: "Complete startup journey on Bruin Entrepreneurs Platform",
     keywords: ["full journey", "complete flow", "start to finish", "all steps"],
-    content: `Here's your complete startup journey on Yassu:
+    content: `Here's your complete startup journey on Bruin Entrepreneurs Platform:
 
 **1. Post Idea** - Create your startup idea with Problem, Solution, Target Users, Why Now
 **2. Business Plan** - Generate AI-powered 9-section business plan
 **3. Find Advisors** - Connect with experienced mentors on the platform
 **4. Form Team** - Invite co-founders and team members
 **5. Build MVP** - Plan and build your minimum viable product with Manus
-**6. Yassu Foundry** - Apply for Yassu's incubator program (coming soon)
+**6. Bruin Entrepreneurs Platform Foundry** - Apply for Bruin Entrepreneurs Platform's incubator program (coming soon)
 **7. Seek Funding** - Create pitch deck and prepare for investor meetings
 
 Each step can be completed in any order - work on what matters most to you!`
@@ -605,7 +605,7 @@ Each step can be completed in any order - work on what matters most to you!`
     category: "Ideas",
     title: "How does AI improve my idea?",
     keywords: ["improve idea", "AI suggestions", "auto improve", "enhance idea"],
-    content: `When you post a new idea, Yassu AI automatically improves it:
+    content: `When you post a new idea, Bruin Entrepreneurs Platform AI automatically improves it:
 
 1. **Auto-parsing** - Your description is analyzed and split into structured fields
 2. **Field enhancement** - AI suggests improvements for:
@@ -624,9 +624,9 @@ This happens automatically when you save your idea!`
   {
     id: "advisor-importance",
     category: "Advisors",
-    title: "Why should I work with Yassu Advisors?",
+    title: "Why should I work with Bruin Entrepreneurs Platform Advisors?",
     keywords: ["advisor", "mentor", "guidance", "help", "experience", "recommend advisor"],
-    content: `Yassu Advisors are experienced mentors who can help your startup succeed:
+    content: `Bruin Entrepreneurs Platform Advisors are experienced mentors who can help your startup succeed:
 
 **Why work with advisors:**
 - AI-generated plans are a great starting point, but not foolproof

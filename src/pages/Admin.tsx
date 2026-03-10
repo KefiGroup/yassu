@@ -1696,7 +1696,7 @@ export default function Admin() {
                 Foundry Events & Attendees
               </CardTitle>
               <CardDescription>
-                View all Yassu Foundry events and their RSVPs.
+                View all Bruin Foundry events and their RSVPs.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'hello@yassu.ai';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'hello@yassu.co';
 const APP_URL = process.env.APP_URL || 'https://yassu.ai';
 
 export interface SendEmailOptions {
@@ -119,7 +119,7 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Yassu!</title>
+  <title>Welcome to Bruin Entrepreneurs Platform!</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -139,7 +139,7 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
               <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${fullName},</h2>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                Welcome to Yassu! We're thrilled to have you join our community of elite university talent.
+                Welcome to Bruin Entrepreneurs Platform! We're thrilled to have you join our community of elite university talent.
               </p>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
@@ -170,7 +170,7 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -196,7 +196,7 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
 
   await sendEmail({
     to: email,
-    subject: 'Welcome to Yassu! 🎉',
+    subject: 'Welcome to Bruin Entrepreneurs Platform! 🎉',
     html,
   });
 }
@@ -269,7 +269,7 @@ export async function sendTeamInvitationEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -353,7 +353,7 @@ export async function sendInviteAcceptedEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -446,7 +446,7 @@ export async function sendNewMessageEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -541,7 +541,7 @@ export async function sendSkillMatchEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -642,7 +642,7 @@ export async function sendJoinRequestEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -732,7 +732,7 @@ export async function sendRequestAcceptedEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -828,7 +828,7 @@ export async function sendRequestRejectedEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -914,7 +914,7 @@ export async function sendRequestPendingEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
@@ -1008,7 +1008,7 @@ export async function sendConnectionRequestEmail(
               
               <p style="margin: 20px 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
                 Best,<br>
-                The Yassu Team
+                The Bruin Entrepreneurs Team
               </p>
             </td>
           </tr>
