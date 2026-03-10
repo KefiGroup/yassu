@@ -37,6 +37,18 @@ export interface BrandConfig {
     ambassadors: string;
     advisors: string;
   };
+  sectionHeadings: {
+    ambassadorsTitle: [string, string];
+    ambassadorsDescription: string;
+    ambassadorsBenefits: [string, string, string];
+    ambassadorsEmpty: string;
+    ambassadorsConnect: string;
+    advisorsTitle: [string, string];
+    advisorsDescription: string;
+    advisorsEmpty: string;
+    advisorsConnect: string;
+    ideasTitle: [string, string];
+  };
   visionQuote: string;
   joinButtonText: string;
 }
@@ -80,6 +92,22 @@ export const YASSU_BRAND: BrandConfig = {
     ambassadors: 'Ambassadors',
     advisors: 'Advisors',
   },
+  sectionHeadings: {
+    ambassadorsTitle: ['Yassu ', 'Ambassadors'],
+    ambassadorsDescription: 'Student leaders who are building the future of university entrepreneurship. Our ambassadors represent Yassu on campus and help fellow students launch their ventures.',
+    ambassadorsBenefits: [
+      'Represent Yassu at your university and help fellow students launch their ventures.',
+      'Connect with ambitious founders and builders across the national Yassu network.',
+      'Help define how the next generation of companies are built, before capital decides who matters.',
+    ],
+    ambassadorsEmpty: 'No ambassadors have joined yet. Be the first to become a Yassu Ambassador!',
+    ambassadorsConnect: 'Connect to Yassu',
+    advisorsTitle: ['Yassu ', 'Advisors'],
+    advisorsDescription: 'Experienced professionals who mentor the next generation of university founders. Our advisors bring industry expertise, startup experience, and a passion for helping students succeed.',
+    advisorsEmpty: 'No advisors have joined yet. Be the first to become a Yassu Advisor!',
+    advisorsConnect: 'Connect to Yassu',
+    ideasTitle: ['Featured ', 'Yassu Ideas'],
+  },
   visionQuote: 'Yassu equalizes access to process.',
   joinButtonText: 'Join Yassu',
 };
@@ -122,6 +150,22 @@ export const BRUIN_BRAND: BrandConfig = {
     team: 'Yassu Team',
     ambassadors: 'Bruin Ambassadors',
     advisors: 'Yassu Advisors',
+  },
+  sectionHeadings: {
+    ambassadorsTitle: ['Bruin ', 'Ambassadors'],
+    ambassadorsDescription: 'Student leaders who are building the future of UCLA entrepreneurship. Our ambassadors represent Bruin Entrepreneurs on campus and help fellow Bruins launch their ventures.',
+    ambassadorsBenefits: [
+      'Represent Bruin Entrepreneurs at UCLA and help fellow students launch their ventures.',
+      'Connect with ambitious founders and builders across the Bruin network.',
+      'Help define how the next generation of Bruin-led companies are built, before capital decides who matters.',
+    ],
+    ambassadorsEmpty: 'No ambassadors have joined yet. Be the first to become a Bruin Ambassador!',
+    ambassadorsConnect: 'Connect',
+    advisorsTitle: ['Yassu ', 'Advisors'],
+    advisorsDescription: 'Experienced professionals who mentor the next generation of Bruin founders. Our advisors bring industry expertise, startup experience, and a passion for helping UCLA students succeed.',
+    advisorsEmpty: 'No advisors have joined yet. Be the first to become a Yassu Advisor!',
+    advisorsConnect: 'Connect',
+    ideasTitle: ['Bruin Entrepreneurs ', 'Ideas'],
   },
   visionQuote: 'Bruin Entrepreneurs equalizes access to process.',
   joinButtonText: 'Join Now',

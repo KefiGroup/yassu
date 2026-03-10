@@ -56,7 +56,7 @@ const HowItWorks = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            How <span className="text-gradient">{brand.name}</span> Works
+            <span className="text-gradient">{brand.navLabels.howItWorks}</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             From idea to market launch, {brand.name} guides you through every step of building your university-native company.

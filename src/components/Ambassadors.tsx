@@ -1,26 +1,29 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Star, Users, Rocket, ArrowRight } from "lucide-react";
-
-const benefits = [
-  {
-    icon: Star,
-    title: "Lead Your Campus",
-    description: "Represent Yassu at your university and help fellow students launch their ventures.",
-  },
-  {
-    icon: Users,
-    title: "Build Your Network",
-    description: "Connect with ambitious founders and builders across the national Yassu network.",
-  },
-  {
-    icon: Rocket,
-    title: "Shape the Future",
-    description: "Help define how the next generation of companies are built, before capital decides who matters.",
-  },
-];
+import { useBranding } from "@/contexts/BrandingContext";
 
 const Ambassadors = () => {
+  const brand = useBranding();
+
+  const benefits = [
+    {
+      icon: Star,
+      title: "Lead Your Campus",
+      description: brand.sectionHeadings.ambassadorsBenefits[0],
+    },
+    {
+      icon: Users,
+      title: "Build Your Network",
+      description: brand.sectionHeadings.ambassadorsBenefits[1],
+    },
+    {
+      icon: Rocket,
+      title: "Shape the Future",
+      description: brand.sectionHeadings.ambassadorsBenefits[2],
+    },
+  ];
+
   return (
     <section id="ambassadors" className="py-24 relative">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
@@ -34,10 +37,10 @@ const Ambassadors = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Yassu <span className="text-gradient">Ambassadors</span>
+            {brand.sectionHeadings.ambassadorsTitle[0]}<span className="text-gradient">{brand.sectionHeadings.ambassadorsTitle[1]}</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Join our network of student leaders who are building the future of university entrepreneurship.
+            {brand.sectionHeadings.ambassadorsDescription}
           </p>
         </motion.div>
 

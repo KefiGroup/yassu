@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { ConnectionButton } from '@/components/ConnectionButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 
 interface Profile {
   id: number;
@@ -24,6 +25,7 @@ export default function Advisors() {
   const [advisors, setAdvisors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const brand = useBranding();
 
   useEffect(() => {
     fetch('/api/advisors', { credentials: 'include' })
@@ -46,7 +48,7 @@ export default function Advisors() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-2xl font-bold text-foreground">Yassu Advisors</h1>
+        <h1 className="text-2xl font-bold text-foreground">{brand.navLabels.advisors}</h1>
         <p className="text-muted-foreground">
           Connect with experienced professionals who mentor student founders
         </p>

@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Briefcase, GraduationCap, Users } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useBranding } from '@/contexts/BrandingContext';
 
 interface Profile {
   id: number;
@@ -27,6 +28,7 @@ interface Profile {
 
 export default function Advisors() {
   const navigate = useNavigate();
+  const brand = useBranding();
   const [advisors, setAdvisors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,11 +76,10 @@ export default function Advisors() {
             className="text-center mb-16"
           >
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              Yassu <span className="text-gradient">Advisors</span>
+              {brand.sectionHeadings.advisorsTitle[0]}<span className="text-gradient">{brand.sectionHeadings.advisorsTitle[1]}</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Experienced professionals who mentor the next generation of university founders.
-              Our advisors bring industry expertise, startup experience, and a passion for helping students succeed.
+              {brand.sectionHeadings.advisorsDescription}
             </p>
           </motion.div>
 
@@ -148,7 +149,7 @@ export default function Advisors() {
               className="text-center py-12"
             >
               <p className="text-muted-foreground text-lg mb-6" data-testid="text-empty-advisors">
-                No advisors have joined yet. Be the first to become a Yassu Advisor!
+                {brand.sectionHeadings.advisorsEmpty}
               </p>
               <Button variant="hero" size="lg" asChild data-testid="button-become-advisor-empty">
                 <a href="/portal" data-testid="link-become-advisor-empty">
@@ -218,7 +219,7 @@ export default function Advisors() {
                         data-testid={`button-connect-advisor-${advisor.id}`}
                       >
                         <Users className="w-4 h-4 mr-2" />
-                        Connect to Yassu
+                        {brand.sectionHeadings.advisorsConnect}
                       </Button>
                     </CardContent>
                   </Card>

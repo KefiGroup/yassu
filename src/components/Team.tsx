@@ -79,7 +79,7 @@ const Team = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            {brand.name} <span className="text-gradient">Team</span>
+            <span className="text-gradient">{brand.navLabels.team}</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto italic">
             "The strength of the team is each individual member. The strength of each member is the team."

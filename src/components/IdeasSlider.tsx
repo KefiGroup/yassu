@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowRight, Lightbulb } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Link } from "react-router-dom";
+import { useBranding } from "@/contexts/BrandingContext";
 
 interface FeaturedIdea {
   id: string;
@@ -19,6 +20,7 @@ interface FeaturedIdea {
 
 
 const IdeasSlider = () => {
+  const brand = useBranding();
   const [featuredIdeas, setFeaturedIdeas] = useState<FeaturedIdea[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -94,7 +96,7 @@ const IdeasSlider = () => {
           className="mb-12 text-center"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Featured <span className="text-gradient">Yassu Ideas</span>
+            {brand.sectionHeadings.ideasTitle[0]}<span className="text-gradient">{brand.sectionHeadings.ideasTitle[1]}</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Discover innovative startup concepts from university founders across the nation

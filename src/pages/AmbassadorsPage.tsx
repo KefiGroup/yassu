@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Star, Users, Rocket } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useBranding } from '@/contexts/BrandingContext';
 
 interface Profile {
   id: number;
@@ -27,6 +28,7 @@ interface Profile {
 
 export default function AmbassadorsPage() {
   const navigate = useNavigate();
+  const brand = useBranding();
   const [ambassadors, setAmbassadors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,11 +76,10 @@ export default function AmbassadorsPage() {
             className="text-center mb-16"
           >
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              Yassu <span className="text-gradient">Ambassadors</span>
+              {brand.sectionHeadings.ambassadorsTitle[0]}<span className="text-gradient">{brand.sectionHeadings.ambassadorsTitle[1]}</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Student leaders who are building the future of university entrepreneurship.
-              Our ambassadors represent Yassu on campus and help fellow students launch their ventures.
+              {brand.sectionHeadings.ambassadorsDescription}
             </p>
           </motion.div>
 
@@ -93,7 +94,7 @@ export default function AmbassadorsPage() {
                 <Star className="w-8 h-8 text-accent" />
               </div>
               <h3 className="text-xl font-semibold mb-3 text-foreground">Lead Your Campus</h3>
-              <p className="text-muted-foreground">Represent Yassu at your university and help fellow students launch their ventures.</p>
+              <p className="text-muted-foreground">{brand.sectionHeadings.ambassadorsBenefits[0]}</p>
             </motion.div>
 
             <motion.div
@@ -106,7 +107,7 @@ export default function AmbassadorsPage() {
                 <Users className="w-8 h-8 text-accent" />
               </div>
               <h3 className="text-xl font-semibold mb-3 text-foreground">Build Your Network</h3>
-              <p className="text-muted-foreground">Connect with ambitious founders and builders across the national Yassu network.</p>
+              <p className="text-muted-foreground">{brand.sectionHeadings.ambassadorsBenefits[1]}</p>
             </motion.div>
 
             <motion.div
@@ -148,7 +149,7 @@ export default function AmbassadorsPage() {
               className="text-center py-12"
             >
               <p className="text-muted-foreground text-lg mb-6" data-testid="text-empty-ambassadors">
-                No ambassadors have joined yet. Be the first to become a Yassu Ambassador!
+                {brand.sectionHeadings.ambassadorsEmpty}
               </p>
               <Button variant="hero" size="lg" asChild data-testid="button-become-ambassador-empty">
                 <a href="/portal" data-testid="link-become-ambassador-empty">
@@ -221,7 +222,7 @@ export default function AmbassadorsPage() {
                         data-testid={`button-connect-ambassador-${ambassador.id}`}
                       >
                         <Users className="w-4 h-4 mr-2" />
-                        Connect to Yassu
+                        {brand.sectionHeadings.ambassadorsConnect}
                       </Button>
                     </CardContent>
                   </Card>

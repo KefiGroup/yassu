@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { ConnectionButton } from '@/components/ConnectionButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 
 interface Profile {
   id: number;
@@ -24,6 +25,7 @@ export default function Ambassadors() {
   const [ambassadors, setAmbassadors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const brand = useBranding();
 
   useEffect(() => {
     fetch('/api/ambassadors', { credentials: 'include' })
@@ -46,9 +48,9 @@ export default function Ambassadors() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-2xl font-bold text-foreground">Yassu Ambassadors</h1>
+        <h1 className="text-2xl font-bold text-foreground">{brand.navLabels.ambassadors}</h1>
         <p className="text-muted-foreground">
-          Connect with undergrad students who represent Yassu on their campus
+          Connect with undergrad students who represent {brand.name} on their campus
         </p>
       </motion.div>
 
