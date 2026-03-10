@@ -30,6 +30,13 @@ export interface BrandConfig {
     formTeam: string;
     presentFoundry: string;
   };
+  navLabels: {
+    howItWorks: string;
+    ideas: string;
+    team: string;
+    ambassadors: string;
+    advisors: string;
+  };
   visionQuote: string;
   joinButtonText: string;
 }
@@ -66,6 +73,13 @@ export const YASSU_BRAND: BrandConfig = {
     formTeam: 'Form Your Yassu Team',
     presentFoundry: 'Present in Yassu Foundry',
   },
+  navLabels: {
+    howItWorks: 'How Yassu Works',
+    ideas: 'Yassu Ideas',
+    team: 'Yassu Team',
+    ambassadors: 'Ambassadors',
+    advisors: 'Advisors',
+  },
   visionQuote: 'Yassu equalizes access to process.',
   joinButtonText: 'Join Yassu',
 };
@@ -101,6 +115,13 @@ export const BRUIN_BRAND: BrandConfig = {
     findAdvisors: 'Find matching Advisors and Ambassadors for your team invites.',
     formTeam: 'Form Your Team',
     presentFoundry: 'Present in the Foundry',
+  },
+  navLabels: {
+    howItWorks: 'How Yassu x Bruin Work',
+    ideas: 'Bruin Entrepreneurs Ideas',
+    team: 'Yassu Team',
+    ambassadors: 'Bruin Ambassadors',
+    advisors: 'Yassu Advisors',
   },
   visionQuote: 'Bruin Entrepreneurs equalizes access to process.',
   joinButtonText: 'Join Now',

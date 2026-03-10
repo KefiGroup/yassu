@@ -23,19 +23,19 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-8">
           <a href={`${base}/#how-it-works`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">
-            How {brand.name} Works
+            {brand.navLabels.howItWorks}
           </a>
           <a href={`${base}/#ideas`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ideas">
-            {brand.name} Ideas
+            {brand.navLabels.ideas}
           </a>
           <a href={`${base}/#team`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
-            {brand.name} Team
+            {brand.navLabels.team}
           </a>
           <a href={`${base}/ambassadors`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ambassadors">
-            Ambassadors
+            {brand.navLabels.ambassadors}
           </a>
           <a href={`${base}/advisors`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-advisors">
-            Advisors
+            {brand.navLabels.advisors}
           </a>
         </div>
 
