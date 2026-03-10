@@ -383,9 +383,6 @@ Looking forward to hearing from you!`;
         <h1 className="text-3xl font-bold text-foreground" data-testid="text-welcome" data-tour="dashboard-header">
           Welcome{isProfileIncomplete ? '' : ' back'}, {profile?.fullName?.split(' ')[0] || 'Founder'}!
         </h1>
-        {brand.id !== 'yassu' && (
-          <p className="text-sm text-muted-foreground mt-0.5">(Powered by Yassu™)</p>
-        )}
         <p className="text-muted-foreground mt-1">
           {isProfileIncomplete 
             ? 'Get started by completing your profile to connect with others.'

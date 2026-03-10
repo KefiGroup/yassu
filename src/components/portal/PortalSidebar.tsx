@@ -42,7 +42,7 @@ const mainNavItems = [
 ];
 
 const getMarketplaceNavItems = (brandId?: string) => [
-  { title: brandId && brandId !== 'yassu' ? 'Marketplace' : 'Ideas', url: '/portal/ideas', icon: Lightbulb },
+  { title: brandId === 'bruin' ? 'Bruin Marketplace' : 'Ideas', url: '/portal/ideas', icon: Lightbulb },
   { title: 'Collaborators', url: '/portal/collaborators', icon: Users },
   { title: 'Ambassadors', url: '/portal/ambassadors', icon: GraduationCap },
   { title: 'Advisors', url: '/portal/advisors', icon: Briefcase },
