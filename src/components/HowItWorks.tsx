@@ -10,12 +10,12 @@ const steps = [
   {
     icon: FileText,
     title: "Generate Business Plan",
-    description: "Use the Yassu Agent to create a comprehensive business plan with market analysis and strategy.",
+    description: "Use Bruin AI to create a comprehensive business plan with market analysis and strategy.",
   },
   {
     icon: Users,
     title: "Find Advisors & Ambassadors",
-    description: "Yassu will find matching Advisors and Ambassadors for your team invites.",
+    description: "Bruin Entrepreneurs will find matching Advisors and Ambassadors for your team invites.",
   },
   {
     icon: UsersRound,
@@ -30,7 +30,7 @@ const steps = [
   {
     icon: Presentation,
     title: "Present in Bruin Foundry",
-    description: "Showcase your progress and get feedback from the Yassu community.",
+    description: "Showcase your progress and get feedback from the Bruin Entrepreneurs community.",
   },
   {
     icon: TrendingUp,
@@ -56,7 +56,7 @@ const HowItWorks = () => {
             How <span className="text-gradient">Bruin Entrepreneurs</span> Works
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            From idea to market launch, Yassu guides you through every step of building your university-native company.
+            From idea to market launch, Bruin Entrepreneurs guides you through every step of building your university-native company.
           </p>
         </motion.div>
 

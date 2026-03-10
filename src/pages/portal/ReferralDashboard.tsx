@@ -2,7 +2,7 @@ export default function ReferralDashboardPage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-4">Referral Dashboard</h1>
-      <p className="text-gray-600">Track all Yassu → Manus AI referrals platform-wide</p>
+      <p className="text-gray-600">Track all Bruin Entrepreneurs referrals platform-wide</p>
       
       <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow">
@@ -37,7 +37,7 @@ export default function ReferralDashboardPage() {
           <li>• Each "Build MVP with Manus AI" click is tracked with a unique referral code</li>
           <li>• Estimated revenue assumes 20% commission on Manus subscriptions ($20/month)</li>
           <li>• This data demonstrates value for partnership negotiations with Manus</li>
-          <li>• All revenue goes toward keeping Yassu 100% free for students</li>
+          <li>• All revenue goes toward keeping Bruin Entrepreneurs 100% free for students</li>
           <li>• Admin-only view: participants cannot see this dashboard</li>
         </ul>
       </div>

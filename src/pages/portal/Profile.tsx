@@ -294,7 +294,7 @@ export default function Profile() {
                     {badges.map((badge) => (
                       <Badge key={badge.id} variant="secondary" className="gap-1">
                         <Award className="w-3 h-3" />
-                        {badge.badgeType === 'ambassador' ? 'Yassu Ambassador' : 'Yassu Advisor'}
+                        {badge.badgeType === 'ambassador' ? 'Bruin Ambassador' : 'Bruin Advisor'}
                       </Badge>
                     ))}
                   </div>

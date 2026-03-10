@@ -6,12 +6,12 @@ const benefits = [
   {
     icon: Star,
     title: "Lead Your Campus",
-    description: "Represent Yassu at your university and help fellow students launch their ventures.",
+    description: "Represent Bruin Entrepreneurs at your university and help fellow students launch their ventures.",
   },
   {
     icon: Users,
     title: "Build Your Network",
-    description: "Connect with ambitious founders and builders across the national Yassu network.",
+    description: "Connect with ambitious founders and builders across the national Bruin Entrepreneurs network.",
   },
   {
     icon: Rocket,
@@ -34,7 +34,7 @@ const Ambassadors = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Yassu <span className="text-gradient">Ambassadors</span>
+            Bruin <span className="text-gradient">Ambassadors</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Join our network of student leaders who are building the future of university entrepreneurship.

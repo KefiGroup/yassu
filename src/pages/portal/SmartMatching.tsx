@@ -77,7 +77,7 @@ export default function SmartMatching() {
         setMatches(data);
         toast({
           title: '✨ Matches Found!',
-          description: `Found ${data.yassuMatches.length} Yassu members and ${data.linkedinSuggestions.length} LinkedIn suggestions`,
+          description: `Found ${data.yassuMatches.length} Bruin members and ${data.linkedinSuggestions.length} LinkedIn suggestions`,
         });
       } else {
         throw new Error('Failed to load matches');
@@ -181,12 +181,12 @@ export default function SmartMatching() {
         </div>
       </div>
 
-      {/* Yassu Network Matches */}
+      {/* Bruin Network Matches */}
       <div className="mb-12">
         <div className="flex items-center gap-3 mb-6">
           <Users className="h-6 w-6 text-purple-600" />
           <h2 className="text-2xl font-bold text-gray-900">
-            Yassu Network ({matches.yassuMatches.length})
+            Bruin Network ({matches.yassuMatches.length})
           </h2>
         </div>
 
@@ -194,7 +194,7 @@ export default function SmartMatching() {
           <Card>
             <CardContent className="py-12 text-center">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">No Yassu members match yet</p>
+              <p className="text-gray-600 mb-2">No Bruin members match yet</p>
               <p className="text-sm text-gray-500">
                 As more students join, we'll find perfect teammates for you!
               </p>

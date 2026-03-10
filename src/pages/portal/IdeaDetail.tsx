@@ -2728,7 +2728,7 @@ export default function IdeaDetail() {
                 </Avatar>
                 <div>
                   <h3 className="text-xl font-bold">{selectedMember.fullName || 'Anonymous'}</h3>
-                  <p className="text-muted-foreground">{selectedMember.headline || 'Yassu Collaborator'}</p>
+                  <p className="text-muted-foreground">{selectedMember.headline || 'Bruin Collaborator'}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="secondary">
                       {selectedMember.matchCount} skill{selectedMember.matchCount !== 1 ? 's' : ''} match

@@ -33,7 +33,7 @@ const Footer = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-center text-muted-foreground/60 text-sm mt-8"
         >
-          © {new Date().getFullYear()} Bruin Entrepreneurs × Yassu. All rights reserved.
+          © {new Date().getFullYear()} Bruin Entrepreneurs. All rights reserved.
         </motion.p>
       </div>
     </footer>

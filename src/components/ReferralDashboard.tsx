@@ -77,7 +77,7 @@ export default function ReferralDashboard() {
       <div>
         <h1 className="text-3xl font-bold mb-2">Referral Dashboard</h1>
         <p className="text-gray-600">
-          Track your Manus AI referrals and estimated earnings from Yassu
+          Track your referrals and estimated earnings from Bruin Entrepreneurs
         </p>
       </div>
 
@@ -179,7 +179,7 @@ export default function ReferralDashboard() {
         <CardHeader>
           <CardTitle>Referral History</CardTitle>
           <CardDescription>
-            All your Manus AI referrals from Yassu
+            All your referrals from Bruin Entrepreneurs
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -248,7 +248,7 @@ export default function ReferralDashboard() {
             <li>• Estimated revenue assumes 20% commission on Manus subscriptions ($20/month)</li>
             <li>• Conversion tracking will be enabled once partnership with Manus is established</li>
             <li>• This data will be used to demonstrate value in partnership negotiations</li>
-            <li>• All revenue goes toward keeping Yassu 100% free for students</li>
+            <li>• All revenue goes toward keeping Bruin Entrepreneurs 100% free for students</li>
           </ul>
         </CardContent>
       </Card>

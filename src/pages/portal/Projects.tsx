@@ -214,7 +214,7 @@ export default function Projects() {
           <h3 className="text-lg font-medium text-foreground mb-2">No projects yet</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Start your entrepreneurship journey by posting your first startup idea.
-            Yassu will help you develop it into a real venture.
+            Bruin Entrepreneurs will help you develop it into a real venture.
           </p>
           <Button onClick={() => navigate('/portal/ideas/new')} data-testid="button-create-first-idea">
             <Plus className="w-4 h-4 mr-2" />
