@@ -75,11 +75,6 @@ const IdeasSlider = () => {
     };
   }, [emblaApi, onSelect]);
 
-  // Don't show section if no featured ideas
-  if (featuredIdeas.length === 0 && !loading) {
-    return null;
-  }
-  
   const ideasToShow = featuredIdeas;
 
   return (
@@ -104,6 +99,23 @@ const IdeasSlider = () => {
           </p>
         </motion.div>
 
+        {ideasToShow.length === 0 && !loading ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center justify-center py-16 px-6"
+          >
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 via-pink-500/10 to-violet-500/20 flex items-center justify-center mb-6">
+              <Lightbulb className="w-10 h-10 text-primary/60" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-2">1K Pitch Ideas</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              Be among the first to pitch your startup idea. Sign up and post your idea to get featured here!
+            </p>
+          </motion.div>
+        ) : (
         <div className="relative">
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex gap-6">
@@ -179,6 +191,7 @@ const IdeasSlider = () => {
             <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
+        )}
       </div>
     </section>
   );

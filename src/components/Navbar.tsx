@@ -28,15 +28,22 @@ const Navbar = () => {
           <a href={`${base}/#ideas`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ideas">
             {brand.navLabels.ideas}
           </a>
-          <a href={`${base}/#team`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
-            {brand.navLabels.team}
-          </a>
+          {brand.id === 'yassu' && (
+            <a href={`${base}/#team`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
+              {brand.navLabels.team}
+            </a>
+          )}
           <a href={`${base}/ambassadors`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ambassadors">
             {brand.navLabels.ambassadors}
           </a>
           <a href={`${base}/advisors`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-advisors">
             {brand.navLabels.advisors}
           </a>
+          {brand.id !== 'yassu' && (
+            <a href={`${base}/#team`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
+              {brand.navLabels.team}
+            </a>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
