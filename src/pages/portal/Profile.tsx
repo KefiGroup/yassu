@@ -339,7 +339,12 @@ export default function Profile() {
         >
           <Alert className="border-primary/20 bg-primary/5" data-testid="alert-welcome">
             <PartyPopper className="h-5 w-5 text-primary" />
-            <AlertTitle className="text-lg">Welcome to {brand.name}!</AlertTitle>
+            <AlertTitle className="text-lg">
+              Welcome to {brand.name}!
+              {brand.id !== 'yassu' && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">(Powered by Yassu™)</span>
+              )}
+            </AlertTitle>
             <AlertDescription>
               We're excited to have you join our community of university entrepreneurs. 
               Complete your profile below to connect with collaborators, advisors, and ambassadors who can help bring your ideas to life.

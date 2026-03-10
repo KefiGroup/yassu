@@ -57,7 +57,12 @@ export function WelcomeModal() {
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-2xl">Welcome to {brand.name}! 🎉</DialogTitle>
+              <DialogTitle className="text-2xl">
+                Welcome to {brand.name}! 🎉
+                {brand.id !== 'yassu' && (
+                  <span className="text-sm font-normal text-muted-foreground ml-2">(Powered by Yassu™)</span>
+                )}
+              </DialogTitle>
               <DialogDescription className="text-base">
                 {brand.tagline}
               </DialogDescription>
@@ -67,12 +72,12 @@ export function WelcomeModal() {
 
         <div className="space-y-6 py-4">
           <p className="text-muted-foreground">
-            {brand.name} helps you turn your startup ideas into reality by connecting you with
+            {brand.id !== 'yassu' ? 'Yassu' : brand.name} helps you turn your startup ideas into reality by connecting you with
             collaborators, advisors, and AI-powered business planning tools.
           </p>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">What you can do on {brand.name}:</h3>
+            <h3 className="font-semibold text-lg">What you can do on {brand.id !== 'yassu' ? 'Yassu' : brand.name}:</h3>
             
             <div className="space-y-3">
               <div className="flex gap-3">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,7 @@ interface Connection {
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const brand = useBranding();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -381,6 +383,9 @@ Looking forward to hearing from you!`;
         <h1 className="text-3xl font-bold text-foreground" data-testid="text-welcome" data-tour="dashboard-header">
           Welcome{isProfileIncomplete ? '' : ' back'}, {profile?.fullName?.split(' ')[0] || 'Founder'}!
         </h1>
+        {brand.id !== 'yassu' && (
+          <p className="text-sm text-muted-foreground mt-0.5">(Powered by Yassu™)</p>
+        )}
         <p className="text-muted-foreground mt-1">
           {isProfileIncomplete 
             ? 'Get started by completing your profile to connect with others.'
