@@ -99,7 +99,7 @@ export default function Foundry() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const brand = useBranding();
-  const foundryName = brand.id === 'bruin' ? 'Bruin Foundry' : 'Yassu Foundry';
+  const foundryName = brand.id === 'bruin' ? 'Bruin Entrepreneurs Foundry' : 'Yassu Foundry';
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
