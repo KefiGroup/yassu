@@ -103,7 +103,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">8. Children's Privacy</h2>
             <p>
-              Yassu is not intended for children under the age of 13. We do not knowingly collect personal information from children.
+              The Bruin Entrepreneurs Platform is not intended for children under the age of 13. We do not knowingly collect personal information from children.
             </p>
           </section>
 

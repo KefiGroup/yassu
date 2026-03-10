@@ -22,7 +22,7 @@ export function WelcomeModal() {
 
   useEffect(() => {
     // Show welcome modal if user hasn't seen it
-    const hasSeenWelcome = localStorage.getItem("yassu_has_seen_welcome");
+    const hasSeenWelcome = localStorage.getItem("bruin_has_seen_welcome");
     if (!hasSeenWelcome) {
       // Delay to ensure page is fully loaded
       setTimeout(() => setOpen(true), 500);
@@ -30,7 +30,7 @@ export function WelcomeModal() {
   }, []);
 
   const handleStartTour = () => {
-    localStorage.setItem("yassu_has_seen_welcome", "true");
+    localStorage.setItem("bruin_has_seen_welcome", "true");
     setOpen(false);
     // Start dashboard tour after a brief delay
     setTimeout(() => {
@@ -41,7 +41,7 @@ export function WelcomeModal() {
   };
 
   const handleSkip = () => {
-    localStorage.setItem("yassu_has_seen_welcome", "true");
+    localStorage.setItem("bruin_has_seen_welcome", "true");
     markTourCompleted("dashboard");
     setOpen(false);
   };
@@ -55,9 +55,9 @@ export function WelcomeModal() {
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-2xl">Welcome to Yassu! 🎉</DialogTitle>
+              <DialogTitle className="text-2xl">Welcome to Bruin Entrepreneurs! 🚀</DialogTitle>
               <DialogDescription className="text-base">
-                Where elite university talent builds together
+                UCLA's private AI-powered entrepreneurship platform
               </DialogDescription>
             </div>
           </div>
@@ -65,12 +65,11 @@ export function WelcomeModal() {
 
         <div className="space-y-6 py-4">
           <p className="text-muted-foreground">
-            Yassu helps you turn your startup ideas into reality by connecting you with
-            collaborators, advisors, and AI-powered business planning tools.
+            The Bruin Entrepreneurs platform helps you turn your startup ideas into reality by connecting you with fellow Bruins, advisors, and AI-powered business planning tools.
           </p>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">What you can do on Yassu:</h3>
+            <h3 className="font-semibold text-lg">What you can do on the platform:</h3>
             
             <div className="space-y-3">
               <div className="flex gap-3">

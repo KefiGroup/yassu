@@ -60,7 +60,7 @@ export default function ForgotPassword() {
       >
         <div className="text-center mb-8">
           <a href="/" className="inline-flex items-center justify-center">
-            <img src="/yassu-logo.png" alt="Yassu" className="h-28 w-auto" />
+            <img src="/bruin-logo.png" alt="Bruin Entrepreneurs" className="h-28 w-auto" />
           </a>
         </div>
 

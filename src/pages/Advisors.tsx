@@ -218,7 +218,7 @@ export default function Advisors() {
                         data-testid={`button-connect-advisor-${advisor.id}`}
                       >
                         <Users className="w-4 h-4 mr-2" />
-                        Connect to Yassu
+                        Join the Platform
                       </Button>
                     </CardContent>
                   </Card>

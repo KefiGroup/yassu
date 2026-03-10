@@ -12,11 +12,11 @@ const Footer = () => {
           className="flex flex-col md:flex-row items-center justify-between gap-6"
         >
           <div className="flex items-center">
-            <img src="/yassu-logo.png" alt="Yassu" className="h-20 w-auto" />
+            <img src="/bruin-logo.png" alt="Bruin Entrepreneurs" className="h-14 w-auto" />
           </div>
 
           <p className="text-muted-foreground text-sm text-center">
-            The LinkedIn × Notion × OpenAI for university founders
+            The private AI-powered entrepreneurship platform for UCLA Bruin Entrepreneurs
           </p>
 
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -33,7 +33,7 @@ const Footer = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-center text-muted-foreground/60 text-sm mt-8"
         >
-          © {new Date().getFullYear()} Yassu. All rights reserved.
+          © {new Date().getFullYear()} Bruin Entrepreneurs × Yassu. All rights reserved.
         </motion.p>
       </div>
     </footer>

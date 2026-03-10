@@ -133,7 +133,7 @@ const Auth = () => {
     } else {
       toast({
         title: 'Account created!',
-        description: 'Welcome to Yassu. Let\'s complete your profile first.',
+        description: 'Welcome to the Bruin Entrepreneurs Platform. Let\'s complete your profile first.',
       });
       navigate('/portal/profile?welcome=true');
     }
@@ -164,9 +164,9 @@ const Auth = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <a href="/" className="inline-flex items-center justify-center">
-            <img src="/yassu-logo.png" alt="Yassu" className="h-28 w-auto" />
+            <img src="/bruin-logo.png" alt="Bruin Entrepreneurs" className="h-20 w-auto" />
           </a>
-          <p className="text-muted-foreground mt-2">The New-Age Marketplace for University-Native Company Creation</p>
+          <p className="text-muted-foreground mt-2">The Private Entrepreneurship Platform for UCLA Bruin Entrepreneurs</p>
         </div>
 
         <Card className="glass-strong border-border/50">

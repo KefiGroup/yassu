@@ -19,7 +19,7 @@ const steps = [
   },
   {
     icon: UsersRound,
-    title: "Form Your Yassu Team",
+    title: "Form Your Bruin Team",
     description: "Build your founding team with complementary skills and shared vision.",
   },
   {
@@ -53,7 +53,7 @@ const HowItWorks = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            How <span className="text-gradient">Yassu</span> Works
+            How <span className="text-gradient">Bruin Entrepreneurs</span> Works
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             From idea to market launch, Yassu guides you through every step of building your university-native company.

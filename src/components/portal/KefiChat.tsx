@@ -337,7 +337,7 @@ export function KefiChat() {
                     ref={feedbackRef}
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
-                    placeholder="What would you like to see improved or added to Yassu?"
+                    placeholder="What would you like to see improved or added to the platform?"
                     className="flex-1 resize-none mb-4"
                     disabled={isSubmittingFeedback}
                     data-testid="textarea-kefi-feedback"

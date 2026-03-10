@@ -32,7 +32,7 @@ export const ONBOARDING_TOURS: Record<string, OnboardingTour> = {
       {
         element: "[data-tour='welcome']",
         popover: {
-          title: "👋 Welcome to Yassu!",
+          title: "👋 Welcome to Bruin Entrepreneurs!",
           description: "Let's take a quick tour to help you get started. You can skip this tour at any time.",
           side: "bottom",
         },

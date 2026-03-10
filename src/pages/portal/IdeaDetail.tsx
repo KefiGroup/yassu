@@ -2003,7 +2003,7 @@ export default function IdeaDetail() {
                             <div className="mt-8 pt-6 border-t">
                               <div className="flex items-center gap-2 mb-4">
                                 <Users className="w-5 h-5 text-primary" />
-                                <h4 className="font-semibold text-lg">Potential collaborators on Yassu</h4>
+                                <h4 className="font-semibold text-lg">Potential Bruin collaborators</h4>
                               </div>
                               
                               {loadingTeamMembers ? (

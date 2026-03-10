@@ -11,7 +11,7 @@ export default function TermsOfService() {
         
         <div className="prose prose-lg dark:prose-invert max-w-none space-y-8">
           <p>
-            Welcome to <strong>Yassu</strong> ("Yassu", "we", "our", or "us"). These Terms of Service ("Terms") govern your access to and use of the Yassu website, platform, and related services (collectively, the "Services").
+            Welcome to <strong>Bruin Entrepreneurs Platform</strong> ("Bruin Entrepreneurs Platform", "we", "our", or "us"). These Terms of Service ("Terms") govern your access to and use of the Bruin Entrepreneurs Platform website, platform, and related services (collectively, the "Services").
           </p>
           <p>
             By accessing or using Yassu, you agree to be bound by these Terms. If you do not agree, you must not use the Services.
@@ -20,7 +20,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">1. Eligibility</h2>
             <p>
-              Yassu is intended for users who are at least <strong>18 years old</strong>, or who have legal parental or guardian consent where required by law.
+              The Bruin Entrepreneurs Platform is intended for users who are at least <strong>18 years old</strong>, or who have legal parental or guardian consent where required by law.
             </p>
             <p>By using Yassu, you represent that you meet these requirements.</p>
           </section>
@@ -44,7 +44,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">3. User Content</h2>
             <p>
-              You retain ownership of all content you submit to Yassu, including profiles, ideas, messages, documents, and uploads ("User Content").
+              You retain ownership of all content you submit to the Bruin Entrepreneurs Platform, including profiles, ideas, messages, documents, and uploads ("User Content").
             </p>
             <p>
               By submitting User Content, you grant Yassu a <strong>non-exclusive, worldwide, royalty-free license</strong> to host, store, process, display, and use such content solely to operate, improve, and provide the Services.
@@ -105,7 +105,7 @@ export default function TermsOfService() {
 
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">8. Suspension and Termination</h2>
-            <p>We may suspend or terminate your access to Yassu at any time if:</p>
+            <p>We may suspend or terminate your access to the Bruin Entrepreneurs Platform at any time if:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>You violate these Terms</li>
               <li>Your conduct poses legal, security, or reputational risk</li>
@@ -124,7 +124,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">10. Disclaimer of Warranties</h2>
             <p>
-              Yassu is provided <strong>"as is" and "as available."</strong> We make no warranties of any kind, express or implied, regarding reliability, accuracy, or availability.
+              The Bruin Entrepreneurs Platform is provided <strong>"as is" and "as available."</strong> We make no warranties of any kind, express or implied, regarding reliability, accuracy, or availability.
             </p>
           </section>
 

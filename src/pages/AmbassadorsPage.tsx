@@ -221,7 +221,7 @@ export default function AmbassadorsPage() {
                         data-testid={`button-connect-ambassador-${ambassador.id}`}
                       >
                         <Users className="w-4 h-4 mr-2" />
-                        Connect to Yassu
+                        Join the Platform
                       </Button>
                     </CardContent>
                   </Card>

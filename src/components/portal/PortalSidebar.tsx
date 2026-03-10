@@ -81,9 +81,9 @@ export function PortalSidebar() {
       <SidebarHeader className="h-14 border-b border-sidebar-border px-3 flex items-center">
         <NavLink to="/portal" className="flex items-center">
           <img 
-            src="/yassu-logo.png" 
-            alt="Yassu" 
-            className={collapsed ? "h-10 w-auto" : "h-12 w-auto"}
+            src="/bruin-logo.png" 
+            alt="Bruin Entrepreneurs" 
+            className={collapsed ? "h-8 w-auto" : "h-10 w-auto"}
           />
         </NavLink>
       </SidebarHeader>
@@ -111,7 +111,7 @@ export function PortalSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
+          <SidebarGroupLabel>BE Platform</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {marketplaceNavItems.map((item) => (
@@ -202,7 +202,7 @@ export function PortalSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-2">
         {!collapsed && (
           <p className="text-xs text-muted-foreground text-center">
-            © 2024 Yassu
+            © 2025 Bruin Entrepreneurs
           </p>
         )}
       </SidebarFooter>

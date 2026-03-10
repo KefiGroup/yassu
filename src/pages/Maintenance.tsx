@@ -28,7 +28,7 @@ export default function Maintenance() {
             We're Building Something Amazing
           </h1>
           <p className="text-xl text-gray-600">
-            Yassu is getting better! We're adding exciting new AI-powered features.
+            Bruin Entrepreneurs Platform is getting better! We're adding exciting new AI-powered features.
           </p>
         </div>
 

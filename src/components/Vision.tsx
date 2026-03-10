@@ -50,7 +50,7 @@ const Vision = () => {
           >
             <Button variant="hero" size="xl" className="group" asChild data-testid="button-join-yassu-vision">
               <a href="/portal">
-                Join Yassu
+                Join the Platform
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </a>
             </Button>
