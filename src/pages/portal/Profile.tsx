@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { api } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +48,7 @@ interface University {
 
 export default function Profile() {
   const { user, profile, refreshProfile } = useAuth();
+  const brand = useBranding();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showWelcome, setShowWelcome] = useState(false);
@@ -337,7 +339,7 @@ export default function Profile() {
         >
           <Alert className="border-primary/20 bg-primary/5" data-testid="alert-welcome">
             <PartyPopper className="h-5 w-5 text-primary" />
-            <AlertTitle className="text-lg">Welcome to Yassu!</AlertTitle>
+            <AlertTitle className="text-lg">Welcome to {brand.name}!</AlertTitle>
             <AlertDescription>
               We're excited to have you join our community of university entrepreneurs. 
               Complete your profile below to connect with collaborators, advisors, and ambassadors who can help bring your ideas to life.
@@ -391,7 +393,7 @@ export default function Profile() {
                     {badges.map((badge) => (
                       <Badge key={badge.id} variant="secondary" className="gap-1">
                         <Award className="w-3 h-3" />
-                        {badge.badgeType === 'ambassador' ? 'Yassu Ambassador' : 'Yassu Advisor'}
+                        {badge.badgeType === 'ambassador' ? 'Ambassador' : 'Advisor'}
                       </Badge>
                     ))}
                   </div>

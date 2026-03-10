@@ -87,5 +87,6 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - **Architecture**: `src/lib/branding.ts` defines `BrandConfig` interface and brand configs; `src/contexts/BrandingContext.tsx` provides `useBranding()` hook; `BrandingProvider` wraps the router and applies CSS variable overrides via `document.documentElement.style.setProperty()`
   - **Branding Detection**: `window.location.pathname.startsWith('/bruin')` → Bruin config, otherwise → Yassu config. `BrowserRouter basename` is set accordingly so ALL `navigate()`, `<Link>`, and `<NavLink>` calls auto-prefix without per-component changes.
   - **Active Skins**: Yassu (default, purple `250 60% 65%` / coral `15 80% 75%`), Bruin Entrepreneurs (`/bruin`, UCLA blue `213 69% 38%` / gold `45 100% 51%`)
-  - **Branded Components**: Navbar, Hero, HowItWorks, Vision, Team, Footer, Auth, ForgotPassword, ResetPassword, PortalSidebar, PortalHeader (via navigate), usePageTitle
+  - **Branded Components**: Navbar, Hero, HowItWorks, Vision, Team, Footer, Auth, ForgotPassword, ResetPassword, PortalSidebar, PortalHeader (via navigate), usePageTitle, WelcomeModal, Profile (welcome alert), KefiChat (brand-neutral)
+  - **Inactivity Logout**: AuthContext uses `window.location.pathname` to detect `/bruin` prefix before redirecting to `/auth?reason=inactivity`, preserving the brand path
   - **Adding New Skins**: Add a new `BrandConfig` to `branding.ts`, update `getBrandByPath()`, set a new basename check in `App.tsx`

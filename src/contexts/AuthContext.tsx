@@ -150,9 +150,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRoles([]);
       setSessionTimeout(null);
       
-      // Redirect with reason if inactivity logout
       if (reason === 'inactivity') {
-        window.location.href = '/auth?reason=inactivity';
+        const prefix = /^\/bruin(\/|$)/.test(window.location.pathname) ? '/bruin' : '';
+        window.location.href = `${prefix}/auth?reason=inactivity`;
       }
     }
   };

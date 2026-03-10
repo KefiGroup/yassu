@@ -154,7 +154,7 @@ export default function UserProfile() {
                     {badges.map(badge => (
                       <Badge key={badge.id} variant="outline" className="gap-1" data-testid={`badge-awarded-${badge.badgeType}`}>
                         <Award className="w-3 h-3" />
-                        {badge.badgeType === 'ambassador' ? 'Yassu Ambassador' : 'Yassu Advisor'}
+                        {badge.badgeType === 'ambassador' ? 'Ambassador' : 'Advisor'}
                       </Badge>
                     ))}
                   </div>

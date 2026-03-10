@@ -25,7 +25,7 @@ interface Message {
 
 type ChatMode = 'select' | 'help' | 'feedback' | 'bug';
 
-const HELP_WELCOME_MESSAGE = `Hi! I'm Kefi, your Yassu assistant.
+const HELP_WELCOME_MESSAGE = `Hi! I'm Kefi, your startup assistant.
 
 I can help you with:
 - Posting and improving your startup ideas
@@ -37,7 +37,7 @@ Just type your question below!`;
 
 const FEEDBACK_WELCOME_MESSAGE = `We'd love to hear from you!
 
-Share your suggestions, feature requests, or any feedback to help us improve Yassu for all student founders.
+Share your suggestions, feature requests, or any feedback to help us improve the platform for all student founders.
 
 Type your feedback below and we'll make sure the team sees it.`;
 
@@ -360,7 +360,7 @@ export function KefiChat() {
                   <HelpCircle className="h-8 w-8 text-primary" />
                   <div className="text-center">
                     <div className="font-medium">Get Help</div>
-                    <div className="text-xs text-muted-foreground">Ask questions about using Yassu</div>
+                    <div className="text-xs text-muted-foreground">Ask questions about the platform</div>
                   </div>
                 </Button>
                 
@@ -469,7 +469,7 @@ export function KefiChat() {
                     ref={feedbackRef}
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
-                    placeholder="What would you like to see improved or added to Yassu?"
+                    placeholder="What would you like to see improved or added?"
                     className="flex-1 resize-none mb-3"
                     disabled={isSubmittingFeedback}
                     data-testid="textarea-kefi-feedback"
@@ -541,7 +541,7 @@ export function KefiChat() {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Thank You!</h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    Your feedback has been recorded. The Yassu team will review it to make the platform better for all student founders.
+                    Your feedback has been recorded. The team will review it to make the platform better for all student founders.
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -651,7 +651,7 @@ export function KefiChat() {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Bug Reported!</h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    Thank you for helping us improve Yassu! Our team will investigate this issue.
+                    Thank you for reporting this! Our team will investigate this issue.
                   </p>
                   <div className="flex gap-2">
                     <Button

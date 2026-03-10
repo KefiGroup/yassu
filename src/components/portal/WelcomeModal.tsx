@@ -15,9 +15,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sparkles, Users, FileText, TrendingUp, CheckCircle2 } from "lucide-react";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { useBranding } from "@/contexts/BrandingContext";
 
 export function WelcomeModal() {
   const [open, setOpen] = useState(false);
+  const brand = useBranding();
   const { startTour, shouldShowTour, markTourCompleted } = useOnboarding();
 
   useEffect(() => {
@@ -55,9 +57,9 @@ export function WelcomeModal() {
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-2xl">Welcome to Yassu! 🎉</DialogTitle>
+              <DialogTitle className="text-2xl">Welcome to {brand.name}! 🎉</DialogTitle>
               <DialogDescription className="text-base">
-                Where elite university talent builds together
+                {brand.tagline}
               </DialogDescription>
             </div>
           </div>
@@ -65,12 +67,12 @@ export function WelcomeModal() {
 
         <div className="space-y-6 py-4">
           <p className="text-muted-foreground">
-            Yassu helps you turn your startup ideas into reality by connecting you with
+            {brand.name} helps you turn your startup ideas into reality by connecting you with
             collaborators, advisors, and AI-powered business planning tools.
           </p>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">What you can do on Yassu:</h3>
+            <h3 className="font-semibold text-lg">What you can do on {brand.name}:</h3>
             
             <div className="space-y-3">
               <div className="flex gap-3">

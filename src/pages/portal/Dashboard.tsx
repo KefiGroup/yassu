@@ -203,7 +203,7 @@ export default function Dashboard() {
     
     const templates = {
       accepted: `Hi ${requesterName},\n\nWelcome to the team! I'm excited to have you join ${ideaTitle}. Let's connect soon to discuss next steps and how you can contribute.\n\nLooking forward to working together!`,
-      rejected: `Hi ${requesterName},\n\nThank you for your interest in ${ideaTitle}. After careful consideration, we've decided to move forward with other candidates whose skills more closely match our current needs.\n\nWe appreciate your enthusiasm and wish you the best in your future endeavors. Keep exploring other opportunities on Yassu!`,
+      rejected: `Hi ${requesterName},\n\nThank you for your interest in ${ideaTitle}. After careful consideration, we've decided to move forward with other candidates whose skills more closely match our current needs.\n\nWe appreciate your enthusiasm and wish you the best in your future endeavors. Keep exploring other opportunities on the platform!`,
       pending: `Hi ${requesterName},\n\nThank you for your interest in ${ideaTitle}. We're still reviewing applications and would like to take a bit more time to make our decision.\n\nWe'll be in touch soon with an update. Thanks for your patience!`
     };
     
@@ -318,7 +318,7 @@ Looking forward to hearing from you!`;
     find_advisors: 'Find Advisors and Collaborators',
     form_team: 'Form Team',
     build_mvp: 'Build MVP',
-    yassu_foundry: 'Yassu Foundry',
+    yassu_foundry: 'Foundry',
     launched: 'Launched',
   };
 
