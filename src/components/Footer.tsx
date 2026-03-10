@@ -38,6 +38,9 @@ const Footer = () => {
           className="text-center text-muted-foreground/60 text-sm mt-8"
         >
           © {new Date().getFullYear()} {brand.copyrightName}. All rights reserved.
+          {brand.id !== 'yassu' && (
+            <span className="block mt-1">Powered by <a href="https://yassu.ai" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors underline">Yassu</a></span>
+          )}
         </motion.p>
       </div>
     </footer>

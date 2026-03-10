@@ -349,12 +349,17 @@ const Auth = () => {
           </CardContent>
         </Card>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          By continuing, you agree to our{' '}
-          <a href={`${brand.basePath}/terms`} className="text-primary hover:underline">Terms of Service</a>
-          {' '}and{' '}
-          <a href={`${brand.basePath}/privacy`} className="text-primary hover:underline">Privacy Policy</a>
-        </p>
+        <div className="text-center text-sm text-muted-foreground mt-6 space-y-1">
+          <p>
+            By continuing, you agree to our{' '}
+            <a href={`${brand.basePath}/terms`} className="text-primary hover:underline">Terms of Service</a>
+            {' '}and{' '}
+            <a href={`${brand.basePath}/privacy`} className="text-primary hover:underline">Privacy Policy</a>
+          </p>
+          {brand.id !== 'yassu' && (
+            <p className="text-muted-foreground/60 text-xs">Powered by <a href="https://yassu.ai" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Yassu</a></p>
+          )}
+        </div>
       </motion.div>
     </div>
   );

@@ -226,9 +226,12 @@ export function PortalSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-2">
         {!collapsed && (
-          <p className="text-xs text-muted-foreground text-center">
-            © {new Date().getFullYear()} {brand.copyrightName}
-          </p>
+          <div className="text-xs text-muted-foreground text-center space-y-0.5">
+            <p>© {new Date().getFullYear()} {brand.copyrightName}</p>
+            {brand.id !== 'yassu' && (
+              <p className="text-muted-foreground/60">Powered by <a href="https://yassu.ai" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Yassu</a></p>
+            )}
+          </div>
         )}
       </SidebarFooter>
     </Sidebar>
