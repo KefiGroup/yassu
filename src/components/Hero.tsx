@@ -42,7 +42,11 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            {brand.description}
+            {brand.description.includes('™') ? (
+              <>
+                {brand.description.split('™')[0]}<sup className="text-[0.6em]">TM</sup>{brand.description.split('™')[1]}
+              </>
+            ) : brand.description}
           </motion.p>
 
           <motion.div

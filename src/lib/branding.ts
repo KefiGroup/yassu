@@ -75,7 +75,7 @@ export const BRUIN_BRAND: BrandConfig = {
   name: 'Bruin Entrepreneurs',
   tagline: 'Where Bruin Ideas Become Companies',
   subtitle: 'Where Bruin Ideas Become Companies',
-  description: 'The UCLA Bruin Entrepreneurs platform where university talent uses AI, shared structure, and collaboration to build real companies.',
+  description: 'The Yassu™ platform where UCLA Bruin Entrepreneurs uses AI, shared structure, and collaboration to build real companies.',
   logoPath: '/bruin-logo.png',
   contactEmail: 'hello@yassu.ai',
   copyrightName: 'Bruin Entrepreneurs',
