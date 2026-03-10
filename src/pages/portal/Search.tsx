@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search as SearchIcon, Lightbulb, Users, User } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
+import { useBranding } from '@/contexts/BrandingContext';
 
 interface IdeaResult {
   id: string;
@@ -29,6 +30,8 @@ interface UserResult {
 export default function Search() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const brand = useBranding();
+  const brandFilter = brand.id === 'yassu' ? '' : `&brand=${encodeURIComponent(brand.id)}`;
   const query = searchParams.get('q') || '';
   const [searchQuery, setSearchQuery] = useState(query);
   const [ideas, setIdeas] = useState<IdeaResult[]>([]);
@@ -46,7 +49,7 @@ export default function Search() {
     setLoading(true);
     try {
       const [ideasData, usersData] = await Promise.all([
-        apiRequest<IdeaResult[]>(`/ideas/search?q=${encodeURIComponent(q)}`).catch(() => []),
+        apiRequest<IdeaResult[]>(`/ideas/search?q=${encodeURIComponent(q)}${brandFilter}`).catch(() => []),
         apiRequest<UserResult[]>(`/users/search?q=${encodeURIComponent(q)}`).catch(() => []),
       ]);
       setIdeas(ideasData);

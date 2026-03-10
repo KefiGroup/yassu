@@ -135,6 +135,7 @@ declare module "express-session" {
     userId?: number;
     rememberMe?: boolean;
     lastActivity?: number;
+    brand?: string | null;
   }
 }
 
@@ -283,7 +284,7 @@ export function registerRoutes(app: Express): void {
 
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
-      const { email, password, fullName } = req.body;
+      const { email, password, fullName, brand } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
@@ -319,8 +320,9 @@ export function registerRoutes(app: Express): void {
         });
 
       req.session.userId = user.id;
-      req.session.rememberMe = false; // New accounts default to non-remember-me
+      req.session.rememberMe = false;
       req.session.lastActivity = Date.now();
+      req.session.brand = brand || null;
       
       // Explicitly save session before responding
       req.session.save((err) => {
@@ -362,8 +364,8 @@ export function registerRoutes(app: Express): void {
 
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      const { email, password, rememberMe } = req.body;
-      console.log(`[Login] Attempt for email: ${email}, rememberMe: ${rememberMe}`);
+      const { email, password, rememberMe, brand } = req.body;
+      console.log(`[Login] Attempt for email: ${email}, rememberMe: ${rememberMe}, brand: ${brand}`);
       
       const user = await storage.getUserByEmail(email);
       if (!user) {
@@ -393,6 +395,7 @@ export function registerRoutes(app: Express): void {
         req.session.userId = user.id;
         req.session.rememberMe = rememberMe || false;
         req.session.lastActivity = Date.now();
+        req.session.brand = brand || null;
         
         // Update cookie maxAge based on rememberMe
         if (req.session.cookie) {
@@ -617,6 +620,7 @@ export function registerRoutes(app: Express): void {
         roles: roles,
         sessionTimeout: sessionTimeout,
         lastActivity: req.session.lastActivity || Date.now(),
+        brand: req.session.brand || null,
       });
     } catch (error) {
       console.error("Auth check error:", error);
@@ -1054,9 +1058,14 @@ export function registerRoutes(app: Express): void {
 
   app.get("/api/ideas", async (req: Request, res: Response) => {
     try {
+      const sessionBrand = req.session?.brand || null;
+      const brandFilter = (req.query.brand as string | undefined) || sessionBrand;
       const ideas = await storage.getIdeasWithCreators();
+      const filtered = brandFilter
+        ? ideas.filter(idea => (idea as any).brand === brandFilter)
+        : ideas.filter(idea => !(idea as any).brand);
       const ideasWithIndustries = await Promise.all(
-        ideas.map(async (idea) => {
+        filtered.map(async (idea) => {
           const industries = await storage.getIdeaIndustries(idea.id);
           return { ...idea, industries };
         })
@@ -1093,12 +1102,17 @@ export function registerRoutes(app: Express): void {
   app.get("/api/ideas/search", async (req: Request, res: Response) => {
     try {
       const query = String(req.query.q || '').toLowerCase().trim();
+      const sessionBrand = req.session?.brand || null;
+      const brandFilter = (req.query.brand as string | undefined) || sessionBrand;
       if (!query) {
         return res.json([]);
       }
       
       const allIdeas = await storage.getIdeasWithCreators();
-      const results = allIdeas.filter(idea => 
+      const brandFiltered = brandFilter
+        ? allIdeas.filter(idea => (idea as any).brand === brandFilter)
+        : allIdeas.filter(idea => !(idea as any).brand);
+      const results = brandFiltered.filter(idea => 
         idea.title?.toLowerCase().includes(query) ||
         idea.problem?.toLowerCase().includes(query) ||
         idea.solution?.toLowerCase().includes(query)
@@ -1114,9 +1128,12 @@ export function registerRoutes(app: Express): void {
   // Get featured ideas for homepage (public)
   app.get("/api/ideas/featured", async (req: Request, res: Response) => {
     try {
+      const brandFilter = req.query.brand as string | undefined;
       const allIdeas = await storage.getIdeasWithCreators();
-      // Filter to only public and featured ideas
-      const featuredIdeas = allIdeas.filter(idea => idea.isPublic && idea.isFeatured);
+      const brandFiltered = brandFilter
+        ? allIdeas.filter(idea => (idea as any).brand === brandFilter)
+        : allIdeas.filter(idea => !(idea as any).brand);
+      const featuredIdeas = brandFiltered.filter(idea => idea.isPublic && idea.isFeatured);
       res.json(featuredIdeas);
     } catch (error) {
       console.error("Error fetching featured ideas:", error);
@@ -1507,6 +1524,7 @@ Return valid JSON:
         stage: "idea_posted" as const,
         isPublic: req.body.isPublic !== false,
         createdBy: req.session.userId,
+        brand: req.session.brand || null,
       };
       
       const idea = await storage.createIdea(ideaData);

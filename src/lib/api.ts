@@ -43,15 +43,15 @@ export const api = {
 
   // Resource-specific methods
   auth: {
-    register: (email: string, password: string, fullName: string) =>
+    register: (email: string, password: string, fullName: string, brand?: string | null) =>
       apiRequest<{ user: { id: number; email: string; fullName: string } }>("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password, fullName }),
+        body: JSON.stringify({ email, password, fullName, brand: brand || null }),
       }),
-    login: (email: string, password: string, rememberMe: boolean = false) =>
+    login: (email: string, password: string, rememberMe: boolean = false, brand?: string | null) =>
       apiRequest<{ user: { id: number; email: string; fullName: string }; sessionTimeout: number | null }>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password, rememberMe }),
+        body: JSON.stringify({ email, password, rememberMe, brand: brand || null }),
       }),
     logout: () =>
       apiRequest<{ success: boolean }>("/auth/logout", { method: "POST" }),
@@ -117,7 +117,7 @@ export const api = {
   },
 
   ideas: {
-    list: () => apiRequest<any[]>("/ideas"),
+    list: (brand?: string | null) => apiRequest<any[]>(brand ? `/ideas?brand=${encodeURIComponent(brand)}` : "/ideas"),
     get: (id: string) => apiRequest<any>(`/ideas/${id}`),
     create: (data: any) =>
       apiRequest<any>("/ideas", {

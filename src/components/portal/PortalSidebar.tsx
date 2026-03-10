@@ -41,8 +41,8 @@ const mainNavItems = [
   { title: 'My Teams', url: '/portal/teams', icon: Users },
 ];
 
-const marketplaceNavItems = [
-  { title: 'Ideas', url: '/portal/ideas', icon: Lightbulb },
+const getMarketplaceNavItems = (brandId?: string) => [
+  { title: brandId && brandId !== 'yassu' ? 'Marketplace' : 'Ideas', url: '/portal/ideas', icon: Lightbulb },
   { title: 'Collaborators', url: '/portal/collaborators', icon: Users },
   { title: 'Ambassadors', url: '/portal/ambassadors', icon: GraduationCap },
   { title: 'Advisors', url: '/portal/advisors', icon: Briefcase },
@@ -125,7 +125,7 @@ export function PortalSidebar() {
           <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {marketplaceNavItems.map((item) => (
+              {getMarketplaceNavItems(brand.id).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild

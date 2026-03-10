@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, apiRequest } from '@/lib/api';
+import { useBranding } from '@/contexts/BrandingContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,6 +63,8 @@ const stageColors: Record<string, string> = {
 
 export default function Ideas() {
   const navigate = useNavigate();
+  const brand = useBranding();
+  const brandFilter = brand.id === 'yassu' ? null : brand.id;
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
@@ -74,7 +77,7 @@ export default function Ideas() {
     async function fetchData() {
       try {
         const [ideasData, unisData, industriesData] = await Promise.all([
-          api.ideas.list(),
+          api.ideas.list(brandFilter),
           api.universities.list(),
           apiRequest<Industry[]>('/industries'),
         ]);
@@ -211,7 +214,7 @@ export default function Ideas() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Lightbulb className="w-6 h-6 text-primary" />
-            Ideas Marketplace
+            {brand.navLabels?.ideas || 'Ideas Marketplace'}
           </h1>
           <p className="text-muted-foreground">
             Discover startup ideas and join teams building the future

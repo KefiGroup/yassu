@@ -50,7 +50,8 @@ const IdeasSlider = () => {
   useEffect(() => {
     const fetchFeaturedIdeas = async () => {
       try {
-        const response = await fetch('/api/ideas/featured');
+        const brandParam = brand.id !== 'yassu' ? `?brand=${encodeURIComponent(brand.id)}` : '';
+        const response = await fetch(`/api/ideas/featured${brandParam}`);
         if (response.ok) {
           const data = await response.json();
           setFeaturedIdeas(data);

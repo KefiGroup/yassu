@@ -149,6 +149,7 @@ export const ideas = pgTable("ideas", {
   isFeatured: boolean("is_featured").default(false),
   mvpLink: text("mvp_link"),
   coverImage: text("cover_image"),
+  brand: text("brand"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api } from '@/lib/api';
+import { getBrandByPath } from '@/lib/branding';
 
 interface User {
   id: number;
@@ -116,9 +117,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchUserData();
   }, []);
 
+  const getCurrentBrand = (): string | null => {
+    const brand = getBrandByPath(window.location.pathname);
+    return brand.id === 'yassu' ? null : brand.id;
+  };
+
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const data = await api.auth.register(email, password, fullName);
+      const data = await api.auth.register(email, password, fullName, getCurrentBrand());
       setUser(data.user);
       await fetchUserData();
       return { error: null };
@@ -129,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
-      const data = await api.auth.login(email, password, rememberMe);
+      const data = await api.auth.login(email, password, rememberMe, getCurrentBrand());
       setUser(data.user);
       setSessionTimeout(data.sessionTimeout);
       setLastActivityTime(Date.now());

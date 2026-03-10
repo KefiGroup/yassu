@@ -17,6 +17,7 @@ declare module "express-session" {
     userId?: number;
     rememberMe?: boolean;
     lastActivity?: number;
+    brand?: string | null;
   }
 }
 
