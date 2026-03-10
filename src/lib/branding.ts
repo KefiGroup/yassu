@@ -107,7 +107,7 @@ export const BRUIN_BRAND: BrandConfig = {
 };
 
 export function getBrandByPath(pathname: string): BrandConfig {
-  if (/^\/bruin(\/|$)/.test(pathname)) {
+  if (/^\/bruin(\/|$)/i.test(pathname)) {
     return BRUIN_BRAND;
   }
   return YASSU_BRAND;

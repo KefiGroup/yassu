@@ -221,6 +221,14 @@ Return valid JSON only, e.g.: {"industries": ["Technology & Software", "AI & Mac
 }
 
 export function registerRoutes(app: Express): void {
+  app.use((req, res, next) => {
+    if (/^\/BRUIN/i.test(req.path) && req.path !== req.path.replace(/^\/BRUIN/i, '/bruin')) {
+      const normalized = req.originalUrl.replace(/^\/BRUIN/i, '/bruin');
+      return res.redirect(301, normalized);
+    }
+    next();
+  });
+
   // Initialize referrals table and seed industries
   initReferralsTable().catch(console.error);
   storage.seedIndustries().catch(console.error);

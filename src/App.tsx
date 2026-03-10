@@ -130,7 +130,7 @@ function AppRoutes() {
   );
 }
 
-const basename = /^\/bruin(\/|$)/.test(window.location.pathname) ? '/bruin' : '';
+const basename = /^\/bruin(\/|$)/i.test(window.location.pathname) ? '/bruin' : '';
 
 const App = () => {
   if (MAINTENANCE_MODE) {
