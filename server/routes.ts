@@ -879,6 +879,16 @@ export function registerRoutes(app: Express): void {
     }
   });
 
+  // Bruin team member names (shown in Bruin collaborators page)
+  const BRUIN_TEAM_MEMBERS = [
+    'bob battista',
+    'kloey battista',
+    'pauline teo',
+    'hae yung kim',
+    'ricardo',
+    'mark wilson',
+  ];
+
   // Collaborators marketplace - all users with filters
   app.get("/api/collaborators", async (req: Request, res: Response) => {
     try {
@@ -887,6 +897,8 @@ export function registerRoutes(app: Express): void {
       const interests = req.query.interests ? (Array.isArray(req.query.interests) ? req.query.interests : [req.query.interests]) as string[] : undefined;
       const clubType = req.query.clubType as string | undefined;
       const search = req.query.search as string | undefined;
+      const sessionBrand = req.session?.brand || null;
+      const brandFilter = (req.query.brand as string | undefined) || sessionBrand;
       
       const collaborators = await storage.getCollaborators({
         roles,
@@ -895,7 +907,16 @@ export function registerRoutes(app: Express): void {
         clubType,
         search,
       });
-      const enriched = await Promise.all(collaborators.map(async (collab) => {
+
+      let filtered = collaborators;
+      if (brandFilter === 'bruin') {
+        filtered = collaborators.filter(c => {
+          const name = (c.fullName || '').toLowerCase().trim();
+          return BRUIN_TEAM_MEMBERS.some(member => name.includes(member) || member.includes(name));
+        });
+      }
+
+      const enriched = await Promise.all(filtered.map(async (collab) => {
         const industries = await storage.getProfileIndustries(collab.id);
         return { ...collab, industries };
       }));
