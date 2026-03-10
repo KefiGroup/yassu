@@ -59,7 +59,9 @@ const HowItWorks = () => {
             <span className="text-gradient">{brand.navLabels.howItWorks}</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            From idea to market launch, {brand.name} guides you through every step of building your university-native company.
+            {brand.id === 'yassu'
+              ? 'From idea to market launch, Yassu guides you through every step of building your university-native company.'
+              : `From idea to market launch, Yassu guides ${brand.name} through every step of building their university-native company.`}
           </p>
         </motion.div>
 
