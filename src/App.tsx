@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BrandingProvider } from "@/contexts/BrandingContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InactivityWarning } from "@/components/InactivityWarning";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -73,6 +74,64 @@ function PageLoader() {
   );
 }
 
+function AppRoutes() {
+  return (
+    <>
+      <PageTitleUpdater />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/advisors" element={<Advisors />} />
+          <Route path="/ambassadors" element={<AmbassadorsPage />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/accept-connection" element={<AcceptConnection />} />
+          
+          <Route path="/portal" element={<PortalLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="ideas" element={<Ideas />} />
+            <Route path="ideas/new" element={<CreateIdea />} />
+            <Route path="ideas/wizard" element={<IdeaWizard />} />
+            <Route path="ideas/:id" element={<IdeaDetail />} />
+            <Route path="ideas/:id/edit" element={<CreateIdea />} />
+            <Route path="ideas/:id/smart-match" element={<SmartMatching />} />
+            <Route path="my-ideas" element={<MyIdeas />} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="teams" element={<Teams />} />
+            <Route path="teams/:id" element={<TeamDetail />} />
+            <Route path="workflows" element={<Workflows />} />
+            <Route path="workflows/:id" element={<WorkflowRun />} />
+            <Route path="resources" element={<Resources />} />
+            <Route path="messages" element={<Messages />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="ambassadors" element={<PortalAmbassadors />} />
+            <Route path="advisors" element={<PortalAdvisors />} />
+            <Route path="collaborators" element={<Collaborators />} />
+            <Route path="users/:userId" element={<UserProfile />} />
+            <Route path="referral-dashboard" element={<ReferralDashboard />} />
+            <Route path="pipeline" element={<Pipeline />} />
+            <Route path="mvp-builder" element={<MVPBuilder />} />
+            <Route path="pitch-deck" element={<PitchDeck />} />
+            <Route path="investor-pitch-deck" element={<InvestorPitchDeck />} />
+            <Route path="pitch-preparation" element={<PitchPreparation />} />
+            <Route path="foundry" element={<Foundry />} />
+            <Route path="admin" element={<Admin />} />
+            <Route path="search" element={<Search />} />
+          </Route>
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </>
+  );
+}
+
+const basename = /^\/bruin(\/|$)/.test(window.location.pathname) ? '/bruin' : '';
+
 const App = () => {
   if (MAINTENANCE_MODE) {
     return (
@@ -89,57 +148,10 @@ const App = () => {
           <Toaster />
           <Sonner />
           <InactivityWarning />
-          <BrowserRouter>
-            <PageTitleUpdater />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/advisors" element={<Advisors />} />
-                <Route path="/ambassadors" element={<AmbassadorsPage />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/accept-connection" element={<AcceptConnection />} />
-                
-                {/* Portal Routes */}
-                <Route path="/portal" element={<PortalLayout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="ideas" element={<Ideas />} />
-                  <Route path="ideas/new" element={<CreateIdea />} />
-                  <Route path="ideas/wizard" element={<IdeaWizard />} />
-                  <Route path="ideas/:id" element={<IdeaDetail />} />
-                  <Route path="ideas/:id/edit" element={<CreateIdea />} />
-                  <Route path="ideas/:id/smart-match" element={<SmartMatching />} />
-                  <Route path="my-ideas" element={<MyIdeas />} />
-                  <Route path="projects" element={<Projects />} />
-                  <Route path="teams" element={<Teams />} />
-                  <Route path="teams/:id" element={<TeamDetail />} />
-                  <Route path="workflows" element={<Workflows />} />
-                  <Route path="workflows/:id" element={<WorkflowRun />} />
-                  <Route path="resources" element={<Resources />} />
-                  <Route path="messages" element={<Messages />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="ambassadors" element={<PortalAmbassadors />} />
-                  <Route path="advisors" element={<PortalAdvisors />} />
-                  <Route path="collaborators" element={<Collaborators />} />
-                  <Route path="users/:userId" element={<UserProfile />} />
-                  <Route path="referral-dashboard" element={<ReferralDashboard />} />
-                  <Route path="pipeline" element={<Pipeline />} />
-                  <Route path="mvp-builder" element={<MVPBuilder />} />
-                  <Route path="pitch-deck" element={<PitchDeck />} />
-                  <Route path="investor-pitch-deck" element={<InvestorPitchDeck />} />
-                  <Route path="pitch-preparation" element={<PitchPreparation />} />
-                  <Route path="foundry" element={<Foundry />} />
-                  <Route path="admin" element={<Admin />} />
-                  <Route path="search" element={<Search />} />
-                </Route>
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+          <BrowserRouter basename={basename}>
+            <BrandingProvider>
+              <AppRoutes />
+            </BrandingProvider>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Linkedin } from "lucide-react";
+import { useBranding } from "@/contexts/BrandingContext";
 import ricardoImg from "../../attached_assets/image_1770467530921.png";
 
 const teamMembers = [
@@ -63,6 +64,8 @@ const teamMembers = [
 ];
 
 const Team = () => {
+  const brand = useBranding();
+
   return (
     <section id="team" className="py-24 relative scroll-mt-32">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/30 to-transparent" />
@@ -76,7 +79,7 @@ const Team = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Yassu <span className="text-gradient">Team</span>
+            {brand.name} <span className="text-gradient">Team</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto italic">
             "The strength of the team is each individual member. The strength of each member is the team."
@@ -153,8 +156,8 @@ const Team = () => {
           </h3>
           <p className="text-muted-foreground">
             Contact us at{" "}
-            <a href="mailto:hello@yassu.ai" className="text-primary hover:underline">
-              hello@yassu.ai
+            <a href={`mailto:${brand.contactEmail}`} className="text-primary hover:underline">
+              {brand.contactEmail}
             </a>
           </p>
         </motion.div>

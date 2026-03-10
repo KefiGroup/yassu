@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
@@ -68,6 +69,7 @@ export function PortalSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const { hasRole, user } = useAuth();
+  const brand = useBranding();
   const collapsed = state === 'collapsed';
 
   const { data: unreadData } = useQuery<{ unreadCount: number }>({
@@ -90,8 +92,8 @@ export function PortalSidebar() {
       <SidebarHeader className="h-14 border-b border-sidebar-border px-3 flex items-center">
         <NavLink to="/portal" className="flex items-center">
           <img 
-            src="/yassu-logo.png" 
-            alt="Yassu" 
+            src={brand.logoPath} 
+            alt={brand.name} 
             className={collapsed ? "h-10 w-auto" : "h-12 w-auto"}
           />
         </NavLink>
@@ -225,7 +227,7 @@ export function PortalSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-2">
         {!collapsed && (
           <p className="text-xs text-muted-foreground text-center">
-            © 2024 Yassu
+            © {new Date().getFullYear()} {brand.copyrightName}
           </p>
         )}
       </SidebarFooter>

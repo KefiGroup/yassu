@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Rocket, Lock, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { useBranding } from '@/contexts/BrandingContext';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/api';
 
 const passwordSchema = z.string().min(8, 'Password must be at least 8 characters');
 
 export default function ResetPassword() {
+  const brand = useBranding();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -97,8 +99,8 @@ export default function ResetPassword() {
         className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center justify-center">
-            <img src="/yassu-logo.png" alt="Yassu" className="h-28 w-auto" />
+          <a href={`${brand.basePath}/`} className="inline-flex items-center justify-center">
+            <img src={brand.logoPath} alt={brand.name} className="h-28 w-auto" />
           </a>
         </div>
 
@@ -126,14 +128,14 @@ export default function ResetPassword() {
                 </div>
                 <p className="text-muted-foreground">{error}</p>
                 <a 
-                  href="/forgot-password" 
+                  href={`${brand.basePath}/forgot-password`} 
                   className="inline-flex items-center gap-2 text-primary hover:underline"
                 >
                   Request New Reset Link
                 </a>
                 <div className="pt-4">
                   <a 
-                    href="/auth" 
+                    href={`${brand.basePath}/auth`} 
                     className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
                   >
                     <ArrowLeft className="w-4 h-4" />
@@ -207,7 +209,7 @@ export default function ResetPassword() {
 
                 <div className="text-center">
                   <a 
-                    href="/auth" 
+                    href={`${brand.basePath}/auth`} 
                     className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
                   >
                     <ArrowLeft className="w-4 h-4" />

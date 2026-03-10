@@ -83,3 +83,9 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
 - **driver.js**: (Presumed for guided tours or feature introductions based on recent additions).
 - **dotenv**: For managing environment variables.
 - **Google Analytics**: Tracking via gtag.js (Measurement ID: G-T0ELVMWHE7) loaded in index.html.
+- **White-Label Skin System**: URL-based branding system enabling multiple branded experiences from the same codebase. Uses React Router `basename` for automatic URL prefixing.
+  - **Architecture**: `src/lib/branding.ts` defines `BrandConfig` interface and brand configs; `src/contexts/BrandingContext.tsx` provides `useBranding()` hook; `BrandingProvider` wraps the router and applies CSS variable overrides via `document.documentElement.style.setProperty()`
+  - **Branding Detection**: `window.location.pathname.startsWith('/bruin')` → Bruin config, otherwise → Yassu config. `BrowserRouter basename` is set accordingly so ALL `navigate()`, `<Link>`, and `<NavLink>` calls auto-prefix without per-component changes.
+  - **Active Skins**: Yassu (default, purple `250 60% 65%` / coral `15 80% 75%`), Bruin Entrepreneurs (`/bruin`, UCLA blue `213 69% 38%` / gold `45 100% 51%`)
+  - **Branded Components**: Navbar, Hero, HowItWorks, Vision, Team, Footer, Auth, ForgotPassword, ResetPassword, PortalSidebar, PortalHeader (via navigate), usePageTitle
+  - **Adding New Skins**: Add a new `BrandConfig` to `branding.ts`, update `getBrandByPath()`, set a new basename check in `App.tsx`

@@ -1,11 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useBranding } from "@/contexts/BrandingContext";
 
 const Vision = () => {
+  const brand = useBranding();
+  const base = brand.basePath;
+
   return (
     <section className="py-32 relative overflow-hidden">
-      {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-pink-200/5 to-transparent" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-gradient-to-r from-primary/10 via-pink-300/10 to-accent/10 rounded-full blur-3xl opacity-50" />
 
@@ -37,7 +40,7 @@ const Vision = () => {
             <span className="text-gradient">"</span>
             The most capable entrepreneurial talent lives inside universities.{" "}
             <span className="text-gradient">AI has equalized the starting line.</span>{" "}
-            Yassu equalizes access to process.
+            {brand.visionQuote}
             <span className="text-gradient">"</span>
           </motion.blockquote>
 
@@ -49,8 +52,8 @@ const Vision = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Button variant="hero" size="xl" className="group" asChild data-testid="button-join-yassu-vision">
-              <a href="/portal">
-                Join Yassu
+              <a href={`${base}/portal`}>
+                {brand.joinButtonText}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </a>
             </Button>

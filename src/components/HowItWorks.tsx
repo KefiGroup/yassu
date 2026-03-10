@@ -1,45 +1,48 @@
 import { motion } from "framer-motion";
 import { Lightbulb, FileText, Users, UsersRound, Wrench, Presentation, TrendingUp } from "lucide-react";
-
-const steps = [
-  {
-    icon: Lightbulb,
-    title: "Post an Idea (Yassu!)",
-    description: "Explain what your idea is and what problem it solves.",
-  },
-  {
-    icon: FileText,
-    title: "Generate Business Plan",
-    description: "Use the Yassu Agent to create a comprehensive business plan with market analysis and strategy.",
-  },
-  {
-    icon: Users,
-    title: "Find Advisors & Ambassadors",
-    description: "Yassu will find matching Advisors and Ambassadors for your team invites.",
-  },
-  {
-    icon: UsersRound,
-    title: "Form Your Yassu Team",
-    description: "Build your founding team with complementary skills and shared vision.",
-  },
-  {
-    icon: Wrench,
-    title: "Work on MVP",
-    description: "Develop your minimum viable product with guidance from your team and advisors.",
-  },
-  {
-    icon: Presentation,
-    title: "Present in Yassu Foundry",
-    description: "Showcase your progress and get feedback from the Yassu community.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Seek Funding / Market Launch",
-    description: "Take your company to market or pursue funding opportunities.",
-  },
-];
+import { useBranding } from "@/contexts/BrandingContext";
 
 const HowItWorks = () => {
+  const brand = useBranding();
+
+  const steps = [
+    {
+      icon: Lightbulb,
+      title: brand.howItWorksSteps.postIdea,
+      description: "Explain what your idea is and what problem it solves.",
+    },
+    {
+      icon: FileText,
+      title: "Generate Business Plan",
+      description: brand.howItWorksSteps.generatePlan,
+    },
+    {
+      icon: Users,
+      title: "Find Advisors & Ambassadors",
+      description: brand.howItWorksSteps.findAdvisors,
+    },
+    {
+      icon: UsersRound,
+      title: brand.howItWorksSteps.formTeam,
+      description: "Build your founding team with complementary skills and shared vision.",
+    },
+    {
+      icon: Wrench,
+      title: "Work on MVP",
+      description: "Develop your minimum viable product with guidance from your team and advisors.",
+    },
+    {
+      icon: Presentation,
+      title: brand.howItWorksSteps.presentFoundry,
+      description: `Showcase your progress and get feedback from the ${brand.name} community.`,
+    },
+    {
+      icon: TrendingUp,
+      title: "Seek Funding / Market Launch",
+      description: "Take your company to market or pursue funding opportunities.",
+    },
+  ];
+
   return (
     <section id="how-it-works" className="py-24 relative scroll-mt-24">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/30 to-transparent" />
@@ -53,10 +56,10 @@ const HowItWorks = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            How <span className="text-gradient">Yassu</span> Works
+            How <span className="text-gradient">{brand.name}</span> Works
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            From idea to market launch, Yassu guides you through every step of building your university-native company.
+            From idea to market launch, {brand.name} guides you through every step of building your university-native company.
           </p>
         </motion.div>
 

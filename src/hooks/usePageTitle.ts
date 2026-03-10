@@ -1,67 +1,69 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { getBrandByPath } from '@/lib/branding';
 
 const PAGE_TITLES: Record<string, string> = {
-  '/': 'Yassu - Where Ideas Meet Builders',
-  '/auth': 'Sign In | Yassu',
-  '/forgot-password': 'Forgot Password | Yassu',
-  '/reset-password': 'Reset Password | Yassu',
-  '/advisors': 'Become an Advisor | Yassu',
-  '/ambassadors': 'Become an Ambassador | Yassu',
-  '/terms': 'Terms of Service | Yassu',
-  '/privacy': 'Privacy Policy | Yassu',
-  '/accept-connection': 'Accept Connection | Yassu',
-  '/portal': 'Dashboard | Yassu',
-  '/portal/ideas': 'Ideas Marketplace | Yassu',
-  '/portal/ideas/new': 'Post an Idea | Yassu',
-  '/portal/ideas/wizard': 'Idea Wizard | Yassu',
-  '/portal/my-ideas': 'My Ideas | Yassu',
-  '/portal/projects': 'Projects | Yassu',
-  '/portal/teams': 'Teams | Yassu',
-  '/portal/workflows': 'Workflows | Yassu',
-  '/portal/resources': 'Startup Resources | Yassu',
-  '/portal/messages': 'Messages | Yassu',
-  '/portal/profile': 'My Profile | Yassu',
-  '/portal/settings': 'Settings | Yassu',
-  '/portal/ambassadors': 'Ambassador Network | Yassu',
-  '/portal/advisors': 'Advisor Network | Yassu',
-  '/portal/collaborators': 'Collaborators | Yassu',
-  '/portal/referral-dashboard': 'Referral Dashboard | Yassu',
-  '/portal/pipeline': 'Pipeline | Yassu',
-  '/portal/mvp-builder': 'MVP Builder | Yassu',
-  '/portal/pitch-deck': 'Pitch Deck | Yassu',
-  '/portal/investor-pitch-deck': 'Investor Pitch Deck | Yassu',
-  '/portal/pitch-preparation': 'Pitch Preparation | Yassu',
-  '/portal/foundry': 'Yassu Foundry | Yassu',
-  '/portal/admin': 'Admin Dashboard | Yassu',
-  '/portal/search': 'Search | Yassu',
+  '/': '{brand} - Where Ideas Meet Builders',
+  '/auth': 'Sign In | {brand}',
+  '/forgot-password': 'Forgot Password | {brand}',
+  '/reset-password': 'Reset Password | {brand}',
+  '/advisors': 'Become an Advisor | {brand}',
+  '/ambassadors': 'Become an Ambassador | {brand}',
+  '/terms': 'Terms of Service | {brand}',
+  '/privacy': 'Privacy Policy | {brand}',
+  '/accept-connection': 'Accept Connection | {brand}',
+  '/portal': 'Dashboard | {brand}',
+  '/portal/ideas': 'Ideas Marketplace | {brand}',
+  '/portal/ideas/new': 'Post an Idea | {brand}',
+  '/portal/ideas/wizard': 'Idea Wizard | {brand}',
+  '/portal/my-ideas': 'My Ideas | {brand}',
+  '/portal/projects': 'Projects | {brand}',
+  '/portal/teams': 'Teams | {brand}',
+  '/portal/workflows': 'Workflows | {brand}',
+  '/portal/resources': 'Startup Resources | {brand}',
+  '/portal/messages': 'Messages | {brand}',
+  '/portal/profile': 'My Profile | {brand}',
+  '/portal/settings': 'Settings | {brand}',
+  '/portal/ambassadors': 'Ambassador Network | {brand}',
+  '/portal/advisors': 'Advisor Network | {brand}',
+  '/portal/collaborators': 'Collaborators | {brand}',
+  '/portal/referral-dashboard': 'Referral Dashboard | {brand}',
+  '/portal/pipeline': 'Pipeline | {brand}',
+  '/portal/mvp-builder': 'MVP Builder | {brand}',
+  '/portal/pitch-deck': 'Pitch Deck | {brand}',
+  '/portal/investor-pitch-deck': 'Investor Pitch Deck | {brand}',
+  '/portal/pitch-preparation': 'Pitch Preparation | {brand}',
+  '/portal/foundry': 'Foundry | {brand}',
+  '/portal/admin': 'Admin Dashboard | {brand}',
+  '/portal/search': 'Search | {brand}',
 };
 
 const DYNAMIC_PATTERNS: Array<{ pattern: RegExp; title: string }> = [
-  { pattern: /^\/portal\/ideas\/[^/]+\/edit$/, title: 'Edit Idea | Yassu' },
-  { pattern: /^\/portal\/ideas\/[^/]+\/smart-match$/, title: 'Smart Matching | Yassu' },
-  { pattern: /^\/portal\/ideas\/[^/]+$/, title: 'Idea Details | Yassu' },
-  { pattern: /^\/portal\/teams\/[^/]+$/, title: 'Team Details | Yassu' },
-  { pattern: /^\/portal\/workflows\/[^/]+$/, title: 'Workflow Details | Yassu' },
-  { pattern: /^\/portal\/users\/[^/]+$/, title: 'User Profile | Yassu' },
+  { pattern: /^\/portal\/ideas\/[^/]+\/edit$/, title: 'Edit Idea | {brand}' },
+  { pattern: /^\/portal\/ideas\/[^/]+\/smart-match$/, title: 'Smart Matching | {brand}' },
+  { pattern: /^\/portal\/ideas\/[^/]+$/, title: 'Idea Details | {brand}' },
+  { pattern: /^\/portal\/teams\/[^/]+$/, title: 'Team Details | {brand}' },
+  { pattern: /^\/portal\/workflows\/[^/]+$/, title: 'Workflow Details | {brand}' },
+  { pattern: /^\/portal\/users\/[^/]+$/, title: 'User Profile | {brand}' },
 ];
 
-function getTitle(pathname: string): string {
+function getTitle(pathname: string, brandName: string): string {
   const staticTitle = PAGE_TITLES[pathname];
-  if (staticTitle) return staticTitle;
+  if (staticTitle) return staticTitle.replace(/\{brand\}/g, brandName);
 
   for (const { pattern, title } of DYNAMIC_PATTERNS) {
-    if (pattern.test(pathname)) return title;
+    if (pattern.test(pathname)) return title.replace(/\{brand\}/g, brandName);
   }
 
-  return 'Page Not Found | Yassu';
+  return `Page Not Found | ${brandName}`;
 }
 
 export function usePageTitle() {
   const location = useLocation();
+  const brand = getBrandByPath(window.location.pathname);
 
   useEffect(() => {
-    const title = getTitle(location.pathname);
+    const title = getTitle(location.pathname, brand.name);
     document.title = title;
-  }, [location.pathname]);
+  }, [location.pathname, brand.name]);
 }

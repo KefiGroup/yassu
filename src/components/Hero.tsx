@@ -2,11 +2,13 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useBranding } from "@/contexts/BrandingContext";
 
 const Hero = () => {
+  const brand = useBranding();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32">
-      {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-pink-300/15 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
@@ -21,7 +23,7 @@ const Hero = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8"
           >
             <Building2 className="w-4 h-4 text-accent" />
-            <span className="text-sm text-muted-foreground">The New-Age Marketplace for University-Native Company Creation</span>
+            <span className="text-sm text-muted-foreground">{brand.tagline}</span>
           </motion.div>
 
           <motion.h1
@@ -40,8 +42,7 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Yassu is the national marketplace where university-native talent uses AI, shared structure, 
-            and cross-campus collaboration to build real companies, before capital decides who matters.
+            {brand.description}
           </motion.p>
 
           <motion.div
@@ -52,7 +53,7 @@ const Hero = () => {
           >
             <Button variant="hero" size="xl" className="group" asChild data-testid="button-join-yassu">
               <Link to="/portal">
-                Join Yassu
+                {brand.joinButtonText}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
@@ -79,7 +80,7 @@ const Hero = () => {
           >
             <p className="text-sm">Connecting students across</p>
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-              {['UCLA', 'MIT', 'Stanford', 'Harvard', 'Caltech', 'Northwestern'].map((uni, i) => (
+              {brand.universities.map((uni, i) => (
                 <motion.span
                   key={uni}
                   initial={{ opacity: 0, y: 10 }}

@@ -5,11 +5,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Rocket, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useBranding } from '@/contexts/BrandingContext';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 
 export default function ForgotPassword() {
+  const brand = useBranding();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -59,8 +61,8 @@ export default function ForgotPassword() {
         className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center justify-center">
-            <img src="/yassu-logo.png" alt="Yassu" className="h-28 w-auto" />
+          <a href={`${brand.basePath}/`} className="inline-flex items-center justify-center">
+            <img src={brand.logoPath} alt={brand.name} className="h-28 w-auto" />
           </a>
         </div>
 
@@ -88,7 +90,7 @@ export default function ForgotPassword() {
                   Didn't receive the email? Check your spam folder or try again in a few minutes.
                 </p>
                 <a 
-                  href="/auth" 
+                  href={`${brand.basePath}/auth`} 
                   className="inline-flex items-center gap-2 text-primary hover:underline"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -127,7 +129,7 @@ export default function ForgotPassword() {
 
                 <div className="text-center">
                   <a 
-                    href="/auth" 
+                    href={`${brand.basePath}/auth`} 
                     className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
                   >
                     <ArrowLeft className="w-4 h-4" />

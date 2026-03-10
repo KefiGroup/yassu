@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 
 const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
+  const brand = useBranding();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -142,7 +144,7 @@ const Auth = () => {
       trackEvent('sign_up', { method: 'email' });
       toast({
         title: 'Account created!',
-        description: 'Welcome to Yassu. Let\'s complete your profile first.',
+        description: `Welcome to ${brand.name}. Let's complete your profile first.`,
       });
       navigate('/portal/profile?welcome=true');
     }
@@ -172,10 +174,10 @@ const Auth = () => {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center justify-center">
-            <img src="/yassu-logo.png" alt="Yassu" className="h-28 w-auto" />
+          <a href={`${brand.basePath}/`} className="inline-flex items-center justify-center">
+            <img src={brand.logoPath} alt={brand.name} className="h-28 w-auto" />
           </a>
-          <p className="text-muted-foreground mt-2">The New-Age Marketplace for University-Native Company Creation</p>
+          <p className="text-muted-foreground mt-2">{brand.tagline}</p>
         </div>
 
         {logoutReason === 'inactivity' && (
@@ -266,7 +268,7 @@ const Auth = () => {
 
                   <div className="text-center mt-4">
                     <a 
-                      href="/forgot-password" 
+                      href={`${brand.basePath}/forgot-password`} 
                       className="text-sm text-primary hover:underline"
                       data-testid="link-forgot-password"
                     >
@@ -349,9 +351,9 @@ const Auth = () => {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           By continuing, you agree to our{' '}
-          <a href="/terms" className="text-primary hover:underline">Terms of Service</a>
+          <a href={`${brand.basePath}/terms`} className="text-primary hover:underline">Terms of Service</a>
           {' '}and{' '}
-          <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>
+          <a href={`${brand.basePath}/privacy`} className="text-primary hover:underline">Privacy Policy</a>
         </p>
       </motion.div>
     </div>
