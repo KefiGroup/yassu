@@ -51,6 +51,8 @@ export interface BrandConfig {
   };
   visionQuote: string;
   joinButtonText: string;
+  defaultUniversityId?: string;
+  defaultClubType?: string;
 }
 
 export const YASSU_BRAND: BrandConfig = {
@@ -169,6 +171,8 @@ export const BRUIN_BRAND: BrandConfig = {
   },
   visionQuote: 'Bruin Entrepreneurs equalizes access to process.',
   joinButtonText: 'Join Now',
+  defaultUniversityId: '339c9b84-471c-4cc6-9c6a-4b007d03c441',
+  defaultClubType: 'entrepreneurship',
 };
 
 export function getBrandByPath(pathname: string): BrandConfig {

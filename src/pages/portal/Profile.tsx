@@ -146,15 +146,14 @@ export default function Profile() {
         bio: profile.bio || '',
         major: profile.major || '',
         graduationYear: profile.graduationYear?.toString() || '',
-        universityId: hasOtherUniversity ? 'other' : (profile.universityId || ''),
+        universityId: brand.defaultUniversityId || (hasOtherUniversity ? 'other' : (profile.universityId || '')),
         otherUniversity: profile.otherUniversity || '',
         availability: profile.availability || '',
         linkedinUrl: profile.linkedinUrl || '',
         skills: profile.skills || [],
         interests: profile.interests || [],
-        clubType: isOtherClub ? 'other' : clubValue,
+        clubType: brand.defaultClubType || (isOtherClub ? 'other' : clubValue),
         otherClubType: isOtherClub ? clubValue.replace('Other: ', '') : '',
-        // Enhanced Profile 2.0 fields
         headline: (profile as any).headline || '',
         portfolioUrl: profile.portfolioUrl || '',
         githubUrl: profile.githubUrl || ''
@@ -486,23 +485,32 @@ export default function Profile() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="university">University</Label>
-                <Select
-                  value={formData.universityId}
-                  onValueChange={(value) => setFormData({ ...formData, universityId: value, otherUniversity: value === 'other' ? formData.otherUniversity : '' })}
-                >
-                  <SelectTrigger data-testid="select-university">
-                    <SelectValue placeholder="Select university" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" side="bottom" className="max-h-60">
-                    {universities.map((uni) => (
-                      <SelectItem key={uni.id} value={uni.id}>
-                        {uni.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="other">Other (Not Listed)</SelectItem>
-                  </SelectContent>
-                </Select>
-                {formData.universityId === 'other' && (
+                {brand.defaultUniversityId ? (
+                  <Input
+                    value={universities.find(u => u.id === brand.defaultUniversityId)?.name || 'University of California, Los Angeles'}
+                    disabled
+                    className="bg-muted cursor-not-allowed"
+                    data-testid="input-university-locked"
+                  />
+                ) : (
+                  <Select
+                    value={formData.universityId}
+                    onValueChange={(value) => setFormData({ ...formData, universityId: value, otherUniversity: value === 'other' ? formData.otherUniversity : '' })}
+                  >
+                    <SelectTrigger data-testid="select-university">
+                      <SelectValue placeholder="Select university" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" side="bottom" className="max-h-60">
+                      {universities.map((uni) => (
+                        <SelectItem key={uni.id} value={uni.id}>
+                          {uni.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="other">Other (Not Listed)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                {!brand.defaultUniversityId && formData.universityId === 'other' && (
                   <Input
                     id="otherUniversity"
                     value={formData.otherUniversity}
@@ -560,38 +568,49 @@ export default function Profile() {
 
             <div className="space-y-2">
               <Label htmlFor="clubType">Club Affiliation</Label>
-              <Select
-                value={formData.clubType}
-                onValueChange={(value) => setFormData({ ...formData, clubType: value, otherClubType: value === 'other' ? formData.otherClubType : '' })}
-              >
-                <SelectTrigger data-testid="select-club-type">
-                  <SelectValue placeholder="Select your club affiliation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ai-data-science">AI / Data Science Clubs</SelectItem>
-                  <SelectItem value="business-school">Business School Associations</SelectItem>
-                  <SelectItem value="computer-science">Computer Science Clubs</SelectItem>
-                  <SelectItem value="consulting">Consulting Clubs</SelectItem>
-                  <SelectItem value="design-ux">Design / UX Clubs</SelectItem>
-                  <SelectItem value="engineering">Engineering Societies</SelectItem>
-                  <SelectItem value="entrepreneurship">Entrepreneurship Clubs</SelectItem>
-                  <SelectItem value="innovation-incubator">Innovation / Incubator Clubs</SelectItem>
-                  <SelectItem value="product-management">Product Management Clubs</SelectItem>
-                  <SelectItem value="startup-founder">Startup / Founder Clubs</SelectItem>
-                  <SelectItem value="venture-capital">Venture Capital Clubs</SelectItem>
-                  <SelectItem value="other">Others (specify)</SelectItem>
-                  <SelectItem value="none">None</SelectItem>
-                </SelectContent>
-              </Select>
-              {formData.clubType === 'other' && (
+              {brand.defaultClubType ? (
                 <Input
-                  id="otherClubType"
-                  value={formData.otherClubType}
-                  onChange={(e) => setFormData({ ...formData, otherClubType: e.target.value })}
-                  placeholder="Enter your club name"
-                  className="mt-2"
-                  data-testid="input-other-club-type"
+                  value="Entrepreneurship Clubs"
+                  disabled
+                  className="bg-muted cursor-not-allowed"
+                  data-testid="input-club-type-locked"
                 />
+              ) : (
+                <>
+                  <Select
+                    value={formData.clubType}
+                    onValueChange={(value) => setFormData({ ...formData, clubType: value, otherClubType: value === 'other' ? formData.otherClubType : '' })}
+                  >
+                    <SelectTrigger data-testid="select-club-type">
+                      <SelectValue placeholder="Select your club affiliation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ai-data-science">AI / Data Science Clubs</SelectItem>
+                      <SelectItem value="business-school">Business School Associations</SelectItem>
+                      <SelectItem value="computer-science">Computer Science Clubs</SelectItem>
+                      <SelectItem value="consulting">Consulting Clubs</SelectItem>
+                      <SelectItem value="design-ux">Design / UX Clubs</SelectItem>
+                      <SelectItem value="engineering">Engineering Societies</SelectItem>
+                      <SelectItem value="entrepreneurship">Entrepreneurship Clubs</SelectItem>
+                      <SelectItem value="innovation-incubator">Innovation / Incubator Clubs</SelectItem>
+                      <SelectItem value="product-management">Product Management Clubs</SelectItem>
+                      <SelectItem value="startup-founder">Startup / Founder Clubs</SelectItem>
+                      <SelectItem value="venture-capital">Venture Capital Clubs</SelectItem>
+                      <SelectItem value="other">Others (specify)</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.clubType === 'other' && (
+                    <Input
+                      id="otherClubType"
+                      value={formData.otherClubType}
+                      onChange={(e) => setFormData({ ...formData, otherClubType: e.target.value })}
+                      placeholder="Enter your club name"
+                      className="mt-2"
+                      data-testid="input-other-club-type"
+                    />
+                  )}
+                </>
               )}
             </div>
 
