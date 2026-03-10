@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBranding } from "@/contexts/BrandingContext";
 import { apiRequest } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,8 @@ interface UserIdea {
 export default function Foundry() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const brand = useBranding();
+  const foundryName = brand.id === 'yassu' ? 'Yassu Foundry' : `${brand.name} Foundry`;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -454,7 +457,7 @@ export default function Foundry() {
             <Rocket className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Yassu Foundry</h1>
+            <h1 className="text-2xl font-bold">{foundryName}</h1>
             <p className="text-muted-foreground">Monthly roadshows, workshops, and networking events</p>
           </div>
         </div>
@@ -880,7 +883,7 @@ export default function Foundry() {
                   Request a Roadshow Slot
                 </CardTitle>
                 <CardDescription>
-                  Present your startup idea at a monthly Yassu Foundry roadshow event.
+                  Present your startup idea at a monthly {foundryName} roadshow event.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
