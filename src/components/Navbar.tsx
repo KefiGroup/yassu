@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +9,15 @@ const Navbar = () => {
   const { user, signOut, loading } = useAuth();
   const brand = useBranding();
   const base = brand.basePath;
+
+  const handleHashClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
+    const el = document.getElementById(hash);
+    if (el) {
+      e.preventDefault();
+      el.scrollIntoView({ behavior: 'smooth' });
+      window.history.replaceState(null, '', `${base}/#${hash}`);
+    }
+  }, [base]);
   
   return (
     <motion.nav
@@ -22,14 +32,14 @@ const Navbar = () => {
         </a>
 
         <div className="hidden md:flex items-center gap-8">
-          <a href={`${base}/#how-it-works`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">
+          <a href={`${base}/#how-it-works`} onClick={(e) => handleHashClick(e, 'how-it-works')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">
             {brand.navLabels.howItWorks}
           </a>
-          <a href={`${base}/#ideas`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ideas">
+          <a href={`${base}/#ideas`} onClick={(e) => handleHashClick(e, 'ideas')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ideas">
             {brand.navLabels.ideas}
           </a>
           {brand.id === 'yassu' && (
-            <a href={`${base}/#team`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
+            <a href={`${base}/#team`} onClick={(e) => handleHashClick(e, 'team')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
               {brand.navLabels.team}
             </a>
           )}
@@ -40,7 +50,7 @@ const Navbar = () => {
             {brand.navLabels.advisors}
           </a>
           {brand.id !== 'yassu' && (
-            <a href={`${base}/#team`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
+            <a href={`${base}/#team`} onClick={(e) => handleHashClick(e, 'team')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
               {brand.navLabels.team}
             </a>
           )}
