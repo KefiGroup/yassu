@@ -3067,8 +3067,8 @@ Return valid JSON:
         pool.query(`SELECT COUNT(*) as total FROM team_members`),
         pool.query(`SELECT COUNT(*) as total FROM workflow_runs WHERE workflow_type = 'business_plan'`),
         pool.query(`SELECT COUNT(*) as total FROM pitch_decks`),
-        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending FROM connections`),
-        pool.query(`SELECT COUNT(*) as total FROM direct_messages`),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending FROM connections`).catch(() => ({ rows: [{ total: 0, accepted: 0, pending: 0 }] })),
+        pool.query(`SELECT COUNT(*) as total FROM direct_messages`).catch(() => ({ rows: [{ total: 0 }] })),
         pool.query(`SELECT stage, COUNT(*) as count FROM ideas GROUP BY stage ORDER BY CASE stage WHEN 'idea_posted' THEN 1 WHEN 'business_plan' THEN 2 WHEN 'find_advisors' THEN 3 WHEN 'form_team' THEN 4 WHEN 'build_mvp' THEN 5 WHEN 'yassu_foundry' THEN 6 WHEN 'launched' THEN 7 ELSE 8 END`),
         pool.query(`SELECT COALESCE(brand, 'yassu') as brand_name, COUNT(*) as count FROM ideas GROUP BY COALESCE(brand, 'yassu')`),
         pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM users WHERE created_at >= NOW() - INTERVAL '12 weeks' GROUP BY week ORDER BY week`),
@@ -3183,7 +3183,7 @@ Return valid JSON:
           result = await pool.query(`SELECT pd.id, pd.investor_mode, pd.deck_type, pd.target_raise, pd.version, pd.created_at, i.title as idea_title FROM pitch_decks pd LEFT JOIN ideas i ON pd.idea_id = i.id ORDER BY pd.created_at DESC`);
           break;
         case 'connections':
-          result = await pool.query(`SELECT c.id, c.status, c.created_at, u1.full_name as from_user, u2.full_name as to_user FROM connections c LEFT JOIN users u1 ON c.from_user_id = u1.id LEFT JOIN users u2 ON c.to_user_id = u2.id ORDER BY c.created_at DESC`);
+          result = await pool.query(`SELECT c.id, c.status, c.created_at, u1.full_name as from_user, u2.full_name as to_user FROM connections c LEFT JOIN users u1 ON c.requester_id = u1.id LEFT JOIN users u2 ON c.recipient_id = u2.id ORDER BY c.created_at DESC`);
           break;
         case 'university':
           result = filter
@@ -3196,7 +3196,7 @@ Return valid JSON:
             : await pool.query(`SELECT i.id, i.title, i.stage, i.created_at, u.full_name as creator_name, COALESCE(i.brand, 'yassu') as brand FROM ideas i LEFT JOIN users u ON i.created_by = u.id ORDER BY i.created_at DESC`);
           break;
         case 'messages':
-          result = await pool.query(`SELECT dm.id, u1.full_name as from_user, u2.full_name as to_user, LEFT(dm.content, 80) as preview, dm.created_at FROM direct_messages dm LEFT JOIN users u1 ON dm.from_user_id = u1.id LEFT JOIN users u2 ON dm.to_user_id = u2.id ORDER BY dm.created_at DESC LIMIT 200`);
+          result = await pool.query(`SELECT dm.id, u1.full_name as from_user, u2.full_name as to_user, LEFT(dm.content, 80) as preview, dm.created_at FROM direct_messages dm LEFT JOIN users u1 ON dm.sender_id = u1.id LEFT JOIN users u2 ON dm.recipient_id = u2.id ORDER BY dm.created_at DESC LIMIT 200`);
           break;
         case 'join_requests':
           result = await pool.query(`SELECT jr.id, u.full_name as user_name, i.title as idea_title, jr.status, jr.interest_type, jr.created_at FROM join_requests jr LEFT JOIN users u ON jr.user_id = u.id LEFT JOIN ideas i ON jr.idea_id = i.id ORDER BY jr.created_at DESC`);
