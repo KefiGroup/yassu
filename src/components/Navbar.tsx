@@ -40,7 +40,7 @@ const Navbar = () => {
             {brand.navLabels.advisors}
           </a>
           {brand.id !== 'yassu' && (
-            <a href={`${base}/#team`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
+            <a href="/#team" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
               {brand.navLabels.team}
             </a>
           )}
