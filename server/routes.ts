@@ -3028,6 +3028,190 @@ Return valid JSON:
     res.json({ isAdmin });
   });
 
+  // Analytics dashboard (admin only)
+  app.get("/api/admin/analytics", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    try {
+      const [
+        usersResult,
+        ideasResult,
+        teamsResult,
+        teamMembersResult,
+        businessPlansResult,
+        pitchDecksResult,
+        connectionsResult,
+        messagesResult,
+        ideaStagesResult,
+        brandBreakdownResult,
+        userGrowthResult,
+        ideaGrowthResult,
+        teamGrowthResult,
+        usersByUniversityResult,
+        usersByRoleResult,
+        recentUsersResult,
+        recentIdeasResult,
+        recentTeamsResult,
+        joinRequestsResult,
+        teamInvitesResult,
+      ] = await Promise.all([
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as last_7, COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as last_30 FROM users`),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN is_public = true THEN 1 END) as public_count, COUNT(CASE WHEN is_public = false THEN 1 END) as private_count FROM ideas`),
+        pool.query(`SELECT COUNT(*) as total FROM teams`),
+        pool.query(`SELECT COUNT(*) as total FROM team_members`),
+        pool.query(`SELECT COUNT(*) as total FROM workflow_runs WHERE workflow_type = 'business_plan'`),
+        pool.query(`SELECT COUNT(*) as total FROM pitch_decks`),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending FROM connections`),
+        pool.query(`SELECT COUNT(*) as total FROM direct_messages`),
+        pool.query(`SELECT stage, COUNT(*) as count FROM ideas GROUP BY stage ORDER BY CASE stage WHEN 'idea_posted' THEN 1 WHEN 'business_plan' THEN 2 WHEN 'find_advisors' THEN 3 WHEN 'form_team' THEN 4 WHEN 'build_mvp' THEN 5 WHEN 'yassu_foundry' THEN 6 WHEN 'launched' THEN 7 ELSE 8 END`),
+        pool.query(`SELECT COALESCE(brand, 'yassu') as brand_name, COUNT(*) as count FROM ideas GROUP BY COALESCE(brand, 'yassu')`),
+        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM users WHERE created_at >= NOW() - INTERVAL '12 weeks' GROUP BY week ORDER BY week`),
+        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM ideas WHERE created_at >= NOW() - INTERVAL '12 weeks' GROUP BY week ORDER BY week`),
+        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM teams WHERE created_at >= NOW() - INTERVAL '12 weeks' GROUP BY week ORDER BY week`),
+        pool.query(`SELECT u.name as university, COUNT(p.id) as count FROM profiles p LEFT JOIN universities u ON p.university_id = u.id WHERE u.name IS NOT NULL GROUP BY u.name ORDER BY count DESC LIMIT 10`),
+        pool.query(`SELECT role, COUNT(*) as count FROM user_roles GROUP BY role ORDER BY count DESC`),
+        pool.query(`SELECT u.id, u.full_name, u.email, u.created_at FROM users u ORDER BY u.created_at DESC LIMIT 10`),
+        pool.query(`SELECT i.id, i.title, i.stage, i.is_public, i.brand, i.created_at, u.full_name as creator_name FROM ideas i LEFT JOIN users u ON i.created_by = u.id ORDER BY i.created_at DESC LIMIT 10`),
+        pool.query(`SELECT t.id, t.name, t.created_at, u.full_name as creator_name, COUNT(tm.id) as member_count FROM teams t LEFT JOIN users u ON t.created_by = u.id LEFT JOIN team_members tm ON tm.team_id = t.id GROUP BY t.id, t.name, t.created_at, u.full_name ORDER BY t.created_at DESC LIMIT 10`),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted FROM join_requests`),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted FROM team_invites`),
+      ]);
+
+      res.json({
+        kpis: {
+          totalUsers: Number(usersResult.rows[0].total),
+          usersLast7Days: Number(usersResult.rows[0].last_7),
+          usersLast30Days: Number(usersResult.rows[0].last_30),
+          totalIdeas: Number(ideasResult.rows[0].total),
+          publicIdeas: Number(ideasResult.rows[0].public_count),
+          privateIdeas: Number(ideasResult.rows[0].private_count),
+          totalTeams: Number(teamsResult.rows[0].total),
+          totalTeamMembers: Number(teamMembersResult.rows[0].total),
+          businessPlansGenerated: Number(businessPlansResult.rows[0].total),
+          pitchDecksGenerated: Number(pitchDecksResult.rows[0].total),
+          totalConnections: Number(connectionsResult.rows[0].total),
+          acceptedConnections: Number(connectionsResult.rows[0].accepted),
+          pendingConnections: Number(connectionsResult.rows[0].pending),
+          totalMessages: Number(messagesResult.rows[0].total),
+          joinRequests: {
+            total: Number(joinRequestsResult.rows[0].total),
+            pending: Number(joinRequestsResult.rows[0].pending),
+            accepted: Number(joinRequestsResult.rows[0].accepted),
+          },
+          teamInvites: {
+            total: Number(teamInvitesResult.rows[0].total),
+            pending: Number(teamInvitesResult.rows[0].pending),
+            accepted: Number(teamInvitesResult.rows[0].accepted),
+          },
+        },
+        ideaStages: ideaStagesResult.rows.map((r: any) => ({
+          stage: r.stage || 'unknown',
+          count: Number(r.count),
+        })),
+        brandBreakdown: brandBreakdownResult.rows.map((r: any) => ({
+          brand: r.brand_name,
+          count: Number(r.count),
+        })),
+        userGrowth: userGrowthResult.rows.map((r: any) => ({
+          week: r.week,
+          count: Number(r.count),
+        })),
+        ideaGrowth: ideaGrowthResult.rows.map((r: any) => ({
+          week: r.week,
+          count: Number(r.count),
+        })),
+        teamGrowth: teamGrowthResult.rows.map((r: any) => ({
+          week: r.week,
+          count: Number(r.count),
+        })),
+        usersByUniversity: usersByUniversityResult.rows.map((r: any) => ({
+          university: r.university,
+          count: Number(r.count),
+        })),
+        usersByRole: usersByRoleResult.rows.map((r: any) => ({
+          role: r.role,
+          count: Number(r.count),
+        })),
+        recentUsers: recentUsersResult.rows,
+        recentIdeas: recentIdeasResult.rows,
+        recentTeams: recentTeamsResult.rows,
+      });
+    } catch (error) {
+      console.error("Analytics error:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // Analytics drill-down (admin only)
+  app.get("/api/admin/analytics/drilldown", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const category = req.query.category as string;
+    const filter = req.query.filter as string | undefined;
+
+    try {
+      let result;
+
+      switch (category) {
+        case 'users':
+          result = await pool.query(`SELECT u.id, u.full_name, u.email, u.created_at, p.university_id, univ.name as university_name, p.skills, p.club_type FROM users u LEFT JOIN profiles p ON p.user_id = u.id LEFT JOIN universities univ ON p.university_id = univ.id ORDER BY u.created_at DESC`);
+          break;
+        case 'ideas':
+          result = filter
+            ? await pool.query(`SELECT i.id, i.title, i.stage, i.is_public, i.brand, i.created_at, u.full_name as creator_name FROM ideas i LEFT JOIN users u ON i.created_by = u.id WHERE i.stage = $1 ORDER BY i.created_at DESC`, [filter])
+            : await pool.query(`SELECT i.id, i.title, i.stage, i.is_public, i.brand, i.created_at, u.full_name as creator_name FROM ideas i LEFT JOIN users u ON i.created_by = u.id ORDER BY i.created_at DESC`);
+          break;
+        case 'teams':
+          result = await pool.query(`SELECT t.id, t.name, t.description, t.created_at, u.full_name as creator_name, COUNT(tm.id) as member_count FROM teams t LEFT JOIN users u ON t.created_by = u.id LEFT JOIN team_members tm ON tm.team_id = t.id GROUP BY t.id, t.name, t.description, t.created_at, u.full_name ORDER BY t.created_at DESC`);
+          break;
+        case 'business_plans':
+          result = await pool.query(`SELECT wr.id, wr.workflow_type, wr.status, wr.created_at, i.title as idea_title, u.full_name as user_name FROM workflow_runs wr LEFT JOIN ideas i ON wr.idea_id = i.id LEFT JOIN users u ON wr.user_id = u.id WHERE wr.workflow_type = 'business_plan' ORDER BY wr.created_at DESC`);
+          break;
+        case 'pitch_decks':
+          result = await pool.query(`SELECT pd.id, pd.investor_mode, pd.deck_type, pd.target_raise, pd.version, pd.created_at, i.title as idea_title FROM pitch_decks pd LEFT JOIN ideas i ON pd.idea_id = i.id ORDER BY pd.created_at DESC`);
+          break;
+        case 'connections':
+          result = await pool.query(`SELECT c.id, c.status, c.created_at, u1.full_name as from_user, u2.full_name as to_user FROM connections c LEFT JOIN users u1 ON c.from_user_id = u1.id LEFT JOIN users u2 ON c.to_user_id = u2.id ORDER BY c.created_at DESC`);
+          break;
+        case 'university':
+          result = filter
+            ? await pool.query(`SELECT u.id, u.full_name, u.email, u.created_at, univ.name as university_name FROM users u LEFT JOIN profiles p ON p.user_id = u.id LEFT JOIN universities univ ON p.university_id = univ.id WHERE univ.name = $1 ORDER BY u.created_at DESC`, [filter])
+            : await pool.query(`SELECT u.id, u.full_name, u.email, u.created_at, univ.name as university_name FROM users u LEFT JOIN profiles p ON p.user_id = u.id LEFT JOIN universities univ ON p.university_id = univ.id ORDER BY u.created_at DESC`);
+          break;
+        case 'brand':
+          result = filter
+            ? await pool.query(`SELECT i.id, i.title, i.stage, i.created_at, u.full_name as creator_name, COALESCE(i.brand, 'yassu') as brand FROM ideas i LEFT JOIN users u ON i.created_by = u.id WHERE COALESCE(i.brand, 'yassu') = $1 ORDER BY i.created_at DESC`, [filter])
+            : await pool.query(`SELECT i.id, i.title, i.stage, i.created_at, u.full_name as creator_name, COALESCE(i.brand, 'yassu') as brand FROM ideas i LEFT JOIN users u ON i.created_by = u.id ORDER BY i.created_at DESC`);
+          break;
+        case 'messages':
+          result = await pool.query(`SELECT dm.id, u1.full_name as from_user, u2.full_name as to_user, LEFT(dm.content, 80) as preview, dm.created_at FROM direct_messages dm LEFT JOIN users u1 ON dm.from_user_id = u1.id LEFT JOIN users u2 ON dm.to_user_id = u2.id ORDER BY dm.created_at DESC LIMIT 200`);
+          break;
+        case 'join_requests':
+          result = await pool.query(`SELECT jr.id, u.full_name as user_name, i.title as idea_title, jr.status, jr.interest_type, jr.created_at FROM join_requests jr LEFT JOIN users u ON jr.user_id = u.id LEFT JOIN ideas i ON jr.idea_id = i.id ORDER BY jr.created_at DESC`);
+          break;
+        default:
+          return res.status(400).json({ error: "Invalid category" });
+      }
+
+      res.json({ data: result.rows });
+    } catch (error) {
+      console.error("Analytics drilldown error:", error);
+      res.status(500).json({ error: "Failed to fetch drilldown data" });
+    }
+  });
+
   // Get all profiles with badges (admin only)
   app.get("/api/admin/profiles", async (req: Request, res: Response) => {
     if (!req.session.userId) {

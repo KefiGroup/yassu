@@ -18,7 +18,15 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
 - **AI Business Analysis**: AI-powered workflows generate and refine multi-section business plans, with inline editing capabilities for founders. Business plans are auto-populated and editable via markdown.
 - **Team Formation & Collaboration**: Features for finding co-founders, advisors, and ambassadors based on skills and interests. Includes a connection system (like LinkedIn) for users to build their network, send team invitations, and manage join requests.
 - **Collaborator Marketplace**: A dedicated section to discover and filter platform users by roles, skills, interests, clubs, and universities, with clickable profiles.
-- **Admin Dashboard**: A unified interface for administrators to manage badges (Ambassador, Advisor), view all ideas (including private ones), grant/revoke admin privileges, and create platform announcements.
+- **Admin Dashboard**: A unified interface for administrators to manage badges (Ambassador, Advisor), view all ideas (including private ones), grant/revoke admin privileges, and create platform announcements. Includes a comprehensive **Analytics Dashboard** (first tab) with:
+  - KPI cards: Total Users, Ideas, Teams, Business Plans, Pitch Decks, Connections, Messages, Join Requests
+  - Growth trends chart (12-week area chart for users, ideas, teams)
+  - Idea Pipeline Funnel (horizontal bar by stage)
+  - Brand Breakdown pie chart (Yassu vs Bruin)
+  - Top Universities and User Roles breakdowns
+  - Recent Signups, Ideas, and Teams lists
+  - Every chart/card is clickable for drill-down into a detailed data table modal
+  - Uses Recharts for charting; data served via `GET /api/admin/analytics` and `GET /api/admin/analytics/drilldown`
 - **Admin Inbox**: Built-in inbox system for managing user feedback and support conversations. Features include:
   - Conversation list with unread message badges
   - Reply functionality that sends emails to users via Resend
