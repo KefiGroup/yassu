@@ -31,6 +31,19 @@ export async function ensureTables() {
     `);
     
     console.log('[ensureTables] ✓ idea_next_steps table verified/created');
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL COLLATE "default",
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+      );
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+    `);
+    console.log('[ensureTables] ✓ session table verified/created');
   } catch (error) {
     console.error('[ensureTables] Error ensuring tables:', error);
     throw error;
