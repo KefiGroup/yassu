@@ -4,9 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Users, Lightbulb, UsersRound, FileText, Presentation, Link2, MessageSquare, TrendingUp, TrendingDown, ArrowUpRight, X, Building2, UserCheck, Handshake, MailPlus, Info } from 'lucide-react';
+import { Loader2, Users, Lightbulb, UsersRound, FileText, Presentation, Link2, MessageSquare, TrendingUp, TrendingDown, ArrowUpRight, X, Building2, UserCheck, Handshake, MailPlus, Info, CalendarIcon } from 'lucide-react';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format, subDays, subMonths, startOfYear } from 'date-fns';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -91,9 +95,22 @@ function formatRole(role: string) {
   return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
+const DATE_PRESETS = [
+  { label: 'Last 7 days', getValue: () => ({ from: subDays(new Date(), 7), to: new Date() }) },
+  { label: 'Last 30 days', getValue: () => ({ from: subDays(new Date(), 30), to: new Date() }) },
+  { label: 'Last 90 days', getValue: () => ({ from: subDays(new Date(), 90), to: new Date() }) },
+  { label: 'Last 6 months', getValue: () => ({ from: subMonths(new Date(), 6), to: new Date() }) },
+  { label: 'Year to date', getValue: () => ({ from: startOfYear(new Date()), to: new Date() }) },
+  { label: 'Last 12 months', getValue: () => ({ from: subMonths(new Date(), 12), to: new Date() }) },
+  { label: 'All time', getValue: () => ({ from: undefined as Date | undefined, to: undefined as Date | undefined }) },
+];
+
 export default function AnalyticsDashboard() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [activePreset, setActivePreset] = useState('All time');
   const [drilldownOpen, setDrilldownOpen] = useState(false);
   const [drilldownTitle, setDrilldownTitle] = useState('');
   const [drilldownData, setDrilldownData] = useState<any[]>([]);
@@ -102,13 +119,18 @@ export default function AnalyticsDashboard() {
   const [drilldownColumns, setDrilldownColumns] = useState<{ key: string; label: string }[]>([]);
 
   useEffect(() => {
+    if (dateRange.from && !dateRange.to) return;
     fetchAnalytics();
-  }, []);
+  }, [dateRange.from, dateRange.to]);
 
   async function fetchAnalytics() {
     try {
       setLoading(true);
-      const result = await apiRequest<AnalyticsData>('/admin/analytics');
+      const params = new URLSearchParams();
+      if (dateRange.from) params.set('from', format(dateRange.from, 'yyyy-MM-dd'));
+      if (dateRange.to) params.set('to', format(dateRange.to, 'yyyy-MM-dd'));
+      const qs = params.toString();
+      const result = await apiRequest<AnalyticsData>(`/admin/analytics${qs ? `?${qs}` : ''}`);
       setData(result);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
@@ -297,14 +319,80 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold" data-testid="text-analytics-title">Platform Analytics</h2>
           <p className="text-muted-foreground text-sm mt-1">Real-time metrics across the entire platform</p>
         </div>
-        <Button variant="outline" onClick={fetchAnalytics} data-testid="button-refresh-analytics">
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal min-w-[220px]",
+                  !dateRange.from && "text-muted-foreground"
+                )}
+                data-testid="button-date-range-picker"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "MMM d, yyyy")} – {format(dateRange.to, "MMM d, yyyy")}
+                    </>
+                  ) : (
+                    format(dateRange.from, "MMM d, yyyy")
+                  )
+                ) : (
+                  <span>All time</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 flex" align="end">
+              <div className="border-r p-2 space-y-1 min-w-[140px]">
+                {DATE_PRESETS.map((preset) => (
+                  <Button
+                    key={preset.label}
+                    variant={activePreset === preset.label ? "default" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start text-xs h-8"
+                    data-testid={`button-preset-${preset.label.toLowerCase().replace(/\s/g, '-')}`}
+                    onClick={() => {
+                      const range = preset.getValue();
+                      setDateRange({ from: range.from, to: range.to });
+                      setActivePreset(preset.label);
+                      setCalendarOpen(false);
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="p-2">
+                <Calendar
+                  mode="range"
+                  selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } : undefined}
+                  onSelect={(range) => {
+                    if (range) {
+                      setDateRange({ from: range.from, to: range.to });
+                      setActivePreset('');
+                      if (range.from && range.to) {
+                        setCalendarOpen(false);
+                      }
+                    }
+                  }}
+                  numberOfMonths={2}
+                  disabled={{ after: new Date() }}
+                  defaultMonth={dateRange.from || subMonths(new Date(), 1)}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button variant="outline" onClick={fetchAnalytics} data-testid="button-refresh-analytics">
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <TooltipProvider delayDuration={200}>
@@ -351,10 +439,10 @@ export default function AnalyticsDashboard() {
           <Card className="border-border/50">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-base font-semibold">Growth Trends (12 Weeks)</CardTitle>
+                <CardTitle className="text-base font-semibold">Growth Trends{dateRange.from ? '' : ' (12 Weeks)'}</CardTitle>
                 <UITooltip>
                   <TooltipTrigger asChild><Info className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors shrink-0" /></TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[220px] text-xs">Weekly signups, ideas posted, and teams formed over the last 12 weeks. Tracks platform momentum.</TooltipContent>
+                  <TooltipContent side="top" className="max-w-[220px] text-xs">{dateRange.from ? 'Weekly signups, ideas, and teams formed within the selected date range.' : 'Weekly signups, ideas posted, and teams formed over the last 12 weeks. Tracks platform momentum.'}</TooltipContent>
                 </UITooltip>
               </div>
             </CardHeader>

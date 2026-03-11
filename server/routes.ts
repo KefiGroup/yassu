@@ -3039,6 +3039,50 @@ Return valid JSON:
     }
 
     try {
+      const rawFrom = req.query.from as string | undefined;
+      const rawTo = req.query.to as string | undefined;
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const fromDate = rawFrom && dateRegex.test(rawFrom) && !isNaN(Date.parse(rawFrom)) ? rawFrom : undefined;
+      const toDate = rawTo && dateRegex.test(rawTo) && !isNaN(Date.parse(rawTo)) ? rawTo : undefined;
+      const hasDateFilter = !!(fromDate || toDate);
+
+      function dateWhere(col: string, startIdx = 1): { clause: string; params: any[] } {
+        if (!hasDateFilter) return { clause: '', params: [] };
+        const parts: string[] = [];
+        const params: any[] = [];
+        if (fromDate) {
+          params.push(fromDate);
+          parts.push(`${col} >= $${startIdx + params.length - 1}::date`);
+        }
+        if (toDate) {
+          params.push(toDate);
+          parts.push(`${col} < ($${startIdx + params.length - 1}::date + INTERVAL '1 day')`);
+        }
+        return { clause: parts.join(' AND '), params };
+      }
+
+      const d = dateWhere('created_at');
+      const dWhere = d.clause ? ` WHERE ${d.clause}` : '';
+      const dAnd = d.clause ? ` AND ${d.clause}` : '';
+      const dP = d.params;
+
+      const di = dateWhere('i.created_at');
+      const diAnd = di.clause ? ` AND ${di.clause}` : '';
+
+      const dt = dateWhere('t.created_at');
+      const dtAnd = dt.clause ? ` AND ${dt.clause}` : '';
+
+      const du = dateWhere('u.created_at');
+      const duWhere = du.clause ? ` WHERE ${du.clause}` : '';
+
+      const dus = dateWhere('us.created_at');
+      const dusAnd = dus.clause ? ` AND ${dus.clause}` : '';
+
+      const growthClause = hasDateFilter && d.clause
+        ? `WHERE ${d.clause}`
+        : `WHERE created_at >= NOW() - INTERVAL '12 weeks'`;
+      const growthParams = hasDateFilter ? dP : [];
+
       const [
         usersResult,
         ideasResult,
@@ -3061,26 +3105,26 @@ Return valid JSON:
         joinRequestsResult,
         teamInvitesResult,
       ] = await Promise.all([
-        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as last_7, COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as last_30 FROM users`),
-        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN is_public = true THEN 1 END) as public_count, COUNT(CASE WHEN is_public = false THEN 1 END) as private_count FROM ideas`),
-        pool.query(`SELECT COUNT(*) as total FROM teams`),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as last_7, COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as last_30 FROM users${dWhere}`, dP),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN is_public = true THEN 1 END) as public_count, COUNT(CASE WHEN is_public = false THEN 1 END) as private_count FROM ideas${dWhere}`, dP),
+        pool.query(`SELECT COUNT(*) as total FROM teams${dWhere}`, dP),
         pool.query(`SELECT COUNT(*) as total FROM team_members`),
-        pool.query(`SELECT COUNT(*) as total FROM workflow_runs WHERE workflow_type = 'business_plan'`),
-        pool.query(`SELECT COUNT(*) as total FROM pitch_decks`),
-        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending FROM connections`).catch(() => ({ rows: [{ total: 0, accepted: 0, pending: 0 }] })),
-        pool.query(`SELECT COUNT(*) as total FROM direct_messages`).catch(() => ({ rows: [{ total: 0 }] })),
-        pool.query(`SELECT stage, COUNT(*) as count FROM ideas GROUP BY stage ORDER BY CASE stage WHEN 'idea_posted' THEN 1 WHEN 'business_plan' THEN 2 WHEN 'find_advisors' THEN 3 WHEN 'form_team' THEN 4 WHEN 'build_mvp' THEN 5 WHEN 'yassu_foundry' THEN 6 WHEN 'launched' THEN 7 ELSE 8 END`),
-        pool.query(`SELECT COALESCE(brand, 'yassu') as brand_name, COUNT(*) as count FROM ideas GROUP BY COALESCE(brand, 'yassu')`),
-        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM users WHERE created_at >= NOW() - INTERVAL '12 weeks' GROUP BY week ORDER BY week`),
-        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM ideas WHERE created_at >= NOW() - INTERVAL '12 weeks' GROUP BY week ORDER BY week`),
-        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM teams WHERE created_at >= NOW() - INTERVAL '12 weeks' GROUP BY week ORDER BY week`),
-        pool.query(`SELECT u.name as university, COUNT(p.id) as count FROM profiles p LEFT JOIN universities u ON p.university_id = u.id WHERE u.name IS NOT NULL GROUP BY u.name ORDER BY count DESC LIMIT 10`),
+        pool.query(`SELECT COUNT(*) as total FROM workflow_runs WHERE workflow_type = 'business_plan'${dAnd}`, dP),
+        pool.query(`SELECT COUNT(*) as total FROM pitch_decks${dWhere}`, dP),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending FROM connections${dWhere}`, dP).catch(() => ({ rows: [{ total: 0, accepted: 0, pending: 0 }] })),
+        pool.query(`SELECT COUNT(*) as total FROM direct_messages${dWhere}`, dP).catch(() => ({ rows: [{ total: 0 }] })),
+        pool.query(`SELECT stage, COUNT(*) as count FROM ideas${dWhere} GROUP BY stage ORDER BY CASE stage WHEN 'idea_posted' THEN 1 WHEN 'business_plan' THEN 2 WHEN 'find_advisors' THEN 3 WHEN 'form_team' THEN 4 WHEN 'build_mvp' THEN 5 WHEN 'yassu_foundry' THEN 6 WHEN 'launched' THEN 7 ELSE 8 END`, dP),
+        pool.query(`SELECT COALESCE(brand, 'yassu') as brand_name, COUNT(*) as count FROM ideas${dWhere} GROUP BY COALESCE(brand, 'yassu')`, dP),
+        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM users ${growthClause} GROUP BY week ORDER BY week`, growthParams),
+        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM ideas ${growthClause} GROUP BY week ORDER BY week`, growthParams),
+        pool.query(`SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as count FROM teams ${growthClause} GROUP BY week ORDER BY week`, growthParams),
+        pool.query(`SELECT u.name as university, COUNT(p.id) as count FROM profiles p LEFT JOIN universities u ON p.university_id = u.id LEFT JOIN users us ON us.id = p.user_id WHERE u.name IS NOT NULL${dusAnd} GROUP BY u.name ORDER BY count DESC LIMIT 10`, dus.params),
         pool.query(`SELECT role, COUNT(*) as count FROM user_roles GROUP BY role ORDER BY count DESC`),
-        pool.query(`SELECT u.id, u.full_name, u.email, u.created_at FROM users u ORDER BY u.created_at DESC LIMIT 10`),
-        pool.query(`SELECT i.id, i.title, i.stage, i.is_public, i.brand, i.created_at, u.full_name as creator_name FROM ideas i LEFT JOIN users u ON i.created_by = u.id ORDER BY i.created_at DESC LIMIT 10`),
-        pool.query(`SELECT t.id, t.name, t.created_at, u.full_name as creator_name, COUNT(tm.id) as member_count FROM teams t LEFT JOIN users u ON t.created_by = u.id LEFT JOIN team_members tm ON tm.team_id = t.id GROUP BY t.id, t.name, t.created_at, u.full_name ORDER BY t.created_at DESC LIMIT 10`),
-        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted FROM join_requests`),
-        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted FROM team_invites`),
+        pool.query(`SELECT u.id, u.full_name, u.email, u.created_at FROM users u${duWhere} ORDER BY u.created_at DESC LIMIT 10`, du.params),
+        pool.query(`SELECT i.id, i.title, i.stage, i.is_public, i.brand, i.created_at, u.full_name as creator_name FROM ideas i LEFT JOIN users u ON i.created_by = u.id WHERE 1=1${diAnd} ORDER BY i.created_at DESC LIMIT 10`, di.params),
+        pool.query(`SELECT t.id, t.name, t.created_at, u.full_name as creator_name, COUNT(tm.id) as member_count FROM teams t LEFT JOIN users u ON t.created_by = u.id LEFT JOIN team_members tm ON tm.team_id = t.id WHERE 1=1${dtAnd} GROUP BY t.id, t.name, t.created_at, u.full_name ORDER BY t.created_at DESC LIMIT 10`, dt.params),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted FROM join_requests${dWhere}`, dP),
+        pool.query(`SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending, COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted FROM team_invites${dWhere}`, dP),
       ]);
 
       res.json({
