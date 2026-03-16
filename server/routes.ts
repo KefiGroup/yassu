@@ -379,41 +379,43 @@ export function registerRoutes(app: Express): void {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      // Set session duration based on rememberMe
-      // Remember me: 30 days, Otherwise: 1 hour for inactivity timeout
       const sessionMaxAge = rememberMe 
         ? 30 * 24 * 60 * 60 * 1000  // 30 days
         : 60 * 60 * 1000;           // 1 hour
 
-      // Regenerate session to prevent session fixation
-      req.session.regenerate((regenerateErr) => {
-        if (regenerateErr) {
-          console.error('[Login] Session regenerate error:', regenerateErr);
-          return res.status(500).json({ error: 'Failed to create session' });
-        }
-        
-        req.session.userId = user.id;
-        req.session.rememberMe = rememberMe || false;
-        req.session.lastActivity = Date.now();
-        req.session.brand = brand || null;
-        
-        // Update cookie maxAge based on rememberMe
-        if (req.session.cookie) {
-          req.session.cookie.maxAge = sessionMaxAge;
-        }
-        
-        console.log(`[Login] Session created for user ${user.id} (${user.email}), session: ${req.session.id}, rememberMe: ${rememberMe}`);
-        
-        // Explicitly save session before responding
-        req.session.save((err) => {
-          if (err) {
-            console.error('Session save error:', err);
-            return res.status(500).json({ error: 'Failed to save session' });
-          }
+      req.session.userId = user.id;
+      req.session.rememberMe = rememberMe || false;
+      req.session.lastActivity = Date.now();
+      req.session.brand = brand || null;
+
+      if (req.session.cookie) {
+        req.session.cookie.maxAge = sessionMaxAge;
+      }
+
+      let responded = false;
+      const saveTimeout = setTimeout(() => {
+        if (!responded) {
+          responded = true;
+          console.error('[Login] Session save timed out for user:', user.id);
           res.json({ 
             user: { id: user.id, email: user.email, fullName: user.fullName },
-            sessionTimeout: rememberMe ? null : 60 * 60 * 1000 // null means no timeout tracking needed
+            sessionTimeout: rememberMe ? null : 60 * 60 * 1000
           });
+        }
+      }, 5000);
+
+      req.session.save((saveErr) => {
+        clearTimeout(saveTimeout);
+        if (responded) return;
+        responded = true;
+        if (saveErr) {
+          console.error('[Login] Session save error:', saveErr);
+          return res.status(500).json({ error: 'Failed to save session' });
+        }
+        console.log(`[Login] Success for user ${user.id} (${user.email}), session: ${req.session.id}, rememberMe: ${rememberMe}`);
+        res.json({ 
+          user: { id: user.id, email: user.email, fullName: user.fullName },
+          sessionTimeout: rememberMe ? null : 60 * 60 * 1000
         });
       });
     } catch (error) {
