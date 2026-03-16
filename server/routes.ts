@@ -383,39 +383,63 @@ export function registerRoutes(app: Express): void {
         ? 30 * 24 * 60 * 60 * 1000  // 30 days
         : 60 * 60 * 1000;           // 1 hour
 
-      req.session.userId = user.id;
-      req.session.rememberMe = rememberMe || false;
-      req.session.lastActivity = Date.now();
-      req.session.brand = brand || null;
-
-      if (req.session.cookie) {
-        req.session.cookie.maxAge = sessionMaxAge;
-      }
-
       let responded = false;
-      const saveTimeout = setTimeout(() => {
+      const regenTimeout = setTimeout(() => {
         if (!responded) {
           responded = true;
-          console.error('[Login] Session save timed out for user:', user.id);
+          console.error('[Login] Session regenerate timed out for user:', user.id);
+          res.status(503).json({ error: 'Session service temporarily unavailable. Please try again.' });
+        }
+      }, 5000);
+
+      req.session.regenerate((regenerateErr) => {
+        if (responded) return;
+        if (regenerateErr) {
+          clearTimeout(regenTimeout);
+          responded = true;
+          console.error('[Login] Session regenerate error:', regenerateErr);
+          req.session.userId = user.id;
+          req.session.rememberMe = rememberMe || false;
+          req.session.lastActivity = Date.now();
+          req.session.brand = brand || null;
+          if (req.session.cookie) {
+            req.session.cookie.maxAge = sessionMaxAge;
+          }
+          req.session.save((fallbackErr) => {
+            if (fallbackErr) {
+              console.error('[Login] Fallback session save also failed:', fallbackErr);
+              return res.status(500).json({ error: 'Failed to create session' });
+            }
+            console.log(`[Login] Success (fallback) for user ${user.id} (${user.email}), session: ${req.session.id}`);
+            res.json({ 
+              user: { id: user.id, email: user.email, fullName: user.fullName },
+              sessionTimeout: rememberMe ? null : 60 * 60 * 1000
+            });
+          });
+          return;
+        }
+
+        req.session.userId = user.id;
+        req.session.rememberMe = rememberMe || false;
+        req.session.lastActivity = Date.now();
+        req.session.brand = brand || null;
+        if (req.session.cookie) {
+          req.session.cookie.maxAge = sessionMaxAge;
+        }
+
+        req.session.save((saveErr) => {
+          clearTimeout(regenTimeout);
+          if (responded) return;
+          responded = true;
+          if (saveErr) {
+            console.error('[Login] Session save error:', saveErr);
+            return res.status(500).json({ error: 'Failed to save session' });
+          }
+          console.log(`[Login] Success for user ${user.id} (${user.email}), session: ${req.session.id}, rememberMe: ${rememberMe}`);
           res.json({ 
             user: { id: user.id, email: user.email, fullName: user.fullName },
             sessionTimeout: rememberMe ? null : 60 * 60 * 1000
           });
-        }
-      }, 5000);
-
-      req.session.save((saveErr) => {
-        clearTimeout(saveTimeout);
-        if (responded) return;
-        responded = true;
-        if (saveErr) {
-          console.error('[Login] Session save error:', saveErr);
-          return res.status(500).json({ error: 'Failed to save session' });
-        }
-        console.log(`[Login] Success for user ${user.id} (${user.email}), session: ${req.session.id}, rememberMe: ${rememberMe}`);
-        res.json({ 
-          user: { id: user.id, email: user.email, fullName: user.fullName },
-          sessionTimeout: rememberMe ? null : 60 * 60 * 1000
         });
       });
     } catch (error) {
