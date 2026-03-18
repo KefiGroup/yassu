@@ -5,6 +5,7 @@ import { api, apiRequest } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
 
 import { AITeamRoleSuggester } from '@/components/portal/AITeamRoleSuggester';
+import { ShareInviteModal } from '@/components/portal/ShareInviteModal';
 import { ApplicationForm } from '@/components/portal/ApplicationForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,6 +74,7 @@ import {
   Upload,
   ExternalLink,
   X,
+  Share2,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -288,6 +290,7 @@ export default function IdeaDetail() {
   
   // Title editing
   const [editingTitle, setEditingTitle] = useState(false);
+  const [shareIdeaOpen, setShareIdeaOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [savingTitle, setSavingTitle] = useState(false);
   
@@ -1783,6 +1786,22 @@ export default function IdeaDetail() {
                           </TooltipContent>
                         </Tooltip>
                       )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={() => setShareIdeaOpen(true)}
+                            data-testid="button-share-idea"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Share this idea</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   )}
                   <Badge className={stageColors[idea.stage] || stageColors.concept}>
@@ -3446,6 +3465,14 @@ export default function IdeaDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ShareInviteModal 
+        open={shareIdeaOpen} 
+        onOpenChange={setShareIdeaOpen} 
+        context="idea" 
+        ideaTitle={idea?.title} 
+        ideaId={ideaId} 
+      />
     </div>
   );
 }

@@ -33,7 +33,11 @@ import {
   Settings,
   DollarSign,
   Rocket,
+  Share2,
 } from 'lucide-react';
+import { useState } from 'react';
+import { ShareInviteModal } from './ShareInviteModal';
+import { Button } from '@/components/ui/button';
 
 const mainNavItems = [
   { title: 'My Dashboard', url: '/portal', icon: LayoutDashboard },
@@ -71,6 +75,7 @@ export function PortalSidebar() {
   const { hasRole, user } = useAuth();
   const brand = useBranding();
   const collapsed = state === 'collapsed';
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data: unreadData } = useQuery<{ unreadCount: number }>({
     queryKey: ['/api/messages/unread/count'],
@@ -224,7 +229,17 @@ export function PortalSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-2">
+      <SidebarFooter className="border-t border-sidebar-border p-2 space-y-2">
+        <Button
+          variant="outline"
+          size={collapsed ? 'icon' : 'sm'}
+          className="w-full gap-2 text-primary border-primary/30 hover:bg-primary/10"
+          onClick={() => setShareOpen(true)}
+          data-testid="button-sidebar-invite"
+        >
+          <Share2 className="h-4 w-4" />
+          {!collapsed && <span>Invite Friends</span>}
+        </Button>
         {!collapsed && (
           <div className="text-xs text-muted-foreground text-center space-y-0.5">
             <p>© {new Date().getFullYear()} {brand.copyrightName}</p>
@@ -233,6 +248,7 @@ export function PortalSidebar() {
             )}
           </div>
         )}
+        <ShareInviteModal open={shareOpen} onOpenChange={setShareOpen} />
       </SidebarFooter>
     </Sidebar>
   );

@@ -81,6 +81,13 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - Contextual search that finds relevant help topics based on user questions
   - Conversation history within each chat session
   - Friendly, encouraging personality tailored for student founders
+- **Social Sharing & Invite System**: Enables users to share Yassu with friends and associates across platforms. Features include:
+  - ShareInviteModal component (`src/components/portal/ShareInviteModal.tsx`) with Web Share API (native OS sharing), X/Twitter, LinkedIn, WhatsApp, email, and copy-to-clipboard
+  - "Invite Friends" button in portal sidebar footer (works collapsed and expanded)
+  - "Spread the Word" card on dashboard with invite CTA
+  - Idea-specific sharing via share icon on idea detail page titles
+  - Brand-aware: uses `brand.canonicalUrl` and `brand.name` for correct Yassu vs Bruin sharing
+  - Customizable share text for general invites vs idea-specific sharing
 - **UI/UX**: Utilizes Tailwind CSS and shadcn/ui for a modern, responsive design. The dashboard is redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
 
 ## External Dependencies

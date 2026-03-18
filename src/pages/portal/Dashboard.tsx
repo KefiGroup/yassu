@@ -31,7 +31,9 @@ import {
   Compass,
   Search,
   Rocket,
+  Share2,
 } from 'lucide-react';
+import { ShareInviteModal } from '@/components/portal/ShareInviteModal';
 interface Profile {
   id: number;
   userId: number;
@@ -106,6 +108,7 @@ export default function Dashboard() {
   const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
   const [invitingUserId, setInvitingUserId] = useState<number | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [inviteMessage, setInviteMessage] = useState('');
   const [inviteIdeaId, setInviteIdeaId] = useState<string | null>(null);
   const [sendingInvite, setSendingInvite] = useState(false);
@@ -822,6 +825,38 @@ Looking forward to hearing from you!`;
           </CardContent>
         </Card>
       </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.5 }}
+      >
+        <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-primary" />
+                  Spread the Word
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Know someone with a great startup idea? Invite them to {brand.name} and build together.
+                </p>
+              </div>
+              <Button
+                onClick={() => setShareModalOpen(true)}
+                className="gap-2 shrink-0"
+                data-testid="button-dashboard-invite"
+              >
+                <Share2 className="w-4 h-4" />
+                Invite Friends
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <ShareInviteModal open={shareModalOpen} onOpenChange={setShareModalOpen} />
 
       {/* Enhanced Invite Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={(open) => {
