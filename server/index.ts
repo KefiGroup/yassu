@@ -24,9 +24,12 @@ declare module "express-session" {
 const app = express();
 const server = createServer(app);
 
-// Create PostgreSQL pool for session store
 const pgPool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  statement_timeout: 5000,
 });
 
 const PgStore = pgSession(session);
