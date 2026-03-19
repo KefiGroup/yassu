@@ -7898,4 +7898,288 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       res.status(500).json({ error: "Failed to reject booking" });
     }
   });
+
+  // ============ Group Routes ============
+
+  app.get("/api/groups/my-groups", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const groups = await storage.getUserGroups(req.session.userId);
+      const adminGroups = groups.filter(g => g.role === 'owner' || g.role === 'admin');
+      res.json(adminGroups);
+    } catch (error) {
+      console.error("Get user groups error:", error);
+      res.status(500).json({ error: "Failed to fetch groups" });
+    }
+  });
+
+  app.get("/api/groups", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) return res.status(403).json({ error: "Admin access required" });
+    try {
+      const groups = await storage.getGroups();
+      const groupsWithStats = await Promise.all(
+        groups.map(async (g) => {
+          const stats = await storage.getGroupStats(g.id);
+          return { ...g, ...stats };
+        })
+      );
+      res.json(groupsWithStats);
+    } catch (error) {
+      console.error("Get groups error:", error);
+      res.status(500).json({ error: "Failed to fetch groups" });
+    }
+  });
+
+  app.post("/api/groups", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) return res.status(403).json({ error: "Admin access required" });
+    try {
+      const { name, slug, description, primaryColor, accentColor, universityId } = req.body;
+      if (!name || !slug) return res.status(400).json({ error: "Name and slug are required" });
+
+      const existing = await storage.getGroupBySlug(slug);
+      if (existing) return res.status(409).json({ error: "A group with this slug already exists" });
+
+      const group = await storage.createGroup({
+        name,
+        slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+        description,
+        primaryColor,
+        accentColor,
+        universityId: universityId || null,
+        createdBy: req.session.userId,
+      });
+
+      await storage.addGroupMember(group.id, req.session.userId, 'owner');
+      res.status(201).json(group);
+    } catch (error) {
+      console.error("Create group error:", error);
+      res.status(500).json({ error: "Failed to create group" });
+    }
+  });
+
+  app.get("/api/groups/:slug/details", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const stats = await storage.getGroupStats(group.id);
+      res.json({ ...group, ...stats });
+    } catch (error) {
+      console.error("Get group details error:", error);
+      res.status(500).json({ error: "Failed to fetch group details" });
+    }
+  });
+
+  app.get("/api/groups/:slug/members", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const members = await storage.getGroupMembers(group.id);
+      res.json(members.map(m => ({
+        id: m.id,
+        userId: m.userId,
+        role: m.role,
+        joinedAt: m.joinedAt,
+        fullName: m.user.fullName,
+        email: m.user.email,
+        avatarUrl: m.profile?.avatarUrl || null,
+        university: m.profile?.universityId || null,
+      })));
+    } catch (error) {
+      console.error("Get group members error:", error);
+      res.status(500).json({ error: "Failed to fetch members" });
+    }
+  });
+
+  app.patch("/api/groups/:slug/members/:userId/role", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isGroupAdminUser = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isGroupAdminUser && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const { role } = req.body;
+      if (!['admin', 'member'].includes(role)) return res.status(400).json({ error: "Invalid role. Only 'admin' or 'member' can be assigned." });
+
+      const targetUserId = parseInt(req.params.userId);
+
+      const members = await storage.getGroupMembers(group.id);
+      const targetMember = members.find(m => m.userId === targetUserId);
+      if (!targetMember) return res.status(404).json({ error: "Member not found" });
+      if (targetMember.role === 'owner') return res.status(403).json({ error: "Cannot change the role of a group owner" });
+
+      const updated = await storage.updateGroupMemberRole(group.id, targetUserId, role);
+      if (!updated) return res.status(404).json({ error: "Member not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Update member role error:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  app.delete("/api/groups/:slug/members/:userId", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const targetUserId = parseInt(req.params.userId);
+      if (targetUserId === req.session.userId) return res.status(400).json({ error: "Cannot remove yourself" });
+
+      const members = await storage.getGroupMembers(group.id);
+      const targetMember = members.find(m => m.userId === targetUserId);
+      if (!targetMember) return res.status(404).json({ error: "Member not found" });
+      if (targetMember.role === 'owner') return res.status(403).json({ error: "Cannot remove a group owner" });
+
+      await storage.removeGroupMember(group.id, targetUserId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove member error:", error);
+      res.status(500).json({ error: "Failed to remove member" });
+    }
+  });
+
+  app.get("/api/groups/:slug/ideas", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const ideas = await storage.getGroupIdeas(group.id);
+      const ideasWithCreators = await Promise.all(
+        ideas.map(async (idea) => {
+          const creator = await storage.getUser(idea.createdBy);
+          return { ...idea, creatorName: creator?.fullName || null };
+        })
+      );
+      res.json(ideasWithCreators);
+    } catch (error) {
+      console.error("Get group ideas error:", error);
+      res.status(500).json({ error: "Failed to fetch ideas" });
+    }
+  });
+
+  app.get("/api/groups/:slug/invites", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const invites = await storage.getGroupInvites(group.id);
+      const sanitized = invites.map(({ token, ...rest }) => rest);
+      res.json(sanitized);
+    } catch (error) {
+      console.error("Get group invites error:", error);
+      res.status(500).json({ error: "Failed to fetch invites" });
+    }
+  });
+
+  app.post("/api/groups/:slug/invite", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const { emails } = req.body;
+      if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        return res.status(400).json({ error: "At least one email is required" });
+      }
+
+      const inviter = await storage.getUser(req.session.userId);
+      const inviterName = inviter?.fullName || 'A group admin';
+      const APP_URL = process.env.APP_URL || 'https://yassu.ai';
+
+      const results: { email: string; status: string }[] = [];
+      const { sendGroupInviteEmail } = await import('./email');
+      const crypto = await import('crypto');
+
+      for (const email of emails) {
+        const trimmedEmail = email.trim().toLowerCase();
+        if (!trimmedEmail || !trimmedEmail.includes('@')) {
+          results.push({ email: trimmedEmail, status: 'invalid' });
+          continue;
+        }
+
+        try {
+          const token = crypto.randomBytes(32).toString('hex');
+          await storage.createGroupInvite({
+            groupId: group.id,
+            email: trimmedEmail,
+            invitedBy: req.session.userId,
+            status: 'pending',
+            token,
+          });
+
+          const acceptUrl = `${APP_URL}/accept-group-invite?token=${token}`;
+          await sendGroupInviteEmail(trimmedEmail, group.name, inviterName, acceptUrl);
+          results.push({ email: trimmedEmail, status: 'sent' });
+        } catch (err) {
+          console.error(`Failed to invite ${trimmedEmail}:`, err);
+          results.push({ email: trimmedEmail, status: 'failed' });
+        }
+      }
+
+      res.json({ results, totalSent: results.filter(r => r.status === 'sent').length });
+    } catch (error) {
+      console.error("Group invite error:", error);
+      res.status(500).json({ error: "Failed to send invites" });
+    }
+  });
+
+  app.post("/api/groups/accept-invite", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const { token } = req.body;
+      if (!token) return res.status(400).json({ error: "Token is required" });
+
+      const invite = await storage.getGroupInviteByToken(token);
+      if (!invite) return res.status(404).json({ error: "Invite not found" });
+      if (invite.status !== 'pending') return res.status(400).json({ error: "Invite already used" });
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user || user.email.toLowerCase() !== invite.email.toLowerCase()) {
+        return res.status(403).json({ error: "This invitation was sent to a different email address. Please sign in with the invited email." });
+      }
+
+      await storage.acceptGroupInvite(token, req.session.userId);
+      res.json({ success: true, groupSlug: invite.group.slug, groupName: invite.group.name });
+    } catch (error) {
+      console.error("Accept group invite error:", error);
+      res.status(500).json({ error: "Failed to accept invite" });
+    }
+  });
 }

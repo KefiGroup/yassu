@@ -54,8 +54,10 @@ const InvestorPitchDeck = lazy(() => import("./pages/portal/InvestorPitchDeck"))
 const PitchPreparation = lazy(() => import("./pages/portal/PitchPreparation"));
 const Foundry = lazy(() => import("./pages/portal/Foundry"));
 const Admin = lazy(() => import("./pages/Admin"));
+const GroupAdmin = lazy(() => import("./pages/portal/GroupAdmin"));
 const Search = lazy(() => import("./pages/portal/Search"));
 const AcceptConnection = lazy(() => import("./pages/portal/AcceptConnection"));
+const AcceptGroupInvite = lazy(() => import("./pages/portal/AcceptGroupInvite"));
 
 const queryClient = new QueryClient();
 
@@ -89,6 +91,7 @@ function AppRoutes() {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/accept-connection" element={<AcceptConnection />} />
+          <Route path="/accept-group-invite" element={<AcceptGroupInvite />} />
           
           <Route path="/portal" element={<PortalLayout />}>
             <Route index element={<Dashboard />} />
@@ -120,6 +123,7 @@ function AppRoutes() {
             <Route path="pitch-preparation" element={<PitchPreparation />} />
             <Route path="foundry" element={<Foundry />} />
             <Route path="admin" element={<Admin />} />
+            <Route path="group-admin" element={<GroupAdmin />} />
             <Route path="search" element={<Search />} />
           </Route>
           

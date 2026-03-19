@@ -606,6 +606,51 @@ export type InsertIndustry = z.infer<typeof insertIndustrySchema>;
 export type IdeaIndustry = typeof ideaIndustries.$inferSelect;
 export type ProfileIndustry = typeof profileIndustries.$inferSelect;
 
+export const groupRoleEnum = pgEnum("group_role", ["owner", "admin", "member"]);
+export const groupInviteStatusEnum = pgEnum("group_invite_status", ["pending", "accepted", "expired"]);
+
+export const groups = pgTable("groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  primaryColor: text("primary_color"),
+  accentColor: text("accent_color"),
+  logoUrl: text("logo_url"),
+  universityId: uuid("university_id").references(() => universities.id),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const groupMembers = pgTable("group_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  role: groupRoleEnum("role").default("member").notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+});
+
+export const groupInvites = pgTable("group_invites", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
+  email: text("email").notNull(),
+  invitedBy: integer("invited_by").references(() => users.id).notNull(),
+  status: groupInviteStatusEnum("status").default("pending").notNull(),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
+export const insertGroupMemberSchema = createInsertSchema(groupMembers).omit({ id: true, joinedAt: true });
+export const insertGroupInviteSchema = createInsertSchema(groupInvites).omit({ id: true, createdAt: true });
+
+export type Group = typeof groups.$inferSelect;
+export type InsertGroup = z.infer<typeof insertGroupSchema>;
+export type GroupMember = typeof groupMembers.$inferSelect;
+export type InsertGroupMember = z.infer<typeof insertGroupMemberSchema>;
+export type GroupInvite = typeof groupInvites.$inferSelect;
+export type InsertGroupInvite = z.infer<typeof insertGroupInviteSchema>;
+
 export const PREDEFINED_INDUSTRIES = [
   { name: "Technology & Software", slug: "technology-software" },
   { name: "Healthcare & Biotech", slug: "healthcare-biotech" },

@@ -88,6 +88,14 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - Idea-specific sharing via share icon on idea detail page titles
   - Brand-aware: uses `brand.canonicalUrl` and `brand.name` for correct Yassu vs Bruin sharing
   - Customizable share text for general invites vs idea-specific sharing
+- **Group Management System**: Database-backed groups with admin panels for branded communities (e.g., Bruin Entrepreneurs). Features include:
+  - Database tables: `groups`, `group_members` (owner/admin/member roles), `group_invites` (pending/accepted/expired)
+  - **Group Admin Panel** (`src/pages/portal/GroupAdmin.tsx`): Tabs for Overview (stats), Members (role management, search, remove), Ideas (group-specific), Invites (single + CSV bulk upload)
+  - **Super Admin Group Creation**: "Groups" tab in Admin panel to create new groups with name, slug, colors, and university affiliation
+  - **Invite System**: Single email or bulk CSV upload, sends branded invitation emails via Resend, accept-invite page at `/accept-group-invite?token=xxx`
+  - **Sidebar Integration**: "Manage Group" link appears automatically for group admins/owners
+  - Group ideas are linked via the `brand` column on ideas table matching the group slug
+  - Bruin Entrepreneurs seeded as first group with UCLA colors and university affiliation
 - **UI/UX**: Utilizes Tailwind CSS and shadcn/ui for a modern, responsive design. The dashboard is redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
 
 ## External Dependencies

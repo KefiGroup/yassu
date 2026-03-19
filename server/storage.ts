@@ -182,6 +182,26 @@ export interface IStorage {
     collaboratingIdeas: (Idea & { role: string | null; joinedAt: Date | null; teamSize: number })[];
   }>;
   
+  // Groups
+  getGroups(): Promise<schema.Group[]>;
+  getGroup(id: string): Promise<schema.Group | undefined>;
+  getGroupBySlug(slug: string): Promise<schema.Group | undefined>;
+  createGroup(data: schema.InsertGroup): Promise<schema.Group>;
+  updateGroup(id: string, data: Partial<schema.Group>): Promise<schema.Group | undefined>;
+  deleteGroup(id: string): Promise<void>;
+  getGroupMembers(groupId: string): Promise<(schema.GroupMember & { user: User; profile: Profile | null })[]>;
+  addGroupMember(groupId: string, userId: number, role: "owner" | "admin" | "member"): Promise<schema.GroupMember>;
+  updateGroupMemberRole(groupId: string, userId: number, role: "owner" | "admin" | "member"): Promise<schema.GroupMember | undefined>;
+  removeGroupMember(groupId: string, userId: number): Promise<void>;
+  isGroupAdmin(groupId: string, userId: number): Promise<boolean>;
+  getUserGroups(userId: number): Promise<(schema.Group & { role: string })[]>;
+  getGroupIdeas(groupId: string): Promise<schema.Idea[]>;
+  getGroupStats(groupId: string): Promise<{ memberCount: number; ideaCount: number; pendingInviteCount: number }>;
+  createGroupInvite(data: schema.InsertGroupInvite): Promise<schema.GroupInvite>;
+  getGroupInvites(groupId: string): Promise<(schema.GroupInvite & { inviterName: string | null })[]>;
+  getGroupInviteByToken(token: string): Promise<(schema.GroupInvite & { group: schema.Group }) | undefined>;
+  acceptGroupInvite(token: string, userId: number): Promise<void>;
+  
   // Pitch Decks
   getPitchDeck(ideaId: string): Promise<typeof schema.pitchDecks.$inferSelect | undefined>;
   savePitchDeck(data: {
@@ -1824,6 +1844,202 @@ export class DatabaseStorage implements IStorage {
       .where(eq(schema.pitchPreparations.id, existing.id))
       .returning();
     return updated;
+  }
+
+  async getGroups(): Promise<schema.Group[]> {
+    return db.select().from(schema.groups).orderBy(desc(schema.groups.createdAt));
+  }
+
+  async getGroup(id: string): Promise<schema.Group | undefined> {
+    const [group] = await db.select().from(schema.groups).where(eq(schema.groups.id, id));
+    return group;
+  }
+
+  async getGroupBySlug(slug: string): Promise<schema.Group | undefined> {
+    const [group] = await db.select().from(schema.groups).where(eq(schema.groups.slug, slug));
+    return group;
+  }
+
+  async createGroup(data: schema.InsertGroup): Promise<schema.Group> {
+    const [group] = await db.insert(schema.groups).values(data).returning();
+    return group;
+  }
+
+  async updateGroup(id: string, data: Partial<schema.Group>): Promise<schema.Group | undefined> {
+    const [updated] = await db.update(schema.groups).set(data).where(eq(schema.groups.id, id)).returning();
+    return updated;
+  }
+
+  async deleteGroup(id: string): Promise<void> {
+    await db.delete(schema.groups).where(eq(schema.groups.id, id));
+  }
+
+  async getGroupMembers(groupId: string): Promise<(schema.GroupMember & { user: User; profile: Profile | null })[]> {
+    const members = await db
+      .select({
+        id: schema.groupMembers.id,
+        groupId: schema.groupMembers.groupId,
+        userId: schema.groupMembers.userId,
+        role: schema.groupMembers.role,
+        joinedAt: schema.groupMembers.joinedAt,
+        user: schema.users,
+        profile: schema.profiles,
+      })
+      .from(schema.groupMembers)
+      .innerJoin(schema.users, eq(schema.groupMembers.userId, schema.users.id))
+      .leftJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+      .where(eq(schema.groupMembers.groupId, groupId))
+      .orderBy(schema.groupMembers.joinedAt);
+    
+    return members.map(m => ({
+      id: m.id,
+      groupId: m.groupId,
+      userId: m.userId,
+      role: m.role,
+      joinedAt: m.joinedAt,
+      user: m.user,
+      profile: m.profile,
+    }));
+  }
+
+  async addGroupMember(groupId: string, userId: number, role: "owner" | "admin" | "member"): Promise<schema.GroupMember> {
+    const existing = await db
+      .select()
+      .from(schema.groupMembers)
+      .where(and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, userId)));
+    
+    if (existing.length > 0) {
+      const [updated] = await db
+        .update(schema.groupMembers)
+        .set({ role })
+        .where(eq(schema.groupMembers.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    
+    const [member] = await db.insert(schema.groupMembers).values({ groupId, userId, role }).returning();
+    return member;
+  }
+
+  async updateGroupMemberRole(groupId: string, userId: number, role: "owner" | "admin" | "member"): Promise<schema.GroupMember | undefined> {
+    const [updated] = await db
+      .update(schema.groupMembers)
+      .set({ role })
+      .where(and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async removeGroupMember(groupId: string, userId: number): Promise<void> {
+    await db
+      .delete(schema.groupMembers)
+      .where(and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, userId)));
+  }
+
+  async isGroupAdmin(groupId: string, userId: number): Promise<boolean> {
+    const [member] = await db
+      .select()
+      .from(schema.groupMembers)
+      .where(and(
+        eq(schema.groupMembers.groupId, groupId),
+        eq(schema.groupMembers.userId, userId),
+      ));
+    if (!member) return false;
+    return member.role === 'owner' || member.role === 'admin';
+  }
+
+  async getUserGroups(userId: number): Promise<(schema.Group & { role: string })[]> {
+    const results = await db
+      .select({
+        group: schema.groups,
+        role: schema.groupMembers.role,
+      })
+      .from(schema.groupMembers)
+      .innerJoin(schema.groups, eq(schema.groupMembers.groupId, schema.groups.id))
+      .where(eq(schema.groupMembers.userId, userId));
+    
+    return results.map(r => ({ ...r.group, role: r.role }));
+  }
+
+  async getGroupIdeas(groupId: string): Promise<schema.Idea[]> {
+    const group = await this.getGroup(groupId);
+    if (!group) return [];
+    return db
+      .select()
+      .from(schema.ideas)
+      .where(eq(schema.ideas.brand, group.slug))
+      .orderBy(desc(schema.ideas.createdAt));
+  }
+
+  async getGroupStats(groupId: string): Promise<{ memberCount: number; ideaCount: number; pendingInviteCount: number }> {
+    const group = await this.getGroup(groupId);
+    if (!group) return { memberCount: 0, ideaCount: 0, pendingInviteCount: 0 };
+
+    const [memberResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.groupMembers)
+      .where(eq(schema.groupMembers.groupId, groupId));
+
+    const [ideaResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.ideas)
+      .where(eq(schema.ideas.brand, group.slug));
+
+    const [inviteResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.groupInvites)
+      .where(and(eq(schema.groupInvites.groupId, groupId), eq(schema.groupInvites.status, 'pending')));
+
+    return {
+      memberCount: memberResult?.count || 0,
+      ideaCount: ideaResult?.count || 0,
+      pendingInviteCount: inviteResult?.count || 0,
+    };
+  }
+
+  async createGroupInvite(data: schema.InsertGroupInvite): Promise<schema.GroupInvite> {
+    const [invite] = await db.insert(schema.groupInvites).values(data).returning();
+    return invite;
+  }
+
+  async getGroupInvites(groupId: string): Promise<(schema.GroupInvite & { inviterName: string | null })[]> {
+    const invites = await db
+      .select({
+        invite: schema.groupInvites,
+        inviterName: schema.users.fullName,
+      })
+      .from(schema.groupInvites)
+      .innerJoin(schema.users, eq(schema.groupInvites.invitedBy, schema.users.id))
+      .where(eq(schema.groupInvites.groupId, groupId))
+      .orderBy(desc(schema.groupInvites.createdAt));
+    
+    return invites.map(i => ({ ...i.invite, inviterName: i.inviterName }));
+  }
+
+  async getGroupInviteByToken(token: string): Promise<(schema.GroupInvite & { group: schema.Group }) | undefined> {
+    const [result] = await db
+      .select({
+        invite: schema.groupInvites,
+        group: schema.groups,
+      })
+      .from(schema.groupInvites)
+      .innerJoin(schema.groups, eq(schema.groupInvites.groupId, schema.groups.id))
+      .where(eq(schema.groupInvites.token, token));
+    
+    if (!result) return undefined;
+    return { ...result.invite, group: result.group };
+  }
+
+  async acceptGroupInvite(token: string, userId: number): Promise<void> {
+    const invite = await this.getGroupInviteByToken(token);
+    if (!invite || invite.status !== 'pending') return;
+
+    await db
+      .update(schema.groupInvites)
+      .set({ status: 'accepted' })
+      .where(eq(schema.groupInvites.token, token));
+
+    await this.addGroupMember(invite.groupId, userId, 'member');
   }
 
 }

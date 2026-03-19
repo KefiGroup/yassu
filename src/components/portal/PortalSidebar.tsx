@@ -34,6 +34,7 @@ import {
   DollarSign,
   Rocket,
   Share2,
+  UsersRound,
 } from 'lucide-react';
 import { useState } from 'react';
 import { ShareInviteModal } from './ShareInviteModal';
@@ -81,6 +82,11 @@ export function PortalSidebar() {
     queryKey: ['/api/messages/unread/count'],
     enabled: !!user,
     refetchInterval: 30000,
+  });
+
+  const { data: myAdminGroups } = useQuery<{ slug: string; name: string }[]>({
+    queryKey: ['/api/groups/my-groups'],
+    enabled: !!user,
   });
 
   const unreadCount = unreadData?.unreadCount || 0;
@@ -200,6 +206,27 @@ export function PortalSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {myAdminGroups && myAdminGroups.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Group Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive('/portal/group-admin')}
+                  >
+                    <NavLink to="/portal/group-admin">
+                      <UsersRound className="h-4 w-4" />
+                      {!collapsed && <span>Manage Group</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

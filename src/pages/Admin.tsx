@@ -147,6 +147,10 @@ export default function Admin() {
   const [foundryEvents, setFoundryEvents] = useState<FoundryEventWithAttendees[]>([]);
   const [roadshowBookings, setRoadshowBookings] = useState<RoadshowBooking[]>([]);
   const [inboxConversations, setInboxConversations] = useState<InboxConversation[]>([]);
+  const [adminGroups, setAdminGroups] = useState<any[]>([]);
+  const [showGroupForm, setShowGroupForm] = useState(false);
+  const [groupForm, setGroupForm] = useState({ name: '', slug: '', description: '', primaryColor: '', accentColor: '', universityId: '' });
+  const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<InboxConversation | null>(null);
   const [conversationMessages, setConversationMessages] = useState<InboxMessage[]>([]);
   const [replyContent, setReplyContent] = useState('');
@@ -188,7 +192,7 @@ export default function Admin() {
           return;
         }
         
-        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData, foundryEventsData, bookingsData, inboxData] = await Promise.all([
+        const [profilesData, ideasData, adminsData, announcementsData, suggestionsData, foundryEventsData, bookingsData, inboxData, groupsData, universitiesData] = await Promise.all([
           apiRequest<ProfileWithBadges[]>('/admin/profiles'),
           apiRequest<Idea[]>('/admin/ideas'),
           apiRequest<AdminUser[]>('/admin/admins'),
@@ -196,7 +200,9 @@ export default function Admin() {
           apiRequest<Suggestion[]>('/admin/suggestions'),
           apiRequest<FoundryEventWithAttendees[]>('/admin/foundry-events'),
           apiRequest<RoadshowBooking[]>('/admin/roadshow-bookings'),
-          apiRequest<InboxConversation[]>('/admin/inbox')
+          apiRequest<InboxConversation[]>('/admin/inbox'),
+          apiRequest<any[]>('/groups'),
+          apiRequest<{ id: string; name: string }[]>('/universities'),
         ]);
         
         setProfiles(profilesData);
@@ -207,6 +213,8 @@ export default function Admin() {
         setFoundryEvents(foundryEventsData);
         setRoadshowBookings(bookingsData);
         setInboxConversations(inboxData);
+        setAdminGroups(groupsData);
+        setUniversities(universitiesData);
       } catch (error) {
         console.error('Admin check failed:', error);
         navigate('/portal');
@@ -919,6 +927,10 @@ export default function Admin() {
                 {inboxUnreadCount}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="groups" className="gap-2" data-testid="tab-groups">
+            <Users className="w-4 h-4" />
+            Groups
           </TabsTrigger>
         </TabsList>
 
@@ -2196,6 +2208,170 @@ export default function Admin() {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="groups">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle data-testid="text-groups-title">Groups</CardTitle>
+                <CardDescription>Create and manage platform groups</CardDescription>
+              </div>
+              <Button onClick={() => setShowGroupForm(!showGroupForm)} data-testid="button-create-group">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Group
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {showGroupForm && (
+                <Card className="border-dashed">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Group Name *</label>
+                        <Input
+                          placeholder="e.g. Bruin Entrepreneurs"
+                          value={groupForm.name}
+                          onChange={e => setGroupForm(f => ({ ...f, name: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }))}
+                          data-testid="input-group-name"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">URL Slug *</label>
+                        <Input
+                          placeholder="bruin"
+                          value={groupForm.slug}
+                          onChange={e => setGroupForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                          data-testid="input-group-slug"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">yassu.ai/{groupForm.slug || 'slug'}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Description</label>
+                      <Input
+                        placeholder="A brief description of this group"
+                        value={groupForm.description}
+                        onChange={e => setGroupForm(f => ({ ...f, description: e.target.value }))}
+                        data-testid="input-group-description"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Primary Color (HSL)</label>
+                        <Input
+                          placeholder="213 69% 38%"
+                          value={groupForm.primaryColor}
+                          onChange={e => setGroupForm(f => ({ ...f, primaryColor: e.target.value }))}
+                          data-testid="input-group-primary-color"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Accent Color (HSL)</label>
+                        <Input
+                          placeholder="45 100% 51%"
+                          value={groupForm.accentColor}
+                          onChange={e => setGroupForm(f => ({ ...f, accentColor: e.target.value }))}
+                          data-testid="input-group-accent-color"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">University</label>
+                        <select
+                          className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                          value={groupForm.universityId}
+                          onChange={e => setGroupForm(f => ({ ...f, universityId: e.target.value }))}
+                          data-testid="select-group-university"
+                        >
+                          <option value="">None</option>
+                          {universities.map(u => (
+                            <option key={u.id} value={u.id}>{u.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={async () => {
+                          if (!groupForm.name || !groupForm.slug) {
+                            toast({ title: 'Missing fields', description: 'Name and slug are required.', variant: 'destructive' });
+                            return;
+                          }
+                          try {
+                            setActionLoading('create-group');
+                            await apiRequest('/groups', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(groupForm),
+                            });
+                            toast({ title: 'Group created!' });
+                            setShowGroupForm(false);
+                            setGroupForm({ name: '', slug: '', description: '', primaryColor: '', accentColor: '', universityId: '' });
+                            const refreshed = await apiRequest<any[]>('/groups');
+                            setAdminGroups(refreshed);
+                          } catch (err: any) {
+                            toast({ title: 'Error', description: err.message || 'Failed to create group', variant: 'destructive' });
+                          } finally {
+                            setActionLoading(null);
+                          }
+                        }}
+                        disabled={actionLoading === 'create-group'}
+                        data-testid="button-submit-group"
+                      >
+                        {actionLoading === 'create-group' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        Create Group
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowGroupForm(false)}>Cancel</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {adminGroups.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>No groups created yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {adminGroups.map((group: any) => (
+                    <Card key={group.id} data-testid={`card-group-${group.slug}`}>
+                      <CardContent className="flex items-center justify-between py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex gap-1">
+                            {group.primaryColor && (
+                              <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
+                            )}
+                            {group.accentColor && (
+                              <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">{group.name}</p>
+                            <p className="text-sm text-muted-foreground">/{group.slug} · {group.description || 'No description'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            {group.memberCount} members
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Lightbulb className="w-4 h-4" />
+                            {group.ideaCount} ideas
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Mail className="w-4 h-4" />
+                            {group.pendingInviteCount} pending
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
