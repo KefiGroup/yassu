@@ -156,6 +156,10 @@ export default function Admin() {
   const [addMemberRole, setAddMemberRole] = useState<string>('member');
   const [addMemberResults, setAddMemberResults] = useState<any[]>([]);
   const [addMemberSearching, setAddMemberSearching] = useState(false);
+  const [expandedGroupSlug, setExpandedGroupSlug] = useState<string | null>(null);
+  const [groupMembers, setGroupMembers] = useState<any[]>([]);
+  const [groupMembersLoading, setGroupMembersLoading] = useState(false);
+  const [groupMemberSearch, setGroupMemberSearch] = useState('');
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<InboxConversation | null>(null);
   const [conversationMessages, setConversationMessages] = useState<InboxMessage[]>([]);
@@ -2345,7 +2349,27 @@ export default function Admin() {
                   {adminGroups.map((group: any) => (
                     <Card key={group.id} data-testid={`card-group-${group.slug}`}>
                       <CardContent className="py-4 space-y-3">
-                        <div className="flex items-center justify-between">
+                        <div
+                          className="flex items-center justify-between cursor-pointer hover:bg-muted/30 -mx-4 -my-2 px-4 py-2 rounded-lg transition-colors"
+                          onClick={async () => {
+                            if (expandedGroupSlug === group.slug) {
+                              setExpandedGroupSlug(null);
+                              setGroupMembers([]);
+                              setAddMemberGroupSlug(null);
+                            } else {
+                              setExpandedGroupSlug(group.slug);
+                              setAddMemberGroupSlug(null);
+                              setGroupMemberSearch('');
+                              setGroupMembersLoading(true);
+                              try {
+                                const members = await apiRequest<any[]>(`/groups/${group.slug}/members`);
+                                setGroupMembers(members);
+                              } catch { setGroupMembers([]); }
+                              finally { setGroupMembersLoading(false); }
+                            }
+                          }}
+                          data-testid={`button-expand-group-${group.slug}`}
+                        >
                           <div className="flex items-center gap-4">
                             {group.logoUrl ? (
                               <img src={group.logoUrl} alt={group.name} className="w-10 h-10 rounded-lg object-cover border" />
@@ -2367,123 +2391,244 @@ export default function Admin() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Users className="w-4 h-4" />
-                              {group.memberCount} members
+                              {group.memberCount}
                             </span>
                             <span className="flex items-center gap-1">
                               <Lightbulb className="w-4 h-4" />
-                              {group.ideaCount} ideas
+                              {group.ideaCount}
                             </span>
                             <span className="flex items-center gap-1">
                               <Mail className="w-4 h-4" />
-                              {group.pendingInviteCount} pending
+                              {group.pendingInviteCount}
                             </span>
-                            <Button
-                              size="sm"
-                              variant={addMemberGroupSlug === group.slug ? 'default' : 'outline'}
-                              onClick={() => {
-                                setAddMemberGroupSlug(addMemberGroupSlug === group.slug ? null : group.slug);
-                                setAddMemberSearch('');
-                                setAddMemberResults([]);
-                                setAddMemberRole('member');
-                              }}
-                              data-testid={`button-add-member-${group.slug}`}
-                            >
-                              <UserPlus className="w-4 h-4 mr-1" />
-                              Add User
-                            </Button>
+                            <svg className={`w-4 h-4 transition-transform ${expandedGroupSlug === group.slug ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                           </div>
                         </div>
 
-                        {addMemberGroupSlug === group.slug && (
-                          <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
-                            <p className="text-sm font-medium">Add user to {group.name}</p>
-                            <div className="flex items-center gap-3">
-                              <Input
-                                placeholder="Search by name or email..."
-                                value={addMemberSearch}
-                                onChange={async (e) => {
-                                  const q = e.target.value;
-                                  setAddMemberSearch(q);
-                                  if (q.length >= 2) {
-                                    setAddMemberSearching(true);
-                                    try {
-                                      const results = await apiRequest(`/api/groups/${group.slug}/search-users?q=${encodeURIComponent(q)}`);
-                                      setAddMemberResults(results as any[]);
-                                    } catch {
-                                      setAddMemberResults([]);
-                                    } finally {
-                                      setAddMemberSearching(false);
-                                    }
-                                  } else {
-                                    setAddMemberResults([]);
-                                  }
+                        {expandedGroupSlug === group.slug && (
+                          <div className="space-y-4 pt-2 border-t">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-semibold">Members ({groupMembers.length})</h3>
+                              <Button
+                                size="sm"
+                                variant={addMemberGroupSlug === group.slug ? 'default' : 'outline'}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAddMemberGroupSlug(addMemberGroupSlug === group.slug ? null : group.slug);
+                                  setAddMemberSearch('');
+                                  setAddMemberResults([]);
+                                  setAddMemberRole('member');
                                 }}
-                                className="flex-1"
-                                data-testid="input-add-member-search"
-                              />
-                              <Select value={addMemberRole} onValueChange={setAddMemberRole}>
-                                <SelectTrigger className="w-[130px]" data-testid="select-add-member-role">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="member">Member</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="judge">Judge</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                data-testid={`button-add-member-${group.slug}`}
+                              >
+                                <UserPlus className="w-4 h-4 mr-1" />
+                                Add User
+                              </Button>
                             </div>
-                            {addMemberSearching && (
-                              <div className="flex justify-center py-2">
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              </div>
-                            )}
-                            {addMemberResults.length > 0 && (
-                              <div className="space-y-1 max-h-48 overflow-y-auto">
-                                {addMemberResults.map((u: any) => (
-                                  <div key={u.id} className="flex items-center justify-between p-2 rounded hover:bg-muted/50" data-testid={`user-result-${u.id}`}>
-                                    <div>
-                                      <p className="text-sm font-medium">{u.fullName || 'Unknown'}</p>
-                                      <p className="text-xs text-muted-foreground">{u.email}</p>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={async () => {
+
+                            {addMemberGroupSlug === group.slug && (
+                              <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <Input
+                                    placeholder="Search by name or email..."
+                                    value={addMemberSearch}
+                                    onChange={async (e) => {
+                                      const q = e.target.value;
+                                      setAddMemberSearch(q);
+                                      if (q.length >= 2) {
+                                        setAddMemberSearching(true);
                                         try {
-                                          setActionLoading(`add-member-${u.id}`);
-                                          await apiRequest(`/api/groups/${group.slug}/add-member`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ userId: u.id, role: addMemberRole }),
-                                          });
-                                          toast({ title: 'User added', description: `${u.fullName || u.email} added as ${addMemberRole}` });
-                                          setAddMemberResults(prev => prev.filter(r => r.id !== u.id));
-                                          const refreshed = await apiRequest<any[]>('/groups');
-                                          setAdminGroups(refreshed);
-                                        } catch (err: any) {
-                                          toast({ title: 'Error', description: err.message || 'Failed to add user', variant: 'destructive' });
+                                          const results = await apiRequest(`/groups/${group.slug}/search-users?q=${encodeURIComponent(q)}`);
+                                          setAddMemberResults(results as any[]);
+                                        } catch {
+                                          setAddMemberResults([]);
                                         } finally {
-                                          setActionLoading(null);
+                                          setAddMemberSearching(false);
                                         }
-                                      }}
-                                      disabled={actionLoading === `add-member-${u.id}`}
-                                      data-testid={`button-add-${u.id}`}
-                                    >
-                                      {actionLoading === `add-member-${u.id}` ? (
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                      ) : (
-                                        <>
-                                          <UserPlus className="w-3 h-3 mr-1" />
-                                          Add as {addMemberRole}
-                                        </>
-                                      )}
-                                    </Button>
+                                      } else {
+                                        setAddMemberResults([]);
+                                      }
+                                    }}
+                                    className="flex-1"
+                                    data-testid="input-add-member-search"
+                                  />
+                                  <Select value={addMemberRole} onValueChange={setAddMemberRole}>
+                                    <SelectTrigger className="w-[130px]" data-testid="select-add-member-role">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="member">Member</SelectItem>
+                                      <SelectItem value="admin">Admin</SelectItem>
+                                      <SelectItem value="judge">Judge</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {addMemberSearching && (
+                                  <div className="flex justify-center py-2">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
                                   </div>
-                                ))}
+                                )}
+                                {addMemberResults.length > 0 && (
+                                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                                    {addMemberResults.map((u: any) => (
+                                      <div key={u.id} className="flex items-center justify-between p-2 rounded hover:bg-muted/50" data-testid={`user-result-${u.id}`}>
+                                        <div>
+                                          <p className="text-sm font-medium">{u.fullName || 'Unknown'}</p>
+                                          <p className="text-xs text-muted-foreground">{u.email}</p>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={async () => {
+                                            try {
+                                              setActionLoading(`add-member-${u.id}`);
+                                              await apiRequest(`/groups/${group.slug}/add-member`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ userId: u.id, role: addMemberRole }),
+                                              });
+                                              toast({ title: 'User added', description: `${u.fullName || u.email} added as ${addMemberRole}` });
+                                              setAddMemberResults(prev => prev.filter(r => r.id !== u.id));
+                                              const refreshedMembers = await apiRequest<any[]>(`/groups/${group.slug}/members`);
+                                              setGroupMembers(refreshedMembers);
+                                              const refreshed = await apiRequest<any[]>('/groups');
+                                              setAdminGroups(refreshed);
+                                            } catch (err: any) {
+                                              toast({ title: 'Error', description: err.message || 'Failed to add user', variant: 'destructive' });
+                                            } finally {
+                                              setActionLoading(null);
+                                            }
+                                          }}
+                                          disabled={actionLoading === `add-member-${u.id}`}
+                                          data-testid={`button-add-${u.id}`}
+                                        >
+                                          {actionLoading === `add-member-${u.id}` ? (
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                          ) : (
+                                            <>
+                                              <UserPlus className="w-3 h-3 mr-1" />
+                                              Add as {addMemberRole}
+                                            </>
+                                          )}
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {addMemberSearch.length >= 2 && !addMemberSearching && addMemberResults.length === 0 && (
+                                  <p className="text-sm text-muted-foreground text-center py-2">No matching users found</p>
+                                )}
                               </div>
                             )}
-                            {addMemberSearch.length >= 2 && !addMemberSearching && addMemberResults.length === 0 && (
-                              <p className="text-sm text-muted-foreground text-center py-2">No matching users found</p>
+
+                            {groupMembersLoading ? (
+                              <div className="flex justify-center py-4">
+                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                              </div>
+                            ) : (
+                              <>
+                                {groupMembers.length > 5 && (
+                                  <Input
+                                    placeholder="Filter members..."
+                                    value={groupMemberSearch}
+                                    onChange={e => setGroupMemberSearch(e.target.value)}
+                                    className="max-w-sm"
+                                    data-testid="input-filter-members"
+                                  />
+                                )}
+                                <div className="space-y-1 max-h-96 overflow-y-auto">
+                                  {groupMembers
+                                    .filter(m => {
+                                      if (!groupMemberSearch) return true;
+                                      const s = groupMemberSearch.toLowerCase();
+                                      return m.fullName?.toLowerCase().includes(s) || m.email?.toLowerCase().includes(s);
+                                    })
+                                    .map((member: any) => (
+                                    <div key={member.id} className="flex items-center justify-between p-2 rounded hover:bg-muted/30" data-testid={`admin-member-${member.userId}`}>
+                                      <div className="flex items-center gap-3">
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarImage src={member.avatarUrl || undefined} />
+                                          <AvatarFallback className="text-xs">{(member.fullName || member.email)?.[0]?.toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                          <p className="text-sm font-medium">{member.fullName || 'Unknown'}</p>
+                                          <p className="text-xs text-muted-foreground">{member.email}</p>
+                                        </div>
+                                        <Badge variant={
+                                          member.role === 'owner' ? 'default' :
+                                          member.role === 'admin' ? 'secondary' : 'outline'
+                                        } className="text-xs">
+                                          {member.role}
+                                        </Badge>
+                                      </div>
+                                      {member.role !== 'owner' && (
+                                        <div className="flex items-center gap-2">
+                                          <Select
+                                            value={member.role}
+                                            onValueChange={async (role) => {
+                                              try {
+                                                setActionLoading(`role-${member.userId}`);
+                                                await apiRequest(`/groups/${group.slug}/members/${member.userId}/role`, {
+                                                  method: 'PATCH',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({ role }),
+                                                });
+                                                toast({ title: 'Role updated' });
+                                                const refreshedMembers = await apiRequest<any[]>(`/groups/${group.slug}/members`);
+                                                setGroupMembers(refreshedMembers);
+                                              } catch (err: any) {
+                                                toast({ title: 'Error', description: err.message || 'Failed to update role', variant: 'destructive' });
+                                              } finally {
+                                                setActionLoading(null);
+                                              }
+                                            }}
+                                          >
+                                            <SelectTrigger className="w-[110px] h-8 text-xs" data-testid={`admin-role-${member.userId}`}>
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="admin">Admin</SelectItem>
+                                              <SelectItem value="member">Member</SelectItem>
+                                              <SelectItem value="judge">Judge</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-destructive hover:text-destructive"
+                                            onClick={async () => {
+                                              try {
+                                                setActionLoading(`remove-${member.userId}`);
+                                                await apiRequest(`/groups/${group.slug}/members/${member.userId}`, { method: 'DELETE' });
+                                                toast({ title: 'Member removed' });
+                                                const refreshedMembers = await apiRequest<any[]>(`/groups/${group.slug}/members`);
+                                                setGroupMembers(refreshedMembers);
+                                                const refreshed = await apiRequest<any[]>('/groups');
+                                                setAdminGroups(refreshed);
+                                              } catch (err: any) {
+                                                toast({ title: 'Error', description: err.message || 'Failed to remove', variant: 'destructive' });
+                                              } finally {
+                                                setActionLoading(null);
+                                              }
+                                            }}
+                                            disabled={actionLoading === `remove-${member.userId}`}
+                                            data-testid={`admin-remove-${member.userId}`}
+                                          >
+                                            {actionLoading === `remove-${member.userId}` ? (
+                                              <Loader2 className="w-3 h-3 animate-spin" />
+                                            ) : (
+                                              <Trash2 className="w-3 h-3" />
+                                            )}
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                  {groupMembers.length === 0 && !groupMembersLoading && (
+                                    <p className="text-sm text-muted-foreground text-center py-4">No members yet</p>
+                                  )}
+                                </div>
+                              </>
                             )}
                           </div>
                         )}
