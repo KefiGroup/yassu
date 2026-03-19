@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive, Reply, BarChart3, Gavel, UserPlus } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive, Reply, BarChart3, Gavel, UserPlus, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import { useToast } from '@/hooks/use-toast';
@@ -156,6 +156,9 @@ export default function Admin() {
   const [addMemberRole, setAddMemberRole] = useState<string>('member');
   const [addMemberResults, setAddMemberResults] = useState<any[]>([]);
   const [addMemberSearching, setAddMemberSearching] = useState(false);
+  const [inviteGroupSlug, setInviteGroupSlug] = useState<string | null>(null);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [inviteSending, setInviteSending] = useState(false);
   const [expandedGroupSlug, setExpandedGroupSlug] = useState<string | null>(null);
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
   const [groupMembersLoading, setGroupMembersLoading] = useState(false);
@@ -2713,6 +2716,54 @@ export default function Admin() {
                                   <p className="text-sm text-muted-foreground text-center py-2">No matching users found</p>
                                 )}
                               </div>
+                            )}
+
+                            {inviteGroupSlug === group.slug ? (
+                              <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-semibold">Invite by Email</p>
+                                  <Button size="sm" variant="ghost" onClick={() => { setInviteGroupSlug(null); setInviteEmails(''); }}>
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Enter email addresses separated by commas. An invitation email will be sent to each address.</p>
+                                <textarea
+                                  className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  placeholder="email1@university.edu, email2@university.edu"
+                                  value={inviteEmails}
+                                  onChange={e => setInviteEmails(e.target.value)}
+                                  data-testid="input-invite-emails"
+                                />
+                                <Button
+                                  size="sm"
+                                  disabled={inviteSending || !inviteEmails.trim()}
+                                  onClick={async () => {
+                                    const emails = inviteEmails.split(/[,\n;]+/).map(e => e.trim()).filter(e => e.length > 0 && e.includes('@'));
+                                    if (emails.length === 0) { toast({ title: 'No valid emails', variant: 'destructive' }); return; }
+                                    try {
+                                      setInviteSending(true);
+                                      const result = await apiRequest<{ totalSent: number }>(`/groups/${group.slug}/invite`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ emails }),
+                                      });
+                                      toast({ title: `${result.totalSent} invitation(s) sent`, description: 'Email invites have been sent.' });
+                                      setInviteEmails('');
+                                      setInviteGroupSlug(null);
+                                    } catch (err: any) {
+                                      toast({ title: 'Error', description: err.message || 'Failed to send invites', variant: 'destructive' });
+                                    } finally { setInviteSending(false); }
+                                  }}
+                                  data-testid="button-send-invites"
+                                >
+                                  {inviteSending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />}
+                                  Send Invites
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setInviteGroupSlug(group.slug); setInviteEmails(''); }} data-testid={`button-invite-emails-${group.slug}`}>
+                                <Mail className="w-4 h-4 mr-1" /> Invite by Email
+                              </Button>
                             )}
 
                             <div className="flex items-center justify-between">
