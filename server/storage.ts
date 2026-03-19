@@ -190,8 +190,8 @@ export interface IStorage {
   updateGroup(id: string, data: Partial<schema.Group>): Promise<schema.Group | undefined>;
   deleteGroup(id: string): Promise<void>;
   getGroupMembers(groupId: string): Promise<(schema.GroupMember & { user: User; profile: Profile | null })[]>;
-  addGroupMember(groupId: string, userId: number, role: "owner" | "admin" | "member"): Promise<schema.GroupMember>;
-  updateGroupMemberRole(groupId: string, userId: number, role: "owner" | "admin" | "member"): Promise<schema.GroupMember | undefined>;
+  addGroupMember(groupId: string, userId: number, role: "owner" | "admin" | "member" | "judge"): Promise<schema.GroupMember>;
+  updateGroupMemberRole(groupId: string, userId: number, role: "owner" | "admin" | "member" | "judge"): Promise<schema.GroupMember | undefined>;
   removeGroupMember(groupId: string, userId: number): Promise<void>;
   isGroupAdmin(groupId: string, userId: number): Promise<boolean>;
   getUserGroups(userId: number): Promise<(schema.Group & { role: string })[]>;
@@ -201,6 +201,17 @@ export interface IStorage {
   getGroupInvites(groupId: string): Promise<(schema.GroupInvite & { inviterName: string | null })[]>;
   getGroupInviteByToken(token: string): Promise<(schema.GroupInvite & { group: schema.Group }) | undefined>;
   acceptGroupInvite(token: string, userId: number): Promise<void>;
+  
+  // Group Applications
+  getGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]>;
+  createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication>;
+  updateGroupApplication(id: string, status: "approved" | "rejected", reviewedBy: number): Promise<schema.GroupApplication | undefined>;
+  
+  // Group Idea Ratings
+  getGroupIdeaRatings(groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null; ideaTitle: string })[]>;
+  getIdeaRatings(ideaId: string, groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null })[]>;
+  upsertGroupIdeaRating(data: { groupId: string; ideaId: string; ratedBy: number; score: number; feedback?: string }): Promise<schema.GroupIdeaRating>;
+  getGroupIdeasWithRatings(groupId: string): Promise<(schema.Idea & { creatorName: string | null; avgScore: number | null; ratingCount: number })[]>;
   
   // Pitch Decks
   getPitchDeck(ideaId: string): Promise<typeof schema.pitchDecks.$inferSelect | undefined>;
@@ -1902,7 +1913,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async addGroupMember(groupId: string, userId: number, role: "owner" | "admin" | "member"): Promise<schema.GroupMember> {
+  async addGroupMember(groupId: string, userId: number, role: "owner" | "admin" | "member" | "judge"): Promise<schema.GroupMember> {
     const existing = await db
       .select()
       .from(schema.groupMembers)
@@ -1921,7 +1932,7 @@ export class DatabaseStorage implements IStorage {
     return member;
   }
 
-  async updateGroupMemberRole(groupId: string, userId: number, role: "owner" | "admin" | "member"): Promise<schema.GroupMember | undefined> {
+  async updateGroupMemberRole(groupId: string, userId: number, role: "owner" | "admin" | "member" | "judge"): Promise<schema.GroupMember | undefined> {
     const [updated] = await db
       .update(schema.groupMembers)
       .set({ role })
@@ -2040,6 +2051,127 @@ export class DatabaseStorage implements IStorage {
       .where(eq(schema.groupInvites.token, token));
 
     await this.addGroupMember(invite.groupId, userId, 'member');
+  }
+
+  async getGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]> {
+    const results = await db
+      .select({
+        id: schema.groupApplications.id,
+        groupId: schema.groupApplications.groupId,
+        userId: schema.groupApplications.userId,
+        motivation: schema.groupApplications.motivation,
+        status: schema.groupApplications.status,
+        reviewedBy: schema.groupApplications.reviewedBy,
+        reviewedAt: schema.groupApplications.reviewedAt,
+        createdAt: schema.groupApplications.createdAt,
+        user: schema.users,
+        profile: schema.profiles,
+      })
+      .from(schema.groupApplications)
+      .innerJoin(schema.users, eq(schema.groupApplications.userId, schema.users.id))
+      .leftJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
+      .where(eq(schema.groupApplications.groupId, groupId))
+      .orderBy(desc(schema.groupApplications.createdAt));
+
+    return results.map(r => ({
+      id: r.id,
+      groupId: r.groupId,
+      userId: r.userId,
+      motivation: r.motivation,
+      status: r.status,
+      reviewedBy: r.reviewedBy,
+      reviewedAt: r.reviewedAt,
+      createdAt: r.createdAt,
+      user: r.user,
+      profile: r.profile,
+    }));
+  }
+
+  async createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication> {
+    const [app] = await db.insert(schema.groupApplications).values(data).returning();
+    return app;
+  }
+
+  async updateGroupApplication(id: string, status: "approved" | "rejected", reviewedBy: number): Promise<schema.GroupApplication | undefined> {
+    const [updated] = await db
+      .update(schema.groupApplications)
+      .set({ status, reviewedBy, reviewedAt: new Date() })
+      .where(eq(schema.groupApplications.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getGroupIdeaRatings(groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null; ideaTitle: string })[]> {
+    const results = await db
+      .select({
+        rating: schema.groupIdeaRatings,
+        raterName: schema.users.fullName,
+        ideaTitle: schema.ideas.title,
+      })
+      .from(schema.groupIdeaRatings)
+      .innerJoin(schema.users, eq(schema.groupIdeaRatings.ratedBy, schema.users.id))
+      .innerJoin(schema.ideas, eq(schema.groupIdeaRatings.ideaId, schema.ideas.id))
+      .where(eq(schema.groupIdeaRatings.groupId, groupId))
+      .orderBy(desc(schema.groupIdeaRatings.updatedAt));
+
+    return results.map(r => ({ ...r.rating, raterName: r.raterName, ideaTitle: r.ideaTitle }));
+  }
+
+  async getIdeaRatings(ideaId: string, groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null })[]> {
+    const results = await db
+      .select({
+        rating: schema.groupIdeaRatings,
+        raterName: schema.users.fullName,
+      })
+      .from(schema.groupIdeaRatings)
+      .innerJoin(schema.users, eq(schema.groupIdeaRatings.ratedBy, schema.users.id))
+      .where(and(eq(schema.groupIdeaRatings.ideaId, ideaId), eq(schema.groupIdeaRatings.groupId, groupId)));
+
+    return results.map(r => ({ ...r.rating, raterName: r.raterName }));
+  }
+
+  async upsertGroupIdeaRating(data: { groupId: string; ideaId: string; ratedBy: number; score: number; feedback?: string }): Promise<schema.GroupIdeaRating> {
+    const result = await db.execute(sql`
+      INSERT INTO group_idea_ratings (group_id, idea_id, rated_by, score, feedback)
+      VALUES (${data.groupId}, ${data.ideaId}, ${data.ratedBy}, ${data.score}, ${data.feedback || null})
+      ON CONFLICT (group_id, idea_id, rated_by) DO UPDATE
+      SET score = ${data.score}, feedback = ${data.feedback || null}, updated_at = NOW()
+      RETURNING *
+    `);
+    return result.rows[0] as any as schema.GroupIdeaRating;
+  }
+
+  async getGroupIdeasWithRatings(groupId: string): Promise<(schema.Idea & { creatorName: string | null; avgScore: number | null; ratingCount: number })[]> {
+    const group = await this.getGroup(groupId);
+    if (!group) return [];
+
+    const ideas = await db
+      .select()
+      .from(schema.ideas)
+      .where(eq(schema.ideas.brand, group.slug))
+      .orderBy(desc(schema.ideas.createdAt));
+
+    const results = await Promise.all(ideas.map(async (idea) => {
+      const creator = await this.getUser(idea.createdBy);
+      const ratings = await db
+        .select({ score: schema.groupIdeaRatings.score })
+        .from(schema.groupIdeaRatings)
+        .where(and(eq(schema.groupIdeaRatings.ideaId, idea.id), eq(schema.groupIdeaRatings.groupId, groupId)));
+
+      const ratingCount = ratings.length;
+      const avgScore = ratingCount > 0
+        ? Math.round((ratings.reduce((sum, r) => sum + r.score, 0) / ratingCount) * 10) / 10
+        : null;
+
+      return {
+        ...idea,
+        creatorName: creator?.fullName || null,
+        avgScore,
+        ratingCount,
+      };
+    }));
+
+    return results;
   }
 
 }

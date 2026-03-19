@@ -2,7 +2,7 @@ import express, { Request, Response, Express } from "express";
 import { storage } from "./storage";
 import { pool, db } from "./db";
 import * as schema from "../shared/schema";
-import { eq, sql, desc, asc, or, and, lte, gt, isNull } from "drizzle-orm";
+import { eq, sql, desc, asc, or, and, lte, gt, isNull, ilike } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { Resend } from "resend";
 import multer from "multer";
@@ -7905,7 +7905,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
     try {
       const groups = await storage.getUserGroups(req.session.userId);
-      const adminGroups = groups.filter(g => g.role === 'owner' || g.role === 'admin');
+      const adminGroups = groups.filter(g => g.role === 'owner' || g.role === 'admin' || g.role === 'judge');
       res.json(adminGroups);
     } catch (error) {
       console.error("Get user groups error:", error);
@@ -7969,7 +7969,9 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
       const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
-      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+      const allMembers = await storage.getGroupMembers(group.id);
+      const isJudge = allMembers.some(m => m.userId === req.session.userId && m.role === 'judge');
+      if (!isAdmin && !isSuperAdmin && !isJudge) return res.status(403).json({ error: "Group admin access required" });
 
       const stats = await storage.getGroupStats(group.id);
       res.json({ ...group, ...stats });
@@ -7987,9 +7989,10 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
       const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
-      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
-
       const members = await storage.getGroupMembers(group.id);
+      const isJudge = members.some(m => m.userId === req.session.userId && m.role === 'judge');
+      if (!isAdmin && !isSuperAdmin && !isJudge) return res.status(403).json({ error: "Group admin access required" });
+
       res.json(members.map(m => ({
         id: m.id,
         userId: m.userId,
@@ -8017,7 +8020,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       if (!isGroupAdminUser && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
 
       const { role } = req.body;
-      if (!['admin', 'member'].includes(role)) return res.status(400).json({ error: "Invalid role. Only 'admin' or 'member' can be assigned." });
+      if (!['admin', 'member', 'judge'].includes(role)) return res.status(400).json({ error: "Invalid role. Only 'admin', 'member', or 'judge' can be assigned." });
 
       const targetUserId = parseInt(req.params.userId);
 
@@ -8180,6 +8183,228 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     } catch (error) {
       console.error("Accept group invite error:", error);
       res.status(500).json({ error: "Failed to accept invite" });
+    }
+  });
+
+  app.get("/api/groups/:slug/applications", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const applications = await storage.getGroupApplications(group.id);
+      res.json(applications);
+    } catch (error) {
+      console.error("Get group applications error:", error);
+      res.status(500).json({ error: "Failed to fetch applications" });
+    }
+  });
+
+  app.post("/api/groups/:slug/apply", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const members = await storage.getGroupMembers(group.id);
+      if (members.some(m => m.userId === req.session.userId)) {
+        return res.status(400).json({ error: "You are already a member of this group" });
+      }
+
+      const existingApps = await storage.getGroupApplications(group.id);
+      const pending = existingApps.find(a => a.userId === req.session.userId && a.status === 'pending');
+      if (pending) return res.status(400).json({ error: "You already have a pending application" });
+
+      const { motivation } = req.body;
+      const application = await storage.createGroupApplication({
+        groupId: group.id,
+        userId: req.session.userId,
+        motivation: motivation || null,
+        status: 'pending',
+        reviewedBy: null,
+      });
+      res.json(application);
+    } catch (error) {
+      console.error("Apply to group error:", error);
+      res.status(500).json({ error: "Failed to submit application" });
+    }
+  });
+
+  app.patch("/api/groups/:slug/applications/:applicationId", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const { status } = req.body;
+      if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: "Status must be 'approved' or 'rejected'" });
+
+      const allApps = await storage.getGroupApplications(group.id);
+      const targetApp = allApps.find(a => a.id === req.params.applicationId);
+      if (!targetApp) return res.status(404).json({ error: "Application not found in this group" });
+      if (targetApp.status !== 'pending') return res.status(400).json({ error: "Application has already been reviewed" });
+
+      const updated = await storage.updateGroupApplication(req.params.applicationId, status, req.session.userId);
+      if (!updated) return res.status(404).json({ error: "Application not found" });
+
+      if (status === 'approved') {
+        await storage.addGroupMember(group.id, updated.userId, 'member');
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Update application error:", error);
+      res.status(500).json({ error: "Failed to update application" });
+    }
+  });
+
+  app.get("/api/groups/:slug/ideas-with-ratings", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      const members = await storage.getGroupMembers(group.id);
+      const isJudge = members.some(m => m.userId === req.session.userId && m.role === 'judge');
+      if (!isAdmin && !isSuperAdmin && !isJudge) return res.status(403).json({ error: "Access required" });
+
+      const ideas = await storage.getGroupIdeasWithRatings(group.id);
+      res.json(ideas);
+    } catch (error) {
+      console.error("Get ideas with ratings error:", error);
+      res.status(500).json({ error: "Failed to fetch ideas" });
+    }
+  });
+
+  app.get("/api/groups/:slug/ideas/:ideaId/ratings", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      const members = await storage.getGroupMembers(group.id);
+      const isJudge = members.some(m => m.userId === req.session.userId && m.role === 'judge');
+      if (!isAdmin && !isSuperAdmin && !isJudge) return res.status(403).json({ error: "Access required" });
+
+      const ratings = await storage.getIdeaRatings(req.params.ideaId, group.id);
+      res.json(ratings);
+    } catch (error) {
+      console.error("Get idea ratings error:", error);
+      res.status(500).json({ error: "Failed to fetch ratings" });
+    }
+  });
+
+  app.post("/api/groups/:slug/ideas/:ideaId/rate", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      const members = await storage.getGroupMembers(group.id);
+      const isJudge = members.some(m => m.userId === req.session.userId && m.role === 'judge');
+      if (!isAdmin && !isSuperAdmin && !isJudge) return res.status(403).json({ error: "Rating access required" });
+
+      const groupIdeas = await storage.getGroupIdeas(group.id);
+      if (!groupIdeas.some(i => i.id === req.params.ideaId)) {
+        return res.status(400).json({ error: "This idea does not belong to this group" });
+      }
+
+      const { score, feedback } = req.body;
+      if (typeof score !== 'number' || score < 1 || score > 10) {
+        return res.status(400).json({ error: "Score must be between 1 and 10" });
+      }
+
+      const rating = await storage.upsertGroupIdeaRating({
+        groupId: group.id,
+        ideaId: req.params.ideaId,
+        ratedBy: req.session.userId,
+        score,
+        feedback,
+      });
+      res.json(rating);
+    } catch (error) {
+      console.error("Rate idea error:", error);
+      res.status(500).json({ error: "Failed to rate idea" });
+    }
+  });
+
+  app.post("/api/groups/:slug/add-member", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isSuperAdmin) return res.status(403).json({ error: "Super admin access required" });
+
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const { userId, role } = req.body;
+      if (!userId || !role) return res.status(400).json({ error: "userId and role are required" });
+      if (!['admin', 'member', 'judge'].includes(role)) return res.status(400).json({ error: "Invalid role" });
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const member = await storage.addGroupMember(group.id, userId, role);
+      res.json(member);
+    } catch (error: any) {
+      if (error.message?.includes('already a member')) {
+        return res.status(400).json({ error: "User is already a member of this group" });
+      }
+      console.error("Add member error:", error);
+      res.status(500).json({ error: "Failed to add member" });
+    }
+  });
+
+  app.get("/api/groups/:slug/search-users", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isGroupAdminUser = await storage.isGroupAdmin(group.id, req.session.userId);
+      if (!isAdmin && !isGroupAdminUser) return res.status(403).json({ error: "Admin access required" });
+
+      const query = (req.query.q as string || '').toLowerCase();
+      if (query.length < 2) return res.json([]);
+
+      const allUsers = await db
+        .select({
+          id: schema.users.id,
+          fullName: schema.users.fullName,
+          email: schema.users.email,
+        })
+        .from(schema.users)
+        .where(
+          or(
+            ilike(schema.users.fullName, `%${query}%`),
+            ilike(schema.users.email, `%${query}%`),
+          )
+        )
+        .limit(20);
+
+      const members = await storage.getGroupMembers(group.id);
+      const memberIds = new Set(members.map(m => m.userId));
+      const nonMembers = allUsers.filter(u => !memberIds.has(u.id));
+
+      res.json(nonMembers);
+    } catch (error) {
+      console.error("Search users error:", error);
+      res.status(500).json({ error: "Failed to search users" });
     }
   });
 }

@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, BarChart3, Crown } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -45,12 +46,43 @@ interface GroupIdea {
   creatorName: string | null;
 }
 
+interface GroupIdeaWithRating extends GroupIdea {
+  avgScore: number | null;
+  ratingCount: number;
+}
+
 interface GroupInvite {
   id: string;
   email: string;
   status: string;
   createdAt: string;
   inviterName: string | null;
+}
+
+interface GroupApplication {
+  id: string;
+  userId: number;
+  motivation: string | null;
+  status: string;
+  createdAt: string;
+  user: {
+    id: number;
+    fullName: string | null;
+    email: string;
+  };
+  profile: {
+    avatarUrl: string | null;
+    university: string | null;
+    skills: string[] | null;
+  } | null;
+}
+
+interface IdeaRating {
+  id: string;
+  score: number;
+  feedback: string | null;
+  raterName: string | null;
+  createdAt: string;
 }
 
 interface AdminGroup {
@@ -77,6 +109,9 @@ export default function GroupAdmin() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [inviteEmails, setInviteEmails] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
+  const [ratingIdeaId, setRatingIdeaId] = useState<string | null>(null);
+  const [ratingScore, setRatingScore] = useState<number>(5);
+  const [ratingFeedback, setRatingFeedback] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: myGroups, isLoading: groupsLoading } = useQuery<AdminGroup[]>({
@@ -97,9 +132,9 @@ export default function GroupAdmin() {
     enabled: !!activeSlug,
   });
 
-  const { data: ideas, isLoading: ideasLoading } = useQuery<GroupIdea[]>({
-    queryKey: ['/api/groups', activeSlug, 'ideas'],
-    queryFn: () => apiRequest(`/api/groups/${activeSlug}/ideas`),
+  const { data: ideasWithRatings, isLoading: ideasLoading } = useQuery<GroupIdeaWithRating[]>({
+    queryKey: ['/api/groups', activeSlug, 'ideas-with-ratings'],
+    queryFn: () => apiRequest(`/api/groups/${activeSlug}/ideas-with-ratings`),
     enabled: !!activeSlug,
   });
 
@@ -107,6 +142,18 @@ export default function GroupAdmin() {
     queryKey: ['/api/groups', activeSlug, 'invites'],
     queryFn: () => apiRequest(`/api/groups/${activeSlug}/invites`),
     enabled: !!activeSlug,
+  });
+
+  const { data: applications, isLoading: applicationsLoading } = useQuery<GroupApplication[]>({
+    queryKey: ['/api/groups', activeSlug, 'applications'],
+    queryFn: () => apiRequest(`/api/groups/${activeSlug}/applications`),
+    enabled: !!activeSlug,
+  });
+
+  const { data: ideaRatings } = useQuery<IdeaRating[]>({
+    queryKey: ['/api/groups', activeSlug, 'ideas', ratingIdeaId, 'ratings'],
+    queryFn: () => apiRequest(`/api/groups/${activeSlug}/ideas/${ratingIdeaId}/ratings`),
+    enabled: !!activeSlug && !!ratingIdeaId,
   });
 
   const inviteMutation = useMutation({
@@ -161,6 +208,48 @@ export default function GroupAdmin() {
     },
   });
 
+  const applicationMutation = useMutation({
+    mutationFn: async ({ applicationId, status }: { applicationId: string; status: string }) => {
+      return apiRequest(`/api/groups/${activeSlug}/applications/${applicationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+    },
+    onSuccess: (_, variables) => {
+      toast({ title: variables.status === 'approved' ? 'Application approved' : 'Application rejected' });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'applications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'members'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'details'] });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to update application.', variant: 'destructive' });
+    },
+  });
+
+  const rateMutation = useMutation({
+    mutationFn: async ({ ideaId, score, feedback }: { ideaId: string; score: number; feedback?: string }) => {
+      return apiRequest(`/api/groups/${activeSlug}/ideas/${ideaId}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score, feedback }),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Rating saved' });
+      setRatingIdeaId(null);
+      setRatingScore(5);
+      setRatingFeedback('');
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'ideas-with-ratings'] });
+      if (ratingIdeaId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'ideas', ratingIdeaId, 'ratings'] });
+      }
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to submit rating.', variant: 'destructive' });
+    },
+  });
+
   const handleSendInvites = () => {
     const emails = inviteEmails
       .split(/[,\n;]+/)
@@ -201,6 +290,8 @@ export default function GroupAdmin() {
     reader.readAsText(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  const pendingApplications = applications?.filter(a => a.status === 'pending') || [];
 
   if (groupsLoading) {
     return (
@@ -255,15 +346,23 @@ export default function GroupAdmin() {
         </div>
       ) : group ? (
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4" data-testid="group-admin-tabs">
+          <TabsList className="grid w-full grid-cols-5" data-testid="group-admin-tabs">
             <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+            <TabsTrigger value="applicants" data-testid="tab-applicants" className="relative">
+              Applicants
+              {pendingApplications.length > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center h-5 w-5 text-xs font-bold rounded-full bg-destructive text-destructive-foreground">
+                  {pendingApplications.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="members" data-testid="tab-members">Members</TabsTrigger>
-            <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas</TabsTrigger>
+            <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
             <TabsTrigger value="invites" data-testid="tab-invites">Invites</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
                 <Card data-testid="card-member-count">
                   <CardContent className="pt-6">
@@ -295,6 +394,21 @@ export default function GroupAdmin() {
                 </Card>
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <Card data-testid="card-applicant-count">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-green-500/10">
+                        <UserPlus className="h-6 w-6 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="text-3xl font-bold">{pendingApplications.length}</p>
+                        <p className="text-sm text-muted-foreground">Pending Applicants</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                 <Card data-testid="card-invite-count">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
@@ -338,6 +452,102 @@ export default function GroupAdmin() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="applicants" className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary">{applications?.length || 0} total</Badge>
+              {pendingApplications.length > 0 && (
+                <Badge variant="destructive">{pendingApplications.length} pending</Badge>
+              )}
+            </div>
+
+            {applicationsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : applications && applications.length > 0 ? (
+              <div className="space-y-3">
+                {applications.map(app => (
+                  <Card key={app.id} data-testid={`card-application-${app.id}`}>
+                    <CardContent className="py-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <Avatar className="h-10 w-10 mt-0.5">
+                            <AvatarImage src={app.profile?.avatarUrl || undefined} />
+                            <AvatarFallback>{(app.user.fullName || app.user.email)[0]?.toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium">{app.user.fullName || 'Unknown'}</p>
+                              <Badge
+                                variant={app.status === 'approved' ? 'default' : app.status === 'rejected' ? 'destructive' : 'secondary'}
+                              >
+                                {app.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                                {app.status === 'approved' && <CheckCircle className="h-3 w-3 mr-1" />}
+                                {app.status === 'rejected' && <XCircle className="h-3 w-3 mr-1" />}
+                                {app.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{app.user.email}</p>
+                            {app.profile?.university && (
+                              <p className="text-sm text-muted-foreground mt-0.5">{app.profile.university}</p>
+                            )}
+                            {app.profile?.skills && app.profile.skills.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {app.profile.skills.slice(0, 5).map((skill, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">{skill}</Badge>
+                                ))}
+                                {app.profile.skills.length > 5 && (
+                                  <Badge variant="outline" className="text-xs">+{app.profile.skills.length - 5}</Badge>
+                                )}
+                              </div>
+                            )}
+                            {app.motivation && (
+                              <div className="mt-2 p-2 rounded bg-muted text-sm">
+                                <p className="text-xs text-muted-foreground mb-0.5 font-medium">Motivation</p>
+                                {app.motivation}
+                              </div>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Applied {new Date(app.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        {app.status === 'pending' && (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              size="sm"
+                              onClick={() => applicationMutation.mutate({ applicationId: app.id, status: 'approved' })}
+                              disabled={applicationMutation.isPending}
+                              data-testid={`button-approve-${app.id}`}
+                            >
+                              <ThumbsUp className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => applicationMutation.mutate({ applicationId: app.id, status: 'rejected' })}
+                              disabled={applicationMutation.isPending}
+                              data-testid={`button-reject-${app.id}`}
+                            >
+                              <ThumbsDown className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <UserPlus className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground">No applications received yet</p>
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="members" className="space-y-4">
             <div className="flex items-center gap-3">
               <Input
@@ -368,9 +578,14 @@ export default function GroupAdmin() {
                           <p className="font-medium">{member.fullName || 'Unknown'}</p>
                           <p className="text-sm text-muted-foreground">{member.email}</p>
                         </div>
-                        <Badge variant={member.role === 'owner' ? 'default' : member.role === 'admin' ? 'secondary' : 'outline'}>
+                        <Badge variant={
+                          member.role === 'owner' ? 'default' :
+                          member.role === 'admin' ? 'secondary' :
+                          member.role === 'judge' ? 'outline' : 'outline'
+                        }>
                           {member.role === 'owner' && <Crown className="h-3 w-3 mr-1" />}
                           {member.role === 'admin' && <ShieldCheck className="h-3 w-3 mr-1" />}
+                          {member.role === 'judge' && <Gavel className="h-3 w-3 mr-1" />}
                           {member.role}
                         </Badge>
                       </div>
@@ -386,6 +601,7 @@ export default function GroupAdmin() {
                             <SelectContent>
                               <SelectItem value="admin">Admin</SelectItem>
                               <SelectItem value="member">Member</SelectItem>
+                              <SelectItem value="judge">Judge</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
@@ -411,35 +627,128 @@ export default function GroupAdmin() {
 
           <TabsContent value="ideas" className="space-y-4">
             <div className="flex items-center gap-3">
-              <Badge variant="secondary">{ideas?.length || 0} ideas</Badge>
+              <Badge variant="secondary">{ideasWithRatings?.length || 0} ideas</Badge>
+              <Badge variant="outline">
+                <Star className="h-3 w-3 mr-1" />
+                Rate ideas 1-10 for competition advancement
+              </Badge>
             </div>
 
             {ideasLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-            ) : ideas && ideas.length > 0 ? (
-              <div className="space-y-2">
-                {ideas.map(idea => (
+            ) : ideasWithRatings && ideasWithRatings.length > 0 ? (
+              <div className="space-y-3">
+                {ideasWithRatings.map(idea => (
                   <Card key={idea.id} data-testid={`card-idea-${idea.id}`}>
-                    <CardContent className="flex items-center justify-between py-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{idea.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-sm text-muted-foreground">by {idea.creatorName || 'Unknown'}</p>
-                          {idea.stage && (
-                            <Badge variant="outline" className="text-xs">
-                              {STAGE_LABELS[idea.stage] || idea.stage}
+                    <CardContent className="py-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium">{idea.title}</p>
+                            {idea.stage && (
+                              <Badge variant="outline" className="text-xs">
+                                {STAGE_LABELS[idea.stage] || idea.stage}
+                              </Badge>
+                            )}
+                            <Badge variant={idea.isPublic ? 'secondary' : 'outline'} className="text-xs">
+                              {idea.isPublic ? 'Public' : 'Private'}
                             </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            by {idea.creatorName || 'Unknown'} · {new Date(idea.createdAt).toLocaleDateString()}
+                          </p>
+                          {idea.problem && (
+                            <p className="text-sm mt-1.5 line-clamp-2 text-muted-foreground">{idea.problem}</p>
                           )}
-                          <Badge variant={idea.isPublic ? 'secondary' : 'outline'} className="text-xs">
-                            {idea.isPublic ? 'Public' : 'Private'}
-                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          {idea.avgScore !== null && (
+                            <div className="text-center">
+                              <p className="text-2xl font-bold text-primary">{idea.avgScore}</p>
+                              <p className="text-xs text-muted-foreground">{idea.ratingCount} rating{idea.ratingCount !== 1 ? 's' : ''}</p>
+                            </div>
+                          )}
+                          <Button
+                            size="sm"
+                            variant={ratingIdeaId === idea.id ? 'default' : 'outline'}
+                            onClick={() => {
+                              if (ratingIdeaId === idea.id) {
+                                setRatingIdeaId(null);
+                              } else {
+                                setRatingIdeaId(idea.id);
+                                setRatingScore(5);
+                                setRatingFeedback('');
+                              }
+                            }}
+                            data-testid={`button-rate-${idea.id}`}
+                          >
+                            <Star className="h-4 w-4 mr-1" />
+                            Rate
+                          </Button>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground whitespace-nowrap ml-4">
-                        {new Date(idea.createdAt).toLocaleDateString()}
-                      </p>
+
+                      {ratingIdeaId === idea.id && (
+                        <div className="mt-4 pt-4 border-t space-y-3">
+                          <div className="flex items-center gap-4">
+                            <label className="text-sm font-medium whitespace-nowrap">Score (1-10):</label>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                                <button
+                                  key={n}
+                                  className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                                    n <= ratingScore
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'bg-muted hover:bg-muted-foreground/10'
+                                  }`}
+                                  onClick={() => setRatingScore(n)}
+                                  data-testid={`score-${n}`}
+                                >
+                                  {n}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <Textarea
+                            placeholder="Optional feedback for this idea..."
+                            value={ratingFeedback}
+                            onChange={e => setRatingFeedback(e.target.value)}
+                            className="min-h-[60px]"
+                            data-testid="input-rating-feedback"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => rateMutation.mutate({ ideaId: idea.id, score: ratingScore, feedback: ratingFeedback || undefined })}
+                              disabled={rateMutation.isPending}
+                              data-testid="button-submit-rating"
+                            >
+                              {rateMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                              Submit Rating
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setRatingIdeaId(null)}>
+                              Cancel
+                            </Button>
+                          </div>
+
+                          {ideaRatings && ideaRatings.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <p className="text-sm font-medium text-muted-foreground">Previous Ratings</p>
+                              {ideaRatings.map(r => (
+                                <div key={r.id} className="flex items-start gap-2 p-2 rounded bg-muted text-sm">
+                                  <Badge variant="outline" className="shrink-0">{r.score}/10</Badge>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-xs">{r.raterName || 'Unknown'}</p>
+                                    {r.feedback && <p className="text-muted-foreground mt-0.5">{r.feedback}</p>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

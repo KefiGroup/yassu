@@ -89,11 +89,14 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - Brand-aware: uses `brand.canonicalUrl` and `brand.name` for correct Yassu vs Bruin sharing
   - Customizable share text for general invites vs idea-specific sharing
 - **Group Management System**: Database-backed groups with admin panels for branded communities (e.g., Bruin Entrepreneurs). Features include:
-  - Database tables: `groups`, `group_members` (owner/admin/member roles), `group_invites` (pending/accepted/expired)
-  - **Group Admin Panel** (`src/pages/portal/GroupAdmin.tsx`): Tabs for Overview (stats), Members (role management, search, remove), Ideas (group-specific), Invites (single + CSV bulk upload)
-  - **Super Admin Group Creation**: "Groups" tab in Admin panel to create new groups with name, slug, colors, and university affiliation
+  - Database tables: `groups`, `group_members` (owner/admin/member/judge roles), `group_invites` (pending/accepted/expired), `group_applications` (pending/approved/rejected), `group_idea_ratings` (1-10 scoring with feedback)
+  - **Group Admin Panel** (`src/pages/portal/GroupAdmin.tsx`): Tabs for Overview (stats including pending applicants), Applicants (approve/reject with motivation & skills display), Members (role management including judge, search, remove), Ideas & Ratings (rate ideas 1-10 for competition advancement, view all ratings), Invites (single + CSV bulk upload)
+  - **Judge Role**: Judges can access the Group Admin panel to view and rate ideas but cannot manage members or invites. Judges see "Manage Group" in sidebar.
+  - **Applicant System**: Users can apply to join groups with motivation text. Group admins see pending applicants with user profile details (skills, university) and can approve/reject. Approved applicants auto-become members.
+  - **Idea Rating System**: Admins and judges can score ideas 1-10 with optional feedback for competition advancement. Ideas display average score and rating count. All individual ratings viewable per idea.
+  - **Super Admin Group Management**: "Groups" tab in Admin panel to create new groups and add any platform user to any group with any role (member, admin, judge). User search by name or email with role selector.
   - **Invite System**: Single email or bulk CSV upload, sends branded invitation emails via Resend, accept-invite page at `/accept-group-invite?token=xxx`
-  - **Sidebar Integration**: "Manage Group" link appears automatically for group admins/owners
+  - **Sidebar Integration**: "Manage Group" link appears automatically for group admins/owners/judges
   - Group ideas are linked via the `brand` column on ideas table matching the group slug
   - Bruin Entrepreneurs seeded as first group with UCLA colors and university affiliation
 - **UI/UX**: Utilizes Tailwind CSS and shadcn/ui for a modern, responsive design. The dashboard is redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.

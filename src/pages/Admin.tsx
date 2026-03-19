@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive, Reply, BarChart3 } from 'lucide-react';
+import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive, Reply, BarChart3, Gavel, UserPlus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -150,6 +151,11 @@ export default function Admin() {
   const [adminGroups, setAdminGroups] = useState<any[]>([]);
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [groupForm, setGroupForm] = useState({ name: '', slug: '', description: '', primaryColor: '', accentColor: '', universityId: '' });
+  const [addMemberGroupSlug, setAddMemberGroupSlug] = useState<string | null>(null);
+  const [addMemberSearch, setAddMemberSearch] = useState('');
+  const [addMemberRole, setAddMemberRole] = useState<string>('member');
+  const [addMemberResults, setAddMemberResults] = useState<any[]>([]);
+  const [addMemberSearching, setAddMemberSearching] = useState(false);
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<InboxConversation | null>(null);
   const [conversationMessages, setConversationMessages] = useState<InboxMessage[]>([]);
@@ -2338,35 +2344,145 @@ export default function Admin() {
                 <div className="space-y-3">
                   {adminGroups.map((group: any) => (
                     <Card key={group.id} data-testid={`card-group-${group.slug}`}>
-                      <CardContent className="flex items-center justify-between py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex gap-1">
-                            {group.primaryColor && (
-                              <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
-                            )}
-                            {group.accentColor && (
-                              <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
-                            )}
+                      <CardContent className="py-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="flex gap-1">
+                              {group.primaryColor && (
+                                <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
+                              )}
+                              {group.accentColor && (
+                                <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{group.name}</p>
+                              <p className="text-sm text-muted-foreground">/{group.slug} · {group.description || 'No description'}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{group.name}</p>
-                            <p className="text-sm text-muted-foreground">/{group.slug} · {group.description || 'No description'}</p>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Users className="w-4 h-4" />
+                              {group.memberCount} members
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Lightbulb className="w-4 h-4" />
+                              {group.ideaCount} ideas
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-4 h-4" />
+                              {group.pendingInviteCount} pending
+                            </span>
+                            <Button
+                              size="sm"
+                              variant={addMemberGroupSlug === group.slug ? 'default' : 'outline'}
+                              onClick={() => {
+                                setAddMemberGroupSlug(addMemberGroupSlug === group.slug ? null : group.slug);
+                                setAddMemberSearch('');
+                                setAddMemberResults([]);
+                                setAddMemberRole('member');
+                              }}
+                              data-testid={`button-add-member-${group.slug}`}
+                            >
+                              <UserPlus className="w-4 h-4 mr-1" />
+                              Add User
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            {group.memberCount} members
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Lightbulb className="w-4 h-4" />
-                            {group.ideaCount} ideas
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Mail className="w-4 h-4" />
-                            {group.pendingInviteCount} pending
-                          </span>
-                        </div>
+
+                        {addMemberGroupSlug === group.slug && (
+                          <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+                            <p className="text-sm font-medium">Add user to {group.name}</p>
+                            <div className="flex items-center gap-3">
+                              <Input
+                                placeholder="Search by name or email..."
+                                value={addMemberSearch}
+                                onChange={async (e) => {
+                                  const q = e.target.value;
+                                  setAddMemberSearch(q);
+                                  if (q.length >= 2) {
+                                    setAddMemberSearching(true);
+                                    try {
+                                      const results = await apiRequest(`/api/groups/${group.slug}/search-users?q=${encodeURIComponent(q)}`);
+                                      setAddMemberResults(results as any[]);
+                                    } catch {
+                                      setAddMemberResults([]);
+                                    } finally {
+                                      setAddMemberSearching(false);
+                                    }
+                                  } else {
+                                    setAddMemberResults([]);
+                                  }
+                                }}
+                                className="flex-1"
+                                data-testid="input-add-member-search"
+                              />
+                              <Select value={addMemberRole} onValueChange={setAddMemberRole}>
+                                <SelectTrigger className="w-[130px]" data-testid="select-add-member-role">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="member">Member</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="judge">Judge</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {addMemberSearching && (
+                              <div className="flex justify-center py-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              </div>
+                            )}
+                            {addMemberResults.length > 0 && (
+                              <div className="space-y-1 max-h-48 overflow-y-auto">
+                                {addMemberResults.map((u: any) => (
+                                  <div key={u.id} className="flex items-center justify-between p-2 rounded hover:bg-muted/50" data-testid={`user-result-${u.id}`}>
+                                    <div>
+                                      <p className="text-sm font-medium">{u.fullName || 'Unknown'}</p>
+                                      <p className="text-xs text-muted-foreground">{u.email}</p>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={async () => {
+                                        try {
+                                          setActionLoading(`add-member-${u.id}`);
+                                          await apiRequest(`/api/groups/${group.slug}/add-member`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ userId: u.id, role: addMemberRole }),
+                                          });
+                                          toast({ title: 'User added', description: `${u.fullName || u.email} added as ${addMemberRole}` });
+                                          setAddMemberResults(prev => prev.filter(r => r.id !== u.id));
+                                          const refreshed = await apiRequest<any[]>('/groups');
+                                          setAdminGroups(refreshed);
+                                        } catch (err: any) {
+                                          toast({ title: 'Error', description: err.message || 'Failed to add user', variant: 'destructive' });
+                                        } finally {
+                                          setActionLoading(null);
+                                        }
+                                      }}
+                                      disabled={actionLoading === `add-member-${u.id}`}
+                                      data-testid={`button-add-${u.id}`}
+                                    >
+                                      {actionLoading === `add-member-${u.id}` ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                      ) : (
+                                        <>
+                                          <UserPlus className="w-3 h-3 mr-1" />
+                                          Add as {addMemberRole}
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {addMemberSearch.length >= 2 && !addMemberSearching && addMemberResults.length === 0 && (
+                              <p className="text-sm text-muted-foreground text-center py-2">No matching users found</p>
+                            )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}

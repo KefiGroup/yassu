@@ -606,8 +606,9 @@ export type InsertIndustry = z.infer<typeof insertIndustrySchema>;
 export type IdeaIndustry = typeof ideaIndustries.$inferSelect;
 export type ProfileIndustry = typeof profileIndustries.$inferSelect;
 
-export const groupRoleEnum = pgEnum("group_role", ["owner", "admin", "member"]);
+export const groupRoleEnum = pgEnum("group_role", ["owner", "admin", "member", "judge"]);
 export const groupInviteStatusEnum = pgEnum("group_invite_status", ["pending", "accepted", "expired"]);
+export const groupApplicationStatusEnum = pgEnum("group_application_status", ["pending", "approved", "rejected"]);
 
 export const groups = pgTable("groups", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -640,9 +641,33 @@ export const groupInvites = pgTable("group_invites", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const groupApplications = pgTable("group_applications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  motivation: text("motivation"),
+  status: groupApplicationStatusEnum("status").default("pending").notNull(),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const groupIdeaRatings = pgTable("group_idea_ratings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  ratedBy: integer("rated_by").references(() => users.id).notNull(),
+  score: integer("score").notNull(),
+  feedback: text("feedback"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
 export const insertGroupMemberSchema = createInsertSchema(groupMembers).omit({ id: true, joinedAt: true });
 export const insertGroupInviteSchema = createInsertSchema(groupInvites).omit({ id: true, createdAt: true });
+export const insertGroupApplicationSchema = createInsertSchema(groupApplications).omit({ id: true, createdAt: true, reviewedAt: true });
+export const insertGroupIdeaRatingSchema = createInsertSchema(groupIdeaRatings).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type Group = typeof groups.$inferSelect;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
@@ -650,6 +675,10 @@ export type GroupMember = typeof groupMembers.$inferSelect;
 export type InsertGroupMember = z.infer<typeof insertGroupMemberSchema>;
 export type GroupInvite = typeof groupInvites.$inferSelect;
 export type InsertGroupInvite = z.infer<typeof insertGroupInviteSchema>;
+export type GroupApplication = typeof groupApplications.$inferSelect;
+export type InsertGroupApplication = z.infer<typeof insertGroupApplicationSchema>;
+export type GroupIdeaRating = typeof groupIdeaRatings.$inferSelect;
+export type InsertGroupIdeaRating = z.infer<typeof insertGroupIdeaRatingSchema>;
 
 export const PREDEFINED_INDUSTRIES = [
   { name: "Technology & Software", slug: "technology-software" },
