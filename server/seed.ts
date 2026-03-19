@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { universities } from "../shared/schema";
-import { sql } from "drizzle-orm";
+import { universities, groups, groupMembers } from "../shared/schema";
+import { sql, eq } from "drizzle-orm";
 
 const UNIVERSITIES_DATA = [
   { name: "Brown University", shortName: "Brown", domain: "brown.edu" },
@@ -52,5 +52,39 @@ export async function seedDatabase(): Promise<void> {
     }
   } catch (error) {
     console.error("Error seeding database:", error);
+  }
+
+  try {
+    const existingGroups = await db.select({ count: sql<number>`count(*)::int` }).from(groups);
+    const groupCount = Number(existingGroups[0]?.count) || 0;
+
+    if (groupCount === 0) {
+      console.log("Seeding Bruin Entrepreneurs group...");
+      const uclaRows = await db.select().from(universities).where(eq(universities.shortName, 'UCLA'));
+      const uclaId = uclaRows[0]?.id || null;
+
+      const [bruinGroup] = await db.insert(groups).values({
+        name: 'Bruin Entrepreneurs',
+        slug: 'bruin',
+        description: 'UCLA\'s premier entrepreneurship community — connecting student founders, hosting pitch competitions, and building the next generation of startups.',
+        primaryColor: '213 69% 38%',
+        accentColor: '45 100% 51%',
+        universityId: uclaId,
+        createdBy: 1,
+      }).onConflictDoNothing().returning();
+
+      if (bruinGroup) {
+        await db.insert(groupMembers).values({
+          groupId: bruinGroup.id,
+          userId: 1,
+          role: 'owner',
+        }).onConflictDoNothing();
+        console.log("Seeded Bruin Entrepreneurs group");
+      }
+    } else {
+      console.log(`Groups already seeded (${groupCount} found)`);
+    }
+  } catch (error) {
+    console.error("Error seeding groups:", error);
   }
 }
