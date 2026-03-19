@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/api';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -80,12 +81,14 @@ export function PortalSidebar() {
 
   const { data: unreadData } = useQuery<{ unreadCount: number }>({
     queryKey: ['/api/messages/unread/count'],
+    queryFn: () => apiRequest('/messages/unread/count'),
     enabled: !!user,
     refetchInterval: 30000,
   });
 
-  const { data: myAdminGroups } = useQuery<{ slug: string; name: string }[]>({
+  const { data: myAdminGroups } = useQuery<{ slug: string; name: string; role?: string }[]>({
     queryKey: ['/api/groups/my-groups'],
+    queryFn: () => apiRequest('/groups/my-groups'),
     enabled: !!user,
   });
 
