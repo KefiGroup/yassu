@@ -2347,14 +2347,18 @@ export default function Admin() {
                       <CardContent className="py-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            <div className="flex gap-1">
-                              {group.primaryColor && (
-                                <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
-                              )}
-                              {group.accentColor && (
-                                <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
-                              )}
-                            </div>
+                            {group.logoUrl ? (
+                              <img src={group.logoUrl} alt={group.name} className="w-10 h-10 rounded-lg object-cover border" />
+                            ) : (
+                              <div className="flex gap-1">
+                                {group.primaryColor && (
+                                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
+                                )}
+                                {group.accentColor && (
+                                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
+                                )}
+                              </div>
+                            )}
                             <div>
                               <p className="font-medium">{group.name}</p>
                               <p className="text-sm text-muted-foreground">/{group.slug} · {group.description || 'No description'}</p>

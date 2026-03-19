@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -21,6 +21,7 @@ interface GroupDetails {
   description: string | null;
   primaryColor: string | null;
   accentColor: string | null;
+  logoUrl: string | null;
   memberCount: number;
   ideaCount: number;
   pendingInviteCount: number;
@@ -113,6 +114,7 @@ export default function GroupAdmin() {
   const [ratingScore, setRatingScore] = useState<number>(5);
   const [ratingFeedback, setRatingFeedback] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const { data: myGroups, isLoading: groupsLoading } = useQuery<AdminGroup[]>({
     queryKey: ['/api/groups/my-groups'],
@@ -249,6 +251,45 @@ export default function GroupAdmin() {
       toast({ title: 'Error', description: 'Failed to submit rating.', variant: 'destructive' });
     },
   });
+
+  const logoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('logo', file);
+      const response = await fetch(`/api/groups/${activeSlug}/logo`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(err.error || 'Upload failed');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Logo updated' });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'details'] });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast({ title: 'Invalid file type', description: 'Please upload a JPEG, PNG, or WebP image.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 5MB.', variant: 'destructive' });
+      return;
+    }
+    logoMutation.mutate(file);
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
 
   const handleSendInvites = () => {
     const emails = inviteEmails
@@ -431,20 +472,53 @@ export default function GroupAdmin() {
                 <CardDescription>{group.description || 'No description'}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Slug</p>
-                    <p className="font-medium">/{group.slug}</p>
+                <div className="flex items-start gap-6">
+                  <div className="shrink-0">
+                    <div className="relative group/logo">
+                      <div className="w-24 h-24 rounded-xl border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted flex items-center justify-center">
+                        {group.logoUrl ? (
+                          <img src={group.logoUrl} alt={`${group.name} logo`} className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
+                        )}
+                      </div>
+                      <button
+                        className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer"
+                        onClick={() => logoInputRef.current?.click()}
+                        data-testid="button-upload-logo"
+                      >
+                        {logoMutation.isPending ? (
+                          <Loader2 className="w-5 h-5 text-white animate-spin" />
+                        ) : (
+                          <Camera className="w-5 h-5 text-white" />
+                        )}
+                      </button>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        data-testid="input-logo-upload"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center mt-1.5">256 x 256px</p>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">Brand Colors</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {group.primaryColor && (
-                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
-                      )}
-                      {group.accentColor && (
-                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
-                      )}
+                  <div className="grid grid-cols-2 gap-4 text-sm flex-1">
+                    <div>
+                      <p className="text-muted-foreground">Slug</p>
+                      <p className="font-medium">/{group.slug}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Brand Colors</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {group.primaryColor && (
+                          <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
+                        )}
+                        {group.accentColor && (
+                          <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
