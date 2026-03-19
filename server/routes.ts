@@ -8065,6 +8065,136 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     }
   });
 
+  app.patch("/api/groups/:slug", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isGroupAdminUser = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isGroupAdminUser && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const allowedFields = ['name', 'description', 'primaryColor', 'accentColor', 'universityId'];
+      const updates: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+      if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No valid fields to update" });
+
+      const updated = await storage.updateGroup(group.id, updates);
+      res.json(updated);
+    } catch (error) {
+      console.error("Update group error:", error);
+      res.status(500).json({ error: "Failed to update group" });
+    }
+  });
+
+  app.delete("/api/groups/:slug", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isSuperAdmin) return res.status(403).json({ error: "Super admin access required" });
+
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      await storage.deleteGroup(group.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete group error:", error);
+      res.status(500).json({ error: "Failed to delete group" });
+    }
+  });
+
+  app.post("/api/groups/:slug/transfer-ownership", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      const members = await storage.getGroupMembers(group.id);
+      const currentOwner = members.find(m => m.role === 'owner');
+      const isOwner = currentOwner && currentOwner.userId === req.session.userId;
+      if (!isOwner && !isSuperAdmin) return res.status(403).json({ error: "Only the group owner or super admin can transfer ownership" });
+
+      const { newOwnerId } = req.body;
+      if (!newOwnerId) return res.status(400).json({ error: "New owner ID required" });
+
+      const newOwnerMember = members.find(m => m.userId === newOwnerId);
+      if (!newOwnerMember) return res.status(400).json({ error: "New owner must be a current group member" });
+
+      if (!currentOwner) return res.status(400).json({ error: "No current owner found" });
+
+      await storage.transferGroupOwnership(group.id, currentOwner.userId, newOwnerId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Transfer ownership error:", error);
+      res.status(500).json({ error: "Failed to transfer ownership" });
+    }
+  });
+
+  app.delete("/api/groups/:slug/invites/:inviteId", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isGroupAdminUser = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isGroupAdminUser && !isSuperAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      await storage.revokeGroupInvite(req.params.inviteId, group.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Revoke invite error:", error);
+      res.status(500).json({ error: "Failed to revoke invite" });
+    }
+  });
+
+  app.post("/api/groups/:slug/invites/:inviteId/resend", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isGroupAdminUser = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isGroupAdminUser && !isSuperAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const invites = await storage.getGroupInvites(group.id);
+      const invite = invites.find(i => i.id === req.params.inviteId);
+      if (!invite) return res.status(404).json({ error: "Invite not found" });
+      if (invite.status !== 'pending') return res.status(400).json({ error: "Can only resend pending invites" });
+
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const APP_URL = process.env.REPLIT_DEV_DOMAIN
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : `${req.protocol}://${req.get('host')}`;
+      const inviteUrl = `${APP_URL}/accept-group-invite?token=${invite.token}`;
+
+      await resend.emails.send({
+        from: 'Yassu <noreply@yassu.ai>',
+        to: invite.email,
+        subject: `Reminder: You're invited to join ${group.name} on Yassu`,
+        html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px">
+          <h2>Join ${group.name}</h2>
+          <p>This is a reminder that you've been invited to join <strong>${group.name}</strong> on Yassu.</p>
+          <a href="${inviteUrl}" style="display:inline-block;padding:12px 24px;background:#7C5CFC;color:#fff;border-radius:8px;text-decoration:none;margin-top:16px">Accept Invitation</a>
+        </div>`
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Resend invite error:", error);
+      res.status(500).json({ error: "Failed to resend invite" });
+    }
+  });
+
   app.get("/api/groups/:slug/ideas", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
     try {

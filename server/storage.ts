@@ -201,6 +201,9 @@ export interface IStorage {
   getGroupInvites(groupId: string): Promise<(schema.GroupInvite & { inviterName: string | null })[]>;
   getGroupInviteByToken(token: string): Promise<(schema.GroupInvite & { group: schema.Group }) | undefined>;
   acceptGroupInvite(token: string, userId: number): Promise<void>;
+  revokeGroupInvite(inviteId: string, groupId: string): Promise<void>;
+  updateGroupInvite(inviteId: string, data: Partial<schema.GroupInvite>): Promise<schema.GroupInvite | undefined>;
+  transferGroupOwnership(groupId: string, currentOwnerId: number, newOwnerId: number): Promise<void>;
   
   // Group Applications
   getGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]>;
@@ -2051,6 +2054,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(schema.groupInvites.token, token));
 
     await this.addGroupMember(invite.groupId, userId, 'member');
+  }
+
+  async revokeGroupInvite(inviteId: string, groupId: string): Promise<void> {
+    await db
+      .update(schema.groupInvites)
+      .set({ status: 'expired' as any })
+      .where(and(eq(schema.groupInvites.id, inviteId), eq(schema.groupInvites.groupId, groupId)));
+  }
+
+  async updateGroupInvite(inviteId: string, data: Partial<schema.GroupInvite>): Promise<schema.GroupInvite | undefined> {
+    const [updated] = await db
+      .update(schema.groupInvites)
+      .set(data)
+      .where(eq(schema.groupInvites.id, inviteId))
+      .returning();
+    return updated;
+  }
+
+  async transferGroupOwnership(groupId: string, currentOwnerId: number, newOwnerId: number): Promise<void> {
+    await db
+      .update(schema.groupMembers)
+      .set({ role: 'admin' })
+      .where(and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, currentOwnerId)));
+    await db
+      .update(schema.groupMembers)
+      .set({ role: 'owner' })
+      .where(and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, newOwnerId)));
   }
 
   async getGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]> {

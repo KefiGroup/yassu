@@ -94,8 +94,10 @@ The platform utilizes a full-stack architecture with React (TypeScript, Vite, Ta
   - **Judge Role**: Judges can access the Group Admin panel to view and rate ideas but cannot manage members or invites. Judges see "Manage Group" in sidebar.
   - **Applicant System**: Users can apply to join groups with motivation text. Group admins see pending applicants with user profile details (skills, university) and can approve/reject. Approved applicants auto-become members.
   - **Idea Rating System**: Admins and judges can score ideas 1-10 with optional feedback for competition advancement. Ideas display average score and rating count. All individual ratings viewable per idea.
-  - **Super Admin Group Management**: "Groups" tab in Admin panel to create new groups and add any platform user to any group with any role (member, admin, judge). User search by name or email with role selector.
-  - **Invite System**: Single email or bulk CSV upload, sends branded invitation emails via Resend, accept-invite page at `/accept-group-invite?token=xxx`
+  - **Super Admin Group Management**: "Groups" tab in Admin panel with expandable group cards. Features: create groups, edit group settings (name, description, colors, university), add/remove members with role assignment, change member roles, delete groups with confirmation, transfer ownership to another member.
+  - **Group Admin Editable Overview**: Group admins can edit their group's name, description, and brand colors directly from the Overview tab. Logo upload also available.
+  - **Invite System**: Single email or bulk CSV upload, sends branded invitation emails via Resend, accept-invite page at `/accept-group-invite?token=xxx`. Pending invites can be revoked or resent.
+  - **Ownership Transfer**: Super admins and group owners can transfer ownership to another group member. Current owner becomes admin.
   - **Sidebar Integration**: "Manage Group" link appears automatically for group admins/owners/judges
   - Group ideas are linked via the `brand` column on ideas table matching the group slug
   - Bruin Entrepreneurs seeded as first group with UCLA colors and university affiliation

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -113,6 +113,8 @@ export default function GroupAdmin() {
   const [ratingIdeaId, setRatingIdeaId] = useState<string | null>(null);
   const [ratingScore, setRatingScore] = useState<number>(5);
   const [ratingFeedback, setRatingFeedback] = useState('');
+  const [isEditingOverview, setIsEditingOverview] = useState(false);
+  const [editForm, setEditForm] = useState<{ name: string; description: string; primaryColor: string; accentColor: string }>({ name: '', description: '', primaryColor: '', accentColor: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,46 +123,47 @@ export default function GroupAdmin() {
   });
 
   const activeSlug = selectedGroup || myGroups?.[0]?.slug || null;
+  const myRole = myGroups?.find(g => g.slug === activeSlug)?.role || 'member';
 
   const { data: group, isLoading: detailsLoading } = useQuery<GroupDetails>({
     queryKey: ['/api/groups', activeSlug, 'details'],
-    queryFn: () => apiRequest(`/api/groups/${activeSlug}/details`),
+    queryFn: () => apiRequest(`/groups/${activeSlug}/details`),
     enabled: !!activeSlug,
   });
 
   const { data: members, isLoading: membersLoading } = useQuery<GroupMember[]>({
     queryKey: ['/api/groups', activeSlug, 'members'],
-    queryFn: () => apiRequest(`/api/groups/${activeSlug}/members`),
+    queryFn: () => apiRequest(`/groups/${activeSlug}/members`),
     enabled: !!activeSlug,
   });
 
   const { data: ideasWithRatings, isLoading: ideasLoading } = useQuery<GroupIdeaWithRating[]>({
     queryKey: ['/api/groups', activeSlug, 'ideas-with-ratings'],
-    queryFn: () => apiRequest(`/api/groups/${activeSlug}/ideas-with-ratings`),
+    queryFn: () => apiRequest(`/groups/${activeSlug}/ideas-with-ratings`),
     enabled: !!activeSlug,
   });
 
   const { data: invites, isLoading: invitesLoading } = useQuery<GroupInvite[]>({
     queryKey: ['/api/groups', activeSlug, 'invites'],
-    queryFn: () => apiRequest(`/api/groups/${activeSlug}/invites`),
+    queryFn: () => apiRequest(`/groups/${activeSlug}/invites`),
     enabled: !!activeSlug,
   });
 
   const { data: applications, isLoading: applicationsLoading } = useQuery<GroupApplication[]>({
     queryKey: ['/api/groups', activeSlug, 'applications'],
-    queryFn: () => apiRequest(`/api/groups/${activeSlug}/applications`),
+    queryFn: () => apiRequest(`/groups/${activeSlug}/applications`),
     enabled: !!activeSlug,
   });
 
   const { data: ideaRatings } = useQuery<IdeaRating[]>({
     queryKey: ['/api/groups', activeSlug, 'ideas', ratingIdeaId, 'ratings'],
-    queryFn: () => apiRequest(`/api/groups/${activeSlug}/ideas/${ratingIdeaId}/ratings`),
+    queryFn: () => apiRequest(`/groups/${activeSlug}/ideas/${ratingIdeaId}/ratings`),
     enabled: !!activeSlug && !!ratingIdeaId,
   });
 
   const inviteMutation = useMutation({
     mutationFn: async (emails: string[]) => {
-      return apiRequest(`/api/groups/${activeSlug}/invite`, {
+      return apiRequest(`/groups/${activeSlug}/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emails }),
@@ -179,7 +182,7 @@ export default function GroupAdmin() {
 
   const roleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
-      return apiRequest(`/api/groups/${activeSlug}/members/${userId}/role`, {
+      return apiRequest(`/groups/${activeSlug}/members/${userId}/role`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role }),
@@ -196,7 +199,7 @@ export default function GroupAdmin() {
 
   const removeMutation = useMutation({
     mutationFn: async (userId: number) => {
-      return apiRequest(`/api/groups/${activeSlug}/members/${userId}`, {
+      return apiRequest(`/groups/${activeSlug}/members/${userId}`, {
         method: 'DELETE',
       });
     },
@@ -212,7 +215,7 @@ export default function GroupAdmin() {
 
   const applicationMutation = useMutation({
     mutationFn: async ({ applicationId, status }: { applicationId: string; status: string }) => {
-      return apiRequest(`/api/groups/${activeSlug}/applications/${applicationId}`, {
+      return apiRequest(`/groups/${activeSlug}/applications/${applicationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -231,7 +234,7 @@ export default function GroupAdmin() {
 
   const rateMutation = useMutation({
     mutationFn: async ({ ideaId, score, feedback }: { ideaId: string; score: number; feedback?: string }) => {
-      return apiRequest(`/api/groups/${activeSlug}/ideas/${ideaId}/rate`, {
+      return apiRequest(`/groups/${activeSlug}/ideas/${ideaId}/rate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ score, feedback }),
@@ -290,6 +293,51 @@ export default function GroupAdmin() {
     logoMutation.mutate(file);
     if (logoInputRef.current) logoInputRef.current.value = '';
   };
+
+  const updateGroupMutation = useMutation({
+    mutationFn: async (data: { name: string; description: string; primaryColor: string; accentColor: string }) => {
+      return apiRequest(`/groups/${activeSlug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Group settings updated' });
+      setIsEditingOverview(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'details'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/my-groups'] });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
+  const revokeInviteMutation = useMutation({
+    mutationFn: async (inviteId: string) => {
+      return apiRequest(`/groups/${activeSlug}/invites/${inviteId}`, { method: 'DELETE' });
+    },
+    onSuccess: () => {
+      toast({ title: 'Invite revoked' });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'invites'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'details'] });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to revoke invite', variant: 'destructive' });
+    },
+  });
+
+  const resendInviteMutation = useMutation({
+    mutationFn: async (inviteId: string) => {
+      return apiRequest(`/groups/${activeSlug}/invites/${inviteId}/resend`, { method: 'POST' });
+    },
+    onSuccess: () => {
+      toast({ title: 'Invite resent', description: 'A reminder email has been sent.' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to resend invite', variant: 'destructive' });
+    },
+  });
 
   const handleSendInvites = () => {
     const emails = inviteEmails
@@ -467,9 +515,21 @@ export default function GroupAdmin() {
             </div>
 
             <Card>
-              <CardHeader>
-                <CardTitle>{group.name}</CardTitle>
-                <CardDescription>{group.description || 'No description'}</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>{group.name}</CardTitle>
+                  <CardDescription>{group.description || 'No description'}</CardDescription>
+                </div>
+                {myRole !== 'judge' && (
+                  <Button size="sm" variant={isEditingOverview ? 'default' : 'outline'} onClick={() => {
+                    if (isEditingOverview) { setIsEditingOverview(false); } else {
+                      setEditForm({ name: group.name || '', description: group.description || '', primaryColor: group.primaryColor || '', accentColor: group.accentColor || '' });
+                      setIsEditingOverview(true);
+                    }
+                  }} data-testid="button-toggle-edit-overview">
+                    <Edit className="w-4 h-4 mr-1" /> {isEditingOverview ? 'Cancel' : 'Edit'}
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="flex items-start gap-6">
@@ -482,17 +542,19 @@ export default function GroupAdmin() {
                           <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
                         )}
                       </div>
-                      <button
-                        className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer"
-                        onClick={() => logoInputRef.current?.click()}
-                        data-testid="button-upload-logo"
-                      >
-                        {logoMutation.isPending ? (
-                          <Loader2 className="w-5 h-5 text-white animate-spin" />
-                        ) : (
-                          <Camera className="w-5 h-5 text-white" />
-                        )}
-                      </button>
+                      {myRole !== 'judge' && (
+                        <button
+                          className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer"
+                          onClick={() => logoInputRef.current?.click()}
+                          data-testid="button-upload-logo"
+                        >
+                          {logoMutation.isPending ? (
+                            <Loader2 className="w-5 h-5 text-white animate-spin" />
+                          ) : (
+                            <Camera className="w-5 h-5 text-white" />
+                          )}
+                        </button>
+                      )}
                       <input
                         ref={logoInputRef}
                         type="file"
@@ -504,23 +566,58 @@ export default function GroupAdmin() {
                     </div>
                     <p className="text-xs text-muted-foreground text-center mt-1.5">256 x 256px</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm flex-1">
-                    <div>
-                      <p className="text-muted-foreground">Slug</p>
-                      <p className="font-medium">/{group.slug}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Brand Colors</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {group.primaryColor && (
-                          <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
-                        )}
-                        {group.accentColor && (
-                          <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
-                        )}
+                  {isEditingOverview ? (
+                    <div className="flex-1 space-y-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">Name</label>
+                        <Input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} data-testid="input-edit-overview-name" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">Description</label>
+                        <Input value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} data-testid="input-edit-overview-desc" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground">Primary Color (HSL)</label>
+                          <div className="flex items-center gap-2">
+                            <Input value={editForm.primaryColor} onChange={e => setEditForm({ ...editForm, primaryColor: e.target.value })} placeholder="213 69% 38%" data-testid="input-edit-overview-primary" />
+                            {editForm.primaryColor && <div className="w-6 h-6 rounded-full border shrink-0" style={{ backgroundColor: `hsl(${editForm.primaryColor})` }} />}
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground">Accent Color (HSL)</label>
+                          <div className="flex items-center gap-2">
+                            <Input value={editForm.accentColor} onChange={e => setEditForm({ ...editForm, accentColor: e.target.value })} placeholder="45 100% 51%" data-testid="input-edit-overview-accent" />
+                            {editForm.accentColor && <div className="w-6 h-6 rounded-full border shrink-0" style={{ backgroundColor: `hsl(${editForm.accentColor})` }} />}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" disabled={updateGroupMutation.isPending} onClick={() => updateGroupMutation.mutate(editForm)} data-testid="button-save-overview">
+                          {updateGroupMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Save Changes
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setIsEditingOverview(false)}>Cancel</Button>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4 text-sm flex-1">
+                      <div>
+                        <p className="text-muted-foreground">Slug</p>
+                        <p className="font-medium">/{group.slug}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Brand Colors</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {group.primaryColor && (
+                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
+                          )}
+                          {group.accentColor && (
+                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -918,14 +1015,42 @@ export default function GroupAdmin() {
                             </p>
                           </div>
                         </div>
-                        <Badge
-                          variant={invite.status === 'accepted' ? 'default' : invite.status === 'expired' ? 'destructive' : 'secondary'}
-                        >
-                          {invite.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                          {invite.status === 'accepted' && <CheckCircle className="h-3 w-3 mr-1" />}
-                          {invite.status === 'expired' && <XCircle className="h-3 w-3 mr-1" />}
-                          {invite.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {invite.status === 'pending' && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                title="Resend invite"
+                                disabled={resendInviteMutation.isPending}
+                                onClick={() => resendInviteMutation.mutate(invite.id)}
+                                data-testid={`button-resend-${invite.id}`}
+                              >
+                                <RotateCw className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                title="Revoke invite"
+                                disabled={revokeInviteMutation.isPending}
+                                onClick={() => revokeInviteMutation.mutate(invite.id)}
+                                data-testid={`button-revoke-${invite.id}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                          <Badge
+                            variant={invite.status === 'accepted' ? 'default' : invite.status === 'expired' ? 'destructive' : 'secondary'}
+                          >
+                            {invite.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                            {invite.status === 'accepted' && <CheckCircle className="h-3 w-3 mr-1" />}
+                            {invite.status === 'expired' && <XCircle className="h-3 w-3 mr-1" />}
+                            {invite.status}
+                          </Badge>
+                        </div>
                       </div>
                     ))}
                   </div>

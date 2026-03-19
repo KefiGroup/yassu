@@ -160,6 +160,10 @@ export default function Admin() {
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
   const [groupMembersLoading, setGroupMembersLoading] = useState(false);
   const [groupMemberSearch, setGroupMemberSearch] = useState('');
+  const [editingGroup, setEditingGroup] = useState<any | null>(null);
+  const [showDeleteGroupConfirm, setShowDeleteGroupConfirm] = useState<string | null>(null);
+  const [transferOwnerUserId, setTransferOwnerUserId] = useState<number | null>(null);
+  const [showTransferConfirm, setShowTransferConfirm] = useState(false);
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<InboxConversation | null>(null);
   const [conversationMessages, setConversationMessages] = useState<InboxMessage[]>([]);
@@ -2407,24 +2411,151 @@ export default function Admin() {
 
                         {expandedGroupSlug === group.slug && (
                           <div className="space-y-4 pt-2 border-t">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-sm font-semibold">Members ({groupMembers.length})</h3>
-                              <Button
-                                size="sm"
-                                variant={addMemberGroupSlug === group.slug ? 'default' : 'outline'}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setAddMemberGroupSlug(addMemberGroupSlug === group.slug ? null : group.slug);
-                                  setAddMemberSearch('');
-                                  setAddMemberResults([]);
-                                  setAddMemberRole('member');
-                                }}
-                                data-testid={`button-add-member-${group.slug}`}
-                              >
-                                <UserPlus className="w-4 h-4 mr-1" />
-                                Add User
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Button size="sm" variant={editingGroup?.slug === group.slug ? 'default' : 'outline'} onClick={(e) => { e.stopPropagation(); setEditingGroup(editingGroup?.slug === group.slug ? null : { ...group }); }} data-testid={`button-edit-group-${group.slug}`}>
+                                <Edit className="w-4 h-4 mr-1" /> Edit Settings
+                              </Button>
+                              <Button size="sm" variant={addMemberGroupSlug === group.slug ? 'default' : 'outline'} onClick={(e) => { e.stopPropagation(); setAddMemberGroupSlug(addMemberGroupSlug === group.slug ? null : group.slug); setAddMemberSearch(''); setAddMemberResults([]); setAddMemberRole('member'); }} data-testid={`button-add-member-${group.slug}`}>
+                                <UserPlus className="w-4 h-4 mr-1" /> Add User
+                              </Button>
+                              <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setShowDeleteGroupConfirm(group.slug); }} data-testid={`button-delete-group-${group.slug}`}>
+                                <Trash2 className="w-4 h-4 mr-1" /> Delete Group
                               </Button>
                             </div>
+
+                            {showDeleteGroupConfirm === group.slug && (
+                              <div className="border border-destructive/30 rounded-lg p-4 bg-destructive/5 space-y-3">
+                                <p className="text-sm font-medium text-destructive">Are you sure you want to delete "{group.name}"?</p>
+                                <p className="text-xs text-muted-foreground">This will permanently remove all members, invites, applications, and ratings. This cannot be undone.</p>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="destructive" disabled={actionLoading === `delete-group-${group.slug}`} onClick={async () => {
+                                    try {
+                                      setActionLoading(`delete-group-${group.slug}`);
+                                      await apiRequest(`/groups/${group.slug}`, { method: 'DELETE' });
+                                      toast({ title: 'Group deleted' });
+                                      setShowDeleteGroupConfirm(null);
+                                      setExpandedGroupSlug(null);
+                                      const refreshed = await apiRequest<any[]>('/groups');
+                                      setAdminGroups(refreshed);
+                                    } catch (err: any) {
+                                      toast({ title: 'Error', description: err.message || 'Failed to delete', variant: 'destructive' });
+                                    } finally { setActionLoading(null); }
+                                  }} data-testid={`button-confirm-delete-${group.slug}`}>
+                                    {actionLoading === `delete-group-${group.slug}` ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                                    Yes, Delete
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => setShowDeleteGroupConfirm(null)}>Cancel</Button>
+                                </div>
+                              </div>
+                            )}
+
+                            {editingGroup?.slug === group.slug && (
+                              <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+                                <p className="text-sm font-semibold">Edit Group Settings</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-muted-foreground">Name</label>
+                                    <Input value={editingGroup.name || ''} onChange={e => setEditingGroup({ ...editingGroup, name: e.target.value })} data-testid="input-edit-group-name" />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-muted-foreground">University</label>
+                                    <Select value={editingGroup.universityId || ''} onValueChange={v => setEditingGroup({ ...editingGroup, universityId: v || null })}>
+                                      <SelectTrigger data-testid="select-edit-university"><SelectValue placeholder="Select..." /></SelectTrigger>
+                                      <SelectContent>
+                                        {universities.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-medium text-muted-foreground">Description</label>
+                                  <Input value={editingGroup.description || ''} onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })} data-testid="input-edit-group-desc" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-muted-foreground">Primary Color (HSL)</label>
+                                    <div className="flex items-center gap-2">
+                                      <Input value={editingGroup.primaryColor || ''} onChange={e => setEditingGroup({ ...editingGroup, primaryColor: e.target.value })} placeholder="213 69% 38%" data-testid="input-edit-primary-color" />
+                                      {editingGroup.primaryColor && <div className="w-6 h-6 rounded-full border shrink-0" style={{ backgroundColor: `hsl(${editingGroup.primaryColor})` }} />}
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-muted-foreground">Accent Color (HSL)</label>
+                                    <div className="flex items-center gap-2">
+                                      <Input value={editingGroup.accentColor || ''} onChange={e => setEditingGroup({ ...editingGroup, accentColor: e.target.value })} placeholder="45 100% 51%" data-testid="input-edit-accent-color" />
+                                      {editingGroup.accentColor && <div className="w-6 h-6 rounded-full border shrink-0" style={{ backgroundColor: `hsl(${editingGroup.accentColor})` }} />}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-medium text-muted-foreground">Transfer Ownership</label>
+                                  <div className="flex items-center gap-2">
+                                    <Select value={transferOwnerUserId?.toString() || ''} onValueChange={v => setTransferOwnerUserId(v ? parseInt(v) : null)}>
+                                      <SelectTrigger className="flex-1" data-testid="select-transfer-owner"><SelectValue placeholder="Select new owner..." /></SelectTrigger>
+                                      <SelectContent>
+                                        {groupMembers.filter(m => m.role !== 'owner').map(m => (
+                                          <SelectItem key={m.userId} value={m.userId.toString()}>{m.fullName || m.email} ({m.role})</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <Button size="sm" variant="outline" disabled={!transferOwnerUserId || actionLoading === 'transfer-owner'} onClick={() => setShowTransferConfirm(true)} data-testid="button-transfer-owner">
+                                      Transfer
+                                    </Button>
+                                  </div>
+                                  {showTransferConfirm && transferOwnerUserId && (
+                                    <div className="border border-orange-300 rounded-lg p-3 bg-orange-50 dark:bg-orange-950/20 space-y-2 mt-2">
+                                      <p className="text-xs font-medium">Transfer ownership to {groupMembers.find(m => m.userId === transferOwnerUserId)?.fullName || 'this user'}?</p>
+                                      <p className="text-xs text-muted-foreground">The current owner will become an admin.</p>
+                                      <div className="flex gap-2">
+                                        <Button size="sm" variant="default" disabled={actionLoading === 'transfer-owner'} onClick={async () => {
+                                          try {
+                                            setActionLoading('transfer-owner');
+                                            await apiRequest(`/groups/${group.slug}/transfer-ownership`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newOwnerId: transferOwnerUserId }) });
+                                            toast({ title: 'Ownership transferred' });
+                                            setShowTransferConfirm(false);
+                                            setTransferOwnerUserId(null);
+                                            const refreshedMembers = await apiRequest<any[]>(`/groups/${group.slug}/members`);
+                                            setGroupMembers(refreshedMembers);
+                                          } catch (err: any) { toast({ title: 'Error', description: err.message, variant: 'destructive' }); }
+                                          finally { setActionLoading(null); }
+                                        }}>
+                                          {actionLoading === 'transfer-owner' ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Confirm
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={() => { setShowTransferConfirm(false); }}>Cancel</Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                  <Button size="sm" disabled={actionLoading === `edit-group-${group.slug}`} onClick={async () => {
+                                    try {
+                                      setActionLoading(`edit-group-${group.slug}`);
+                                      await apiRequest(`/groups/${group.slug}`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          name: editingGroup.name,
+                                          description: editingGroup.description,
+                                          primaryColor: editingGroup.primaryColor,
+                                          accentColor: editingGroup.accentColor,
+                                          universityId: editingGroup.universityId,
+                                        }),
+                                      });
+                                      toast({ title: 'Group updated' });
+                                      setEditingGroup(null);
+                                      const refreshed = await apiRequest<any[]>('/groups');
+                                      setAdminGroups(refreshed);
+                                    } catch (err: any) {
+                                      toast({ title: 'Error', description: err.message || 'Failed to update', variant: 'destructive' });
+                                    } finally { setActionLoading(null); }
+                                  }} data-testid={`button-save-group-${group.slug}`}>
+                                    {actionLoading === `edit-group-${group.slug}` ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                                    Save Changes
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => setEditingGroup(null)}>Cancel</Button>
+                                </div>
+                              </div>
+                            )}
 
                             {addMemberGroupSlug === group.slug && (
                               <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
@@ -2520,6 +2651,10 @@ export default function Admin() {
                                 )}
                               </div>
                             )}
+
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-semibold">Members ({groupMembers.length})</h3>
+                            </div>
 
                             {groupMembersLoading ? (
                               <div className="flex justify-center py-4">
