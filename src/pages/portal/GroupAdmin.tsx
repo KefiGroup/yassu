@@ -149,6 +149,7 @@ export default function GroupAdmin() {
     queryKey: ['/api/groups', activeSlug, 'invites'],
     queryFn: () => apiRequest(`/groups/${activeSlug}/invites`),
     enabled: !!activeSlug && !roleIsJudge,
+    refetchInterval: 30000,
   });
 
   const { data: applications, isLoading: applicationsLoading } = useQuery<GroupApplication[]>({
