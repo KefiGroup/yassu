@@ -7905,6 +7905,21 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
   app.get("/api/groups/my-groups", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
     try {
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (isSuperAdmin) {
+        const allGroups = await storage.getGroups();
+        const userGroups = await storage.getUserGroups(req.session.userId);
+        const result = allGroups.map(g => {
+          const membership = userGroups.find(ug => ug.id === g.id);
+          return {
+            id: g.id,
+            name: g.name,
+            slug: g.slug,
+            role: membership?.role || 'admin',
+          };
+        });
+        return res.json(result);
+      }
       const groups = await storage.getUserGroups(req.session.userId);
       const adminGroups = groups.filter(g => g.role === 'owner' || g.role === 'admin' || g.role === 'judge');
       res.json(adminGroups);
