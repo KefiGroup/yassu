@@ -2411,6 +2411,18 @@ export default function Admin() {
 
                         {expandedGroupSlug === group.slug && (
                           <div className="space-y-4 pt-2 border-t">
+                            <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/40 text-sm">
+                              <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground">Login URL:</span>
+                              <code className="font-mono text-xs bg-background px-2 py-0.5 rounded border select-all">yassu.ai/{group.slug}/auth</code>
+                              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`https://yassu.ai/${group.slug}/auth`);
+                                toast({ title: 'Copied to clipboard' });
+                              }} data-testid={`button-copy-url-${group.slug}`}>
+                                Copy
+                              </Button>
+                            </div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <Button size="sm" variant={editingGroup?.slug === group.slug ? 'default' : 'outline'} onClick={(e) => { e.stopPropagation(); setEditingGroup(editingGroup?.slug === group.slug ? null : { ...group }); }} data-testid={`button-edit-group-${group.slug}`}>
                                 <Edit className="w-4 h-4 mr-1" /> Edit Settings
@@ -2452,6 +2464,55 @@ export default function Admin() {
                             {editingGroup?.slug === group.slug && (
                               <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
                                 <p className="text-sm font-semibold">Edit Group Settings</p>
+                                <div className="flex items-start gap-4">
+                                  <div className="shrink-0">
+                                    <div className="relative group/logo">
+                                      <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted flex items-center justify-center">
+                                        {(editingGroup.logoUrl || group.logoUrl) ? (
+                                          <img src={editingGroup.logoUrl || group.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                                        ) : (
+                                          <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
+                                        )}
+                                      </div>
+                                      <button
+                                        className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const input = document.createElement('input');
+                                          input.type = 'file';
+                                          input.accept = 'image/jpeg,image/png,image/webp';
+                                          input.onchange = async (ev) => {
+                                            const file = (ev.target as HTMLInputElement).files?.[0];
+                                            if (!file) return;
+                                            if (file.size > 5 * 1024 * 1024) { toast({ title: 'File too large', variant: 'destructive' }); return; }
+                                            try {
+                                              setActionLoading(`logo-${group.slug}`);
+                                              const formData = new FormData();
+                                              formData.append('logo', file);
+                                              const resp = await fetch(`/api/groups/${group.slug}/logo`, { method: 'POST', body: formData, credentials: 'include' });
+                                              if (!resp.ok) throw new Error('Upload failed');
+                                              const data = await resp.json();
+                                              setEditingGroup({ ...editingGroup, logoUrl: data.logoUrl });
+                                              toast({ title: 'Logo uploaded' });
+                                              const refreshed = await apiRequest<any[]>('/groups');
+                                              setAdminGroups(refreshed);
+                                            } catch { toast({ title: 'Error', description: 'Failed to upload logo', variant: 'destructive' }); }
+                                            finally { setActionLoading(null); }
+                                          };
+                                          input.click();
+                                        }}
+                                        data-testid={`button-upload-logo-${group.slug}`}
+                                      >
+                                        {actionLoading === `logo-${group.slug}` ? (
+                                          <Loader2 className="w-4 h-4 text-white animate-spin" />
+                                        ) : (
+                                          <ImageIcon className="w-4 h-4 text-white" />
+                                        )}
+                                      </button>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground text-center mt-1">Upload logo</p>
+                                  </div>
+                                  <div className="flex-1 space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
                                   <div className="space-y-1.5">
                                     <label className="text-xs font-medium text-muted-foreground">Name</label>
@@ -2553,6 +2614,8 @@ export default function Admin() {
                                     Save Changes
                                   </Button>
                                   <Button size="sm" variant="outline" onClick={() => setEditingGroup(null)}>Cancel</Button>
+                                </div>
+                                  </div>
                                 </div>
                               </div>
                             )}
