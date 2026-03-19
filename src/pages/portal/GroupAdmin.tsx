@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -131,10 +131,12 @@ export default function GroupAdmin() {
     enabled: !!activeSlug,
   });
 
+  const roleIsJudge = myRole === 'judge';
+
   const { data: members, isLoading: membersLoading } = useQuery<GroupMember[]>({
     queryKey: ['/api/groups', activeSlug, 'members'],
     queryFn: () => apiRequest(`/groups/${activeSlug}/members`),
-    enabled: !!activeSlug,
+    enabled: !!activeSlug && !roleIsJudge,
   });
 
   const { data: ideasWithRatings, isLoading: ideasLoading } = useQuery<GroupIdeaWithRating[]>({
@@ -146,13 +148,13 @@ export default function GroupAdmin() {
   const { data: invites, isLoading: invitesLoading } = useQuery<GroupInvite[]>({
     queryKey: ['/api/groups', activeSlug, 'invites'],
     queryFn: () => apiRequest(`/groups/${activeSlug}/invites`),
-    enabled: !!activeSlug,
+    enabled: !!activeSlug && !roleIsJudge,
   });
 
   const { data: applications, isLoading: applicationsLoading } = useQuery<GroupApplication[]>({
     queryKey: ['/api/groups', activeSlug, 'applications'],
     queryFn: () => apiRequest(`/groups/${activeSlug}/applications`),
-    enabled: !!activeSlug,
+    enabled: !!activeSlug && !roleIsJudge,
   });
 
   const { data: ideaRatings } = useQuery<IdeaRating[]>({
@@ -408,107 +410,118 @@ export default function GroupAdmin() {
     return (m.fullName?.toLowerCase().includes(search)) || m.email.toLowerCase().includes(search);
   });
 
+  const isJudge = myRole === 'judge';
+  const defaultTab = isJudge ? 'ideas' : 'overview';
+  const groupLoginUrl = group ? `yassu.ai/${group.slug}/auth` : '';
+  const brandPrimary = group?.primaryColor || undefined;
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-4 md:p-6" data-testid="group-admin-page">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" data-testid="text-group-admin-title">Group Admin</h1>
-          <p className="text-muted-foreground">Manage your group's members, ideas, and invitations</p>
-        </div>
-        {myGroups.length > 1 && (
-          <Select value={activeSlug || ''} onValueChange={setSelectedGroup}>
-            <SelectTrigger className="w-[220px]" data-testid="select-group">
-              <SelectValue placeholder="Select group" />
-            </SelectTrigger>
-            <SelectContent>
-              {myGroups.map(g => (
-                <SelectItem key={g.slug} value={g.slug}>{g.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-
       {detailsLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : group ? (
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5" data-testid="group-admin-tabs">
-            <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-            <TabsTrigger value="applicants" data-testid="tab-applicants" className="relative">
-              Applicants
-              {pendingApplications.length > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center h-5 w-5 text-xs font-bold rounded-full bg-destructive text-destructive-foreground">
-                  {pendingApplications.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="members" data-testid="tab-members">Members</TabsTrigger>
-            <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
-            <TabsTrigger value="invites" data-testid="tab-invites">Invites</TabsTrigger>
-          </TabsList>
+        <>
+        <div className="rounded-xl border overflow-hidden" style={brandPrimary ? { borderColor: `hsl(${brandPrimary} / 0.2)` } : undefined}>
+          <div className="p-5 flex items-center gap-5" style={brandPrimary ? { background: `linear-gradient(135deg, hsl(${brandPrimary} / 0.08), hsl(${brandPrimary} / 0.03))` } : undefined}>
+            <div className="shrink-0">
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted border flex items-center justify-center" style={brandPrimary ? { borderColor: `hsl(${brandPrimary} / 0.3)` } : undefined}>
+                {group.logoUrl ? (
+                  <img src={group.logoUrl} alt={group.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl font-bold text-muted-foreground">{group.name?.[0]?.toUpperCase()}</span>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold truncate" data-testid="text-group-admin-title">{group.name}</h1>
+                <Badge variant="outline" className="text-xs shrink-0" style={brandPrimary ? { borderColor: `hsl(${brandPrimary} / 0.4)`, color: `hsl(${brandPrimary})` } : undefined}>
+                  {isJudge ? 'Judge' : myRole === 'owner' ? 'Owner' : 'Admin'}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">{group.description || 'No description'}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <code className="text-xs font-mono bg-background/80 px-2 py-0.5 rounded border select-all">{groupLoginUrl}</code>
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => { navigator.clipboard.writeText(`https://${groupLoginUrl}`); toast({ title: 'Link copied' }); }}
+                  data-testid="button-copy-group-url"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+            {myGroups && myGroups.length > 1 && (
+              <Select value={activeSlug || ''} onValueChange={setSelectedGroup}>
+                <SelectTrigger className="w-[180px] shrink-0" data-testid="select-group">
+                  <SelectValue placeholder="Switch group" />
+                </SelectTrigger>
+                <SelectContent>
+                  {myGroups.map(g => (
+                    <SelectItem key={g.slug} value={g.slug}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
 
-          <TabsContent value="overview" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
+          {isJudge ? (
+            <TabsList className="grid w-full grid-cols-1 max-w-[200px]" data-testid="group-admin-tabs">
+              <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
+            </TabsList>
+          ) : (
+            <TabsList className="grid w-full grid-cols-5" data-testid="group-admin-tabs">
+              <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+              <TabsTrigger value="applicants" data-testid="tab-applicants" className="relative">
+                Applicants
+                {pendingApplications.length > 0 && (
+                  <span className="ml-1.5 inline-flex items-center justify-center h-5 w-5 text-xs font-bold rounded-full bg-destructive text-destructive-foreground">
+                    {pendingApplications.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="members" data-testid="tab-members">Members</TabsTrigger>
+              <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
+              <TabsTrigger value="invites" data-testid="tab-invites">Invites</TabsTrigger>
+            </TabsList>
+          )}
+
+          {!isJudge && <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-                <Card data-testid="card-member-count">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-primary/10">
-                        <Users className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-3xl font-bold">{group.memberCount}</p>
-                        <p className="text-sm text-muted-foreground">Members</p>
-                      </div>
-                    </div>
+                <Card data-testid="card-member-count" className="border-l-4" style={brandPrimary ? { borderLeftColor: `hsl(${brandPrimary})` } : undefined}>
+                  <CardContent className="pt-5 pb-4">
+                    <p className="text-sm text-muted-foreground">Members</p>
+                    <p className="text-2xl font-bold mt-1">{group.memberCount}</p>
                   </CardContent>
                 </Card>
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <Card data-testid="card-idea-count">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-yellow-500/10">
-                        <Lightbulb className="h-6 w-6 text-yellow-500" />
-                      </div>
-                      <div>
-                        <p className="text-3xl font-bold">{group.ideaCount}</p>
-                        <p className="text-sm text-muted-foreground">Ideas</p>
-                      </div>
-                    </div>
+                <Card data-testid="card-idea-count" className="border-l-4" style={brandPrimary ? { borderLeftColor: `hsl(${brandPrimary})` } : undefined}>
+                  <CardContent className="pt-5 pb-4">
+                    <p className="text-sm text-muted-foreground">Ideas</p>
+                    <p className="text-2xl font-bold mt-1">{group.ideaCount}</p>
                   </CardContent>
                 </Card>
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                <Card data-testid="card-applicant-count">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-green-500/10">
-                        <UserPlus className="h-6 w-6 text-green-500" />
-                      </div>
-                      <div>
-                        <p className="text-3xl font-bold">{pendingApplications.length}</p>
-                        <p className="text-sm text-muted-foreground">Pending Applicants</p>
-                      </div>
-                    </div>
+                <Card data-testid="card-applicant-count" className="border-l-4" style={brandPrimary ? { borderLeftColor: `hsl(${brandPrimary})` } : undefined}>
+                  <CardContent className="pt-5 pb-4">
+                    <p className="text-sm text-muted-foreground">Pending Applicants</p>
+                    <p className="text-2xl font-bold mt-1">{pendingApplications.length}</p>
                   </CardContent>
                 </Card>
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                <Card data-testid="card-invite-count">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-blue-500/10">
-                        <Mail className="h-6 w-6 text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="text-3xl font-bold">{group.pendingInviteCount}</p>
-                        <p className="text-sm text-muted-foreground">Pending Invites</p>
-                      </div>
-                    </div>
+                <Card data-testid="card-invite-count" className="border-l-4" style={brandPrimary ? { borderLeftColor: `hsl(${brandPrimary})` } : undefined}>
+                  <CardContent className="pt-5 pb-4">
+                    <p className="text-sm text-muted-foreground">Pending Invites</p>
+                    <p className="text-2xl font-bold mt-1">{group.pendingInviteCount}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -516,10 +529,7 @@ export default function GroupAdmin() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>{group.name}</CardTitle>
-                  <CardDescription>{group.description || 'No description'}</CardDescription>
-                </div>
+                <CardTitle className="text-base">Group Settings</CardTitle>
                 {myRole !== 'judge' && (
                   <Button size="sm" variant={isEditingOverview ? 'default' : 'outline'} onClick={() => {
                     if (isEditingOverview) { setIsEditingOverview(false); } else {
@@ -535,7 +545,7 @@ export default function GroupAdmin() {
                 <div className="flex items-start gap-6">
                   <div className="shrink-0">
                     <div className="relative group/logo">
-                      <div className="w-24 h-24 rounded-xl border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted flex items-center justify-center">
                         {group.logoUrl ? (
                           <img src={group.logoUrl} alt={`${group.name} logo`} className="w-full h-full object-cover" />
                         ) : (
@@ -564,33 +574,17 @@ export default function GroupAdmin() {
                         data-testid="input-logo-upload"
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground text-center mt-1.5">256 x 256px</p>
+                    <p className="text-[10px] text-muted-foreground text-center mt-1">Logo</p>
                   </div>
                   {isEditingOverview ? (
                     <div className="flex-1 space-y-3">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">Name</label>
+                        <label className="text-xs font-medium text-muted-foreground">Group Name</label>
                         <Input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} data-testid="input-edit-overview-name" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-medium text-muted-foreground">Description</label>
-                        <Input value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} data-testid="input-edit-overview-desc" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-muted-foreground">Primary Color (HSL)</label>
-                          <div className="flex items-center gap-2">
-                            <Input value={editForm.primaryColor} onChange={e => setEditForm({ ...editForm, primaryColor: e.target.value })} placeholder="213 69% 38%" data-testid="input-edit-overview-primary" />
-                            {editForm.primaryColor && <div className="w-6 h-6 rounded-full border shrink-0" style={{ backgroundColor: `hsl(${editForm.primaryColor})` }} />}
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-muted-foreground">Accent Color (HSL)</label>
-                          <div className="flex items-center gap-2">
-                            <Input value={editForm.accentColor} onChange={e => setEditForm({ ...editForm, accentColor: e.target.value })} placeholder="45 100% 51%" data-testid="input-edit-overview-accent" />
-                            {editForm.accentColor && <div className="w-6 h-6 rounded-full border shrink-0" style={{ backgroundColor: `hsl(${editForm.accentColor})` }} />}
-                          </div>
-                        </div>
+                        <Textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} rows={3} data-testid="input-edit-overview-desc" />
                       </div>
                       <div className="flex gap-2 pt-1">
                         <Button size="sm" disabled={updateGroupMutation.isPending} onClick={() => updateGroupMutation.mutate(editForm)} data-testid="button-save-overview">
@@ -600,30 +594,23 @@ export default function GroupAdmin() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-4 text-sm flex-1">
+                    <div className="flex-1 space-y-3 text-sm">
                       <div>
-                        <p className="text-muted-foreground">Slug</p>
-                        <p className="font-medium">/{group.slug}</p>
+                        <p className="text-xs text-muted-foreground">Name</p>
+                        <p className="font-medium">{group.name}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Brand Colors</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          {group.primaryColor && (
-                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.primaryColor})` }} />
-                          )}
-                          {group.accentColor && (
-                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: `hsl(${group.accentColor})` }} />
-                          )}
-                        </div>
+                        <p className="text-xs text-muted-foreground">Description</p>
+                        <p className="text-muted-foreground">{group.description || 'No description set'}</p>
                       </div>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent value="applicants" className="space-y-4">
+          {!isJudge && <TabsContent value="applicants" className="space-y-4">
             <div className="flex items-center gap-3">
               <Badge variant="secondary">{applications?.length || 0} total</Badge>
               {pendingApplications.length > 0 && (
@@ -717,9 +704,9 @@ export default function GroupAdmin() {
                 <p className="text-muted-foreground">No applications received yet</p>
               </div>
             )}
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent value="members" className="space-y-4">
+          {!isJudge && <TabsContent value="members" className="space-y-4">
             <div className="flex items-center gap-3">
               <Input
                 placeholder="Search members..."
@@ -794,7 +781,7 @@ export default function GroupAdmin() {
                 )}
               </div>
             )}
-          </TabsContent>
+          </TabsContent>}
 
           <TabsContent value="ideas" className="space-y-4">
             <div className="flex items-center gap-3">
@@ -932,7 +919,7 @@ export default function GroupAdmin() {
             )}
           </TabsContent>
 
-          <TabsContent value="invites" className="space-y-6">
+          {!isJudge && <TabsContent value="invites" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Send Invitations</CardTitle>
@@ -1059,8 +1046,9 @@ export default function GroupAdmin() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent>}
         </Tabs>
+        </>
       ) : null}
     </div>
   );
