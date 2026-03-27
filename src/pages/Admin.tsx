@@ -176,6 +176,9 @@ export default function Admin() {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [createUserForm, setCreateUserForm] = useState({ email: '', fullName: '' });
+  const [createUserLoading, setCreateUserLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('analytics');
   const [searchQuery, setSearchQuery] = useState('');
@@ -2254,13 +2257,69 @@ export default function Admin() {
               <CardDescription>View, search, and manage all platform users.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Input
-                placeholder="Search by name or email..."
-                value={userSearchQuery}
-                onChange={e => setUserSearchQuery(e.target.value)}
-                className="max-w-md"
-                data-testid="input-user-search"
-              />
+              <div className="flex items-center gap-3">
+                <Input
+                  placeholder="Search by name or email..."
+                  value={userSearchQuery}
+                  onChange={e => setUserSearchQuery(e.target.value)}
+                  className="max-w-md"
+                  data-testid="input-user-search"
+                />
+                <Button size="sm" onClick={() => setShowCreateUser(!showCreateUser)} data-testid="button-toggle-create-user">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Create User
+                </Button>
+              </div>
+
+              {showCreateUser && (
+                <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+                  <p className="text-sm font-semibold">Create New User</p>
+                  <p className="text-xs text-muted-foreground">A temporary password will be generated and emailed to the user along with login instructions.</p>
+                  <div className="flex gap-3 flex-wrap">
+                    <Input
+                      placeholder="Full name"
+                      value={createUserForm.fullName}
+                      onChange={e => setCreateUserForm(prev => ({ ...prev, fullName: e.target.value }))}
+                      className="max-w-[200px]"
+                      data-testid="input-create-user-name"
+                    />
+                    <Input
+                      placeholder="Email address"
+                      value={createUserForm.email}
+                      onChange={e => setCreateUserForm(prev => ({ ...prev, email: e.target.value }))}
+                      className="max-w-[250px]"
+                      data-testid="input-create-user-email"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={createUserLoading || !createUserForm.email.trim() || !createUserForm.fullName.trim()}
+                      onClick={async () => {
+                        try {
+                          setCreateUserLoading(true);
+                          const result = await apiRequest<{ user: { id: number; email: string; fullName: string } }>('/admin/users', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(createUserForm),
+                          });
+                          toast({ title: 'User created', description: `Account created for ${result.user.email}. Login credentials have been emailed.` });
+                          setCreateUserForm({ email: '', fullName: '' });
+                          setShowCreateUser(false);
+                          setUsersLoading(true);
+                          const data = await apiRequest<any[]>('/admin/users');
+                          setAllUsers(data);
+                          setUsersLoading(false);
+                        } catch (err: any) {
+                          toast({ title: 'Error', description: err.message || 'Failed to create user', variant: 'destructive' });
+                        } finally { setCreateUserLoading(false); }
+                      }}
+                      data-testid="button-create-user-submit"
+                    >
+                      {createUserLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <UserPlus className="w-4 h-4 mr-1" />}
+                      Create & Send Email
+                    </Button>
+                  </div>
+                </div>
+              )}
               {usersLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />

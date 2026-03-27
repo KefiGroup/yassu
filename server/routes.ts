@@ -4072,6 +4072,56 @@ Return valid JSON:
     }
   });
 
+  // Create user (admin only)
+  app.post("/api/admin/users", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { email, fullName } = req.body;
+      if (!email || !fullName) {
+        return res.status(400).json({ error: "Email and full name are required" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email.trim().toLowerCase());
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+
+      const crypto = await import('crypto');
+      const temporaryPassword = crypto.randomBytes(6).toString('base64url');
+      const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+      const user = await storage.createUser({ email: email.trim().toLowerCase(), password: hashedPassword, fullName: fullName.trim() });
+
+      await storage.createProfile(user.id, {
+        email: user.email,
+        fullName: user.fullName,
+        verificationStatus: "pending",
+        onboardingCompleted: false,
+        skills: [],
+        interests: []
+      });
+      await storage.addUserRole(user.id, "student");
+
+      const { sendAccountCreatedEmail } = await import('./email');
+      sendAccountCreatedEmail(user.email, user.fullName || 'there', temporaryPassword)
+        .then(() => console.log(`[Admin] Account created email sent to: ${user.email}`))
+        .catch(err => console.error(`[Admin] Failed to send account created email to ${user.email}:`, err));
+
+      res.json({ success: true, user: { id: user.id, email: user.email, fullName: user.fullName } });
+    } catch (error) {
+      console.error("Create user error:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
   // Delete team member (admin only)
   app.delete("/api/admin/team-members/:id", async (req: Request, res: Response) => {
     if (!req.session.userId) {
