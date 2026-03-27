@@ -173,6 +173,9 @@ export default function Admin() {
   const [replyContent, setReplyContent] = useState('');
   const [inboxLoading, setInboxLoading] = useState(false);
   const [outlookSyncing, setOutlookSyncing] = useState(false);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('analytics');
   const [searchQuery, setSearchQuery] = useState('');
@@ -944,6 +947,18 @@ export default function Admin() {
                 {inboxUnreadCount}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="users" className="gap-2" data-testid="tab-users" onClick={async () => {
+            if (allUsers.length === 0 && !usersLoading) {
+              setUsersLoading(true);
+              try {
+                const data = await apiRequest<any[]>('/admin/users');
+                setAllUsers(data);
+              } catch { /* ignore */ } finally { setUsersLoading(false); }
+            }
+          }}>
+            <UserCog className="w-4 h-4" />
+            Users
           </TabsTrigger>
           <TabsTrigger value="groups" className="gap-2" data-testid="tab-groups">
             <Users className="w-4 h-4" />
@@ -2225,6 +2240,111 @@ export default function Admin() {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="users">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                User Management ({allUsers.length})
+              </CardTitle>
+              <CardDescription>View, search, and manage all platform users.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                placeholder="Search by name or email..."
+                value={userSearchQuery}
+                onChange={e => setUserSearchQuery(e.target.value)}
+                className="max-w-md"
+                data-testid="input-user-search"
+              />
+              {usersLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-3 font-medium">User</th>
+                        <th className="text-left p-3 font-medium">Email</th>
+                        <th className="text-left p-3 font-medium">University</th>
+                        <th className="text-left p-3 font-medium">Roles</th>
+                        <th className="text-left p-3 font-medium">Joined</th>
+                        <th className="text-right p-3 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allUsers
+                        .filter(u => {
+                          if (!userSearchQuery) return true;
+                          const q = userSearchQuery.toLowerCase();
+                          return (u.fullName || u.profile?.fullName || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+                        })
+                        .map((u: any) => (
+                          <tr key={u.id} className="border-t hover:bg-muted/30" data-testid={`user-row-${u.id}`}>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={u.profile?.avatarUrl} />
+                                  <AvatarFallback className="text-xs">{(u.fullName || u.profile?.fullName || u.email)?.[0]?.toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium">{u.fullName || u.profile?.fullName || 'No name'}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-muted-foreground">{u.email}</td>
+                            <td className="p-3 text-muted-foreground">{u.profile?.university || '—'}</td>
+                            <td className="p-3">
+                              <div className="flex gap-1 flex-wrap">
+                                {(u.roles || []).map((r: string) => (
+                                  <Badge key={r} variant={r === 'admin' ? 'default' : 'secondary'} className="text-xs">
+                                    {r === 'admin' && <Shield className="w-3 h-3 mr-1" />}
+                                    {r}
+                                  </Badge>
+                                ))}
+                                {(!u.roles || u.roles.length === 0) && <span className="text-xs text-muted-foreground">user</span>}
+                              </div>
+                            </td>
+                            <td className="p-3 text-muted-foreground text-xs">
+                              {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}
+                            </td>
+                            <td className="p-3 text-right">
+                              {!(u.roles || []).includes('admin') && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={actionLoading === `delete-user-${u.id}`}
+                                  onClick={async () => {
+                                    if (!confirm(`Delete user "${u.fullName || u.profile?.fullName || u.email}"? This cannot be undone.`)) return;
+                                    try {
+                                      setActionLoading(`delete-user-${u.id}`);
+                                      await apiRequest(`/admin/users/${u.id}`, { method: 'DELETE' });
+                                      setAllUsers(prev => prev.filter(x => x.id !== u.id));
+                                      toast({ title: 'User deleted' });
+                                    } catch (err: any) {
+                                      toast({ title: 'Error', description: err.message || 'Failed to delete user', variant: 'destructive' });
+                                    } finally { setActionLoading(null); }
+                                  }}
+                                  data-testid={`button-delete-user-${u.id}`}
+                                >
+                                  {actionLoading === `delete-user-${u.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3 mr-1" />}
+                                  Delete
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      {allUsers.length === 0 && !usersLoading && (
+                        <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No users loaded. Click the Users tab to load.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
