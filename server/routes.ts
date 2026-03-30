@@ -8579,7 +8579,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const imageBuffer = fs.readFileSync(req.file.path);
       const resized = await sharp(imageBuffer)
-        .resize(256, 256, { fit: 'cover', position: 'center' })
+        .resize({ width: 512, height: 512, fit: 'inside', withoutEnlargement: true })
         .png({ quality: 85 })
         .toBuffer();
       fs.unlinkSync(req.file.path);
@@ -8591,6 +8591,24 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     } catch (error) {
       console.error("Group logo upload error:", error);
       res.status(500).json({ error: "Failed to upload logo" });
+    }
+  });
+
+  app.delete("/api/groups/:slug/logo", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      await storage.updateGroup(group.id, { logoUrl: null });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Group logo delete error:", error);
+      res.status(500).json({ error: "Failed to delete logo" });
     }
   });
 

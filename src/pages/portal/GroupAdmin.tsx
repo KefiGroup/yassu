@@ -283,6 +283,27 @@ export default function GroupAdmin() {
     },
   });
 
+  const deleteLogoMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/groups/${activeSlug}/logo`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Delete failed' }));
+        throw new Error(err.error || 'Delete failed');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Logo removed' });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'details'] });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -549,7 +570,7 @@ export default function GroupAdmin() {
                     <div className="relative group/logo">
                       <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted flex items-center justify-center">
                         {group.logoUrl ? (
-                          <img src={group.logoUrl} alt={`${group.name} logo`} className="w-full h-full object-cover" />
+                          <img src={group.logoUrl} alt={`${group.name} logo`} className="w-full h-full object-contain" />
                         ) : (
                           <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
                         )}
@@ -565,6 +586,16 @@ export default function GroupAdmin() {
                           ) : (
                             <Camera className="w-5 h-5 text-white" />
                           )}
+                        </button>
+                      )}
+                      {myRole !== 'judge' && group.logoUrl && (
+                        <button
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center hover:bg-destructive/80 transition-colors"
+                          onClick={() => deleteLogoMutation.mutate()}
+                          disabled={deleteLogoMutation.isPending}
+                          data-testid="button-delete-logo"
+                        >
+                          <X className="w-3 h-3" />
                         </button>
                       )}
                       <input
