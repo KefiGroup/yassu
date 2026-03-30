@@ -191,7 +191,7 @@ export default function GroupApply() {
       <div className="w-full py-8 px-4" style={{ background: `linear-gradient(135deg, hsl(${primaryHSL}), hsl(${primaryHSL} / 0.8))` }}>
         <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-3">
           {groupInfo.logoUrl && (
-            <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-16 rounded-xl object-contain bg-white/20 p-2" style={{ width: 'auto', maxWidth: '200px' }} data-testid="img-group-logo" />
+            <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-14 object-contain" style={{ width: 'auto', maxWidth: '240px' }} data-testid="img-group-logo" />
           )}
           <div className="text-white">
             <h1 className="text-2xl font-bold">{groupInfo.name}</h1>
