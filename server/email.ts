@@ -7,6 +7,15 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'hello@yassu.ai';
 const APP_URL = process.env.APP_URL || 'https://yassu.ai';
 
+const BRANDED_SLUGS = new Set(['bruin']);
+
+export function getBrandedUrl(path: string, groupSlug?: string): string {
+  if (groupSlug && BRANDED_SLUGS.has(groupSlug.toLowerCase())) {
+    return `${APP_URL}/${groupSlug}${path}`;
+  }
+  return `${APP_URL}${path}`;
+}
+
 export interface SendEmailOptions {
   to: string;
   subject: string;
@@ -240,7 +249,8 @@ export async function sendWelcomeEmail(email: string, fullName: string): Promise
   });
 }
 
-export async function sendAccountCreatedEmail(email: string, fullName: string, temporaryPassword: string): Promise<void> {
+export async function sendAccountCreatedEmail(email: string, fullName: string, temporaryPassword: string, groupSlug?: string): Promise<void> {
+  const loginUrl = getBrandedUrl('/auth', groupSlug);
   const html = `
 <!DOCTYPE html>
 <html>
@@ -280,7 +290,7 @@ export async function sendAccountCreatedEmail(email: string, fullName: string, t
               <table role="presentation" style="margin: 30px 0;">
                 <tr>
                   <td style="border-radius: 6px; background-color: #7c3aed;">
-                    <a href="${APP_URL}/auth" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                    <a href="${loginUrl}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
                       Log In to Yassu
                     </a>
                   </td>

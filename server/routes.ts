@@ -8308,10 +8308,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const { Resend } = await import('resend');
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const APP_URL = process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : `${req.protocol}://${req.get('host')}`;
-      const inviteUrl = `${APP_URL}/accept-group-invite?token=${invite.token}`;
+      const { getBrandedUrl } = await import('./email');
+      const inviteUrl = getBrandedUrl(`/accept-group-invite?token=${invite.token}`, group.slug);
 
       await resend.emails.send({
         from: 'Yassu <noreply@yassu.ai>',
@@ -8391,10 +8389,9 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const inviter = await storage.getUser(req.session.userId);
       const inviterName = inviter?.fullName || 'A group admin';
-      const APP_URL = process.env.APP_URL || 'https://yassu.ai';
 
       const results: { email: string; status: string }[] = [];
-      const { sendGroupInviteEmail } = await import('./email');
+      const { sendGroupInviteEmail, getBrandedUrl } = await import('./email');
       const crypto = await import('crypto');
 
       for (const email of emails) {
@@ -8414,7 +8411,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
             token,
           });
 
-          const acceptUrl = `${APP_URL}/accept-group-invite?token=${token}`;
+          const acceptUrl = getBrandedUrl(`/accept-group-invite?token=${token}`, group.slug);
           await sendGroupInviteEmail(trimmedEmail, group.name, inviterName, acceptUrl);
           results.push({ email: trimmedEmail, status: 'sent' });
         } catch (err) {
@@ -8812,7 +8809,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         await storage.addUserRole(user.id, "student");
 
         const { sendAccountCreatedEmail } = await import('./email');
-        sendAccountCreatedEmail(trimmedEmail, fullName, temporaryPassword)
+        sendAccountCreatedEmail(trimmedEmail, fullName, temporaryPassword, group.slug)
           .then(() => console.log(`[GroupApply] Account created email sent to: ${trimmedEmail}`))
           .catch(err => console.error(`[GroupApply] Failed to send account email to ${trimmedEmail}:`, err));
 

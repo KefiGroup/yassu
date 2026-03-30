@@ -12,6 +12,7 @@ export default function AcceptGroupInvite() {
   const { user } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [groupName, setGroupName] = useState('');
+  const [groupSlug, setGroupSlug] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   const token = searchParams.get('token');
@@ -33,6 +34,7 @@ export default function AcceptGroupInvite() {
           body: JSON.stringify({ token }),
         });
         setGroupName(result.groupName);
+        setGroupSlug(result.groupSlug || '');
         setStatus('success');
       } catch (err: any) {
         setStatus('error');
@@ -49,7 +51,7 @@ export default function AcceptGroupInvite() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <p className="text-lg font-medium">Please sign in to accept this invitation</p>
-            <Button onClick={() => navigate('/auth')}>
+            <Button onClick={() => navigate('/auth')} data-testid="button-sign-in">
               Sign In
             </Button>
           </CardContent>
@@ -83,7 +85,7 @@ export default function AcceptGroupInvite() {
               <XCircle className="h-12 w-12 text-destructive mx-auto" />
               <p className="text-lg font-medium">Could not accept invitation</p>
               <p className="text-muted-foreground">{errorMsg}</p>
-              <Button variant="outline" onClick={() => navigate('/portal')}>
+              <Button variant="outline" onClick={() => navigate('/portal')} data-testid="button-go-to-portal-error">
                 Go to Portal
               </Button>
             </>
