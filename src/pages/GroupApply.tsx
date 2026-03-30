@@ -93,6 +93,7 @@ export default function GroupApply() {
         const data = await res.json();
         setGroupInfo(data);
         setAnswers((data.applicationQuestions || []).map((q: any) => ({ question: q.label, answer: '' })));
+        document.title = `Apply to ${data.name} | Yassu`;
       } catch {
         toast({ title: 'Group not found', variant: 'destructive' });
       } finally {

@@ -12,6 +12,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/terms': 'Terms of Service | {brand}',
   '/privacy': 'Privacy Policy | {brand}',
   '/accept-connection': 'Accept Connection | {brand}',
+  '/accept-group-invite': 'Accept Group Invite | {brand}',
+  '/maintenance': 'Maintenance | {brand}',
   '/portal': 'Dashboard | {brand}',
   '/portal/ideas': 'Ideas Marketplace | {brand}',
   '/portal/ideas/new': 'Post an Idea | {brand}',
@@ -35,10 +37,12 @@ const PAGE_TITLES: Record<string, string> = {
   '/portal/pitch-preparation': 'Pitch Preparation | {brand}',
   '/portal/foundry': 'Foundry | {brand}',
   '/portal/admin': 'Admin Dashboard | {brand}',
+  '/portal/group-admin': 'Group Admin | {brand}',
   '/portal/search': 'Search | {brand}',
 };
 
 const DYNAMIC_PATTERNS: Array<{ pattern: RegExp; title: string }> = [
+  { pattern: /^\/apply\/[^/]+$/, title: 'Apply | {brand}' },
   { pattern: /^\/portal\/ideas\/[^/]+\/edit$/, title: 'Edit Idea | {brand}' },
   { pattern: /^\/portal\/ideas\/[^/]+\/smart-match$/, title: 'Smart Matching | {brand}' },
   { pattern: /^\/portal\/ideas\/[^/]+$/, title: 'Idea Details | {brand}' },
@@ -55,7 +59,7 @@ function getTitle(pathname: string, brandName: string): string {
     if (pattern.test(pathname)) return title.replace(/\{brand\}/g, brandName);
   }
 
-  return `Page Not Found | ${brandName}`;
+  return brandName;
 }
 
 export function usePageTitle() {
