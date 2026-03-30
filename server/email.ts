@@ -14,11 +14,11 @@ export interface SendEmailOptions {
   emailType?: string;
 }
 
-async function logEmail(recipient: string, subject: string, emailType: string, status: string, errorMessage?: string) {
+async function logEmail(recipient: string, subject: string, emailType: string, status: string, errorMessage?: string, htmlBody?: string) {
   try {
     await db.execute(sql`
-      INSERT INTO email_logs (recipient, subject, email_type, status, error_message)
-      VALUES (${recipient}, ${subject}, ${emailType}, ${status}, ${errorMessage || null})
+      INSERT INTO email_logs (recipient, subject, email_type, status, error_message, html_body)
+      VALUES (${recipient}, ${subject}, ${emailType}, ${status}, ${errorMessage || null}, ${htmlBody || null})
     `);
   } catch (err) {
     console.error('[email-log] Failed to log email:', err);
@@ -35,10 +35,10 @@ export async function sendEmail({ to, subject, html, emailType }: SendEmailOptio
       html,
     });
     console.log(`Email sent to ${to}: ${subject}`);
-    await logEmail(to, subject, type, 'sent');
+    await logEmail(to, subject, type, 'sent', undefined, html);
   } catch (error) {
     console.error('Failed to send email:', error);
-    await logEmail(to, subject, type, 'failed', error instanceof Error ? error.message : String(error));
+    await logEmail(to, subject, type, 'failed', error instanceof Error ? error.message : String(error), html);
     throw new Error('Failed to send email');
   }
 }

@@ -620,6 +620,9 @@ export const groups = pgTable("groups", {
   logoUrl: text("logo_url"),
   universityId: uuid("university_id").references(() => universities.id),
   applicationQuestions: jsonb("application_questions").$type<{ label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[]>(),
+  redirectUrl: text("redirect_url"),
+  submissionMessage: text("submission_message"),
+  submissionFileUrl: text("submission_file_url"),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

@@ -161,6 +161,10 @@ export async function ensureTables() {
 
     console.log('[ensureTables] ✓ group tables verified/created');
 
+    await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS redirect_url TEXT`);
+    await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS submission_message TEXT`);
+    await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS submission_file_url TEXT`);
+
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS email_logs (
         id SERIAL PRIMARY KEY,
@@ -169,9 +173,11 @@ export async function ensureTables() {
         email_type TEXT,
         status TEXT NOT NULL DEFAULT 'sent',
         error_message TEXT,
+        html_body TEXT,
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    await db.execute(sql`ALTER TABLE email_logs ADD COLUMN IF NOT EXISTS html_body TEXT`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_email_logs_created_at ON email_logs(created_at DESC)`);
     console.log('[ensureTables] ✓ email_logs table verified/created');
   } catch (error) {

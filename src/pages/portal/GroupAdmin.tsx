@@ -25,6 +25,9 @@ interface GroupDetails {
   memberCount: number;
   ideaCount: number;
   pendingInviteCount: number;
+  redirectUrl: string | null;
+  submissionMessage: string | null;
+  submissionFileUrl: string | null;
 }
 
 interface GroupMember {
@@ -664,6 +667,16 @@ export default function GroupAdmin() {
                 <ApplicationQuestionsEditor slug={group.slug} />
               </CardContent>
             </Card>
+
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="text-base">Post-Submission Settings</CardTitle>
+                <CardDescription>Customize what applicants see after submitting their application.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SubmissionSettingsEditor slug={group.slug} group={group} onUpdate={() => queryClient.invalidateQueries({ queryKey: ['/api/groups', group.slug, 'details'] })} />
+              </CardContent>
+            </Card>
           </TabsContent>}
 
           {!isJudge && <TabsContent value="applicants" className="space-y-4">
@@ -1221,6 +1234,122 @@ function ApplicationQuestionsEditor({ slug }: { slug: string }) {
           Save Questions
         </Button>
       </div>
+    </div>
+  );
+}
+
+function SubmissionSettingsEditor({ slug, group, onUpdate }: { slug: string; group: GroupDetails; onUpdate: () => void }) {
+  const { toast } = useToast();
+  const [redirectUrl, setRedirectUrl] = useState(group.redirectUrl || '');
+  const [submissionMessage, setSubmissionMessage] = useState(group.submissionMessage || '');
+  const [submissionFileUrl, setSubmissionFileUrl] = useState(group.submissionFileUrl || '');
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await apiRequest(`/groups/${slug}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ redirectUrl: redirectUrl || null, submissionMessage: submissionMessage || null, submissionFileUrl: submissionFileUrl || null }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      toast({ title: 'Submission settings saved' });
+      onUpdate();
+    } catch {
+      toast({ title: 'Failed to save', variant: 'destructive' });
+    }
+    setSaving(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowed.includes(file.type)) {
+      toast({ title: 'File type not supported', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'File must be under 10MB', variant: 'destructive' });
+      return;
+    }
+    setUploading(true);
+    try {
+      const { uploadURL, objectPath } = await apiRequest<{ uploadURL: string; objectPath: string }>('/uploads/request-url', {
+        method: 'POST',
+        body: JSON.stringify({ name: file.name, contentType: file.type, size: file.size }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      await fetch(uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+      setSubmissionFileUrl(objectPath);
+      toast({ title: 'File uploaded' });
+    } catch {
+      toast({ title: 'Upload failed', variant: 'destructive' });
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Redirect URL (after submission)</label>
+        <Input
+          placeholder="https://example.com/thank-you or leave blank for default"
+          value={redirectUrl}
+          onChange={(e) => setRedirectUrl(e.target.value)}
+          data-testid="input-redirect-url"
+        />
+        <p className="text-xs text-muted-foreground">If set, applicants will see a button to visit this URL after submitting. Use your group's home page or a custom thank-you page.</p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Custom Submission Message</label>
+        <Textarea
+          placeholder="Thank you for applying! We'll review your application shortly."
+          value={submissionMessage}
+          onChange={(e) => setSubmissionMessage(e.target.value)}
+          rows={3}
+          data-testid="input-submission-message"
+        />
+        <p className="text-xs text-muted-foreground">Replaces the default "Your application is under review" message on the confirmation page.</p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Submission Page File/Image</label>
+        <div className="flex items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading} data-testid="button-upload-submission-file">
+            {uploading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Upload className="w-3 h-3 mr-1" />}
+            Upload File
+          </Button>
+          {submissionFileUrl && (
+            <div className="flex items-center gap-2 text-sm">
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              <a href={submissionFileUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-submission-file">
+                View file
+              </a>
+              <Button size="sm" variant="ghost" onClick={() => setSubmissionFileUrl('')} className="h-6 w-6 p-0">
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">Optional image or document shown on the submission confirmation page (e.g., welcome flyer, next steps PDF).</p>
+      </div>
+
+      <Button onClick={handleSave} disabled={saving} data-testid="button-save-submission-settings">
+        {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+        Save Settings
+      </Button>
     </div>
   );
 }

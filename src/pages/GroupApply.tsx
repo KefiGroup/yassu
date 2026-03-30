@@ -16,6 +16,9 @@ interface GroupPublicInfo {
   primaryColor: string | null;
   accentColor: string | null;
   applicationQuestions: { label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[];
+  redirectUrl: string | null;
+  submissionMessage: string | null;
+  submissionFileUrl: string | null;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -161,6 +164,7 @@ export default function GroupApply() {
   }
 
   if (submitted) {
+    const isImage = groupInfo.submissionFileUrl && /\.(jpg|jpeg|png|webp)$/i.test(groupInfo.submissionFileUrl);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
         <Card className="max-w-lg w-full">
@@ -170,16 +174,33 @@ export default function GroupApply() {
             </div>
             <h2 className="text-2xl font-bold">Application Submitted!</h2>
             <p className="text-muted-foreground">
-              Thank you for applying to <strong>{groupInfo.name}</strong>. Your application is under review.
+              {groupInfo.submissionMessage || <>Thank you for applying to <strong>{groupInfo.name}</strong>. Your application is under review.</>}
             </p>
             {isNewUser && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
                 A Yassu account has been created for you. Check your email for login credentials.
               </div>
             )}
-            <Button onClick={() => navigate('/auth')} style={{ backgroundColor: `hsl(${primaryHSL})` }} className="text-white">
-              Go to Login
-            </Button>
+            {groupInfo.submissionFileUrl && (
+              isImage ? (
+                <img src={groupInfo.submissionFileUrl} alt="Welcome" className="rounded-lg mx-auto max-h-64 object-contain" data-testid="img-submission-file" />
+              ) : (
+                <a href={groupInfo.submissionFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm underline" style={{ color: `hsl(${primaryHSL})` }} data-testid="link-submission-file">
+                  <FileText className="w-4 h-4" />
+                  View attached document
+                </a>
+              )
+            )}
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              {groupInfo.redirectUrl && (
+                <Button onClick={() => window.location.href = groupInfo!.redirectUrl!} style={{ backgroundColor: `hsl(${primaryHSL})` }} className="text-white" data-testid="button-redirect">
+                  Continue to {groupInfo.name}
+                </Button>
+              )}
+              <Button onClick={() => navigate('/auth')} variant={groupInfo.redirectUrl ? 'outline' : 'default'} style={!groupInfo.redirectUrl ? { backgroundColor: `hsl(${primaryHSL})` } : {}} className={!groupInfo.redirectUrl ? 'text-white' : ''} data-testid="button-go-login">
+                Go to Login
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

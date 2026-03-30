@@ -3097,6 +3097,24 @@ Return valid JSON:
     }
   });
 
+  app.get("/api/admin/email-logs/:id/html", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const result = await db.execute(sql`SELECT html_body FROM email_logs WHERE id = ${parseInt(req.params.id)}`);
+      const row = result.rows[0] as any;
+      if (!row) return res.status(404).json({ error: "Email not found" });
+      if (!row.html_body) return res.status(404).json({ error: "Email body not available" });
+
+      res.json({ html: row.html_body });
+    } catch (error) {
+      console.error("Email HTML fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch email HTML" });
+    }
+  });
+
   // Analytics dashboard (admin only)
   app.get("/api/admin/analytics", async (req: Request, res: Response) => {
     if (!req.session.userId) {
@@ -8182,7 +8200,18 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
       if (!isGroupAdminUser && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
 
-      const allowedFields = ['name', 'description', 'primaryColor', 'accentColor', 'universityId'];
+      if (req.body.redirectUrl && typeof req.body.redirectUrl === 'string' && req.body.redirectUrl.trim() !== '') {
+        try {
+          const parsed = new URL(req.body.redirectUrl);
+          if (!['http:', 'https:'].includes(parsed.protocol)) {
+            return res.status(400).json({ error: "Redirect URL must use http or https" });
+          }
+        } catch {
+          return res.status(400).json({ error: "Invalid redirect URL" });
+        }
+      }
+
+      const allowedFields = ['name', 'description', 'primaryColor', 'accentColor', 'universityId', 'redirectUrl', 'submissionMessage', 'submissionFileUrl'];
       const updates: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
@@ -8707,6 +8736,9 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         primaryColor: group.primaryColor,
         accentColor: group.accentColor,
         applicationQuestions: group.applicationQuestions || [],
+        redirectUrl: group.redirectUrl || null,
+        submissionMessage: group.submissionMessage || null,
+        submissionFileUrl: group.submissionFileUrl || null,
       });
     } catch (error) {
       console.error("Get public group info error:", error);

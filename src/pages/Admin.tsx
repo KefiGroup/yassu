@@ -3175,6 +3175,22 @@ function EmailLogsTab() {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [viewingEmail, setViewingEmail] = useState<EmailLog | null>(null);
+  const [emailHtml, setEmailHtml] = useState<string | null>(null);
+  const [loadingHtml, setLoadingHtml] = useState(false);
+
+  const viewEmail = async (log: EmailLog) => {
+    setViewingEmail(log);
+    setEmailHtml(null);
+    setLoadingHtml(true);
+    try {
+      const data = await apiRequest<{ html: string }>(`/admin/email-logs/${log.id}/html`);
+      setEmailHtml(data.html);
+    } catch {
+      setEmailHtml(null);
+    }
+    setLoadingHtml(false);
+  };
 
   const fetchLogs = async (p: number) => {
     setLoading(true);
@@ -3295,6 +3311,7 @@ function EmailLogsTab() {
                     <th className="text-left px-4 py-2 font-medium">Type</th>
                     <th className="text-left px-4 py-2 font-medium">Status</th>
                     <th className="text-left px-4 py-2 font-medium">Date</th>
+                    <th className="text-left px-4 py-2 font-medium w-16"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3321,6 +3338,12 @@ function EmailLogsTab() {
                       <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(log.created_at).toLocaleString()}
                       </td>
+                      <td className="px-4 py-2.5">
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => viewEmail(log)} data-testid={`button-view-email-${log.id}`}>
+                          <Eye className="w-3 h-3 mr-1" />
+                          View
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -3343,6 +3366,45 @@ function EmailLogsTab() {
               </div>
             )}
           </>
+        )}
+
+        {viewingEmail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setViewingEmail(null)}>
+            <div className="bg-background rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col m-4" onClick={e => e.stopPropagation()} data-testid="modal-email-preview">
+              <div className="flex items-center justify-between px-6 py-4 border-b">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold truncate">{viewingEmail.subject}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    To: {viewingEmail.recipient} &middot; {new Date(viewingEmail.created_at).toLocaleString()}
+                  </p>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => setViewingEmail(null)} data-testid="button-close-email-preview">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-auto">
+                {loadingHtml ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : emailHtml ? (
+                  <iframe
+                    srcDoc={emailHtml}
+                    className="w-full h-full min-h-[500px] border-0"
+                    title="Email Preview"
+                    sandbox="allow-same-origin"
+                    data-testid="iframe-email-preview"
+                  />
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Mail className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p>Email content not available</p>
+                    <p className="text-xs mt-1">Email body is only stored for emails sent after the logging feature was enabled</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
