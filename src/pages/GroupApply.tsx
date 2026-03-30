@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, Upload } from 'lucide-react';
+import { Loader2, CheckCircle, Upload, FileText, X } from 'lucide-react';
 
 interface GroupPublicInfo {
   name: string;
@@ -18,6 +18,19 @@ interface GroupPublicInfo {
   applicationQuestions: { label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[];
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
+const ALLOWED_EXTENSIONS = '.pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.webp';
+
 export default function GroupApply() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -27,11 +40,50 @@ export default function GroupApply() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [fileNames, setFileNames] = useState<Record<number, string>>({});
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [answers, setAnswers] = useState<{ question: string; answer: string }[]>([]);
+
+  const uploadFile = async (file: File, questionIdx: number) => {
+    if (file.size > MAX_FILE_SIZE) {
+      toast({ title: 'File too large', description: 'Maximum file size is 10MB', variant: 'destructive' });
+      return;
+    }
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      toast({ title: 'Unsupported file type', description: 'Please upload PDF, DOC, DOCX, PPT, PPTX, JPG, PNG, or WEBP files', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      setUploadingIdx(questionIdx);
+      const urlRes = await fetch('/api/uploads/request-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+      });
+      if (!urlRes.ok) throw new Error('Failed to get upload URL');
+      const { uploadURL, objectPath } = await urlRes.json();
+
+      const uploadRes = await fetch(uploadURL, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error('Failed to upload file');
+
+      setAnswers(prev => prev.map((a, idx) => idx === questionIdx ? { ...a, answer: `[file:${file.name}]${objectPath}` } : a));
+      setFileNames(prev => ({ ...prev, [questionIdx]: file.name }));
+      toast({ title: 'File uploaded successfully' });
+    } catch (err: any) {
+      toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setUploadingIdx(null);
+    }
+  };
 
   useEffect(() => {
     async function fetchGroup() {
@@ -174,7 +226,56 @@ export default function GroupApply() {
               {(groupInfo.applicationQuestions || []).map((q, i) => (
                 <div key={i} className="space-y-2">
                   <Label>{q.label} {q.required && '*'}</Label>
-                  {q.type === 'textarea' ? (
+                  {q.type === 'file' ? (
+                    <div className="space-y-2">
+                      {answers[i]?.answer ? (
+                        <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+                          <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                          <span className="text-sm truncate flex-1">{fileNames[i] || 'File uploaded'}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: '' } : a));
+                              setFileNames(prev => { const next = { ...prev }; delete next[i]; return next; });
+                            }}
+                            data-testid={`button-remove-file-${i}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label
+                          className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                          data-testid={`input-file-${i}`}
+                        >
+                          {uploadingIdx === i ? (
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Upload className="h-8 w-8 text-muted-foreground" />
+                          )}
+                          <span className="text-sm text-muted-foreground mt-2">
+                            {uploadingIdx === i ? 'Uploading...' : 'Click to upload a file'}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            PDF, DOC, DOCX, PPT, PPTX, JPG, PNG (max 10MB)
+                          </span>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept={ALLOWED_EXTENSIONS}
+                            disabled={uploadingIdx !== null}
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) uploadFile(file, i);
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  ) : q.type === 'textarea' ? (
                     <Textarea
                       value={answers[i]?.answer || ''}
                       onChange={e => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a))}

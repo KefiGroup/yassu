@@ -1,7 +1,7 @@
 # Yassu - University Founders Platform
 
 ## Overview
-Yassu is a platform designed for university students to foster entrepreneurship. It enables users to post startup ideas, find co-founders, leverage AI-powered business analysis, and build collaborative teams. The platform aims to be a comprehensive ecosystem for student founders, supporting them from idea inception through team formation and business plan development, with ambitions to expand into a broader university innovation network.
+Yassu is a platform designed to foster entrepreneurship among university students by enabling them to post startup ideas, find co-founders, leverage AI-powered business analysis, and build collaborative teams. It aims to be a comprehensive ecosystem supporting student founders from idea inception through team formation and business plan development, with ambitions to expand into a broader university innovation network.
 
 ## User Preferences
 - TypeScript strict mode
@@ -10,113 +10,36 @@ Yassu is a platform designed for university students to foster entrepreneurship.
 - TanStack Query for frontend data fetching
 
 ## System Architecture
-The platform utilizes a full-stack architecture with React (TypeScript, Vite, Tailwind CSS, shadcn/ui) for the frontend, an Express.js backend, and a PostgreSQL database managed by Drizzle ORM. Frontend state management is handled by TanStack Query.
+The platform employs a full-stack architecture featuring a React frontend (TypeScript, Vite, Tailwind CSS, shadcn/ui), an Express.js backend, and a PostgreSQL database managed by Drizzle ORM. TanStack Query handles frontend state management.
 
-**Key Features:**
-- **User & Profile Management**: Comprehensive user profiles with skills, interests, university affiliation, and club types. Includes a profile completion prompt for new users.
-- **Idea Management**: Users can post, update, and manage startup ideas, tracking their progress through a 7-step journey (Post Idea, Business Plan, Find Advisors, Form Team, Build MVP, Yassu Foundry, Launch). Ideas can be toggled between public and private visibility. AI automatically classifies ideas into 1-3 industries from a predefined list of 15 industries (Technology & Software, Healthcare & Biotech, Finance & Fintech, etc.). The Ideas Marketplace groups ideas by industry with an industry filter dropdown. Industries are stored via a many-to-many relationship (industries + idea_industries tables).
-- **AI Business Analysis**: AI-powered workflows generate and refine multi-section business plans, with inline editing capabilities for founders. Business plans are auto-populated and editable via markdown.
-- **Team Formation & Collaboration**: Features for finding co-founders, advisors, and ambassadors based on skills and interests. Includes a connection system (like LinkedIn) for users to build their network, send team invitations, and manage join requests.
-- **Collaborator Marketplace**: A dedicated section to discover and filter platform users by roles, skills, interests, clubs, and universities, with clickable profiles.
-- **Admin Dashboard**: A unified interface for administrators to manage badges (Ambassador, Advisor), view all ideas (including private ones), grant/revoke admin privileges, and create platform announcements. Includes a comprehensive **Analytics Dashboard** (first tab) with:
-  - KPI cards: Total Users, Ideas, Teams, Business Plans, Pitch Decks, Connections, Messages, Join Requests
-  - Growth trends chart (12-week area chart for users, ideas, teams)
-  - Idea Pipeline Funnel (horizontal bar by stage)
-  - Brand Breakdown pie chart (Yassu vs Bruin)
-  - Top Universities and User Roles breakdowns
-  - Recent Signups, Ideas, and Teams lists
-  - Every chart/card is clickable for drill-down into a detailed data table modal
-  - Uses Recharts for charting; data served via `GET /api/admin/analytics` and `GET /api/admin/analytics/drilldown`
-- **Admin Inbox**: Built-in inbox system for managing user feedback and support conversations. Features include:
-  - Conversation list with unread message badges
-  - Reply functionality that sends emails to users via Resend
-  - Mark conversations as resolved/reopened
-  - Full message thread history for each conversation
-  - Loading states to prevent stale data display
-  - Screenshot attachment support - users can attach screenshots when submitting feedback via Kefi chat
-- **Platform Announcements**: System for admins to communicate with all users. Features include:
-  - Four announcement types: Maintenance, Event, Update, General
-  - Three priority levels: Normal, Important, Urgent
-  - Scheduled start and end dates for time-limited announcements
-  - Banner bar at top of portal for active announcements (dismissible for non-urgent)
-  - Integration with notification dropdown showing all active announcements
-  - Full CRUD management in Admin panel
-- **Direct Messaging**: Full messaging system with conversation threads, real-time UI, and email notifications for new messages. Features include:
-  - Unread message count badge in sidebar (refreshes every 30 seconds)
-  - Red dot indicator when sidebar is collapsed
-  - Delayed email notifications for unread messages after 10 minutes
-  - Respects user's notification preferences (messageNotificationsEnabled)
-- **Notification System**: Email notifications for connection requests, team invitations, new messages, and weekly digests.
-- **Session Security & Auto-Logout**: Automatic session management for user security. Features include:
-  - "Remember me for 30 days" checkbox on login for extended sessions
-  - 1-hour inactivity timeout for regular sessions (not "remember me")
-  - Warning popup 3 minutes before automatic logout with countdown timer
-  - "Stay Logged In" button to extend session
-  - Security message displayed on login page after inactivity logout
-  - Activity tracking via mouse, keyboard, touch, and scroll events
-- **Journey Progress Tracker**: Visual progress tracker for each idea's development stages with independent milestone completion. Each step (Post Idea, Business Plan, Find Advisors, Form Team, Build MVP, Yassu Foundry, Seek Funding) can be completed in any order without sequential dependencies. Features dashed connecting lines to indicate non-linear paths and ring-style in-progress indicators.
-- **Investor Pitch Deck Generator**: AI-powered one-click generator for creating investor-grade pitch decks. Features include:
-  - Auto-analysis of business plan to determine investor type (Angel vs VC) and raise amount
-  - Clean centered UI matching the MVP Builder design pattern
-  - Business Plan preview card showing loaded sections
-  - Optional upload of refined business plan
-  - AI automatically extracts problem, solution, traction, and founder context
-  - Full 10-slide deck or 6-slide Warm Intro generation
-  - "Investor-Proof This Deck" refinement feature for tightening language
-  - Metrics validation table showing required metrics per slide
-  - Manus-ready export with copy-paste format for slide design
-  - Version history tracking with restore capability
-- **Pitch Preparation Module**: AI-powered investor pitch preparation to help founders deliver confidently and handle Q&A. Features include:
-  - Spoken delivery script for each slide (what to say out loud, key emphasis, delivery tips)
-  - Investor objection generator with 10 categories (Problem, Solution, Market, Traction, Business Model, GTM, Competition, Team, Timing, Risk)
-  - Risk-level classification (High/Medium/Low) with color-coded badges
-  - Live Q&A response playbook with best answers and "what NOT to say"
-  - Deal-breaker awareness and mitigation strategies
-  - Rapid-fire rehearsal drill with 10-12 practice questions
-  - Practice Mode toggle to hide answers for self-testing
-  - One-click export of full preparation playbook
-- **Kefi AI Help Assistant**: AI-powered help assistant accessible via floating chat bubble in the portal. Features include:
-  - Comprehensive help content covering all platform features
-  - Natural language Q&A about posting ideas, business plans, pitch decks, team building, etc.
-  - Contextual search that finds relevant help topics based on user questions
-  - Conversation history within each chat session
-  - Friendly, encouraging personality tailored for student founders
-- **Social Sharing & Invite System**: Enables users to share Yassu with friends and associates across platforms. Features include:
-  - ShareInviteModal component (`src/components/portal/ShareInviteModal.tsx`) with Web Share API (native OS sharing), X/Twitter, LinkedIn, WhatsApp, email, and copy-to-clipboard
-  - "Invite Friends" button in portal sidebar footer (works collapsed and expanded)
-  - "Spread the Word" card on dashboard with invite CTA
-  - Idea-specific sharing via share icon on idea detail page titles
-  - Brand-aware: uses `brand.canonicalUrl` and `brand.name` for correct Yassu vs Bruin sharing
-  - Customizable share text for general invites vs idea-specific sharing
-- **Group Management System**: Database-backed groups with admin panels for branded communities (e.g., Bruin Entrepreneurs). Features include:
-  - Database tables: `groups` (includes `application_questions` JSONB), `group_members` (owner/admin/member/judge roles), `group_invites` (pending/accepted/expired), `group_applications` (pending/approved/rejected, includes `answers` JSONB), `group_idea_ratings` (1-10 scoring with feedback)
-  - **Group Application Questionnaire**: Configurable per-group application questions. Public apply page at `/apply/{slug}` (no auth required). Auto-creates Yassu user account on submission, sends welcome email with temp password, adds applicant to group as pending. Group admins configure questions from Overview tab with question editor (add/remove/reorder, text vs textarea, required toggle). Bruin seeded with Yoyo's 7 competition questions.
-  - **Group Admin Panel** (`src/pages/portal/GroupAdmin.tsx`): Tabs for Overview (stats, editable name/description/logo, application questionnaire config with apply link), Applicants (approve/reject with full questionnaire answers display), Members (role management including judge, search, remove), Ideas & Ratings (rate ideas 1-10 for competition advancement, view all ratings), Invites (single + CSV bulk upload)
-  - **Judge Role**: Judges can access the Group Admin panel to view and rate ideas but cannot manage members or invites. Judges see "Manage Group" in sidebar.
-  - **Applicant System**: Users can apply to join groups with motivation text. Group admins see pending applicants with user profile details (skills, university) and can approve/reject. Approved applicants auto-become members.
-  - **Idea Rating System**: Admins and judges can score ideas 1-10 with optional feedback for competition advancement. Ideas display average score and rating count. All individual ratings viewable per idea.
-  - **Super Admin Group Management**: "Groups" tab in Admin panel with expandable group cards. Features: create groups, edit group settings (name, description, colors, university), add/remove members with role assignment, change member roles, delete groups with confirmation, transfer ownership to another member.
-  - **Group Admin Editable Overview**: Group admins can edit their group's name, description, and brand colors directly from the Overview tab. Logo upload also available.
-  - **Invite System**: Single email or bulk CSV upload, sends branded invitation emails via Resend, accept-invite page at `/accept-group-invite?token=xxx`. Pending invites can be revoked or resent.
-  - **Ownership Transfer**: Super admins and group owners can transfer ownership to another group member. Current owner becomes admin.
-  - **Sidebar Integration**: "Manage Group" link appears automatically for group admins/owners/judges
-  - Group ideas are linked via the `brand` column on ideas table matching the group slug
-  - Bruin Entrepreneurs seeded as first group with UCLA colors and university affiliation
-- **UI/UX**: Utilizes Tailwind CSS and shadcn/ui for a modern, responsive design. The dashboard is redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
+**UI/UX Decisions:**
+- Modern, responsive design using Tailwind CSS and shadcn/ui.
+- Dashboard redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
+- White-label skin system for URL-based branding, supporting multiple branded experiences from the same codebase (e.g., Yassu and Bruin Entrepreneurs).
+
+**Technical Implementations & Feature Specifications:**
+- **User & Profile Management**: Comprehensive profiles, university affiliation, skills, interests, and profile completion prompts.
+- **Idea Management**: Users can post, update, and manage startup ideas through a 7-step journey. Ideas can be public/private and are AI-classified into industries.
+- **AI Business Analysis**: AI generates and refines multi-section business plans with inline editing.
+- **Team Formation & Collaboration**: Features for finding co-founders, advisors, and ambassadors, including a connection system and team invitation management.
+- **Collaborator Marketplace**: Discover and filter users by roles, skills, interests, clubs, and universities.
+- **Admin Dashboard**: Manages badges, ideas, user privileges, and announcements. Includes an Analytics Dashboard with KPIs, growth trends, idea pipeline, and user breakdowns, with drill-down capabilities.
+- **Admin Inbox**: Manages user feedback and support conversations, with email replies via Resend and screenshot attachment support.
+- **Platform Announcements**: Admins can create scheduled, prioritized announcements with different types, displayed as a banner and in the notification dropdown.
+- **Direct Messaging**: Full messaging system with real-time UI, conversation threads, and delayed email notifications.
+- **Notification System**: Email notifications for key platform interactions.
+- **Session Security & Auto-Logout**: Automated session management with "remember me" functionality, inactivity timeouts, and warning pop-ups before logout.
+- **Journey Progress Tracker**: Visual progress tracker for idea development stages, allowing non-linear completion of milestones.
+- **Investor Pitch Deck Generator**: AI-powered one-click generator for investor-grade pitch decks, with business plan analysis, multiple deck types, refinement features, metrics validation, and version history.
+- **Pitch Preparation Module**: AI-powered module for investor pitch preparation, including spoken scripts, investor objection generation, Q&A playbooks, and practice mode.
+- **Kefi AI Help Assistant**: Floating chat bubble assistant providing comprehensive help content, natural language Q&A, and contextual search.
+- **Social Sharing & Invite System**: Enables sharing of the platform and specific ideas across various social media and communication channels.
+- **Group Management System**: Database-backed groups with admin panels, configurable application questionnaires (including file uploads), member role management (owner, admin, judge, member), idea rating system, invite system, and ownership transfer. Groups are integrated into the main platform sidebar and can be branded. Ideas can be linked to specific groups.
 
 ## External Dependencies
-- **PostgreSQL**: Primary database for all application data.
-- **Google Gemini 2.5 Flash**: AI model used for generating business plans.
-- **Resend**: Email service for sending notifications.
-- **connect-pg-simple**: PostgreSQL session store for Express.js.
-- **driver.js**: (Presumed for guided tours or feature introductions based on recent additions).
-- **dotenv**: For managing environment variables.
-- **Google Analytics**: Tracking via gtag.js (Measurement ID: G-T0ELVMWHE7) loaded in index.html.
-- **White-Label Skin System**: URL-based branding system enabling multiple branded experiences from the same codebase. Uses React Router `basename` for automatic URL prefixing.
-  - **Architecture**: `src/lib/branding.ts` defines `BrandConfig` interface and brand configs; `src/contexts/BrandingContext.tsx` provides `useBranding()` hook; `BrandingProvider` wraps the router and applies CSS variable overrides via `document.documentElement.style.setProperty()`
-  - **Branding Detection**: `window.location.pathname.startsWith('/bruin')` → Bruin config, otherwise → Yassu config. `BrowserRouter basename` is set accordingly so ALL `navigate()`, `<Link>`, and `<NavLink>` calls auto-prefix without per-component changes.
-  - **Active Skins**: Yassu (default, purple `250 60% 65%` / coral `15 80% 75%`), Bruin Entrepreneurs (`/bruin`, UCLA blue `213 69% 38%` / gold `45 100% 51%`)
-  - **Branded Components**: Navbar, Hero, HowItWorks, Vision, Team, Footer, Auth, ForgotPassword, ResetPassword, PortalSidebar, PortalHeader (via navigate), usePageTitle, WelcomeModal, Profile (welcome alert), KefiChat (brand-neutral)
-  - **Inactivity Logout**: AuthContext uses `window.location.pathname` to detect `/bruin` prefix before redirecting to `/auth?reason=inactivity`, preserving the brand path
-  - **Brand-Isolated Marketplace**: Ideas are tagged with a `brand` column (null = Yassu, 'bruin' = Bruin). When logging in from `/bruin`, session stores `brand: 'bruin'`. Ideas created from Bruin are tagged `brand='bruin'` and only visible in the Bruin marketplace. Yassu marketplace shows only unbranded ideas. Admin panel sees all ideas across brands. Search, featured ideas, and IdeasSlider all respect brand filtering via `?brand=` query parameter.
-  - **Adding New Skins**: Add a new `BrandConfig` to `branding.ts`, update `getBrandByPath()`, set a new basename check in `App.tsx`
+- **PostgreSQL**: Primary database.
+- **Google Gemini 2.5 Flash**: AI model for business analysis and content generation.
+- **Resend**: Email service for notifications and invitations.
+- **connect-pg-simple**: PostgreSQL session store.
+- **dotenv**: Environment variable management.
+- **Google Analytics**: For tracking user behavior (via gtag.js).

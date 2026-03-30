@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -686,12 +686,23 @@ export default function GroupAdmin() {
                             )}
                             {app.answers && app.answers.length > 0 ? (
                               <div className="mt-2 space-y-2">
-                                {app.answers.map((a, idx) => (
-                                  <div key={idx} className="p-2 rounded bg-muted text-sm">
-                                    <p className="text-xs text-muted-foreground mb-0.5 font-medium">{a.question}</p>
-                                    <p className="whitespace-pre-wrap">{a.answer}</p>
-                                  </div>
-                                ))}
+                                {app.answers.map((a, idx) => {
+                                  const fileMatch = a.answer?.match(/^\[file:(.+?)\](\/objects\/.+)$/);
+                                  return (
+                                    <div key={idx} className="p-2 rounded bg-muted text-sm">
+                                      <p className="text-xs text-muted-foreground mb-0.5 font-medium">{a.question}</p>
+                                      {fileMatch ? (
+                                        <a href={fileMatch[2]} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-primary hover:underline" data-testid={`link-file-${idx}`}>
+                                          <FileText className="h-4 w-4" />
+                                          {fileMatch[1] || 'Download file'}
+                                          <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      ) : (
+                                        <p className="whitespace-pre-wrap">{a.answer}</p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             ) : app.motivation ? (
                               <div className="mt-2 p-2 rounded bg-muted text-sm">
@@ -1161,6 +1172,7 @@ function ApplicationQuestionsEditor({ slug }: { slug: string }) {
               >
                 <option value="text">Short text</option>
                 <option value="textarea">Long text</option>
+                <option value="file">File upload</option>
               </select>
             </div>
           </div>

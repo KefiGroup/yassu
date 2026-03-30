@@ -8688,6 +8688,12 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           if (q.required && !a.answer.trim()) {
             return res.status(400).json({ error: `"${q.label}" is required` });
           }
+          if (q.type === 'file' && a.answer.trim()) {
+            const filePattern = /^\[file:[^\]]+\]\/objects\/.+$/;
+            if (!filePattern.test(a.answer)) {
+              return res.status(400).json({ error: `Invalid file upload for "${q.label}"` });
+            }
+          }
         }
       }
 

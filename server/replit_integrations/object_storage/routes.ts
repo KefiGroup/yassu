@@ -35,14 +35,32 @@ export function registerObjectStorageRoutes(app: Express): void {
    * IMPORTANT: The client should NOT send the file to this endpoint.
    * Send JSON metadata only, then upload the file directly to uploadURL.
    */
+  const ALLOWED_UPLOAD_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  ];
+  const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
+
   app.post("/api/uploads/request-url", async (req, res) => {
     try {
       const { name, size, contentType } = req.body;
 
-      if (!name) {
-        return res.status(400).json({
-          error: "Missing required field: name",
-        });
+      if (!name || typeof name !== 'string') {
+        return res.status(400).json({ error: "Missing required field: name" });
+      }
+
+      if (contentType && !ALLOWED_UPLOAD_TYPES.includes(contentType)) {
+        return res.status(400).json({ error: "File type not allowed. Supported: PDF, DOC, DOCX, PPT, PPTX, JPG, PNG, WEBP" });
+      }
+
+      if (size && (typeof size !== 'number' || size > MAX_UPLOAD_SIZE)) {
+        return res.status(400).json({ error: "File too large. Maximum size is 10MB" });
       }
 
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
