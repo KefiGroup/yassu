@@ -8012,6 +8012,17 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
   // ============ Group Routes ============
 
+  app.get("/api/my-group-applications", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const applications = await storage.getUserApplications(req.session.userId);
+      res.json(applications);
+    } catch (error) {
+      console.error("Get user applications error:", error);
+      res.status(500).json({ error: "Failed to fetch applications" });
+    }
+  });
+
   app.get("/api/groups/my-groups", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
     try {

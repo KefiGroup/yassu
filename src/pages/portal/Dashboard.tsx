@@ -32,6 +32,10 @@ import {
   Search,
   Rocket,
   Share2,
+  ClipboardCheck,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { ShareInviteModal } from '@/components/portal/ShareInviteModal';
 interface Profile {
@@ -93,6 +97,17 @@ interface Connection {
   profile: Profile;
 }
 
+interface GroupApplication {
+  id: string;
+  groupId: string;
+  userId: number;
+  status: string;
+  createdAt: string;
+  reviewedAt: string | null;
+  groupName: string;
+  groupSlug: string;
+}
+
 export default function Dashboard() {
   const { profile } = useAuth();
   const brand = useBranding();
@@ -103,6 +118,7 @@ export default function Dashboard() {
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [potentialMembers, setPotentialMembers] = useState<Profile[]>([]);
   const [myConnections, setMyConnections] = useState<Connection[]>([]);
+  const [myGroupApplications, setMyGroupApplications] = useState<GroupApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
@@ -133,16 +149,17 @@ export default function Dashboard() {
         const mostRecentIdea = ideas.length > 0 ? ideas[0] : null;
         const ideaIdParam = mostRecentIdea ? `?ideaId=${mostRecentIdea.id}` : '';
         
-        // Fetch other data with intelligent matching based on most recent idea
-        const [requests, members, connections] = await Promise.all([
+        const [requests, members, connections, groupApps] = await Promise.all([
           fetch('/api/join-requests', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch(`/api/profiles/potential-team${ideaIdParam}`, { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/connections', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
+          fetch('/api/my-group-applications', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
         ]);
         
         setJoinRequests(requests);
         setPotentialMembers(members);
         setMyConnections(connections);
+        setMyGroupApplications(groupApps);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -392,6 +409,71 @@ Looking forward to hearing from you!`;
             : 'Manage your ideas and build your team.'}
         </p>
       </motion.div>
+
+      {/* Group Applications Section */}
+      {!loading && myGroupApplications.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-primary" />
+                My Applications
+              </CardTitle>
+              <CardDescription>Your group application status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {myGroupApplications.map((app) => (
+                  <div
+                    key={app.id}
+                    className="p-4 rounded-lg border border-border hover:border-primary/20 hover:bg-muted/50 transition-colors"
+                    data-testid={`card-group-application-${app.id}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          app.status === 'approved' ? 'bg-green-500/10' :
+                          app.status === 'rejected' ? 'bg-red-500/10' :
+                          'bg-amber-500/10'
+                        }`}>
+                          {app.status === 'approved' ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          ) : app.status === 'rejected' ? (
+                            <XCircle className="w-5 h-5 text-red-500" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-amber-500" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-medium truncate" data-testid={`text-app-group-${app.id}`}>{app.groupName}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            Applied {new Date(app.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        className={
+                          app.status === 'approved' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200' :
+                          app.status === 'rejected' ? 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200' :
+                          'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200'
+                        }
+                        variant="outline"
+                        data-testid={`badge-app-status-${app.id}`}
+                      >
+                        {app.status === 'approved' ? 'Approved' : app.status === 'rejected' ? 'Rejected' : 'Under Review'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Get Started Section (for users without ideas) */}
       {!loading && myIdeas.length === 0 && (

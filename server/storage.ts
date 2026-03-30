@@ -207,6 +207,7 @@ export interface IStorage {
   
   // Group Applications
   getGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]>;
+  getUserApplications(userId: number): Promise<(schema.GroupApplication & { groupName: string; groupSlug: string })[]>;
   createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication>;
   updateGroupApplication(id: string, status: "approved" | "rejected", reviewedBy: number): Promise<schema.GroupApplication | undefined>;
   
@@ -2117,6 +2118,21 @@ export class DatabaseStorage implements IStorage {
       user: r.user,
       profile: r.profile,
     }));
+  }
+
+  async getUserApplications(userId: number): Promise<(schema.GroupApplication & { groupName: string; groupSlug: string })[]> {
+    const results = await db
+      .select({
+        application: schema.groupApplications,
+        groupName: schema.groups.name,
+        groupSlug: schema.groups.slug,
+      })
+      .from(schema.groupApplications)
+      .innerJoin(schema.groups, eq(schema.groupApplications.groupId, schema.groups.id))
+      .where(eq(schema.groupApplications.userId, userId))
+      .orderBy(desc(schema.groupApplications.createdAt));
+
+    return results.map(r => ({ ...r.application, groupName: r.groupName, groupSlug: r.groupSlug }));
   }
 
   async createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication> {

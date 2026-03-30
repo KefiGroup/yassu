@@ -14,8 +14,8 @@ The platform employs a full-stack architecture featuring a React frontend (TypeS
 
 **UI/UX Decisions:**
 - Modern, responsive design using Tailwind CSS and shadcn/ui.
-- Dashboard redesigned into focused sections: My Ideas, Team Join Requests, and People to Invite.
-- White-label skin system for URL-based branding, supporting multiple branded experiences from the same codebase (e.g., Yassu and Bruin Entrepreneurs).
+- Dashboard redesigned into focused sections: My Applications, My Ideas, Team Join Requests, and People to Invite.
+- White-label skin system for URL-based branding, supporting multiple branded experiences from the same codebase (e.g., Yassu and Bruin Entrepreneurs). Branded slugs are managed via `BRANDED_SLUGS` in `server/email.ts` and `getBrandByPath` in `src/lib/branding.ts`.
 
 **Technical Implementations & Feature Specifications:**
 - **User & Profile Management**: Comprehensive profiles, university affiliation, skills, interests, and profile completion prompts.
@@ -34,7 +34,7 @@ The platform employs a full-stack architecture featuring a React frontend (TypeS
 - **Pitch Preparation Module**: AI-powered module for investor pitch preparation, including spoken scripts, investor objection generation, Q&A playbooks, and practice mode.
 - **Kefi AI Help Assistant**: Floating chat bubble assistant providing comprehensive help content, natural language Q&A, and contextual search.
 - **Social Sharing & Invite System**: Enables sharing of the platform and specific ideas across various social media and communication channels.
-- **Group Management System**: Database-backed groups with admin panels, configurable application questionnaires (including file uploads), member role management (owner, admin, judge, member), idea rating system, invite system, and ownership transfer. Groups are integrated into the main platform sidebar and can be branded. Ideas can be linked to specific groups. Post-submission settings allow admins to configure a redirect URL, custom confirmation message, and a file/image to display on the submission page.
+- **Group Management System**: Database-backed groups with admin panels, configurable application questionnaires (including file uploads), member role management (owner, admin, judge, member), idea rating system, invite system, and ownership transfer. Groups are integrated into the main platform sidebar and can be branded. Ideas can be linked to specific groups. Post-submission settings allow admins to configure a redirect URL, custom confirmation message, and a file/image to display on the submission page. Group invite emails and account creation emails use branded URLs via `getBrandedUrl()` helper. Users see their group application status (pending/approved/rejected) on the dashboard via `GET /api/my-group-applications`.
 
 ## External Dependencies
 - **PostgreSQL**: Primary database.
