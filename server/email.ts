@@ -274,7 +274,7 @@ export async function sendAccountCreatedEmail(email: string, fullName: string, t
               <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${fullName},</h2>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                An account has been created for you on <strong>Yassu</strong> — the platform where university founders connect, build teams, and launch startups.
+                An account has been created for you on <strong>Yassu</strong> — the platform where university founders connect, build teams, and launch startups.${groupSlug ? ' Log in to review and submit your application.' : ''}
               </p>
               
               <div style="background-color: #f3f0ff; border-radius: 8px; padding: 24px; margin: 0 0 24px;">

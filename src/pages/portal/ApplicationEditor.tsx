@@ -1,0 +1,366 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Save, Send, CheckCircle2, Clock, XCircle, Upload, FileText, X, ArrowLeft } from 'lucide-react';
+
+interface GroupInfo {
+  name: string;
+  slug: string;
+  description: string;
+  logoUrl: string | null;
+  primaryColor: string | null;
+  applicationQuestions: { label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[];
+}
+
+interface Application {
+  id: string;
+  status: string;
+  answers: { question: string; answer: string }[] | null;
+  createdAt: string;
+  reviewedAt: string | null;
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
+const ALLOWED_EXTENSIONS = '.pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.webp';
+
+export default function ApplicationEditor() {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [fileNames, setFileNames] = useState<Record<number, string>>({});
+
+  const [group, setGroup] = useState<GroupInfo | null>(null);
+  const [application, setApplication] = useState<Application | null>(null);
+  const [answers, setAnswers] = useState<{ question: string; answer: string }[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch(`/api/groups/${slug}/my-application`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load application');
+        const data = await res.json();
+        setGroup(data.group);
+        setApplication(data.application);
+
+        if (data.application?.answers) {
+          setAnswers(data.application.answers);
+          const names: Record<number, string> = {};
+          data.application.answers.forEach((a: { answer: string }, idx: number) => {
+            if (a.answer && a.answer.startsWith('[file:')) {
+              const match = a.answer.match(/^\[file:([^\]]+)\]/);
+              if (match) names[idx] = match[1];
+            }
+          });
+          setFileNames(names);
+        } else if (data.group?.applicationQuestions) {
+          setAnswers(data.group.applicationQuestions.map((q: { label: string }) => ({ question: q.label, answer: '' })));
+        }
+      } catch {
+        toast({ title: 'Failed to load application', variant: 'destructive' });
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (slug) fetchData();
+  }, [slug, toast]);
+
+  const uploadFile = async (file: File, questionIdx: number) => {
+    if (file.size > MAX_FILE_SIZE) {
+      toast({ title: 'File too large', description: 'Maximum file size is 10MB', variant: 'destructive' });
+      return;
+    }
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      toast({ title: 'Unsupported file type', variant: 'destructive' });
+      return;
+    }
+    try {
+      setUploadingIdx(questionIdx);
+      const urlRes = await fetch('/api/uploads/request-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+      });
+      if (!urlRes.ok) throw new Error('Failed to get upload URL');
+      const { uploadURL, objectPath } = await urlRes.json();
+      const uploadRes = await fetch(uploadURL, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!uploadRes.ok) throw new Error('Failed to upload file');
+      setAnswers(prev => prev.map((a, idx) => idx === questionIdx ? { ...a, answer: `[file:${file.name}]${objectPath}` } : a));
+      setFileNames(prev => ({ ...prev, [questionIdx]: file.name }));
+      setHasChanges(true);
+      toast({ title: 'File uploaded successfully' });
+    } catch (err: any) {
+      toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setUploadingIdx(null);
+    }
+  };
+
+  const handleSave = async (): Promise<boolean> => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/groups/${slug}/my-application`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ answers }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save');
+      }
+      setHasChanges(false);
+      toast({ title: 'Progress saved!' });
+      return true;
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const questions = group?.applicationQuestions || [];
+    for (let i = 0; i < questions.length; i++) {
+      if (questions[i].required && !answers[i]?.answer?.trim()) {
+        toast({ title: `Please answer: "${questions[i].label}"`, variant: 'destructive' });
+        return;
+      }
+    }
+
+    if (hasChanges) {
+      const saved = await handleSave();
+      if (!saved) return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/groups/${slug}/my-application/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to submit');
+      }
+      toast({ title: 'Application submitted!' });
+      setApplication(prev => prev ? { ...prev, status: 'pending' } : prev);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!group || !application) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground">
+              {!group ? 'Group not found.' : 'No draft application found for this group.'}
+            </p>
+            <Button className="mt-4" onClick={() => navigate('/portal')} data-testid="button-back-portal">Go to Dashboard</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isDraft = application?.status === 'draft';
+  const isPending = application?.status === 'pending';
+  const isApproved = application?.status === 'approved';
+  const isRejected = application?.status === 'rejected';
+  const isReadOnly = !isDraft;
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/portal')} data-testid="button-back">
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Dashboard
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-xl">{group.name} Application</CardTitle>
+              <CardDescription>
+                {isDraft && 'Review your answers and submit when ready.'}
+                {isPending && 'Your application is under review.'}
+                {isApproved && 'Your application has been approved!'}
+                {isRejected && 'Your application was not accepted.'}
+                {!application && 'Fill out the form to apply.'}
+              </CardDescription>
+            </div>
+            {application && (
+              <Badge
+                variant="outline"
+                className={
+                  isDraft ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200' :
+                  isPending ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200' :
+                  isApproved ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200' :
+                  'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200'
+                }
+                data-testid="badge-app-status"
+              >
+                {isDraft && <><Clock className="w-3 h-3 mr-1" /> Draft</>}
+                {isPending && <><Clock className="w-3 h-3 mr-1" /> Under Review</>}
+                {isApproved && <><CheckCircle2 className="w-3 h-3 mr-1" /> Approved</>}
+                {isRejected && <><XCircle className="w-3 h-3 mr-1" /> Rejected</>}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {(group.applicationQuestions || []).map((q, i) => (
+              <div key={i} className="space-y-2">
+                <Label>{q.label} {q.required && '*'}</Label>
+                {q.type === 'file' ? (
+                  <div className="space-y-2">
+                    {answers[i]?.answer ? (
+                      <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+                        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <span className="text-sm truncate flex-1">{fileNames[i] || 'File uploaded'}</span>
+                        {isDraft && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: '' } : a));
+                              setFileNames(prev => { const next = { ...prev }; delete next[i]; return next; });
+                              setHasChanges(true);
+                            }}
+                            data-testid={`button-remove-file-${i}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ) : isDraft ? (
+                      <label
+                        className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                        data-testid={`input-file-${i}`}
+                      >
+                        {uploadingIdx === i ? (
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                        )}
+                        <span className="text-sm text-muted-foreground mt-2">
+                          {uploadingIdx === i ? 'Uploading...' : 'Click to upload a file'}
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          PDF, DOC, DOCX, PPT, PPTX, JPG, PNG (max 10MB)
+                        </span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept={ALLOWED_EXTENSIONS}
+                          disabled={uploadingIdx !== null}
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) uploadFile(file, i);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No file uploaded</p>
+                    )}
+                  </div>
+                ) : q.type === 'textarea' ? (
+                  <Textarea
+                    value={answers[i]?.answer || ''}
+                    onChange={e => {
+                      setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a));
+                      setHasChanges(true);
+                    }}
+                    placeholder={isReadOnly ? '' : 'Your answer...'}
+                    rows={4}
+                    disabled={isReadOnly}
+                    data-testid={`input-question-${i}`}
+                  />
+                ) : (
+                  <Input
+                    value={answers[i]?.answer || ''}
+                    onChange={e => {
+                      setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a));
+                      setHasChanges(true);
+                    }}
+                    placeholder={isReadOnly ? '' : 'Your answer...'}
+                    disabled={isReadOnly}
+                    data-testid={`input-question-${i}`}
+                  />
+                )}
+              </div>
+            ))}
+
+            {isDraft && (
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={handleSave}
+                  disabled={saving || !hasChanges}
+                  className="flex-1"
+                  data-testid="button-save-draft"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Progress
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="flex-1"
+                  data-testid="button-submit-application"
+                >
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  Submit Application
+                </Button>
+              </div>
+            )}
+
+            {!application && group.applicationQuestions?.length > 0 && (
+              <p className="text-sm text-muted-foreground text-center">No application found for this group.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

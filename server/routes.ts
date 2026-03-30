@@ -8472,7 +8472,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
 
       const applications = await storage.getGroupApplications(group.id);
-      res.json(applications);
+      res.json(applications.filter(a => a.status !== 'draft'));
     } catch (error) {
       console.error("Get group applications error:", error);
       res.status(500).json({ error: "Failed to fetch applications" });
@@ -8490,11 +8490,20 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         return res.status(400).json({ error: "You are already a member of this group" });
       }
 
-      const existingApps = await storage.getGroupApplications(group.id);
-      const pending = existingApps.find(a => a.userId === req.session.userId && a.status === 'pending');
-      if (pending) return res.status(400).json({ error: "You already have a pending application" });
+      const existingApp = await storage.getUserApplicationForGroup(req.session.userId, group.id);
+      if (existingApp && (existingApp.status === 'pending' || existingApp.status === 'approved')) {
+        return res.status(400).json({ error: "You already have an application for this group" });
+      }
 
       const { motivation } = req.body;
+      if (existingApp && existingApp.status === 'draft') {
+        const { db } = await import('./db');
+        const { sql } = await import('drizzle-orm');
+        await db.execute(sql`UPDATE group_applications SET motivation = ${motivation || ''}, status = 'pending', reviewed_by = NULL, reviewed_at = NULL WHERE id = ${existingApp.id}`);
+        const updated = await storage.getUserApplicationForGroup(req.session.userId, group.id);
+        return res.json(updated);
+      }
+
       const application = await storage.createGroupApplication({
         groupId: group.id,
         userId: req.session.userId,
@@ -8505,6 +8514,84 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       res.json(application);
     } catch (error) {
       console.error("Apply to group error:", error);
+      res.status(500).json({ error: "Failed to submit application" });
+    }
+  });
+
+  app.get("/api/groups/:slug/my-application", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const application = await storage.getUserApplicationForGroup(req.session.userId, group.id);
+      res.json({
+        application: application || null,
+        group: {
+          name: group.name,
+          slug: group.slug,
+          description: group.description,
+          logoUrl: (group as any).logoUrl || null,
+          primaryColor: (group as any).primaryColor || null,
+          applicationQuestions: (group as any).applicationQuestions || [],
+        },
+      });
+    } catch (error) {
+      console.error("Get user application error:", error);
+      res.status(500).json({ error: "Failed to fetch application" });
+    }
+  });
+
+  app.patch("/api/groups/:slug/my-application", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const application = await storage.getUserApplicationForGroup(req.session.userId, group.id);
+      if (!application) return res.status(404).json({ error: "No application found" });
+      if (application.status !== 'draft') return res.status(400).json({ error: "Only draft applications can be edited" });
+
+      const { answers } = req.body;
+      if (!Array.isArray(answers)) return res.status(400).json({ error: "Answers must be an array" });
+
+      const motivation = answers.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n');
+      const updated = await storage.updateGroupApplicationAnswers(application.id, answers, motivation);
+      res.json(updated);
+    } catch (error) {
+      console.error("Save draft application error:", error);
+      res.status(500).json({ error: "Failed to save application" });
+    }
+  });
+
+  app.post("/api/groups/:slug/my-application/submit", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const application = await storage.getUserApplicationForGroup(req.session.userId, group.id);
+      if (!application) return res.status(404).json({ error: "No application found" });
+      if (application.status !== 'draft') return res.status(400).json({ error: "Only draft applications can be submitted" });
+
+      const configuredQuestions = (group as any).applicationQuestions as { label: string; type: string; required: boolean }[] | null;
+      const currentAnswers = (application.answers || []) as { question: string; answer: string }[];
+      if (configuredQuestions && configuredQuestions.length > 0) {
+        for (let i = 0; i < configuredQuestions.length; i++) {
+          const q = configuredQuestions[i];
+          const a = currentAnswers[i];
+          if (q.required && (!a || !a.answer?.trim())) {
+            return res.status(400).json({ error: `"${q.label}" is required` });
+          }
+        }
+      }
+
+      const { db } = await import('./db');
+      const { sql } = await import('drizzle-orm');
+      await db.execute(sql`UPDATE group_applications SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL WHERE id = ${application.id}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Submit application error:", error);
       res.status(500).json({ error: "Failed to submit application" });
     }
   });
@@ -8834,22 +8921,32 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         return res.status(400).json({ error: "You are already a member of this group" });
       }
 
-      // Check for existing pending application
-      const existingApps = await storage.getGroupApplications(group.id);
-      const existingApp = existingApps.find((a: any) => a.userId === user!.id && a.status === 'pending');
-      if (existingApp) {
-        return res.status(400).json({ error: "You already have a pending application for this group" });
+      const existingApp = await storage.getUserApplicationForGroup(user.id, group.id);
+      if (existingApp && (existingApp.status === 'pending' || existingApp.status === 'approved')) {
+        return res.status(400).json({ error: "You already have an application for this group" });
       }
 
-      await storage.createGroupApplication({
-        groupId: group.id,
-        userId: user.id,
-        motivation: answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '',
-        answers: answers || [],
-        status: 'pending',
-      });
+      if (existingApp && existingApp.status === 'draft') {
+        const motivation = answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '';
+        await storage.updateGroupApplicationAnswers(existingApp.id, answers || [], motivation);
+      } else {
+        await storage.createGroupApplication({
+          groupId: group.id,
+          userId: user.id,
+          motivation: answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '',
+          answers: answers || [],
+          status: 'draft',
+        });
+      }
 
-      res.json({ success: true, isNewUser, message: isNewUser ? 'Application submitted! Check your email for login credentials.' : 'Application submitted!' });
+      res.json({
+        success: true,
+        isNewUser,
+        isDraft: true,
+        message: isNewUser
+          ? 'Your application has been saved! Check your email for login credentials, then log in to review and submit.'
+          : 'Your application has been saved! Log in to review and submit.',
+      });
     } catch (error) {
       console.error("Public group apply error:", error);
       res.status(500).json({ error: "Failed to submit application" });

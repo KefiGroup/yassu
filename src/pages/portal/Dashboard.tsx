@@ -430,7 +430,11 @@ Looking forward to hearing from you!`;
                 {myGroupApplications.map((app) => (
                   <div
                     key={app.id}
-                    className="p-4 rounded-lg border border-border hover:border-primary/20 hover:bg-muted/50 transition-colors"
+                    className={`p-4 rounded-lg border transition-colors ${
+                      app.status === 'draft'
+                        ? 'border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800'
+                        : 'border-border hover:border-primary/20 hover:bg-muted/50'
+                    }`}
                     data-testid={`card-group-application-${app.id}`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -438,12 +442,15 @@ Looking forward to hearing from you!`;
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                           app.status === 'approved' ? 'bg-green-500/10' :
                           app.status === 'rejected' ? 'bg-red-500/10' :
+                          app.status === 'draft' ? 'bg-blue-500/10' :
                           'bg-amber-500/10'
                         }`}>
                           {app.status === 'approved' ? (
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
                           ) : app.status === 'rejected' ? (
                             <XCircle className="w-5 h-5 text-red-500" />
+                          ) : app.status === 'draft' ? (
+                            <ClipboardCheck className="w-5 h-5 text-blue-500" />
                           ) : (
                             <Clock className="w-5 h-5 text-amber-500" />
                           )}
@@ -451,21 +458,35 @@ Looking forward to hearing from you!`;
                         <div className="min-w-0">
                           <h4 className="font-medium truncate" data-testid={`text-app-group-${app.id}`}>{app.groupName}</h4>
                           <p className="text-xs text-muted-foreground">
-                            Applied {new Date(app.createdAt).toLocaleDateString()}
+                            {app.status === 'draft' ? 'Saved — not yet submitted' : `Applied ${new Date(app.createdAt).toLocaleDateString()}`}
                           </p>
                         </div>
                       </div>
-                      <Badge
-                        className={
-                          app.status === 'approved' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200' :
-                          app.status === 'rejected' ? 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200' :
-                          'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200'
-                        }
-                        variant="outline"
-                        data-testid={`badge-app-status-${app.id}`}
-                      >
-                        {app.status === 'approved' ? 'Approved' : app.status === 'rejected' ? 'Rejected' : 'Under Review'}
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {app.status === 'draft' && (
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/portal/applications/${app.groupSlug}`)}
+                            data-testid={`button-continue-app-${app.id}`}
+                          >
+                            Continue
+                            <ArrowRight className="w-3 h-3 ml-1" />
+                          </Button>
+                        )}
+                        {app.status !== 'draft' && (
+                          <Badge
+                            className={
+                              app.status === 'approved' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200' :
+                              app.status === 'rejected' ? 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200' :
+                              'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200'
+                            }
+                            variant="outline"
+                            data-testid={`badge-app-status-${app.id}`}
+                          >
+                            {app.status === 'approved' ? 'Approved' : app.status === 'rejected' ? 'Rejected' : 'Under Review'}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

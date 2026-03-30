@@ -608,7 +608,7 @@ export type ProfileIndustry = typeof profileIndustries.$inferSelect;
 
 export const groupRoleEnum = pgEnum("group_role", ["owner", "admin", "member", "judge"]);
 export const groupInviteStatusEnum = pgEnum("group_invite_status", ["pending", "accepted", "expired"]);
-export const groupApplicationStatusEnum = pgEnum("group_application_status", ["pending", "approved", "rejected"]);
+export const groupApplicationStatusEnum = pgEnum("group_application_status", ["draft", "pending", "approved", "rejected"]);
 
 export const groups = pgTable("groups", {
   id: uuid("id").primaryKey().defaultRandom(),

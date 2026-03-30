@@ -59,6 +59,7 @@ const Search = lazy(() => import("./pages/portal/Search"));
 const AcceptConnection = lazy(() => import("./pages/portal/AcceptConnection"));
 const AcceptGroupInvite = lazy(() => import("./pages/portal/AcceptGroupInvite"));
 const GroupApply = lazy(() => import("./pages/GroupApply"));
+const ApplicationEditor = lazy(() => import("./pages/portal/ApplicationEditor"));
 
 const queryClient = new QueryClient();
 
@@ -125,6 +126,7 @@ function AppRoutes() {
             <Route path="pitch-preparation" element={<PitchPreparation />} />
             <Route path="foundry" element={<Foundry />} />
             <Route path="admin" element={<Admin />} />
+            <Route path="applications/:slug" element={<ApplicationEditor />} />
             <Route path="group-admin" element={<GroupAdmin />} />
             <Route path="search" element={<Search />} />
           </Route>

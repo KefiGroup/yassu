@@ -172,13 +172,18 @@ export default function GroupApply() {
             <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: `hsl(${primaryHSL} / 0.15)` }}>
               <CheckCircle className="h-8 w-8" style={{ color: `hsl(${primaryHSL})` }} />
             </div>
-            <h2 className="text-2xl font-bold">Application Submitted!</h2>
+            <h2 className="text-2xl font-bold">Application Saved!</h2>
             <p className="text-muted-foreground">
-              {groupInfo.submissionMessage || <>Thank you for applying to <strong>{groupInfo.name}</strong>. Your application is under review.</>}
+              {groupInfo.submissionMessage || <>Thank you for applying to <strong>{groupInfo.name}</strong>. Log in to review your answers and submit your application when you're ready.</>}
             </p>
             {isNewUser && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                A Yassu account has been created for you. Check your email for login credentials.
+                A Yassu account has been created for you. Check your email for login credentials, then log in to review and submit your application.
+              </div>
+            )}
+            {!isNewUser && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                Your application has been saved as a draft. Log in to review and submit it.
               </div>
             )}
             {groupInfo.submissionFileUrl && (

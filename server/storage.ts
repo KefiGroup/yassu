@@ -208,8 +208,10 @@ export interface IStorage {
   // Group Applications
   getGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]>;
   getUserApplications(userId: number): Promise<(schema.GroupApplication & { groupName: string; groupSlug: string })[]>;
+  getUserApplicationForGroup(userId: number, groupId: string): Promise<schema.GroupApplication | undefined>;
   createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication>;
   updateGroupApplication(id: string, status: "approved" | "rejected", reviewedBy: number): Promise<schema.GroupApplication | undefined>;
+  updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string): Promise<schema.GroupApplication | undefined>;
   
   // Group Idea Ratings
   getGroupIdeaRatings(groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null; ideaTitle: string })[]>;
@@ -2135,6 +2137,16 @@ export class DatabaseStorage implements IStorage {
     return results.map(r => ({ ...r.application, groupName: r.groupName, groupSlug: r.groupSlug }));
   }
 
+  async getUserApplicationForGroup(userId: number, groupId: string): Promise<schema.GroupApplication | undefined> {
+    const [result] = await db
+      .select()
+      .from(schema.groupApplications)
+      .where(and(eq(schema.groupApplications.userId, userId), eq(schema.groupApplications.groupId, groupId)))
+      .orderBy(desc(schema.groupApplications.createdAt))
+      .limit(1);
+    return result;
+  }
+
   async createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication> {
     const [app] = await db.insert(schema.groupApplications).values(data).returning();
     return app;
@@ -2144,6 +2156,15 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(schema.groupApplications)
       .set({ status, reviewedBy, reviewedAt: new Date() })
+      .where(eq(schema.groupApplications.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string): Promise<schema.GroupApplication | undefined> {
+    const [updated] = await db
+      .update(schema.groupApplications)
+      .set({ answers, motivation })
       .where(eq(schema.groupApplications.id, id))
       .returning();
     return updated;

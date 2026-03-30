@@ -66,6 +66,13 @@ export async function ensureTables() {
         END IF;
       END $$;
     `);
+    await db.execute(sql`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'draft' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'group_application_status')) THEN
+          ALTER TYPE group_application_status ADD VALUE 'draft' BEFORE 'pending';
+        END IF;
+      END $$;
+    `);
 
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS groups (
