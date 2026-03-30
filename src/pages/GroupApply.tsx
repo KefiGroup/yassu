@@ -187,14 +187,14 @@ export default function GroupApply() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="w-full py-6 px-4" style={{ background: `linear-gradient(135deg, hsl(${primaryHSL}), hsl(${primaryHSL} / 0.8))` }}>
-        <div className="max-w-2xl mx-auto flex items-center gap-4">
+      <div className="w-full py-8 px-4" style={{ background: `linear-gradient(135deg, hsl(${primaryHSL}), hsl(${primaryHSL} / 0.8))` }}>
+        <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-3">
           {groupInfo.logoUrl && (
-            <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-12 w-12 rounded-lg object-contain bg-white/20 p-1" />
+            <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-20 w-20 rounded-xl object-contain bg-white/20 p-2" data-testid="img-group-logo" />
           )}
           <div className="text-white">
             <h1 className="text-2xl font-bold">{groupInfo.name}</h1>
-            {groupInfo.description && <p className="text-sm opacity-90">{groupInfo.description}</p>}
+            {groupInfo.description && <p className="text-sm opacity-90 mt-1">{groupInfo.description}</p>}
           </div>
         </div>
       </div>
@@ -309,6 +309,12 @@ export default function GroupApply() {
             </form>
           </CardContent>
         </Card>
+
+        <div className="text-center py-6">
+          <a href="https://yassu.ai" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid="link-powered-by">
+            Powered by <span className="font-semibold">Yassu</span>
+          </a>
+        </div>
       </div>
     </div>
   );
