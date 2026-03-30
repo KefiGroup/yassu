@@ -160,6 +160,20 @@ export async function ensureTables() {
     }
 
     console.log('[ensureTables] ✓ group tables verified/created');
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS email_logs (
+        id SERIAL PRIMARY KEY,
+        recipient TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        email_type TEXT,
+        status TEXT NOT NULL DEFAULT 'sent',
+        error_message TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_email_logs_created_at ON email_logs(created_at DESC)`);
+    console.log('[ensureTables] ✓ email_logs table verified/created');
   } catch (error) {
     console.error('[ensureTables] Error ensuring tables:', error);
     throw error;

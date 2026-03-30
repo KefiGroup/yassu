@@ -967,6 +967,10 @@ export default function Admin() {
             <Users className="w-4 h-4" />
             Groups
           </TabsTrigger>
+          <TabsTrigger value="email-logs" className="gap-2" data-testid="tab-email-logs">
+            <Mail className="w-4 h-4" />
+            Email Log
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="analytics">
@@ -3068,7 +3072,206 @@ export default function Admin() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="email-logs">
+          <EmailLogsTab />
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+interface EmailLog {
+  id: number;
+  recipient: string;
+  subject: string;
+  email_type: string;
+  status: string;
+  error_message: string | null;
+  created_at: string;
+}
+
+function EmailLogsTab() {
+  const [logs, setLogs] = useState<EmailLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [typeCounts, setTypeCounts] = useState<{ email_type: string; count: string }[]>([]);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+
+  const fetchLogs = async (p: number) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(p), limit: '50' });
+      if (typeFilter) params.set('type', typeFilter);
+      if (statusFilter) params.set('status', statusFilter);
+      if (search) params.set('search', search);
+      const data = await apiRequest<any>(`/admin/email-logs?${params.toString()}`);
+      setLogs(data.logs);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      setTypeCounts(data.typeCounts);
+      setPage(p);
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchLogs(1); }, [typeFilter, statusFilter, search]);
+
+  const emailTypeLabels: Record<string, string> = {
+    password_reset: 'Password Reset',
+    welcome: 'Welcome',
+    account_created: 'Account Created',
+    team_invitation: 'Team Invitation',
+    new_message: 'New Message',
+    connection_request: 'Connection Request',
+    join_request: 'Join Request',
+    request_accepted: 'Request Accepted',
+    request_rejected: 'Request Rejected',
+    weekly_digest: 'Weekly Digest',
+    announcement: 'Announcement',
+    idea_created: 'Idea Created',
+    advisor_request: 'Advisor Request',
+    investor_notification: 'Investor Notification',
+    group_invite: 'Group Invite',
+    skill_match: 'Skill Match',
+    admin_inbox: 'Admin Inbox',
+    other: 'Other',
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Email Log
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{total} total emails sent</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => fetchLogs(page)} data-testid="button-refresh-logs">
+            <RefreshCw className="w-4 h-4 mr-1" />
+            Refresh
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {typeCounts.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {typeCounts.map(tc => (
+              <Badge
+                key={tc.email_type}
+                variant={typeFilter === tc.email_type ? 'default' : 'outline'}
+                className="cursor-pointer"
+                onClick={() => setTypeFilter(typeFilter === tc.email_type ? '' : tc.email_type)}
+                data-testid={`badge-type-${tc.email_type}`}
+              >
+                {emailTypeLabels[tc.email_type] || tc.email_type} ({tc.count})
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by recipient or subject..."
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') setSearch(searchInput); }}
+              className="pl-9"
+              data-testid="input-email-search"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="border rounded px-3 py-2 text-sm bg-background"
+            data-testid="select-status-filter"
+          >
+            <option value="">All Status</option>
+            <option value="sent">Sent</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Mail className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p>No emails logged yet</p>
+            <p className="text-xs mt-1">Emails will appear here as they are sent from the platform</p>
+          </div>
+        ) : (
+          <>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b">
+                    <th className="text-left px-4 py-2 font-medium">Recipient</th>
+                    <th className="text-left px-4 py-2 font-medium">Subject</th>
+                    <th className="text-left px-4 py-2 font-medium">Type</th>
+                    <th className="text-left px-4 py-2 font-medium">Status</th>
+                    <th className="text-left px-4 py-2 font-medium">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map(log => (
+                    <tr key={log.id} className="border-b last:border-0 hover:bg-muted/30" data-testid={`row-email-${log.id}`}>
+                      <td className="px-4 py-2.5 font-mono text-xs max-w-[200px] truncate">{log.recipient}</td>
+                      <td className="px-4 py-2.5 max-w-[300px] truncate">{log.subject}</td>
+                      <td className="px-4 py-2.5">
+                        <Badge variant="outline" className="text-xs">
+                          {emailTypeLabels[log.email_type] || log.email_type}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {log.status === 'sent' ? (
+                          <span className="inline-flex items-center gap-1 text-green-600 text-xs">
+                            <CheckCircle className="w-3 h-3" /> Sent
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-red-600 text-xs" title={log.error_message || ''}>
+                            <XCircle className="w-3 h-3" /> Failed
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages} ({total} total)
+                </p>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => fetchLogs(page - 1)} data-testid="button-prev-page">
+                    Previous
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => fetchLogs(page + 1)} data-testid="button-next-page">
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

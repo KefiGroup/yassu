@@ -3055,6 +3055,48 @@ Return valid JSON:
     res.json({ isAdmin });
   });
 
+  app.get("/api/admin/email-logs", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const isAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const offset = (page - 1) * limit;
+      const typeFilter = req.query.type as string || '';
+      const statusFilter = req.query.status as string || '';
+      const search = req.query.search as string || '';
+
+      let whereClause = sql`1=1`;
+      if (typeFilter) whereClause = sql`${whereClause} AND email_type = ${typeFilter}`;
+      if (statusFilter) whereClause = sql`${whereClause} AND status = ${statusFilter}`;
+      if (search) whereClause = sql`${whereClause} AND (recipient ILIKE ${'%' + search + '%'} OR subject ILIKE ${'%' + search + '%'})`;
+
+      const [countResult, logs] = await Promise.all([
+        db.execute(sql`SELECT COUNT(*) as total FROM email_logs WHERE ${whereClause}`),
+        db.execute(sql`SELECT * FROM email_logs WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`),
+      ]);
+
+      const total = Number((countResult.rows[0] as any)?.total || 0);
+
+      const typeCounts = await db.execute(sql`
+        SELECT email_type, COUNT(*) as count FROM email_logs GROUP BY email_type ORDER BY count DESC
+      `);
+
+      res.json({
+        logs: logs.rows,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        typeCounts: typeCounts.rows,
+      });
+    } catch (error) {
+      console.error("Email logs error:", error);
+      res.status(500).json({ error: "Failed to fetch email logs" });
+    }
+  });
+
   // Analytics dashboard (admin only)
   app.get("/api/admin/analytics", async (req: Request, res: Response) => {
     if (!req.session.userId) {

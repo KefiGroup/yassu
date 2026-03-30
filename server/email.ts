@@ -1,4 +1,6 @@
 import { Resend } from 'resend';
+import { db } from './db';
+import { sql } from 'drizzle-orm';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -9,9 +11,22 @@ export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  emailType?: string;
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions): Promise<void> {
+async function logEmail(recipient: string, subject: string, emailType: string, status: string, errorMessage?: string) {
+  try {
+    await db.execute(sql`
+      INSERT INTO email_logs (recipient, subject, email_type, status, error_message)
+      VALUES (${recipient}, ${subject}, ${emailType}, ${status}, ${errorMessage || null})
+    `);
+  } catch (err) {
+    console.error('[email-log] Failed to log email:', err);
+  }
+}
+
+export async function sendEmail({ to, subject, html, emailType }: SendEmailOptions): Promise<void> {
+  const type = emailType || inferEmailType(subject);
   try {
     await resend.emails.send({
       from: FROM_EMAIL,
@@ -20,10 +35,34 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
       html,
     });
     console.log(`Email sent to ${to}: ${subject}`);
+    await logEmail(to, subject, type, 'sent');
   } catch (error) {
     console.error('Failed to send email:', error);
+    await logEmail(to, subject, type, 'failed', error instanceof Error ? error.message : String(error));
     throw new Error('Failed to send email');
   }
+}
+
+function inferEmailType(subject: string): string {
+  const s = subject.toLowerCase();
+  if (s.includes('password') && s.includes('reset')) return 'password_reset';
+  if (s.includes('welcome')) return 'welcome';
+  if (s.includes('account') && s.includes('created')) return 'account_created';
+  if (s.includes('team') && s.includes('invitation')) return 'team_invitation';
+  if (s.includes('message')) return 'new_message';
+  if (s.includes('connection')) return 'connection_request';
+  if (s.includes('join request') || s.includes('join your')) return 'join_request';
+  if (s.includes('accepted')) return 'request_accepted';
+  if (s.includes('rejected') || s.includes('declined')) return 'request_rejected';
+  if (s.includes('weekly') || s.includes('digest')) return 'weekly_digest';
+  if (s.includes('announcement')) return 'announcement';
+  if (s.includes('idea') && s.includes('posted')) return 'idea_created';
+  if (s.includes('advisor')) return 'advisor_request';
+  if (s.includes('investor')) return 'investor_notification';
+  if (s.includes('invite') || s.includes('invited')) return 'group_invite';
+  if (s.includes('skill') && s.includes('match')) return 'skill_match';
+  if (s.includes('feedback') || s.includes('inbox')) return 'admin_inbox';
+  return 'other';
 }
 
 export async function sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
