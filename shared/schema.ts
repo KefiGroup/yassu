@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, uuid, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, uuid, varchar, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -619,6 +619,7 @@ export const groups = pgTable("groups", {
   accentColor: text("accent_color"),
   logoUrl: text("logo_url"),
   universityId: uuid("university_id").references(() => universities.id),
+  applicationQuestions: jsonb("application_questions").$type<{ label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[]>(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -646,6 +647,7 @@ export const groupApplications = pgTable("group_applications", {
   groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   motivation: text("motivation"),
+  answers: jsonb("answers").$type<{ question: string; answer: string }[]>(),
   status: groupApplicationStatusEnum("status").default("pending").notNull(),
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),

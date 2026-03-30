@@ -58,6 +58,7 @@ const GroupAdmin = lazy(() => import("./pages/portal/GroupAdmin"));
 const Search = lazy(() => import("./pages/portal/Search"));
 const AcceptConnection = lazy(() => import("./pages/portal/AcceptConnection"));
 const AcceptGroupInvite = lazy(() => import("./pages/portal/AcceptGroupInvite"));
+const GroupApply = lazy(() => import("./pages/GroupApply"));
 
 const queryClient = new QueryClient();
 
@@ -92,6 +93,7 @@ function AppRoutes() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/accept-connection" element={<AcceptConnection />} />
           <Route path="/accept-group-invite" element={<AcceptGroupInvite />} />
+          <Route path="/apply/:slug" element={<GroupApply />} />
           
           <Route path="/portal" element={<PortalLayout />}>
             <Route index element={<Dashboard />} />

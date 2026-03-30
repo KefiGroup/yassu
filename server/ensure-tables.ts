@@ -140,6 +140,25 @@ export async function ensureTables() {
       END $$;
     `);
 
+    await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS application_questions JSONB`);
+    await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS answers JSONB`);
+
+    // Seed default application questions for Bruin group if not set
+    const bruinCheck = await db.execute(sql`SELECT application_questions FROM groups WHERE slug = 'bruin'`);
+    if (bruinCheck.rows.length > 0 && !(bruinCheck.rows[0] as any).application_questions) {
+      const defaultQuestions = JSON.stringify([
+        { label: "What are you building?", type: "textarea", required: true },
+        { label: "What specific problem are you solving, and who are your target customers?", type: "textarea", required: true },
+        { label: "Why is now the best opportunity?", type: "textarea", required: true },
+        { label: "How is your solution different from others?", type: "textarea", required: true },
+        { label: "Why are you & your team best suited to build this?", type: "textarea", required: true },
+        { label: "What progress have you made so far?", type: "textarea", required: true },
+        { label: "(Optional) Any additional materials or links you'd like to share?", type: "textarea", required: false },
+      ]);
+      await db.execute(sql`UPDATE groups SET application_questions = ${defaultQuestions}::jsonb WHERE slug = 'bruin'`);
+      console.log('[ensureTables] ✓ Bruin group application questions seeded');
+    }
+
     console.log('[ensureTables] ✓ group tables verified/created');
   } catch (error) {
     console.error('[ensureTables] Error ensuring tables:', error);

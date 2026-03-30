@@ -8632,4 +8632,141 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       res.status(500).json({ error: "Failed to search users" });
     }
   });
+
+  // Public: Get group info + application questions (no auth required)
+  app.get("/api/groups/:slug/public-info", async (req: Request, res: Response) => {
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      res.json({
+        name: group.name,
+        slug: group.slug,
+        description: group.description,
+        logoUrl: group.logoUrl,
+        primaryColor: group.primaryColor,
+        accentColor: group.accentColor,
+        applicationQuestions: group.applicationQuestions || [],
+      });
+    } catch (error) {
+      console.error("Get public group info error:", error);
+      res.status(500).json({ error: "Failed to get group info" });
+    }
+  });
+
+  // Public: Apply to a group (no auth required - creates account if needed)
+  app.post("/api/groups/:slug/public-apply", async (req: Request, res: Response) => {
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const { firstName, lastName, email, answers } = req.body;
+      if (!firstName || !lastName || !email) {
+        return res.status(400).json({ error: "First name, last name, and email are required" });
+      }
+
+      if (typeof firstName !== 'string' || typeof lastName !== 'string' || typeof email !== 'string') {
+        return res.status(400).json({ error: "Invalid field types" });
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({ error: "Invalid email address" });
+      }
+
+      const configuredQuestions = (group as any).applicationQuestions as { label: string; type: string; required: boolean }[] | null;
+      if (configuredQuestions && configuredQuestions.length > 0) {
+        if (!Array.isArray(answers) || answers.length !== configuredQuestions.length) {
+          return res.status(400).json({ error: "All application questions must be answered" });
+        }
+        for (let i = 0; i < configuredQuestions.length; i++) {
+          const q = configuredQuestions[i];
+          const a = answers[i];
+          if (!a || typeof a.answer !== 'string') {
+            return res.status(400).json({ error: `Invalid answer format for question ${i + 1}` });
+          }
+          if (q.required && !a.answer.trim()) {
+            return res.status(400).json({ error: `"${q.label}" is required` });
+          }
+        }
+      }
+
+      const trimmedEmail = email.trim().toLowerCase();
+      const fullName = `${firstName.trim()} ${lastName.trim()}`;
+
+      let user = await storage.getUserByEmail(trimmedEmail);
+      let isNewUser = false;
+
+      if (!user) {
+        const crypto = await import('crypto');
+        const temporaryPassword = crypto.randomBytes(6).toString('base64url');
+        const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+        user = await storage.createUser({ email: trimmedEmail, password: hashedPassword, fullName });
+
+        await storage.createProfile(user.id, {
+          email: trimmedEmail,
+          fullName,
+          verificationStatus: "pending",
+          onboardingCompleted: false,
+          skills: [],
+          interests: []
+        });
+        await storage.addUserRole(user.id, "student");
+
+        const { sendAccountCreatedEmail } = await import('./email');
+        sendAccountCreatedEmail(trimmedEmail, fullName, temporaryPassword)
+          .then(() => console.log(`[GroupApply] Account created email sent to: ${trimmedEmail}`))
+          .catch(err => console.error(`[GroupApply] Failed to send account email to ${trimmedEmail}:`, err));
+
+        isNewUser = true;
+      }
+
+      // Check if already a member
+      const existingMembers = await storage.getGroupMembers(group.id);
+      const alreadyMember = existingMembers.some((m: any) => m.userId === user!.id);
+      if (alreadyMember) {
+        return res.status(400).json({ error: "You are already a member of this group" });
+      }
+
+      // Check for existing pending application
+      const existingApps = await storage.getGroupApplications(group.id);
+      const existingApp = existingApps.find((a: any) => a.userId === user!.id && a.status === 'pending');
+      if (existingApp) {
+        return res.status(400).json({ error: "You already have a pending application for this group" });
+      }
+
+      await storage.createGroupApplication({
+        groupId: group.id,
+        userId: user.id,
+        motivation: answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '',
+        answers: answers || [],
+        status: 'pending',
+      });
+
+      res.json({ success: true, isNewUser, message: isNewUser ? 'Application submitted! Check your email for login credentials.' : 'Application submitted!' });
+    } catch (error) {
+      console.error("Public group apply error:", error);
+      res.status(500).json({ error: "Failed to submit application" });
+    }
+  });
+
+  // Update group application questions (admin only)
+  app.patch("/api/groups/:slug/application-questions", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Admin access required" });
+
+      const { applicationQuestions } = req.body;
+      await storage.updateGroup(group.id, { applicationQuestions });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update application questions error:", error);
+      res.status(500).json({ error: "Failed to update questions" });
+    }
+  });
 }

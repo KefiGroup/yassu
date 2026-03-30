@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,6 +64,7 @@ interface GroupApplication {
   id: string;
   userId: number;
   motivation: string | null;
+  answers: { question: string; answer: string }[] | null;
   status: string;
   createdAt: string;
   user: {
@@ -609,6 +610,29 @@ export default function GroupAdmin() {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="mt-4">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Application Questionnaire</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs bg-muted px-2 py-1 rounded">
+                      {window.location.origin}/apply/{group.slug}
+                    </code>
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/apply/${group.slug}`);
+                      toast({ title: 'Link copied!' });
+                    }}>
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+                <CardDescription>Configure the questions applicants must answer. Changes save automatically.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ApplicationQuestionsEditor slug={group.slug} />
+              </CardContent>
+            </Card>
           </TabsContent>}
 
           {!isJudge && <TabsContent value="applicants" className="space-y-4">
@@ -660,12 +684,21 @@ export default function GroupAdmin() {
                                 )}
                               </div>
                             )}
-                            {app.motivation && (
+                            {app.answers && app.answers.length > 0 ? (
+                              <div className="mt-2 space-y-2">
+                                {app.answers.map((a, idx) => (
+                                  <div key={idx} className="p-2 rounded bg-muted text-sm">
+                                    <p className="text-xs text-muted-foreground mb-0.5 font-medium">{a.question}</p>
+                                    <p className="whitespace-pre-wrap">{a.answer}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : app.motivation ? (
                               <div className="mt-2 p-2 rounded bg-muted text-sm">
                                 <p className="text-xs text-muted-foreground mb-0.5 font-medium">Motivation</p>
                                 {app.motivation}
                               </div>
-                            )}
+                            ) : null}
                             <p className="text-xs text-muted-foreground mt-1">
                               Applied {new Date(app.createdAt).toLocaleDateString()}
                             </p>
@@ -1051,6 +1084,100 @@ export default function GroupAdmin() {
         </Tabs>
         </>
       ) : null}
+    </div>
+  );
+}
+
+function ApplicationQuestionsEditor({ slug }: { slug: string }) {
+  const { toast } = useToast();
+  const [questions, setQuestions] = useState<{ label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await apiRequest<{ applicationQuestions: any[] }>(`/groups/${slug}/public-info`);
+        setQuestions(data.applicationQuestions || []);
+      } catch { /* ignore */ }
+      setLoaded(true);
+    }
+    load();
+  }, [slug]);
+
+  const save = async (updated: typeof questions) => {
+    try {
+      setSaving(true);
+      await apiRequest(`/groups/${slug}/application-questions`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applicationQuestions: updated }),
+      });
+      toast({ title: 'Questions saved' });
+    } catch {
+      toast({ title: 'Failed to save', variant: 'destructive' });
+    } finally { setSaving(false); }
+  };
+
+  const addQuestion = () => {
+    const updated = [...questions, { label: '', type: 'textarea' as const, required: true }];
+    setQuestions(updated);
+  };
+
+  const removeQuestion = (idx: number) => {
+    const updated = questions.filter((_, i) => i !== idx);
+    setQuestions(updated);
+    save(updated);
+  };
+
+  const updateQuestion = (idx: number, field: string, value: any) => {
+    const updated = questions.map((q, i) => i === idx ? { ...q, [field]: value } : q);
+    setQuestions(updated);
+  };
+
+  if (!loaded) return <Loader2 className="h-4 w-4 animate-spin" />;
+
+  return (
+    <div className="space-y-3">
+      {questions.map((q, i) => (
+        <div key={i} className="flex items-start gap-2 p-3 border rounded-lg bg-background">
+          <div className="flex-1 space-y-2">
+            <Input
+              value={q.label}
+              onChange={e => updateQuestion(i, 'label', e.target.value)}
+              placeholder="Question text..."
+              className="text-sm"
+              data-testid={`input-question-label-${i}`}
+            />
+            <div className="flex items-center gap-3 text-xs">
+              <label className="flex items-center gap-1.5">
+                <input type="checkbox" checked={q.required} onChange={e => { updateQuestion(i, 'required', e.target.checked); }} />
+                Required
+              </label>
+              <select
+                value={q.type}
+                onChange={e => updateQuestion(i, 'type', e.target.value)}
+                className="border rounded px-2 py-0.5 text-xs bg-background"
+              >
+                <option value="text">Short text</option>
+                <option value="textarea">Long text</option>
+              </select>
+            </div>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => removeQuestion(i)} className="shrink-0">
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      ))}
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" onClick={addQuestion} data-testid="button-add-question">
+          + Add Question
+        </Button>
+        <Button size="sm" onClick={() => save(questions)} disabled={saving} data-testid="button-save-questions">
+          {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+          Save Questions
+        </Button>
+      </div>
     </div>
   );
 }

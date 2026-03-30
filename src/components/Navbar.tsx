@@ -32,16 +32,23 @@ const Navbar = () => {
         </a>
 
         <div className="hidden md:flex items-center gap-8">
+          {brand.navLabels.apply && (
+            <a href={`${base}/apply/${brand.id}`} className="font-semibold hover:text-foreground transition-colors" style={{ color: `hsl(${brand.colors.primary})` }} data-testid="link-nav-apply">
+              {brand.navLabels.apply}
+            </a>
+          )}
           <a href={`${base}/#how-it-works`} onClick={(e) => handleHashClick(e, 'how-it-works')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">
             {brand.navLabels.howItWorks}
           </a>
-          <a href={`${base}/#ideas`} onClick={(e) => handleHashClick(e, 'ideas')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ideas">
-            {brand.navLabels.ideas}
-          </a>
           {brand.id === 'yassu' && (
-            <a href={`${base}/#team`} onClick={(e) => handleHashClick(e, 'team')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
-              {brand.navLabels.team}
-            </a>
+            <>
+              <a href={`${base}/#ideas`} onClick={(e) => handleHashClick(e, 'ideas')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ideas">
+                {brand.navLabels.ideas}
+              </a>
+              <a href={`${base}/#team`} onClick={(e) => handleHashClick(e, 'team')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
+                {brand.navLabels.team}
+              </a>
+            </>
           )}
           <a href={`${base}/ambassadors`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-ambassadors">
             {brand.navLabels.ambassadors}
@@ -49,11 +56,6 @@ const Navbar = () => {
           <a href={`${base}/advisors`} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-advisors">
             {brand.navLabels.advisors}
           </a>
-          {brand.id !== 'yassu' && (
-            <a href={`${base}/#team`} onClick={(e) => handleHashClick(e, 'team')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-team">
-              {brand.navLabels.team}
-            </a>
-          )}
         </div>
 
         <div className="flex items-center gap-3">

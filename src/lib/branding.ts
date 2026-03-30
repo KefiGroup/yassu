@@ -31,6 +31,7 @@ export interface BrandConfig {
     presentFoundry: string;
   };
   navLabels: {
+    apply?: string;
     howItWorks: string;
     ideas: string;
     team: string;
@@ -147,7 +148,8 @@ export const BRUIN_BRAND: BrandConfig = {
     presentFoundry: 'Present in the Foundry',
   },
   navLabels: {
-    howItWorks: 'How Yassu x Bruin Work',
+    apply: '1000 Pitches Application',
+    howItWorks: 'How Yassu Works',
     ideas: 'Bruin Entrepreneurs Ideas',
     team: 'Yassu Team',
     ambassadors: 'Bruin Ambassadors',
