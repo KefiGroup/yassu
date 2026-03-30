@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive, Reply, BarChart3, Gavel, UserPlus, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import { useToast } from '@/hooks/use-toast';
@@ -134,6 +134,103 @@ interface InboxMessage {
   createdAt: string;
   senderName: string | null;
   attachmentUrl: string | null;
+}
+
+const sidebarGroups = [
+  {
+    label: 'Overview',
+    items: [
+      { value: 'analytics', label: 'Analytics', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Content',
+    items: [
+      { value: 'ideas', label: 'All Ideas', icon: Lightbulb },
+      { value: 'announcements', label: 'Announcements', icon: Megaphone },
+    ],
+  },
+  {
+    label: 'People',
+    items: [
+      { value: 'users', label: 'Users', icon: UserCog },
+      { value: 'badges', label: 'Badges', icon: Award },
+      { value: 'admins', label: 'Admin Access', icon: Shield },
+    ],
+  },
+  {
+    label: 'Communication',
+    items: [
+      { value: 'inbox', label: 'Inbox', icon: MessageSquare },
+      { value: 'suggestions', label: 'Suggestions', icon: MessageSquare },
+      { value: 'email-logs', label: 'Email Log', icon: Mail },
+    ],
+  },
+  {
+    label: 'Events',
+    items: [
+      { value: 'foundry', label: 'Foundry Events', icon: Rocket },
+      { value: 'bookings', label: 'Roadshow Bookings', icon: Calendar },
+    ],
+  },
+  {
+    label: 'Platform',
+    items: [
+      { value: 'groups', label: 'Groups', icon: Users },
+    ],
+  },
+];
+
+function AdminSidebar({ activeTab, onTabChange, suggestionCount, inboxUnreadCount }: {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  suggestionCount: number;
+  inboxUnreadCount: number;
+}) {
+  return (
+    <nav className="w-56 shrink-0 space-y-1 sticky top-24 self-start hidden md:block" data-testid="admin-sidebar">
+      {sidebarGroups.map((group) => (
+        <div key={group.label} className="mb-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1.5">
+            {group.label}
+          </p>
+          {group.items.map((item) => {
+            const isActive = activeTab === item.value;
+            const Icon = item.icon;
+            const badge = item.value === 'suggestions' && suggestionCount > 0
+              ? suggestionCount
+              : item.value === 'inbox' && inboxUnreadCount > 0
+                ? inboxUnreadCount
+                : null;
+            return (
+              <button
+                key={item.value}
+                onClick={() => onTabChange(item.value)}
+                className={cn(
+                  'w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+                data-testid={`tab-${item.value}`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate">{item.label}</span>
+                {badge !== null && (
+                  <Badge
+                    variant={item.value === 'inbox' ? 'destructive' : 'secondary'}
+                    className="ml-auto h-5 px-1.5 text-xs"
+                  >
+                    {badge}
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </nav>
+  );
 }
 
 export default function Admin() {
@@ -903,81 +1000,56 @@ export default function Admin() {
         </p>
       </motion.div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="analytics" className="gap-2" data-testid="tab-analytics">
-            <BarChart3 className="w-4 h-4" />
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="badges" className="gap-2" data-testid="tab-badges">
-            <Award className="w-4 h-4" />
-            Badges
-          </TabsTrigger>
-          <TabsTrigger value="ideas" className="gap-2" data-testid="tab-ideas">
-            <Lightbulb className="w-4 h-4" />
-            All Ideas
-          </TabsTrigger>
-          <TabsTrigger value="admins" className="gap-2" data-testid="tab-admins">
-            <UserCog className="w-4 h-4" />
-            Admin Access
-          </TabsTrigger>
-          <TabsTrigger value="announcements" className="gap-2" data-testid="tab-announcements">
-            <Megaphone className="w-4 h-4" />
-            Announcements
-          </TabsTrigger>
-          <TabsTrigger value="suggestions" className="gap-2" data-testid="tab-suggestions">
-            <MessageSquare className="w-4 h-4" />
-            Suggestions
-            {suggestions.filter(s => s.status === 'new').length > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                {suggestions.filter(s => s.status === 'new').length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="foundry" className="gap-2" data-testid="tab-foundry">
-            <Rocket className="w-4 h-4" />
-            Foundry Events
-          </TabsTrigger>
-          <TabsTrigger value="bookings" className="gap-2" data-testid="tab-bookings">
-            <Calendar className="w-4 h-4" />
-            Roadshow Bookings
-          </TabsTrigger>
-          <TabsTrigger value="inbox" className="gap-2" data-testid="tab-inbox">
-            <MessageSquare className="w-4 h-4" />
-            Inbox
-            {inboxUnreadCount > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 px-1.5">
-                {inboxUnreadCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="users" className="gap-2" data-testid="tab-users" onClick={async () => {
-            if (allUsers.length === 0 && !usersLoading) {
+      <div className="md:hidden mb-4">
+        <select
+          value={activeTab}
+          onChange={(e) => {
+            const tab = e.target.value;
+            setActiveTab(tab);
+            if (tab === 'users' && allUsers.length === 0 && !usersLoading) {
               setUsersLoading(true);
-              try {
-                const data = await apiRequest<any[]>('/admin/users');
-                setAllUsers(data);
-              } catch { /* ignore */ } finally { setUsersLoading(false); }
+              apiRequest<any[]>('/admin/users')
+                .then(data => setAllUsers(data))
+                .catch(() => {})
+                .finally(() => setUsersLoading(false));
             }
-          }}>
-            <UserCog className="w-4 h-4" />
-            Users
-          </TabsTrigger>
-          <TabsTrigger value="groups" className="gap-2" data-testid="tab-groups">
-            <Users className="w-4 h-4" />
-            Groups
-          </TabsTrigger>
-          <TabsTrigger value="email-logs" className="gap-2" data-testid="tab-email-logs">
-            <Mail className="w-4 h-4" />
-            Email Log
-          </TabsTrigger>
-        </TabsList>
+          }}
+          className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+          data-testid="admin-mobile-nav"
+        >
+          {sidebarGroups.map(group => (
+            <optgroup key={group.label} label={group.label}>
+              {group.items.map(item => (
+                <option key={item.value} value={item.value}>{item.label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
 
-        <TabsContent value="analytics">
+      <div className="flex gap-6">
+        <AdminSidebar
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            if (tab === 'users' && allUsers.length === 0 && !usersLoading) {
+              setUsersLoading(true);
+              apiRequest<any[]>('/admin/users')
+                .then(data => setAllUsers(data))
+                .catch(() => {})
+                .finally(() => setUsersLoading(false));
+            }
+          }}
+          suggestionCount={suggestions.filter(s => s.status === 'new').length}
+          inboxUnreadCount={inboxUnreadCount}
+        />
+
+        <div className="flex-1 min-w-0">
+        <div className={activeTab === 'analytics' ? '' : 'hidden'}>
           <AnalyticsDashboard />
-        </TabsContent>
+        </div>
 
-        <TabsContent value="badges">
+        <div className={activeTab === 'badges' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1124,9 +1196,9 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="ideas">
+        <div className={activeTab === 'ideas' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
@@ -1260,9 +1332,9 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="admins">
+        <div className={activeTab === 'admins' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1353,9 +1425,9 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="announcements">
+        <div className={activeTab === 'announcements' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1615,9 +1687,9 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="suggestions">
+        <div className={activeTab === 'suggestions' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1780,9 +1852,9 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="foundry">
+        <div className={activeTab === 'foundry' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1904,9 +1976,9 @@ export default function Admin() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="bookings">
+        <div className={activeTab === 'bookings' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2016,9 +2088,9 @@ export default function Admin() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="inbox">
+        <div className={activeTab === 'inbox' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -2249,9 +2321,9 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="users">
+        <div className={activeTab === 'users' ? '' : 'hidden'}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2410,9 +2482,9 @@ export default function Admin() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="groups">
+        <div className={activeTab === 'groups' ? '' : 'hidden'}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -3071,12 +3143,13 @@ export default function Admin() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="email-logs">
+        <div className={activeTab === 'email-logs' ? '' : 'hidden'}>
           <EmailLogsTab />
-        </TabsContent>
-      </Tabs>
+        </div>
+        </div>
+      </div>
     </div>
   );
 }
