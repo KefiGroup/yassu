@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -107,9 +108,17 @@ const STAGE_LABELS: Record<string, string> = {
   launched: 'Launched',
 };
 
+interface MyApplication {
+  id: string;
+  status: string;
+  answers: { question: string; answer: string }[] | null;
+  createdAt: string;
+}
+
 export default function GroupAdmin() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [inviteEmails, setInviteEmails] = useState('');
@@ -166,6 +175,12 @@ export default function GroupAdmin() {
     queryKey: ['/api/groups', activeSlug, 'ideas', ratingIdeaId, 'ratings'],
     queryFn: () => apiRequest(`/groups/${activeSlug}/ideas/${ratingIdeaId}/ratings`),
     enabled: !!activeSlug && !!ratingIdeaId,
+  });
+
+  const { data: myApplicationData } = useQuery<{ application: MyApplication | null }>({
+    queryKey: ['/api/groups', activeSlug, 'my-application'],
+    queryFn: () => apiRequest(`/groups/${activeSlug}/my-application`),
+    enabled: !!activeSlug,
   });
 
   const inviteMutation = useMutation({
@@ -552,6 +567,47 @@ export default function GroupAdmin() {
                 </Card>
               </motion.div>
             </div>
+
+            {myApplicationData?.application && (
+              <Card data-testid="card-my-application">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <div>
+                    <CardTitle className="text-base">My Application</CardTitle>
+                    <CardDescription>
+                      {myApplicationData.application.status === 'draft' && 'Your application is saved but not yet submitted.'}
+                      {myApplicationData.application.status === 'pending' && 'Your application is under review.'}
+                      {myApplicationData.application.status === 'approved' && 'Your application has been approved!'}
+                      {myApplicationData.application.status === 'rejected' && 'Your application was not accepted.'}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge
+                      variant="outline"
+                      className={
+                        myApplicationData.application.status === 'draft' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200' :
+                        myApplicationData.application.status === 'pending' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200' :
+                        myApplicationData.application.status === 'approved' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200' :
+                        'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200'
+                      }
+                      data-testid="badge-my-app-status"
+                    >
+                      {myApplicationData.application.status === 'draft' ? 'Draft' :
+                       myApplicationData.application.status === 'pending' ? 'Under Review' :
+                       myApplicationData.application.status === 'approved' ? 'Approved' : 'Rejected'}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant={myApplicationData.application.status === 'draft' ? 'default' : 'outline'}
+                      onClick={() => navigate(`/portal/applications/${activeSlug}`)}
+                      data-testid="button-view-my-application"
+                    >
+                      {myApplicationData.application.status === 'draft' ? 'Continue Application' :
+                       (myApplicationData.application.status === 'pending') ? 'Edit Application' : 'View Application'}
+                    </Button>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
