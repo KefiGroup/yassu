@@ -473,17 +473,35 @@ Looking forward to hearing from you!`;
                             <ArrowRight className="w-3 h-3 ml-1" />
                           </Button>
                         )}
-                        {app.status !== 'draft' && (
+                        {app.status === 'pending' && (
+                          <>
+                            <Badge
+                              className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200"
+                              variant="outline"
+                              data-testid={`badge-app-status-${app.id}`}
+                            >
+                              Under Review
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigate(`/portal/applications/${app.groupSlug}`)}
+                              data-testid={`button-edit-app-${app.id}`}
+                            >
+                              Edit
+                            </Button>
+                          </>
+                        )}
+                        {(app.status === 'approved' || app.status === 'rejected') && (
                           <Badge
                             className={
                               app.status === 'approved' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200' :
-                              app.status === 'rejected' ? 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200' :
-                              'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200'
+                              'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200'
                             }
                             variant="outline"
                             data-testid={`badge-app-status-${app.id}`}
                           >
-                            {app.status === 'approved' ? 'Approved' : app.status === 'rejected' ? 'Rejected' : 'Under Review'}
+                            {app.status === 'approved' ? 'Approved' : 'Rejected'}
                           </Badge>
                         )}
                       </div>

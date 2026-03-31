@@ -202,7 +202,7 @@ export default function ApplicationEditor() {
   const isPending = application?.status === 'pending';
   const isApproved = application?.status === 'approved';
   const isRejected = application?.status === 'rejected';
-  const isReadOnly = !isDraft;
+  const isReadOnly = !isDraft && !isPending;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -220,7 +220,7 @@ export default function ApplicationEditor() {
               <CardTitle className="text-xl">{group.name} Application</CardTitle>
               <CardDescription>
                 {isDraft && 'Review your answers and submit when ready.'}
-                {isPending && 'Your application is under review.'}
+                {isPending && 'Your application is under review. You can still edit your answers.'}
                 {isApproved && 'Your application has been approved!'}
                 {isRejected && 'Your application was not accepted.'}
                 {!application && 'Fill out the form to apply.'}
@@ -335,7 +335,7 @@ export default function ApplicationEditor() {
               <div className="flex gap-3 pt-4 border-t">
                 <Button
                   variant="outline"
-                  onClick={handleSave}
+                  onClick={() => handleSave()}
                   disabled={saving || !hasChanges}
                   className="flex-1"
                   data-testid="button-save-draft"
@@ -351,6 +351,21 @@ export default function ApplicationEditor() {
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
                   Submit Application
+                </Button>
+              </div>
+            )}
+
+            {isPending && (
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => handleSave()}
+                  disabled={saving || !hasChanges}
+                  className="flex-1"
+                  data-testid="button-save-pending"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Changes
                 </Button>
               </div>
             )}

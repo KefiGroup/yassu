@@ -8550,7 +8550,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const application = await storage.getUserApplicationForGroup(req.session.userId, group.id);
       if (!application) return res.status(404).json({ error: "No application found" });
-      if (application.status !== 'draft') return res.status(400).json({ error: "Only draft applications can be edited" });
+      if (application.status !== 'draft' && application.status !== 'pending') return res.status(400).json({ error: "Only draft or pending applications can be edited" });
 
       const { answers } = req.body;
       if (!Array.isArray(answers)) return res.status(400).json({ error: "Answers must be an array" });
