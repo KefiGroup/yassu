@@ -256,7 +256,7 @@ export default function ApplicationEditor() {
                       <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
                         <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
                         <span className="text-sm truncate flex-1">{fileNames[i] || 'File uploaded'}</span>
-                        {isDraft && (
+                        {!isReadOnly && (
                           <Button
                             type="button"
                             size="sm"
@@ -272,7 +272,7 @@ export default function ApplicationEditor() {
                           </Button>
                         )}
                       </div>
-                    ) : isDraft ? (
+                    ) : !isReadOnly ? (
                       <label
                         className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
                         data-testid={`input-file-${i}`}

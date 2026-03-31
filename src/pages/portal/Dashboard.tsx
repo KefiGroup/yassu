@@ -493,16 +493,26 @@ Looking forward to hearing from you!`;
                           </>
                         )}
                         {(app.status === 'approved' || app.status === 'rejected') && (
-                          <Badge
-                            className={
-                              app.status === 'approved' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200' :
-                              'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200'
-                            }
-                            variant="outline"
-                            data-testid={`badge-app-status-${app.id}`}
-                          >
-                            {app.status === 'approved' ? 'Approved' : 'Rejected'}
-                          </Badge>
+                          <>
+                            <Badge
+                              className={
+                                app.status === 'approved' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200' :
+                                'bg-red-500/10 text-red-700 dark:text-red-400 border-red-200'
+                              }
+                              variant="outline"
+                              data-testid={`badge-app-status-${app.id}`}
+                            >
+                              {app.status === 'approved' ? 'Approved' : 'Rejected'}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => navigate(`/portal/applications/${app.groupSlug}`)}
+                              data-testid={`button-view-app-${app.id}`}
+                            >
+                              View
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
