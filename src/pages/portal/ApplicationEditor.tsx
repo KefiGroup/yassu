@@ -64,19 +64,21 @@ export default function ApplicationEditor() {
         setGroup(data.group);
         setApplication(data.application);
 
-        if (data.application?.answers) {
-          setAnswers(data.application.answers);
-          const names: Record<number, string> = {};
-          data.application.answers.forEach((a: { answer: string }, idx: number) => {
-            if (a.answer && a.answer.startsWith('[file:')) {
-              const match = a.answer.match(/^\[file:([^\]]+)\]/);
-              if (match) names[idx] = match[1];
-            }
-          });
-          setFileNames(names);
-        } else if (data.group?.applicationQuestions) {
-          setAnswers(data.group.applicationQuestions.map((q: { label: string }) => ({ question: q.label, answer: '' })));
-        }
+        const questions = data.group?.applicationQuestions || [];
+        const savedAnswers = data.application?.answers || [];
+        const merged = questions.map((q: { label: string }, idx: number) => {
+          const existing = savedAnswers[idx];
+          return { question: q.label, answer: existing?.answer || '' };
+        });
+        setAnswers(merged);
+        const names: Record<number, string> = {};
+        merged.forEach((a: { answer: string }, idx: number) => {
+          if (a.answer && a.answer.startsWith('[file:')) {
+            const match = a.answer.match(/^\[file:([^\]]+)\]/);
+            if (match) names[idx] = match[1];
+          }
+        });
+        setFileNames(names);
       } catch {
         toast({ title: 'Failed to load application', variant: 'destructive' });
       } finally {
