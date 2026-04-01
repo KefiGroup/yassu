@@ -62,10 +62,28 @@ export default function ApplicationEditor() {
         if (!res.ok) throw new Error('Failed to load application');
         const data = await res.json();
         setGroup(data.group);
-        setApplication(data.application);
+
+        let app = data.application;
+        if (!app && data.group) {
+          const createRes = await fetch(`/api/groups/${slug}/apply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ motivation: '', asDraft: true }),
+          });
+          if (createRes.ok) {
+            const reloadRes = await fetch(`/api/groups/${slug}/my-application`, { credentials: 'include' });
+            if (reloadRes.ok) {
+              const reloaded = await reloadRes.json();
+              app = reloaded.application;
+            }
+          }
+        }
+
+        setApplication(app);
 
         const questions = data.group?.applicationQuestions || [];
-        const savedAnswers = data.application?.answers || [];
+        const savedAnswers = app?.answers || [];
         const merged = questions.map((q: { label: string }, idx: number) => {
           const existing = savedAnswers[idx];
           return { question: q.label, answer: existing?.answer || '' };

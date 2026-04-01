@@ -36,6 +36,7 @@ import {
   Rocket,
   Share2,
   UsersRound,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 import { ShareInviteModal } from './ShareInviteModal';
@@ -92,6 +93,12 @@ export function PortalSidebar() {
     enabled: !!user,
   });
 
+  const { data: myMemberships } = useQuery<{ id: string; name: string; slug: string; role: string }[]>({
+    queryKey: ['/api/groups/my-memberships'],
+    queryFn: () => apiRequest('/groups/my-memberships'),
+    enabled: !!user,
+  });
+
   const unreadCount = unreadData?.unreadCount || 0;
 
   const isActive = (path: string) => {
@@ -134,6 +141,29 @@ export function PortalSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {myMemberships && myMemberships.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>My Groups</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {myMemberships.map((group) => (
+                  <SidebarMenuItem key={group.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(`/portal/applications/${group.slug}`)}
+                    >
+                      <NavLink to={`/portal/applications/${group.slug}`}>
+                        <ClipboardCheck className="h-4 w-4" />
+                        {!collapsed && <span>1000 Pitches</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel>Marketplace</SidebarGroupLabel>

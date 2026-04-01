@@ -8063,6 +8063,17 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     }
   });
 
+  app.get("/api/groups/my-memberships", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const groups = await storage.getUserGroups(req.session.userId);
+      res.json(groups.map(g => ({ id: g.id, name: g.name, slug: g.slug, role: g.role })));
+    } catch (error) {
+      console.error("Get user memberships error:", error);
+      res.status(500).json({ error: "Failed to fetch memberships" });
+    }
+  });
+
   app.get("/api/groups/my-groups", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
     try {
@@ -8531,18 +8542,17 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const group = await storage.getGroupBySlug(req.params.slug);
       if (!group) return res.status(404).json({ error: "Group not found" });
 
-      const members = await storage.getGroupMembers(group.id);
-      if (members.some(m => m.userId === req.session.userId)) {
-        return res.status(400).json({ error: "You are already a member of this group" });
-      }
-
       const existingApp = await storage.getUserApplicationForGroup(req.session.userId, group.id);
       if (existingApp && (existingApp.status === 'pending' || existingApp.status === 'approved')) {
         return res.status(400).json({ error: "You already have an application for this group" });
       }
 
-      const { motivation } = req.body;
+      const { motivation, asDraft } = req.body;
+
       if (existingApp && existingApp.status === 'draft') {
+        if (asDraft) {
+          return res.json(existingApp);
+        }
         const { db } = await import('./db');
         const { sql } = await import('drizzle-orm');
         await db.execute(sql`UPDATE group_applications SET motivation = ${motivation || ''}, status = 'pending', reviewed_by = NULL, reviewed_at = NULL WHERE id = ${existingApp.id}`);
@@ -8550,11 +8560,15 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         return res.json(updated);
       }
 
+      if (existingApp) {
+        return res.json(existingApp);
+      }
+
       const application = await storage.createGroupApplication({
         groupId: group.id,
         userId: req.session.userId,
         motivation: motivation || null,
-        status: 'pending',
+        status: asDraft ? 'draft' : 'pending',
         reviewedBy: null,
       });
       res.json(application);
@@ -8958,13 +8972,6 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           .catch(err => console.error(`[GroupApply] Failed to send account email to ${trimmedEmail}:`, err));
 
         isNewUser = true;
-      }
-
-      // Check if already a member
-      const existingMembers = await storage.getGroupMembers(group.id);
-      const alreadyMember = existingMembers.some((m: any) => m.userId === user!.id);
-      if (alreadyMember) {
-        return res.status(400).json({ error: "You are already a member of this group" });
       }
 
       const existingApp = await storage.getUserApplicationForGroup(user.id, group.id);
