@@ -351,26 +351,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateProfile(userId: number, data: Partial<Profile>): Promise<Profile | undefined> {
-    // Ensure array fields are properly formatted for PostgreSQL
     const updateData: any = { ...data, updatedAt: new Date() };
-    
-    // Explicitly handle array fields to ensure they're saved correctly
-    if (data.skills !== undefined) {
-      updateData.skills = Array.isArray(data.skills) ? data.skills : [];
+
+    if (updateData.skills !== undefined) {
+      updateData.skills = Array.isArray(updateData.skills) ? updateData.skills : [];
     }
-    if (data.interests !== undefined) {
-      updateData.interests = Array.isArray(data.interests) ? data.interests : [];
+    if (updateData.interests !== undefined) {
+      updateData.interests = Array.isArray(updateData.interests) ? updateData.interests : [];
     }
-    if (data.lookingFor !== undefined) {
-      updateData.lookingFor = Array.isArray(data.lookingFor) ? JSON.stringify(data.lookingFor) : (data.lookingFor || null);
-    }
-    
-    const [updated] = await db
+
+    const result = await db
       .update(schema.profiles)
       .set(updateData)
       .where(eq(schema.profiles.userId, userId))
       .returning();
-    return updated;
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async createProfile(userId: number, data: Partial<Profile>): Promise<Profile> {

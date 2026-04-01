@@ -689,51 +689,80 @@ export function registerRoutes(app: Express): void {
     }
 
     try {
-      const data = { ...req.body };
+      const body = req.body;
       console.log('[profile-update] User ID:', req.session.userId);
-      console.log('[profile-update] Received data:', JSON.stringify(data, null, 2));
-      
+
       // Validate yassuRole if provided
-      if (data.yassuRole !== undefined) {
+      if (body.yassuRole !== undefined) {
         const validRoles = ['ambassador', 'advisor', null];
-        if (!validRoles.includes(data.yassuRole)) {
+        if (!validRoles.includes(body.yassuRole)) {
           return res.status(400).json({ error: "Invalid Yassu role" });
         }
       }
-      
-      // First try to update, if no profile exists, create one
-      let profile = await storage.updateProfile(req.session.userId, data);
-      
-      // If profile doesn't exist, create it
-      if (!profile) {
-        console.log('[profile-update] No existing profile found, creating new one for user:', req.session.userId);
+
+      const profileData: Record<string, any> = {};
+      if (body.fullName !== undefined) profileData.fullName = body.fullName || null;
+      if (body.bio !== undefined) profileData.bio = body.bio || null;
+      if (body.major !== undefined) profileData.major = body.major || null;
+      if (body.graduationYear !== undefined) {
+        const gy = body.graduationYear;
+        profileData.graduationYear = (gy !== null && gy !== '' && !isNaN(Number(gy))) ? Number(gy) : null;
+      }
+      if (body.universityId !== undefined) profileData.universityId = body.universityId || null;
+      if (body.otherUniversity !== undefined) profileData.otherUniversity = body.otherUniversity || null;
+      if (body.availability !== undefined) profileData.availability = body.availability || null;
+      if (body.linkedinUrl !== undefined) profileData.linkedinUrl = body.linkedinUrl || null;
+      if (body.githubUrl !== undefined) profileData.githubUrl = body.githubUrl || null;
+      if (body.portfolioUrl !== undefined) profileData.portfolioUrl = body.portfolioUrl || null;
+      if (body.skills !== undefined) profileData.skills = Array.isArray(body.skills) ? body.skills : [];
+      if (body.interests !== undefined) profileData.interests = Array.isArray(body.interests) ? body.interests : [];
+      if (body.clubType !== undefined) profileData.clubType = body.clubType || null;
+      if (body.headline !== undefined) profileData.headline = body.headline || null;
+      if (body.onboardingCompleted !== undefined) profileData.onboardingCompleted = !!body.onboardingCompleted;
+      if (body.yassuRole !== undefined) profileData.yassuRole = body.yassuRole;
+      if (body.lookingFor !== undefined) {
+        profileData.lookingFor = Array.isArray(body.lookingFor) ? JSON.stringify(body.lookingFor) : (body.lookingFor || null);
+      }
+      if (body.experience !== undefined) profileData.experience = body.experience || null;
+      if (body.emailNotificationsEnabled !== undefined) profileData.emailNotificationsEnabled = !!body.emailNotificationsEnabled;
+      if (body.ideaUpdatesEnabled !== undefined) profileData.ideaUpdatesEnabled = !!body.ideaUpdatesEnabled;
+      if (body.teamInvitesEnabled !== undefined) profileData.teamInvitesEnabled = !!body.teamInvitesEnabled;
+      if (body.messageNotificationsEnabled !== undefined) profileData.messageNotificationsEnabled = !!body.messageNotificationsEnabled;
+      if (body.profilePublic !== undefined) profileData.profilePublic = !!body.profilePublic;
+      if (body.avatarUrl !== undefined) profileData.avatarUrl = body.avatarUrl || null;
+
+      console.log('[profile-update] Sanitized fields:', Object.keys(profileData).join(', '));
+
+      const existing = await storage.getProfile(req.session.userId);
+      let profile;
+
+      if (existing) {
+        profile = await storage.updateProfile(req.session.userId, profileData);
+      } else {
+        console.log('[profile-update] No existing profile, creating for user:', req.session.userId);
         const user = await storage.getUser(req.session.userId);
         profile = await storage.createProfile(req.session.userId, {
-          ...data,
-          email: user?.email || data.email,
+          ...profileData,
+          email: user?.email || null,
           verificationStatus: "pending",
-          onboardingCompleted: false,
-          skills: data.skills || [],
-          interests: data.interests || []
+          onboardingCompleted: profileData.onboardingCompleted ?? false,
+          skills: profileData.skills || [],
+          interests: profileData.interests || [],
         });
       }
-      
+
       if (!profile) {
         console.error('[profile-update] Failed to create/update profile for user:', req.session.userId);
         return res.status(500).json({ error: "Failed to save profile" });
       }
-      
-      // Send skill match notifications if skills were updated
-      if (data.skills && data.skills.length > 0 && profile?.email) {
-        // Find public ideas that match the user's skills
-        const matchingIdeas = await storage.findIdeasBySkills(data.skills, req.session.userId);
-        
+
+      if (profileData.skills && profileData.skills.length > 0 && profile?.email) {
+        const matchingIdeas = await storage.findIdeasBySkills(profileData.skills, req.session.userId);
+
         if (matchingIdeas.length > 0) {
           const { sendSkillMatchEmail } = await import('./email');
-          
-          // Send email about top 5 matching ideas
           const topMatches = matchingIdeas.slice(0, 5);
-          
+
           for (const match of topMatches) {
             if (match.idea && match.matchingSkills && match.matchingSkills.length > 0) {
               sendSkillMatchEmail(
@@ -750,12 +779,15 @@ export function registerRoutes(app: Express): void {
           }
         }
       }
-      
+
       res.json(profile);
-    } catch (error) {
-      console.error('[profile-update] Error:', error);
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      res.status(500).json({ error: `Failed to update profile: ${message}` });
+    } catch (error: any) {
+      console.error('[profile-update] Error saving profile for user:', req.session?.userId);
+      console.error('[profile-update] Error name:', error?.name);
+      console.error('[profile-update] Error message:', error?.message);
+      if (error?.code) console.error('[profile-update] PG code:', error.code);
+      if (error?.detail) console.error('[profile-update] PG detail:', error.detail);
+      res.status(500).json({ error: "Failed to save profile. Please try again." });
     }
   });
 
