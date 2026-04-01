@@ -119,7 +119,6 @@ export default function Dashboard() {
   const [potentialMembers, setPotentialMembers] = useState<Profile[]>([]);
   const [myConnections, setMyConnections] = useState<Connection[]>([]);
   const [myGroupApplications, setMyGroupApplications] = useState<GroupApplication[]>([]);
-  const [myGroupMemberships, setMyGroupMemberships] = useState<{ id: string; name: string; slug: string; role: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [selectedIdea, setSelectedIdea] = useState<string | null>(null);
@@ -130,13 +129,6 @@ export default function Dashboard() {
   const [inviteIdeaId, setInviteIdeaId] = useState<string | null>(null);
   const [sendingInvite, setSendingInvite] = useState(false);
   const [sentInvites, setSentInvites] = useState<Set<string>>(new Set());
-
-  const groupsNeedingApplication = myGroupMemberships.filter(g => {
-    const hasApp = myGroupApplications.some(
-      a => a.groupSlug === g.slug && a.status !== 'draft'
-    );
-    return !hasApp;
-  });
   
   // Join request review states
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -157,19 +149,17 @@ export default function Dashboard() {
         const mostRecentIdea = ideas.length > 0 ? ideas[0] : null;
         const ideaIdParam = mostRecentIdea ? `?ideaId=${mostRecentIdea.id}` : '';
         
-        const [requests, members, connections, groupApps, memberships] = await Promise.all([
+        const [requests, members, connections, groupApps] = await Promise.all([
           fetch('/api/join-requests', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch(`/api/profiles/potential-team${ideaIdParam}`, { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/connections', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
           fetch('/api/my-group-applications', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
-          fetch('/api/groups/my-memberships', { credentials: 'include' }).then(r => r.ok ? r.json() : []),
         ]);
         
         setJoinRequests(requests);
         setPotentialMembers(members);
         setMyConnections(connections);
         setMyGroupApplications(groupApps);
-        setMyGroupMemberships(memberships);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -405,44 +395,46 @@ Looking forward to hearing from you!`;
         </motion.div>
       )}
 
-      {!loading && groupsNeedingApplication.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          {groupsNeedingApplication.map(group => {
-            const draftApp = myGroupApplications.find(a => a.groupSlug === group.slug && a.status === 'draft');
-            return (
-              <Card key={group.id} className="border-amber-300/40 bg-gradient-to-r from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 dark:border-amber-700/40">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">
-                      <Rocket className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground">1000 Pitches Application</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {draftApp
-                          ? 'You have a draft application saved. Complete and submit it to participate!'
-                          : `Complete your ${group.name} application to unlock pitch competitions and resources.`}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => navigate(`/portal/applications/${group.slug}`)}
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
-                      data-testid={`button-apply-${group.slug}`}
-                    >
-                      {draftApp ? 'Continue Application' : 'Apply Now'}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
+      {!loading && brand.navLabels.apply && (() => {
+        const hasSubmittedApp = myGroupApplications.some(
+          a => a.groupSlug === brand.id && (a.status === 'pending' || a.status === 'approved')
+        );
+        if (hasSubmittedApp) return null;
+        const draftApp = myGroupApplications.find(a => a.groupSlug === brand.id && a.status === 'draft');
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Card className="border-amber-300/40 bg-gradient-to-r from-amber-50/80 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 dark:border-amber-700/40">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                    <Rocket className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </motion.div>
-      )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground">{brand.navLabels.apply}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {draftApp
+                        ? 'You have a draft application saved. Complete and submit it to participate!'
+                        : `Complete your ${brand.name} application to unlock pitch competitions and resources.`}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate(`/portal/applications/${brand.id}`)}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    data-testid={`button-apply-${brand.id}`}
+                  >
+                    {draftApp ? 'Continue Application' : 'Apply Now'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

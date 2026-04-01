@@ -93,12 +93,6 @@ export function PortalSidebar() {
     enabled: !!user,
   });
 
-  const { data: myMemberships } = useQuery<{ id: string; name: string; slug: string; role: string }[]>({
-    queryKey: ['/api/groups/my-memberships'],
-    queryFn: () => apiRequest('/groups/my-memberships'),
-    enabled: !!user,
-  });
-
   const unreadCount = unreadData?.unreadCount || 0;
 
   const isActive = (path: string) => {
@@ -142,24 +136,22 @@ export function PortalSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {myMemberships && myMemberships.length > 0 && (
+        {brand.navLabels.apply && (
           <SidebarGroup>
-            <SidebarGroupLabel>My Groups</SidebarGroupLabel>
+            <SidebarGroupLabel>{brand.id === 'bruin' ? 'Bruin Entrepreneurs' : 'My Groups'}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {myMemberships.map((group) => (
-                  <SidebarMenuItem key={group.id}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(`/portal/applications/${group.slug}`)}
-                    >
-                      <NavLink to={`/portal/applications/${group.slug}`}>
-                        <ClipboardCheck className="h-4 w-4" />
-                        {!collapsed && <span>1000 Pitches</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(`/portal/applications/${brand.id}`)}
+                  >
+                    <NavLink to={`/portal/applications/${brand.id}`}>
+                      <ClipboardCheck className="h-4 w-4" />
+                      {!collapsed && <span>{brand.navLabels.apply}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
