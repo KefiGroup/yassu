@@ -8660,6 +8660,25 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const { db } = await import('./db');
       const { sql } = await import('drizzle-orm');
       await db.execute(sql`UPDATE group_applications SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL WHERE id = ${application.id}`);
+
+      // Notify group admins/owners about the new application
+      try {
+        const applicant = await storage.getUser(req.session.userId);
+        const members = await storage.getGroupMembers(group.id);
+        const adminsAndOwners = members.filter(m => m.role === 'admin' || m.role === 'owner');
+        for (const admin of adminsAndOwners) {
+          await storage.createNotification({
+            userId: admin.userId,
+            type: 'group_application',
+            title: 'New Application Submitted',
+            message: `${applicant?.fullName || applicant?.email || 'A user'} submitted an application to ${group.name}.`,
+            link: '/portal/group-admin',
+          });
+        }
+      } catch (notifErr) {
+        console.error("Failed to notify admins about application:", notifErr);
+      }
+
       res.json({ success: true });
     } catch (error) {
       console.error("Submit application error:", error);
