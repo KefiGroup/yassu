@@ -42,7 +42,7 @@ const Auth = () => {
   useEffect(() => {
     if (!loading && user) {
       if (inviteToken) {
-        navigate(`/portal/accept-group-invite?token=${inviteToken}`);
+        navigate(`/accept-group-invite?token=${inviteToken}`);
       } else {
         navigate('/portal');
       }

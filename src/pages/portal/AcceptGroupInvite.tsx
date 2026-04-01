@@ -75,8 +75,13 @@ export default function AcceptGroupInvite() {
               <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
               <p className="text-lg font-medium">Welcome to {groupName}!</p>
               <p className="text-muted-foreground">You've been added as a member.</p>
-              <Button onClick={() => navigate('/portal')} data-testid="button-go-to-portal">
-                Go to Portal
+              {groupSlug && (
+                <Button onClick={() => navigate(`/portal/applications/${groupSlug}`)} data-testid="button-go-to-application">
+                  Fill Out Application
+                </Button>
+              )}
+              <Button variant={groupSlug ? 'outline' : 'default'} onClick={() => navigate('/portal')} data-testid="button-go-to-portal">
+                Go to Dashboard
               </Button>
             </>
           )}
