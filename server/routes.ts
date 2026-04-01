@@ -731,6 +731,14 @@ export function registerRoutes(app: Express): void {
       if (body.profilePublic !== undefined) profileData.profilePublic = !!body.profilePublic;
       if (body.avatarUrl !== undefined) profileData.avatarUrl = body.avatarUrl || null;
 
+      if (profileData.universityId) {
+        const uniCheck = await db.select({ id: schema.universities.id }).from(schema.universities).where(eq(schema.universities.id, profileData.universityId));
+        if (uniCheck.length === 0) {
+          console.log('[profile-update] University ID not found, clearing:', profileData.universityId);
+          profileData.universityId = null;
+        }
+      }
+
       console.log('[profile-update] Sanitized fields:', Object.keys(profileData).join(', '));
 
       const existing = await storage.getProfile(req.session.userId);
