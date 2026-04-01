@@ -8422,7 +8422,13 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
             token,
           });
 
-          const acceptUrl = getBrandedUrl(`/accept-group-invite?token=${token}`, group.slug);
+          const existingUser = await storage.getUserByEmail(trimmedEmail);
+          let acceptUrl: string;
+          if (existingUser) {
+            acceptUrl = getBrandedUrl(`/accept-group-invite?token=${token}`, group.slug);
+          } else {
+            acceptUrl = getBrandedUrl(`/auth?mode=signup&invite=${token}`, group.slug);
+          }
           await sendGroupInviteEmail(trimmedEmail, group.name, inviterName, acceptUrl);
           results.push({ email: trimmedEmail, status: 'sent' });
         } catch (err) {

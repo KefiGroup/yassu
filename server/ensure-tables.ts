@@ -45,6 +45,19 @@ export async function ensureTables() {
     `);
     console.log('[ensureTables] ✓ session table verified/created');
 
+    // Fix looking_for column type: text -> text[]
+    await db.execute(sql`
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'profiles' AND column_name = 'looking_for' AND data_type = 'text'
+        ) THEN
+          ALTER TABLE profiles ALTER COLUMN looking_for TYPE text[] USING CASE WHEN looking_for IS NULL THEN '{}'::text[] ELSE ARRAY[looking_for] END;
+          ALTER TABLE profiles ALTER COLUMN looking_for SET DEFAULT '{}'::text[];
+        END IF;
+      END $$;
+    `);
+
     await db.execute(sql`
       DO $$ BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'group_role') THEN

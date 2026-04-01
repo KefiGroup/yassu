@@ -35,12 +35,19 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
   
   const logoutReason = searchParams.get('reason');
+  const modeParam = searchParams.get('mode');
+  const inviteToken = searchParams.get('invite');
+  const defaultTab = modeParam === 'signup' ? 'signup' : 'signin';
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/portal');
+      if (inviteToken) {
+        navigate(`/portal/accept-group-invite?token=${inviteToken}`);
+      } else {
+        navigate('/portal');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, inviteToken]);
 
   const validateLogin = () => {
     const newErrors: typeof errors = {};
@@ -198,7 +205,7 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue={defaultTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
