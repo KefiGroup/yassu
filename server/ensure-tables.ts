@@ -149,6 +149,8 @@ export async function ensureTables() {
 
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS application_questions JSONB`);
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS answers JSONB`);
+    await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS project_title TEXT`);
+    await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS team_emails JSONB`);
 
     // Seed default application questions for Bruin group if not set
     const bruinCheck = await db.execute(sql`SELECT application_questions FROM groups WHERE slug = 'bruin'`);

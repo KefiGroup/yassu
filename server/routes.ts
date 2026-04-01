@@ -320,6 +320,21 @@ export function registerRoutes(app: Express): void {
         console.error(`[Registration] Failed to auto-accept invites for ${email}:`, inviteErr);
       }
 
+      // Auto-attach to groups where this email was listed as a team member in an application
+      try {
+        const teamApps = await storage.getApplicationsByTeamEmail(email.toLowerCase());
+        for (const teamApp of teamApps) {
+          const members = await storage.getGroupMembers(teamApp.groupId);
+          const alreadyMember = members.some(m => m.userId === user.id);
+          if (!alreadyMember) {
+            await storage.addGroupMember(teamApp.groupId, user.id, 'member');
+            console.log(`[Registration] Auto-attached ${email} as team member to group ${teamApp.groupId} from application ${teamApp.id}`);
+          }
+        }
+      } catch (teamErr) {
+        console.error(`[Registration] Failed to auto-attach team member for ${email}:`, teamErr);
+      }
+
       // Send welcome email (don't wait for it to avoid blocking)
       const { sendWelcomeEmail } = await import('./email');
       console.log(`[Registration] Sending welcome email to: ${user.email}`);
@@ -8623,11 +8638,32 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       if (!application) return res.status(404).json({ error: "No application found" });
       if (application.status !== 'draft' && application.status !== 'pending') return res.status(400).json({ error: "Only draft or pending applications can be edited" });
 
-      const { answers } = req.body;
+      const { answers, projectTitle, teamEmails } = req.body;
       if (!Array.isArray(answers)) return res.status(400).json({ error: "Answers must be an array" });
 
+      const normalizedTeamEmails = Array.isArray(teamEmails) ? teamEmails.map((e: string) => e.trim().toLowerCase()).filter(Boolean) : undefined;
       const motivation = answers.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n');
-      const updated = await storage.updateGroupApplicationAnswers(application.id, answers, motivation);
+      const updated = await storage.updateGroupApplicationAnswers(application.id, answers, motivation, projectTitle, normalizedTeamEmails);
+
+      if (application.status === 'pending') {
+        try {
+          const editor = await storage.getUser(req.session.userId);
+          const members = await storage.getGroupMembers(group.id);
+          const adminsAndOwners = members.filter(m => m.role === 'admin' || m.role === 'owner');
+          for (const admin of adminsAndOwners) {
+            await storage.createNotification({
+              userId: admin.userId,
+              type: 'group_application',
+              title: 'Application Updated',
+              message: `${editor?.fullName || editor?.email || 'A user'} updated their application for ${group.name}.`,
+              link: '/portal/group-admin',
+            });
+          }
+        } catch (notifErr) {
+          console.error("Failed to notify admins about application edit:", notifErr);
+        }
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Save draft application error:", error);
@@ -8677,6 +8713,19 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         }
       } catch (notifErr) {
         console.error("Failed to notify admins about application:", notifErr);
+      }
+
+      // Notify the applicant that their application was received
+      try {
+        await storage.createNotification({
+          userId: req.session.userId,
+          type: 'group_application',
+          title: 'Application Received',
+          message: `Your application to ${group.name} has been received and is under review.`,
+          link: `/portal/applications/${group.slug}`,
+        });
+      } catch (notifErr) {
+        console.error("Failed to notify applicant about submission:", notifErr);
       }
 
       res.json({ success: true });
@@ -8937,7 +8986,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const group = await storage.getGroupBySlug(req.params.slug);
       if (!group) return res.status(404).json({ error: "Group not found" });
 
-      const { firstName, lastName, email, answers } = req.body;
+      const { firstName, lastName, email, answers, projectTitle, teamEmails: rawTeamEmails } = req.body;
       if (!firstName || !lastName || !email) {
         return res.status(400).json({ error: "First name, last name, and email are required" });
       }
@@ -8970,6 +9019,18 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
             if (!filePattern.test(a.answer)) {
               return res.status(400).json({ error: `Invalid file upload for "${q.label}"` });
             }
+          }
+        }
+      }
+
+      if (Array.isArray(rawTeamEmails)) {
+        const emailRegex2 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (rawTeamEmails.length > 10) {
+          return res.status(400).json({ error: "You can invite up to 10 team members" });
+        }
+        for (const te of rawTeamEmails) {
+          if (typeof te !== 'string' || !emailRegex2.test(te.trim())) {
+            return res.status(400).json({ error: "Invalid team member email address" });
           }
         }
       }
@@ -9009,15 +9070,18 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         return res.status(400).json({ error: "You already have an application for this group" });
       }
 
+      const normalizedPublicTeamEmails = Array.isArray(rawTeamEmails) ? rawTeamEmails.map((e: string) => e.trim().toLowerCase()).filter(Boolean) : undefined;
       if (existingApp && existingApp.status === 'draft') {
         const motivation = answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '';
-        await storage.updateGroupApplicationAnswers(existingApp.id, answers || [], motivation);
+        await storage.updateGroupApplicationAnswers(existingApp.id, answers || [], motivation, projectTitle || undefined, normalizedPublicTeamEmails);
       } else {
         await storage.createGroupApplication({
           groupId: group.id,
           userId: user.id,
           motivation: answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '',
           answers: answers || [],
+          projectTitle: projectTitle || null,
+          teamEmails: normalizedPublicTeamEmails || null,
           status: 'draft',
         });
       }

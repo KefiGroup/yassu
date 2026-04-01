@@ -651,6 +651,8 @@ export const groupApplications = pgTable("group_applications", {
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   motivation: text("motivation"),
   answers: jsonb("answers").$type<{ question: string; answer: string }[]>(),
+  projectTitle: text("project_title"),
+  teamEmails: jsonb("team_emails").$type<string[]>(),
   status: groupApplicationStatusEnum("status").default("pending").notNull(),
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),

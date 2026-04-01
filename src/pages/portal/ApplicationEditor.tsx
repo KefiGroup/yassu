@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Send, CheckCircle2, Clock, XCircle, Upload, FileText, X, ArrowLeft } from 'lucide-react';
+import { Loader2, Save, Send, CheckCircle2, Clock, XCircle, Upload, FileText, X, ArrowLeft, UserPlus, Mail } from 'lucide-react';
 
 interface GroupInfo {
   name: string;
@@ -22,6 +22,8 @@ interface Application {
   id: string;
   status: string;
   answers: { question: string; answer: string }[] | null;
+  projectTitle: string | null;
+  teamEmails: string[] | null;
   createdAt: string;
   reviewedAt: string | null;
 }
@@ -53,6 +55,9 @@ export default function ApplicationEditor() {
   const [group, setGroup] = useState<GroupInfo | null>(null);
   const [application, setApplication] = useState<Application | null>(null);
   const [answers, setAnswers] = useState<{ question: string; answer: string }[]>([]);
+  const [projectTitle, setProjectTitle] = useState('');
+  const [teamEmails, setTeamEmails] = useState<string[]>([]);
+  const [teamEmailInput, setTeamEmailInput] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
@@ -81,6 +86,8 @@ export default function ApplicationEditor() {
         }
 
         setApplication(app);
+        setProjectTitle(app?.projectTitle || '');
+        setTeamEmails(app?.teamEmails || []);
 
         const questions = data.group?.applicationQuestions || [];
         const savedAnswers = app?.answers || [];
@@ -144,7 +151,7 @@ export default function ApplicationEditor() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers, projectTitle, teamEmails }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -267,6 +274,18 @@ export default function ApplicationEditor() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="projectTitle">Project Title</Label>
+              <Input
+                id="projectTitle"
+                value={projectTitle}
+                onChange={e => { setProjectTitle(e.target.value); setHasChanges(true); }}
+                placeholder={isReadOnly ? '' : 'Enter your project or startup name'}
+                disabled={isReadOnly}
+                data-testid="input-project-title"
+              />
+            </div>
+
             {(group.applicationQuestions || []).map((q, i) => (
               <div key={i} className="space-y-2">
                 <Label>{q.label} {q.required && '*'}</Label>
@@ -350,6 +369,74 @@ export default function ApplicationEditor() {
                 )}
               </div>
             ))}
+
+            {!isReadOnly && (
+              <div className="space-y-3 pt-2">
+                <Label className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Invite Team Members
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Add email addresses of team members. They'll be automatically added to the group when they create an account.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    value={teamEmailInput}
+                    onChange={e => setTeamEmailInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const trimmed = teamEmailInput.trim().toLowerCase();
+                        if (trimmed && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && !teamEmails.includes(trimmed)) {
+                          setTeamEmails(prev => [...prev, trimmed]);
+                          setTeamEmailInput('');
+                          setHasChanges(true);
+                        }
+                      }
+                    }}
+                    placeholder="teammate@university.edu"
+                    data-testid="input-team-email"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const trimmed = teamEmailInput.trim().toLowerCase();
+                      if (trimmed && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && !teamEmails.includes(trimmed)) {
+                        setTeamEmails(prev => [...prev, trimmed]);
+                        setTeamEmailInput('');
+                        setHasChanges(true);
+                      }
+                    }}
+                    data-testid="button-add-team-email"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {teamEmails.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {teamEmails.map((em, idx) => (
+                      <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1 px-2">
+                        <Mail className="w-3 h-3" />
+                        {em}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTeamEmails(prev => prev.filter((_, i) => i !== idx));
+                            setHasChanges(true);
+                          }}
+                          className="ml-1 hover:text-destructive"
+                          data-testid={`button-remove-team-email-${idx}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {isDraft && (
               <div className="flex gap-3 pt-4 border-t">

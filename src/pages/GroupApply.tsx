@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, Upload, FileText, X } from 'lucide-react';
+import { Loader2, CheckCircle, Upload, FileText, X, UserPlus, Mail } from 'lucide-react';
 
 interface GroupPublicInfo {
   name: string;
@@ -49,6 +50,9 @@ export default function GroupApply() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [projectTitle, setProjectTitle] = useState('');
+  const [teamEmails, setTeamEmails] = useState<string[]>([]);
+  const [teamEmailInput, setTeamEmailInput] = useState('');
   const [answers, setAnswers] = useState<{ question: string; answer: string }[]>([]);
 
   const uploadFile = async (file: File, questionIdx: number) => {
@@ -126,7 +130,7 @@ export default function GroupApply() {
       const res = await fetch(`/api/groups/${slug}/public-apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, answers }),
+        body: JSON.stringify({ firstName, lastName, email, answers, projectTitle, teamEmails }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to submit');
@@ -250,6 +254,11 @@ export default function GroupApply() {
                 <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@university.edu" required data-testid="input-email" />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="projectTitle">Project Title</Label>
+                <Input id="projectTitle" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} placeholder="Enter your project or startup name" data-testid="input-project-title" />
+              </div>
+
               {(groupInfo.applicationQuestions || []).map((q, i) => (
                 <div key={i} className="space-y-2">
                   <Label>{q.label} {q.required && '*'}</Label>
@@ -322,6 +331,67 @@ export default function GroupApply() {
                   )}
                 </div>
               ))}
+
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Invite Team Members
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Add email addresses of team members. They'll be automatically added to the group when they create an account.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    value={teamEmailInput}
+                    onChange={e => setTeamEmailInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const trimmed = teamEmailInput.trim().toLowerCase();
+                        if (trimmed && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && !teamEmails.includes(trimmed)) {
+                          setTeamEmails(prev => [...prev, trimmed]);
+                          setTeamEmailInput('');
+                        }
+                      }
+                    }}
+                    placeholder="teammate@university.edu"
+                    data-testid="input-team-email"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const trimmed = teamEmailInput.trim().toLowerCase();
+                      if (trimmed && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && !teamEmails.includes(trimmed)) {
+                        setTeamEmails(prev => [...prev, trimmed]);
+                        setTeamEmailInput('');
+                      }
+                    }}
+                    data-testid="button-add-team-email"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {teamEmails.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {teamEmails.map((em, idx) => (
+                      <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1 px-2">
+                        <Mail className="w-3 h-3" />
+                        {em}
+                        <button
+                          type="button"
+                          onClick={() => setTeamEmails(prev => prev.filter((_, i) => i !== idx))}
+                          className="ml-1 hover:text-destructive"
+                          data-testid={`button-remove-team-email-${idx}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <Button
                 type="submit"

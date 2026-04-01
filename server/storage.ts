@@ -212,7 +212,8 @@ export interface IStorage {
   getUserApplicationForGroup(userId: number, groupId: string): Promise<schema.GroupApplication | undefined>;
   createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication>;
   updateGroupApplication(id: string, status: "approved" | "rejected", reviewedBy: number): Promise<schema.GroupApplication | undefined>;
-  updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string): Promise<schema.GroupApplication | undefined>;
+  updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[]): Promise<schema.GroupApplication | undefined>;
+  getApplicationsByTeamEmail(email: string): Promise<schema.GroupApplication[]>;
   
   // Group Idea Ratings
   getGroupIdeaRatings(groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null; ideaTitle: string })[]>;
@@ -2100,6 +2101,8 @@ export class DatabaseStorage implements IStorage {
         userId: schema.groupApplications.userId,
         motivation: schema.groupApplications.motivation,
         answers: schema.groupApplications.answers,
+        projectTitle: schema.groupApplications.projectTitle,
+        teamEmails: schema.groupApplications.teamEmails,
         status: schema.groupApplications.status,
         reviewedBy: schema.groupApplications.reviewedBy,
         reviewedAt: schema.groupApplications.reviewedAt,
@@ -2119,6 +2122,8 @@ export class DatabaseStorage implements IStorage {
       userId: r.userId,
       motivation: r.motivation,
       answers: r.answers,
+      projectTitle: r.projectTitle,
+      teamEmails: r.teamEmails,
       status: r.status,
       reviewedBy: r.reviewedBy,
       reviewedAt: r.reviewedAt,
@@ -2167,13 +2172,30 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string): Promise<schema.GroupApplication | undefined> {
+  async updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[]): Promise<schema.GroupApplication | undefined> {
+    const setData: any = { answers, motivation };
+    if (projectTitle !== undefined) setData.projectTitle = projectTitle;
+    if (teamEmails !== undefined) setData.teamEmails = teamEmails;
     const [updated] = await db
       .update(schema.groupApplications)
-      .set({ answers, motivation })
+      .set(setData)
       .where(eq(schema.groupApplications.id, id))
       .returning();
     return updated;
+  }
+
+  async getApplicationsByTeamEmail(email: string): Promise<schema.GroupApplication[]> {
+    const results = await db
+      .select()
+      .from(schema.groupApplications)
+      .where(and(
+        sql`${schema.groupApplications.teamEmails}::jsonb @> ${JSON.stringify([email.toLowerCase()])}::jsonb`,
+        or(
+          eq(schema.groupApplications.status, 'pending'),
+          eq(schema.groupApplications.status, 'approved')
+        )
+      ));
+    return results;
   }
 
   async getGroupIdeaRatings(groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null; ideaTitle: string })[]> {
