@@ -362,7 +362,7 @@ export class DatabaseStorage implements IStorage {
       updateData.interests = Array.isArray(data.interests) ? data.interests : [];
     }
     if (data.lookingFor !== undefined) {
-      updateData.lookingFor = Array.isArray(data.lookingFor) ? data.lookingFor : [];
+      updateData.lookingFor = Array.isArray(data.lookingFor) ? JSON.stringify(data.lookingFor) : (data.lookingFor || null);
     }
     
     const [updated] = await db

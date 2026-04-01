@@ -102,7 +102,7 @@ export const profiles = pgTable("profiles", {
   yassuRole: yassuRoleEnum("yassu_role"),
   // Enhanced Profile 2.0 fields
   headline: text("headline"), // e.g., "Product Designer | Ex-Google Intern"
-  lookingFor: text("looking_for").array().default([]), // ["Full-time", "Part-time", "Advisor", "Co-founder"]
+  lookingFor: text("looking_for"), // JSON-encoded array: ["Full-time", "Part-time", "Advisor", "Co-founder"]
   experience: text("experience"), // JSON string of work/project history
   reputationScore: integer("reputation_score").default(0), // Calculated reputation score
   projectsCompleted: integer("projects_completed").default(0), // Number of completed projects
