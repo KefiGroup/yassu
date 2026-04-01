@@ -28,7 +28,7 @@ export default function AcceptGroupInvite() {
 
     async function acceptInvite() {
       try {
-        const result = await apiRequest('/api/groups/accept-invite', {
+        const result = await apiRequest('/groups/accept-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),

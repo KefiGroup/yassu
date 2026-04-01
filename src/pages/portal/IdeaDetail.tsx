@@ -979,7 +979,7 @@ export default function IdeaDetail() {
   const handleOpenManusAI = async () => {
     if (!idea) return;
     try {
-      await apiRequest('/api/referrals/track', {
+      await apiRequest('/referrals/track', {
         method: 'POST',
         body: JSON.stringify({
           platform: 'manus',
@@ -2754,7 +2754,7 @@ export default function IdeaDetail() {
                       onClick={async () => {
                         if (!idea) return;
                         try {
-                          await apiRequest('/api/referrals/track', {
+                          await apiRequest('/referrals/track', {
                             method: 'POST',
                             body: JSON.stringify({
                               platform: 'manus',
