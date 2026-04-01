@@ -200,6 +200,7 @@ export interface IStorage {
   createGroupInvite(data: schema.InsertGroupInvite): Promise<schema.GroupInvite>;
   getGroupInvites(groupId: string): Promise<(schema.GroupInvite & { inviterName: string | null })[]>;
   getGroupInviteByToken(token: string): Promise<(schema.GroupInvite & { group: schema.Group }) | undefined>;
+  getPendingGroupInvitesByEmail(email: string): Promise<schema.GroupInvite[]>;
   acceptGroupInvite(token: string, userId: number): Promise<void>;
   revokeGroupInvite(inviteId: string, groupId: string): Promise<void>;
   updateGroupInvite(inviteId: string, data: Partial<schema.GroupInvite>): Promise<schema.GroupInvite | undefined>;
@@ -2040,6 +2041,16 @@ export class DatabaseStorage implements IStorage {
     
     if (!result) return undefined;
     return { ...result.invite, group: result.group };
+  }
+
+  async getPendingGroupInvitesByEmail(email: string): Promise<schema.GroupInvite[]> {
+    return db
+      .select()
+      .from(schema.groupInvites)
+      .where(and(
+        sql`lower(${schema.groupInvites.email}) = lower(${email})`,
+        eq(schema.groupInvites.status, 'pending')
+      ));
   }
 
   async acceptGroupInvite(token: string, userId: number): Promise<void> {

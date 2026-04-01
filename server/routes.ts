@@ -309,6 +309,17 @@ export function registerRoutes(app: Express): void {
       });
       await storage.addUserRole(user.id, "student");
 
+      // Auto-accept any pending group invites for this email
+      try {
+        const pendingInvites = await storage.getPendingGroupInvitesByEmail(email);
+        for (const invite of pendingInvites) {
+          await storage.acceptGroupInvite(invite.token, user.id);
+          console.log(`[Registration] Auto-accepted group invite for ${email} to group ${invite.groupId}`);
+        }
+      } catch (inviteErr) {
+        console.error(`[Registration] Failed to auto-accept invites for ${email}:`, inviteErr);
+      }
+
       // Send welcome email (don't wait for it to avoid blocking)
       const { sendWelcomeEmail } = await import('./email');
       console.log(`[Registration] Sending welcome email to: ${user.email}`);

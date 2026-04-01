@@ -125,7 +125,11 @@ const Auth = () => {
         title: 'Welcome back!',
         description: 'You have successfully signed in.',
       });
-      navigate('/portal');
+      if (inviteToken) {
+        navigate(`/accept-group-invite?token=${inviteToken}`);
+      } else {
+        navigate('/portal');
+      }
     }
   };
 
@@ -153,7 +157,11 @@ const Auth = () => {
         title: 'Account created!',
         description: `Welcome to ${brand.name}. Let's complete your profile first.`,
       });
-      navigate('/portal/profile?welcome=true');
+      if (inviteToken) {
+        navigate(`/accept-group-invite?token=${inviteToken}`);
+      } else {
+        navigate('/portal/profile?welcome=true');
+      }
     }
   };
 
