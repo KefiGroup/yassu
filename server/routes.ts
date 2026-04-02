@@ -8451,8 +8451,9 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
       if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
 
-      const invites = await storage.getGroupInvites(group.id);
-      const sanitized = invites.map(({ token, ...rest }) => rest);
+      const allInvites = await storage.getGroupInvites(group.id);
+      const userInvites = allInvites.filter(i => i.invitedBy === req.session.userId);
+      const sanitized = userInvites.map(({ token, ...rest }) => rest);
       res.json(sanitized);
     } catch (error) {
       console.error("Get group invites error:", error);

@@ -1118,9 +1118,9 @@ export default function GroupAdmin() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Invitation History</CardTitle>
+                <CardTitle className="text-lg">My Invitations</CardTitle>
                 <CardDescription>
-                  {invites?.length || 0} total invitations sent
+                  {invites?.length || 0} invitation{(invites?.length || 0) !== 1 ? 's' : ''} sent by you
                 </CardDescription>
               </CardHeader>
               <CardContent>
