@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 
-// Extend Express Request type to include user
 declare global {
   namespace Express {
     interface Request {
@@ -13,28 +12,33 @@ declare global {
   }
 }
 
-// Middleware to require authentication
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
-  // Attach user info to request (you can expand this to fetch full user data)
   req.user = {
     id: req.session.userId,
-    email: '', // Would be fetched from database in real implementation
+    email: '',
   };
   
   next();
 }
 
-// Middleware to require admin role
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
-  // TODO: Check if user is admin from database
-  // For now, just pass through (implement proper admin check)
-  next();
+  try {
+    const { storage } = await import('./storage');
+    const isAdmin = await storage.isSuperadmin(req.session.userId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  } catch (err) {
+    console.error('Admin check error:', err);
+    return res.status(500).json({ error: 'Failed to verify admin access' });
+  }
 }

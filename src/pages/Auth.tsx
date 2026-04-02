@@ -228,6 +228,7 @@ const Auth = () => {
                       <Input
                         id="signin-email"
                         type="email"
+                        autoComplete="email"
                         placeholder="you@university.edu"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -246,6 +247,7 @@ const Auth = () => {
                       <Input
                         id="signin-password"
                         type="password"
+                        autoComplete="current-password"
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -320,6 +322,7 @@ const Auth = () => {
                       <Input
                         id="signup-email"
                         type="email"
+                        autoComplete="email"
                         placeholder="you@university.edu"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -338,6 +341,7 @@ const Auth = () => {
                       <Input
                         id="signup-password"
                         type="password"
+                        autoComplete="new-password"
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

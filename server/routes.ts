@@ -1347,7 +1347,7 @@ export function registerRoutes(app: Express): void {
       res.json({ message: `Classified ${classified} ideas into industries`, total: allIdeas.length });
     } catch (error: any) {
       console.error("Industry classification backfill error:", error);
-      res.status(500).json({ error: error.message || "Failed to classify ideas" });
+      res.status(500).json({ error: "Failed to classify ideas" });
     }
   });
 
@@ -1399,7 +1399,7 @@ export function registerRoutes(app: Express): void {
       });
     } catch (error: any) {
       console.error("Error regenerating cover images:", error);
-      res.status(500).json({ error: error.message || "Failed to regenerate cover images" });
+      res.status(500).json({ error: "Failed to regenerate cover images" });
     }
   });
 
@@ -1487,7 +1487,7 @@ export function registerRoutes(app: Express): void {
     } catch (error: any) {
       console.error("AI refine error:", error?.message || error);
       res.status(500).json({ 
-        error: error?.message || "Failed to refine idea. Please try again."
+        error: "Failed to refine idea. Please try again."
       });
     }
   });
@@ -1529,8 +1529,7 @@ export function registerRoutes(app: Express): void {
     } catch (error) {
       console.error('Smart matching error:', error);
       return res.status(500).json({ 
-        error: 'Failed to generate matches',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to generate matches'
       });
     }
   });
@@ -1614,8 +1613,7 @@ Return valid JSON:
     } catch (error) {
       console.error("Improve idea error:", error);
       res.status(500).json({ 
-        error: 'Failed to improve idea',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to improve idea'
       });
     }
   });
@@ -1724,7 +1722,7 @@ Return valid JSON:
       res.json(idea);
     } catch (error: any) {
       console.error("Create idea error:", error?.message || error);
-      res.status(500).json({ error: "Failed to create idea", details: error?.message });
+      res.status(500).json({ error: "Failed to create idea" });
     }
   });
 
@@ -3169,7 +3167,9 @@ Return valid JSON:
       const isAdmin = await storage.isSuperadmin(req.session.userId);
       if (!isAdmin) return res.status(403).json({ error: "Admin access required" });
 
-      const result = await db.execute(sql`SELECT html_body FROM email_logs WHERE id = ${parseInt(req.params.id)}`);
+      const emailId = parseInt(req.params.id);
+      if (isNaN(emailId)) return res.status(400).json({ error: "Invalid email ID" });
+      const result = await db.execute(sql`SELECT html_body FROM email_logs WHERE id = ${emailId}`);
       const row = result.rows[0] as any;
       if (!row) return res.status(404).json({ error: "Email not found" });
       if (!row.html_body) return res.status(404).json({ error: "Email body not available" });
@@ -3467,6 +3467,7 @@ Return valid JSON:
 
     try {
       const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
       const badgeType = req.params.badgeType as "ambassador" | "advisor";
       
       if (!["ambassador", "advisor"].includes(badgeType)) {
@@ -3764,7 +3765,7 @@ Return valid JSON:
     } catch (error: any) {
       console.error("Send connection error:", error);
       if (error.message === 'Connection already exists') {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: "Connection already exists" });
       }
       res.status(500).json({ error: "Failed to send connection request" });
     }
@@ -5162,7 +5163,7 @@ Return valid JSON:
       res.json({ success: true, message: `Synced from ${result.connectedEmail}: ${result.new} new conversations, ${result.updated} new messages` });
     } catch (error: any) {
       console.error("Outlook sync error:", error);
-      res.status(500).json({ error: error.message || "Failed to sync Outlook emails" });
+      res.status(500).json({ error: "Failed to sync Outlook emails" });
     }
   });
 
@@ -7106,12 +7107,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     } catch (error: any) {
       console.error("Failed to create event:", error);
       console.error("Request body:", req.body);
-      // Return detailed error for debugging
-      const errorMessage = error?.message || "Failed to create event";
-      const errorDetails = error?.code ? ` (code: ${error.code})` : "";
       res.status(500).json({ 
-        error: errorMessage + errorDetails,
-        details: process.env.NODE_ENV === "development" ? String(error) : undefined
+        error: "Failed to create event"
       });
     }
   });
