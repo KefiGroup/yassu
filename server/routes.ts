@@ -4,7 +4,6 @@ import { pool, db } from "./db";
 import * as schema from "../shared/schema";
 import { eq, sql, desc, asc, or, and, lte, gt, isNull, ilike } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { Resend } from "resend";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -5015,9 +5014,8 @@ Return valid JSON:
 
       // Send email to user
       try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: "Yassu Team <hello@yassu.ai>",
+        const { sendEmail } = await import('./email');
+        await sendEmail({
           to: conversation.userEmail,
           subject: `Re: ${conversation.subject}`,
           html: `
@@ -5036,10 +5034,10 @@ Return valid JSON:
               </div>
             </div>
           `,
+          emailType: 'admin_inbox',
         });
       } catch (emailError) {
         console.error("Failed to send reply email:", emailError);
-        // Don't fail the request if email fails
       }
 
       res.json({ success: true, message });
@@ -6764,13 +6762,9 @@ Return as valid JSON:
 
         // Send email notification to hello@yassu.ai with user's email for follow-up
         try {
-          const { Resend } = await import("resend");
-          const resend = new Resend(process.env.RESEND_API_KEY);
-          
-          await resend.emails.send({
-            from: "Yassu Feedback <hello@yassu.ai>",
+          const { sendEmail } = await import('./email');
+          await sendEmail({
             to: "hello@yassu.ai",
-            replyTo: userEmail || undefined,
             subject: `New User Feedback: ${suggestionText.substring(0, 50)}${suggestionText.length > 50 ? '...' : ''}`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -6787,6 +6781,7 @@ Return as valid JSON:
                 ${userEmail ? `<p style="margin-top: 20px; font-size: 14px; color: #666;">You can reply directly to this email to respond to the user.</p>` : ''}
               </div>
             `,
+            emailType: 'other',
           });
         } catch (emailError) {
           console.error("Failed to send feedback notification email:", emailError);
@@ -7577,10 +7572,6 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       // Filter out excluded users
       const usersToNotify = allUsers.filter(u => !excludedUserIds.includes(u.id));
 
-      // Send emails using Resend
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY);
-
       const eventDate = new Date(event.startTime).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -7598,8 +7589,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         if (!user.email) continue;
         
         try {
-          await resend.emails.send({
-            from: "Yassu <hello@yassu.ai>",
+          const { sendEmail } = await import('./email');
+          await sendEmail({
             to: user.email,
             subject: `You're Invited: ${event.title}`,
             html: `
@@ -7628,6 +7619,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
                 </p>
               </div>
             `,
+            emailType: 'other',
           });
           sentCount++;
         } catch (emailError) {
@@ -7696,10 +7688,6 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         return res.json({ success: true, sentCount: 0, message: "No users to remind" });
       }
 
-      // Send reminder emails
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY);
-
       const eventDate = new Date(event.startTime).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -7718,8 +7706,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         if (!user.email) continue;
         
         try {
-          await resend.emails.send({
-            from: "Yassu <hello@yassu.ai>",
+          const { sendEmail } = await import('./email');
+          await sendEmail({
             to: user.email,
             subject: `Reminder: ${event.title} is coming up!`,
             html: `
@@ -7747,6 +7735,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
                 </p>
               </div>
             `,
+            emailType: 'other',
           });
           sentCount++;
         } catch (emailError) {
@@ -8391,20 +8380,18 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       if (!invite) return res.status(404).json({ error: "Invite not found" });
       if (invite.status !== 'pending') return res.status(400).json({ error: "Can only resend pending invites" });
 
-      const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const { getBrandedUrl } = await import('./email');
+      const { getBrandedUrl, sendEmail } = await import('./email');
       const inviteUrl = getBrandedUrl(`/accept-group-invite?token=${invite.token}`, group.slug);
 
-      await resend.emails.send({
-        from: 'Yassu <noreply@yassu.ai>',
+      await sendEmail({
         to: invite.email,
         subject: `Reminder: You're invited to join ${group.name} on Yassu`,
         html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px">
           <h2>Join ${group.name}</h2>
           <p>This is a reminder that you've been invited to join <strong>${group.name}</strong> on Yassu.</p>
           <a href="${inviteUrl}" style="display:inline-block;padding:12px 24px;background:#7C5CFC;color:#fff;border-radius:8px;text-decoration:none;margin-top:16px">Accept Invitation</a>
-        </div>`
+        </div>`,
+        emailType: 'group_invite',
       });
 
       res.json({ success: true });
