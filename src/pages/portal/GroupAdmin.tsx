@@ -545,7 +545,11 @@ export default function GroupAdmin() {
                   {isJudge ? 'Judge' : myRole === 'owner' ? 'Owner' : 'Admin'}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground mt-0.5">{group.description || 'No description'}</p>
+              {group.description ? (
+                <div className="text-sm text-muted-foreground mt-0.5 prose prose-sm max-w-none break-words line-clamp-3" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} dangerouslySetInnerHTML={{ __html: group.description }} />
+              ) : (
+                <p className="text-sm text-muted-foreground mt-0.5">No description</p>
+              )}
               <div className="flex items-center gap-2 mt-2">
                 <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
                 <code className="text-xs font-mono bg-background/80 px-2 py-0.5 rounded border select-all">{groupLoginUrl}</code>
