@@ -228,26 +228,32 @@ export default function GroupApply() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       <Navbar />
-      <div className="w-full py-8 px-4 mt-20" style={{ background: `linear-gradient(135deg, hsl(${primaryHSL}), hsl(${primaryHSL} / 0.8))` }}>
-        <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-3">
-          {groupInfo.logoUrl && (
-            <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-14 object-contain" style={{ width: 'auto', maxWidth: '240px' }} data-testid="img-group-logo" />
-          )}
-          <div className="text-white">
+      <div className="flex-1 flex flex-col lg:flex-row mt-20">
+        <aside
+          className="lg:w-[400px] lg:min-w-[400px] lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto p-6 lg:p-10 text-white flex flex-col"
+          style={{ background: `linear-gradient(180deg, hsl(${primaryHSL}), hsl(${primaryHSL} / 0.85))` }}
+          data-testid="sidebar-group-info"
+        >
+          <div className="flex flex-col gap-5">
+            {groupInfo.logoUrl && (
+              <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-16 object-contain self-start" style={{ width: 'auto', maxWidth: '200px' }} data-testid="img-group-logo" />
+            )}
             <h1 className="text-2xl font-bold">{groupInfo.name}</h1>
-            {groupInfo.description && <p className="text-sm opacity-90 mt-1">{groupInfo.description}</p>}
+            <p className="text-sm leading-relaxed opacity-90">
+              {groupInfo.description}
+            </p>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      <div className="max-w-2xl mx-auto p-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Application</CardTitle>
-            <CardDescription>Fill out the form below to apply. All fields marked with * are required.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <main className="flex-1 p-4 lg:p-10 lg:overflow-y-auto">
+          <div className="max-w-2xl mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle>Application</CardTitle>
+                <CardDescription>Fill out the form below to apply. All fields marked with * are required.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name *</Label>
@@ -435,6 +441,8 @@ export default function GroupApply() {
           </CardContent>
         </Card>
 
+          </div>
+        </main>
       </div>
       <Footer />
     </div>

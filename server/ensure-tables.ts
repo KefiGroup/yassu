@@ -164,8 +164,8 @@ export async function ensureTables() {
       { label: "What progress have you made so far?", type: "textarea", required: true },
       { label: "Pitch Deck or Product Demo? If you're not there yet, it's okay!", type: "textarea", required: false },
     ]);
-    await db.execute(sql`UPDATE groups SET application_questions = ${updatedQuestions}::jsonb WHERE slug = 'bruin'`);
-    console.log('[ensureTables] ✓ Bruin group application questions updated');
+    await db.execute(sql`UPDATE groups SET application_questions = ${updatedQuestions}::jsonb, description = ${`"1000 Pitches" is UCLA's largest annual pitch competition. It is hosted by Bruin Entrepreneurs, UCLA's premier entrepreneurship community, empowering student founders through "Startup Lab" accelerator, pitch competitions, and investor network. Join us for the opportunity to present on the popular Bruin Plaza Stage on April 20th, where each finalist could earn up to $1500 cash in a "shark-tank" fashion – convince the judges of your value, and negotiate a cash prize. From our application pool, 15 top founding teams will become finalists. Pitch us your startup idea via concise answers!`} WHERE slug = 'bruin'`);
+    console.log('[ensureTables] ✓ Bruin group application questions and description updated');
 
     console.log('[ensureTables] ✓ group tables verified/created');
 
