@@ -1948,6 +1948,9 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(schema.groupMembers)
       .where(and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, userId)));
+    await db
+      .delete(schema.groupApplications)
+      .where(and(eq(schema.groupApplications.groupId, groupId), eq(schema.groupApplications.userId, userId)));
   }
 
   async isGroupAdmin(groupId: string, userId: number): Promise<boolean> {
