@@ -32,11 +32,9 @@ const Navbar = () => {
         </a>
 
         <div className="hidden md:flex items-center gap-8">
-          {brand.navLabels.apply && (
-            <a href={`${base}/apply/${brand.id}`} className="font-semibold hover:text-foreground transition-colors" style={{ color: `hsl(${brand.colors.primary})` }} data-testid="link-nav-apply">
-              {brand.navLabels.apply}
-            </a>
-          )}
+          <a href="/bruin/apply/bruin" className="font-semibold hover:text-foreground transition-colors" style={{ color: `hsl(${brand.colors.primary})` }} data-testid="link-nav-1000-pitches">
+            1000 Pitches
+          </a>
           <a href={`${base}/#how-it-works`} onClick={(e) => handleHashClick(e, 'how-it-works')} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-nav-how-it-works">
             {brand.navLabels.howItWorks}
           </a>
