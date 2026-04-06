@@ -230,18 +230,18 @@ export default function GroupApply() {
       <Navbar />
       <div className="flex-1 flex flex-col lg:flex-row mt-20">
         <aside
-          className="lg:w-[420px] lg:min-w-[420px] lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto text-white flex flex-col"
+          className="lg:w-[420px] lg:shrink-0 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto overflow-hidden text-white flex flex-col"
           style={{ background: `linear-gradient(180deg, hsl(${primaryHSL}), hsl(${primaryHSL} / 0.85))` }}
           data-testid="sidebar-group-info"
         >
-          <div className="flex flex-col gap-5 px-8 py-10 lg:px-10 lg:py-12">
+          <div className="flex flex-col gap-5 px-8 py-10 lg:px-10 lg:py-12 min-w-0 w-full">
             {groupInfo.logoUrl && (
               <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-16 object-contain self-start" style={{ width: 'auto', maxWidth: '200px' }} data-testid="img-group-logo" />
             )}
             <h1 className="text-2xl font-bold">{groupInfo.name}</h1>
             {groupInfo.description && (
               <div
-                className="text-sm leading-relaxed opacity-90 prose prose-sm prose-invert max-w-none break-words overflow-wrap-anywhere"
+                className="text-sm leading-relaxed opacity-90 prose prose-sm prose-invert max-w-none min-w-0"
                 style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                 dangerouslySetInnerHTML={{ __html: groupInfo.description }}
               />
