@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -430,6 +430,62 @@ export default function GroupAdmin() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const exportApplicationsCSV = () => {
+    if (!applications || applications.length === 0) return;
+    const allQuestions = new Set<string>();
+    for (const app of applications) {
+      if (app.answers) {
+        for (const a of app.answers) {
+          allQuestions.add(a.question);
+        }
+      }
+    }
+    const questionCols = Array.from(allQuestions);
+
+    const headers = [
+      'Name', 'Email', 'University', 'Graduation Year', 'Major',
+      'Project Title', 'Team Members', 'Status', 'Submitted',
+      ...questionCols
+    ];
+
+    const escapeCSV = (val: string) => {
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    };
+
+    const rows = applications.map(app => {
+      const answerMap: Record<string, string> = {};
+      if (app.answers) {
+        for (const a of app.answers) {
+          answerMap[a.question] = a.answer || '';
+        }
+      }
+      return [
+        app.user.fullName || '',
+        app.user.email,
+        app.universityName || app.profile?.university || '',
+        app.graduationYear || '',
+        app.major || '',
+        app.projectTitle || '',
+        app.teamEmails?.join('; ') || '',
+        app.status,
+        new Date(app.createdAt).toLocaleDateString(),
+        ...questionCols.map(q => answerMap[q] || '')
+      ].map(v => escapeCSV(String(v)));
+    });
+
+    const csv = [headers.map(h => escapeCSV(h)).join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `applications-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const pendingApplications = applications?.filter(a => a.status === 'pending') || [];
 
   if (groupsLoading) {
@@ -754,10 +810,18 @@ export default function GroupAdmin() {
           </TabsContent>}
 
           {!isJudge && <TabsContent value="applicants" className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary">{applications?.length || 0} total</Badge>
-              {pendingApplications.length > 0 && (
-                <Badge variant="destructive">{pendingApplications.length} pending</Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Badge variant="secondary">{applications?.length || 0} total</Badge>
+                {pendingApplications.length > 0 && (
+                  <Badge variant="destructive">{pendingApplications.length} pending</Badge>
+                )}
+              </div>
+              {applications && applications.length > 0 && (
+                <Button size="sm" variant="outline" onClick={exportApplicationsCSV} data-testid="button-export-csv">
+                  <Download className="w-4 h-4 mr-1" />
+                  Export CSV
+                </Button>
               )}
             </div>
 
