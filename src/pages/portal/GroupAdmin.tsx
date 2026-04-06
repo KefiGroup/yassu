@@ -756,15 +756,15 @@ export default function GroupAdmin() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex-1 space-y-3 text-sm">
+                    <div className="flex-1 min-w-0 space-y-3 text-sm">
                       <div>
                         <p className="text-xs text-muted-foreground">Name</p>
                         <p className="font-medium">{group.name}</p>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Description</p>
                         {group.description ? (
-                          <div className="text-muted-foreground text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.description }} />
+                          <div className="text-muted-foreground text-sm prose prose-sm max-w-none break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} dangerouslySetInnerHTML={{ __html: group.description }} />
                         ) : (
                           <p className="text-muted-foreground">No description set</p>
                         )}
