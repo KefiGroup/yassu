@@ -239,9 +239,12 @@ export default function GroupApply() {
               <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-16 object-contain self-start" style={{ width: 'auto', maxWidth: '200px' }} data-testid="img-group-logo" />
             )}
             <h1 className="text-2xl font-bold">{groupInfo.name}</h1>
-            <p className="text-sm leading-relaxed opacity-90">
-              {groupInfo.description}
-            </p>
+            {groupInfo.description && (
+              <div
+                className="text-sm leading-relaxed opacity-90 prose prose-sm prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: groupInfo.description }}
+              />
+            )}
           </div>
         </aside>
 

@@ -186,3 +186,22 @@
   max-width: 100% !important;
   width: 100% !important;
 }
+
+.rich-text-editor .ql-toolbar {
+  border-radius: 0.5rem 0.5rem 0 0;
+  border-color: hsl(var(--border));
+  background: hsl(var(--muted));
+}
+.rich-text-editor .ql-container {
+  border-radius: 0 0 0.5rem 0.5rem;
+  border-color: hsl(var(--border));
+  font-size: 0.875rem;
+  min-height: 120px;
+}
+.rich-text-editor .ql-editor {
+  min-height: 120px;
+}
+.rich-text-editor .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+  font-style: normal;
+}

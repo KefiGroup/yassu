@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api';
@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+
+const RichTextEditor = lazy(() => import('@/components/RichTextEditor'));
 
 interface GroupDetails {
   id: string;
@@ -681,7 +683,14 @@ export default function GroupAdmin() {
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-medium text-muted-foreground">Description</label>
-                        <Textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} rows={3} data-testid="input-edit-overview-desc" />
+                        <Suspense fallback={<div className="h-[160px] border rounded-lg animate-pulse bg-muted" />}>
+                          <RichTextEditor
+                            value={editForm.description}
+                            onChange={(val) => setEditForm({ ...editForm, description: val })}
+                            placeholder="Describe your group..."
+                            data-testid="input-edit-overview-desc"
+                          />
+                        </Suspense>
                       </div>
                       <div className="flex gap-2 pt-1">
                         <Button size="sm" disabled={updateGroupMutation.isPending} onClick={() => updateGroupMutation.mutate(editForm)} data-testid="button-save-overview">
@@ -698,7 +707,11 @@ export default function GroupAdmin() {
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Description</p>
-                        <p className="text-muted-foreground">{group.description || 'No description set'}</p>
+                        {group.description ? (
+                          <div className="text-muted-foreground text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.description }} />
+                        ) : (
+                          <p className="text-muted-foreground">No description set</p>
+                        )}
                       </div>
                     </div>
                   )}
