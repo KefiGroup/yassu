@@ -212,7 +212,7 @@ export interface IStorage {
   getUserApplicationForGroup(userId: number, groupId: string): Promise<schema.GroupApplication | undefined>;
   createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication>;
   updateGroupApplication(id: string, status: "approved" | "rejected", reviewedBy: number): Promise<schema.GroupApplication | undefined>;
-  updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[]): Promise<schema.GroupApplication | undefined>;
+  updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[], extra?: { universityName?: string; graduationYear?: string; major?: string }): Promise<schema.GroupApplication | undefined>;
   getApplicationsByTeamEmail(email: string): Promise<schema.GroupApplication[]>;
   
   // Group Idea Ratings
@@ -2102,6 +2102,9 @@ export class DatabaseStorage implements IStorage {
         motivation: schema.groupApplications.motivation,
         answers: schema.groupApplications.answers,
         projectTitle: schema.groupApplications.projectTitle,
+        universityName: schema.groupApplications.universityName,
+        graduationYear: schema.groupApplications.graduationYear,
+        major: schema.groupApplications.major,
         teamEmails: schema.groupApplications.teamEmails,
         status: schema.groupApplications.status,
         reviewedBy: schema.groupApplications.reviewedBy,
@@ -2172,10 +2175,13 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[]): Promise<schema.GroupApplication | undefined> {
+  async updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[], extra?: { universityName?: string; graduationYear?: string; major?: string }): Promise<schema.GroupApplication | undefined> {
     const setData: any = { answers, motivation };
     if (projectTitle !== undefined) setData.projectTitle = projectTitle;
     if (teamEmails !== undefined) setData.teamEmails = teamEmails;
+    if (extra?.universityName !== undefined) setData.universityName = extra.universityName;
+    if (extra?.graduationYear !== undefined) setData.graduationYear = extra.graduationYear;
+    if (extra?.major !== undefined) setData.major = extra.major;
     const [updated] = await db
       .update(schema.groupApplications)
       .set(setData)

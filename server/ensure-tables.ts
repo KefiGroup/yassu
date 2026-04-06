@@ -150,23 +150,22 @@ export async function ensureTables() {
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS application_questions JSONB`);
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS answers JSONB`);
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS project_title TEXT`);
+    await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS university_name TEXT`);
+    await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS graduation_year TEXT`);
+    await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS major TEXT`);
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS team_emails JSONB`);
 
-    // Seed default application questions for Bruin group if not set
-    const bruinCheck = await db.execute(sql`SELECT application_questions FROM groups WHERE slug = 'bruin'`);
-    if (bruinCheck.rows.length > 0 && !(bruinCheck.rows[0] as any).application_questions) {
-      const defaultQuestions = JSON.stringify([
-        { label: "What are you building?", type: "textarea", required: true },
-        { label: "What specific problem are you solving, and who are your target customers?", type: "textarea", required: true },
-        { label: "Why is now the best opportunity?", type: "textarea", required: true },
-        { label: "How is your solution different from others?", type: "textarea", required: true },
-        { label: "Why are you & your team best suited to build this?", type: "textarea", required: true },
-        { label: "What progress have you made so far?", type: "textarea", required: true },
-        { label: "(Optional) Any additional materials or links you'd like to share?", type: "textarea", required: false },
-      ]);
-      await db.execute(sql`UPDATE groups SET application_questions = ${defaultQuestions}::jsonb WHERE slug = 'bruin'`);
-      console.log('[ensureTables] ✓ Bruin group application questions seeded');
-    }
+    // Update Bruin application questions to latest version
+    const updatedQuestions = JSON.stringify([
+      { label: "What are you building?", type: "textarea", required: true },
+      { label: "Who are your customers, and what makes your venture highly differentiated? (2-3 sentences)", type: "textarea", required: true },
+      { label: "Why is now the best opportunity? (2 sentences)", type: "textarea", required: true },
+      { label: "Why are you & your team best suited to build this?", type: "textarea", required: true },
+      { label: "What progress have you made so far?", type: "textarea", required: true },
+      { label: "Pitch Deck or Product Demo? If you're not there yet, it's okay!", type: "textarea", required: false },
+    ]);
+    await db.execute(sql`UPDATE groups SET application_questions = ${updatedQuestions}::jsonb WHERE slug = 'bruin'`);
+    console.log('[ensureTables] ✓ Bruin group application questions updated');
 
     console.log('[ensureTables] ✓ group tables verified/created');
 

@@ -69,6 +69,11 @@ interface GroupApplication {
   userId: number;
   motivation: string | null;
   answers: { question: string; answer: string }[] | null;
+  projectTitle: string | null;
+  universityName: string | null;
+  graduationYear: string | null;
+  major: string | null;
+  teamEmails: string[] | null;
   status: string;
   createdAt: string;
   user: {
@@ -771,8 +776,23 @@ export default function GroupAdmin() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">{app.user.email}</p>
-                            {app.profile?.university && (
-                              <p className="text-sm text-muted-foreground mt-0.5">{app.profile.university}</p>
+                            {(app.universityName || app.profile?.university) && (
+                              <p className="text-sm text-muted-foreground mt-0.5">{app.universityName || app.profile?.university}</p>
+                            )}
+                            {(app.graduationYear || app.major) && (
+                              <p className="text-sm text-muted-foreground mt-0.5">
+                                {[app.major, app.graduationYear ? `Class of ${app.graduationYear}` : ''].filter(Boolean).join(' · ')}
+                              </p>
+                            )}
+                            {app.projectTitle && (
+                              <p className="text-sm font-medium mt-1">Project: {app.projectTitle}</p>
+                            )}
+                            {app.teamEmails && app.teamEmails.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {app.teamEmails.map((em, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">{em}</Badge>
+                                ))}
+                              </div>
                             )}
                             {app.profile?.skills && app.profile.skills.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1.5">

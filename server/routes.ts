@@ -8623,12 +8623,16 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       if (!application) return res.status(404).json({ error: "No application found" });
       if (application.status !== 'draft' && application.status !== 'pending') return res.status(400).json({ error: "Only draft or pending applications can be edited" });
 
-      const { answers, projectTitle, teamEmails } = req.body;
+      const { answers, projectTitle, universityName, graduationYear, major, teamEmails } = req.body;
       if (!Array.isArray(answers)) return res.status(400).json({ error: "Answers must be an array" });
 
       const normalizedTeamEmails = Array.isArray(teamEmails) ? teamEmails.map((e: string) => e.trim().toLowerCase()).filter(Boolean) : undefined;
       const motivation = answers.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n');
-      const updated = await storage.updateGroupApplicationAnswers(application.id, answers, motivation, projectTitle, normalizedTeamEmails);
+      const updated = await storage.updateGroupApplicationAnswers(application.id, answers, motivation, projectTitle, normalizedTeamEmails, {
+        universityName: typeof universityName === 'string' ? universityName.trim() || undefined : undefined,
+        graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || undefined : undefined,
+        major: typeof major === 'string' ? major.trim() || undefined : undefined,
+      });
 
       if (application.status === 'pending') {
         try {
@@ -8971,7 +8975,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const group = await storage.getGroupBySlug(req.params.slug);
       if (!group) return res.status(404).json({ error: "Group not found" });
 
-      const { firstName, lastName, email, answers, projectTitle, teamEmails: rawTeamEmails } = req.body;
+      const { firstName, lastName, email, universityName, graduationYear, major, answers, projectTitle, teamEmails: rawTeamEmails } = req.body;
       if (!firstName || !lastName || !email) {
         return res.status(400).json({ error: "First name, last name, and email are required" });
       }
@@ -9058,7 +9062,11 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const normalizedPublicTeamEmails = Array.isArray(rawTeamEmails) ? rawTeamEmails.map((e: string) => e.trim().toLowerCase()).filter(Boolean) : undefined;
       if (existingApp && existingApp.status === 'draft') {
         const motivation = answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '';
-        await storage.updateGroupApplicationAnswers(existingApp.id, answers || [], motivation, projectTitle || undefined, normalizedPublicTeamEmails);
+        await storage.updateGroupApplicationAnswers(existingApp.id, answers || [], motivation, projectTitle || undefined, normalizedPublicTeamEmails, {
+          universityName: typeof universityName === 'string' ? universityName.trim() || undefined : undefined,
+          graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || undefined : undefined,
+          major: typeof major === 'string' ? major.trim() || undefined : undefined,
+        });
       } else {
         await storage.createGroupApplication({
           groupId: group.id,
@@ -9066,6 +9074,9 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           motivation: answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '',
           answers: answers || [],
           projectTitle: projectTitle || null,
+          universityName: typeof universityName === 'string' ? universityName.trim() || null : null,
+          graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || null : null,
+          major: typeof major === 'string' ? major.trim() || null : null,
           teamEmails: normalizedPublicTeamEmails || null,
           status: 'draft',
         });

@@ -23,6 +23,9 @@ interface Application {
   status: string;
   answers: { question: string; answer: string }[] | null;
   projectTitle: string | null;
+  universityName: string | null;
+  graduationYear: string | null;
+  major: string | null;
   teamEmails: string[] | null;
   createdAt: string;
   reviewedAt: string | null;
@@ -56,6 +59,9 @@ export default function ApplicationEditor() {
   const [application, setApplication] = useState<Application | null>(null);
   const [answers, setAnswers] = useState<{ question: string; answer: string }[]>([]);
   const [projectTitle, setProjectTitle] = useState('');
+  const [universityName, setUniversityName] = useState('');
+  const [graduationYear, setGraduationYear] = useState('');
+  const [major, setMajor] = useState('');
   const [teamEmails, setTeamEmails] = useState<string[]>([]);
   const [teamEmailInput, setTeamEmailInput] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
@@ -87,6 +93,9 @@ export default function ApplicationEditor() {
 
         setApplication(app);
         setProjectTitle(app?.projectTitle || '');
+        setUniversityName(app?.universityName || '');
+        setGraduationYear(app?.graduationYear || '');
+        setMajor(app?.major || '');
         setTeamEmails(app?.teamEmails || []);
 
         const questions = data.group?.applicationQuestions || [];
@@ -151,7 +160,7 @@ export default function ApplicationEditor() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ answers, projectTitle, teamEmails }),
+        body: JSON.stringify({ answers, projectTitle, universityName, graduationYear, major, teamEmails }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -275,15 +284,57 @@ export default function ApplicationEditor() {
         <CardContent>
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="projectTitle">Project Title</Label>
+              <Label htmlFor="universityName">University Name *</Label>
               <Input
-                id="projectTitle"
-                value={projectTitle}
-                onChange={e => { setProjectTitle(e.target.value); setHasChanges(true); }}
-                placeholder={isReadOnly ? '' : 'Enter your project or startup name'}
+                id="universityName"
+                value={universityName}
+                onChange={e => { setUniversityName(e.target.value); setHasChanges(true); }}
+                placeholder={isReadOnly ? '' : 'e.g. UCLA'}
                 disabled={isReadOnly}
-                data-testid="input-project-title"
+                required
+                data-testid="input-university-name"
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="graduationYear">Year of Graduation *</Label>
+                <Input
+                  id="graduationYear"
+                  value={graduationYear}
+                  onChange={e => { setGraduationYear(e.target.value); setHasChanges(true); }}
+                  placeholder={isReadOnly ? '' : 'e.g. 2026'}
+                  disabled={isReadOnly}
+                  required
+                  data-testid="input-graduation-year"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="major">Major *</Label>
+                <Input
+                  id="major"
+                  value={major}
+                  onChange={e => { setMajor(e.target.value); setHasChanges(true); }}
+                  placeholder={isReadOnly ? '' : 'e.g. Computer Science'}
+                  disabled={isReadOnly}
+                  required
+                  data-testid="input-major"
+                />
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <div className="space-y-2">
+                <Label htmlFor="projectTitle">Project Title</Label>
+                <Input
+                  id="projectTitle"
+                  value={projectTitle}
+                  onChange={e => { setProjectTitle(e.target.value); setHasChanges(true); }}
+                  placeholder={isReadOnly ? '' : 'Enter your project or startup name'}
+                  disabled={isReadOnly}
+                  data-testid="input-project-title"
+                />
+              </div>
             </div>
 
             {(group.applicationQuestions || []).map((q, i) => (

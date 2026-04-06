@@ -50,6 +50,9 @@ export default function GroupApply() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [universityName, setUniversityName] = useState('');
+  const [graduationYear, setGraduationYear] = useState('');
+  const [major, setMajor] = useState('');
   const [projectTitle, setProjectTitle] = useState('');
   const [teamEmails, setTeamEmails] = useState<string[]>([]);
   const [teamEmailInput, setTeamEmailInput] = useState('');
@@ -130,7 +133,7 @@ export default function GroupApply() {
       const res = await fetch(`/api/groups/${slug}/public-apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, answers, projectTitle, teamEmails }),
+        body: JSON.stringify({ firstName, lastName, email, universityName, graduationYear, major, answers, projectTitle, teamEmails }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to submit');
@@ -255,8 +258,26 @@ export default function GroupApply() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="projectTitle">Project Title</Label>
-                <Input id="projectTitle" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} placeholder="Enter your project or startup name" data-testid="input-project-title" />
+                <Label htmlFor="universityName">University Name *</Label>
+                <Input id="universityName" value={universityName} onChange={e => setUniversityName(e.target.value)} placeholder="e.g. UCLA" required data-testid="input-university-name" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="graduationYear">Year of Graduation *</Label>
+                  <Input id="graduationYear" value={graduationYear} onChange={e => setGraduationYear(e.target.value)} placeholder="e.g. 2026" required data-testid="input-graduation-year" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="major">Major *</Label>
+                  <Input id="major" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Computer Science" required data-testid="input-major" />
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="projectTitle">Project Title</Label>
+                  <Input id="projectTitle" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} placeholder="Enter your project or startup name" data-testid="input-project-title" />
+                </div>
               </div>
 
               {(groupInfo.applicationQuestions || []).map((q, i) => (
