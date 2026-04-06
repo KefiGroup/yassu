@@ -126,7 +126,7 @@ export const BRUIN_BRAND: BrandConfig = {
   copyrightName: 'Bruin Entrepreneurs',
   footerSlogan: 'UCLA\'s platform for student-led company creation',
   aiAssistantName: 'Kefi',
-  basePath: '/bruin',
+  basePath: '',
   canonicalUrl: 'https://yassu.ai/bruin',
   colors: {
     primary: '213 69% 38%',

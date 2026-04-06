@@ -5,7 +5,7 @@ import { useBranding } from "@/contexts/BrandingContext";
 
 const Vision = () => {
   const brand = useBranding();
-  const base = brand.basePath;
+  const base = '';
 
   return (
     <section className="py-32 relative overflow-hidden">

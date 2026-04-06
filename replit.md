@@ -15,7 +15,7 @@ The platform employs a full-stack architecture featuring a React frontend (TypeS
 **UI/UX Decisions:**
 - Modern, responsive design using Tailwind CSS and shadcn/ui.
 - Dashboard redesigned into focused sections: My Applications, My Ideas, Team Join Requests, and People to Invite.
-- White-label skin system for URL-based branding, supporting multiple branded experiences from the same codebase (e.g., Yassu and Bruin Entrepreneurs). Branded slugs are managed via `BRANDED_SLUGS` in `server/email.ts` and `getBrandByPath` in `src/lib/branding.ts`.
+- White-label skin system for URL-based branding. `/bruin` and `/bruin/apply/:slug` routes show Bruin-branded content but with Yassu's main header/nav/footer (Navbar and Footer always use `YASSU_BRAND` directly). Post-submission redirects and all email links point to main Yassu URLs (no `/bruin/` prefix). `BRANDED_SLUGS` in `server/email.ts` is empty; `getBrandByPath` in `src/lib/branding.ts` still returns Bruin brand config for content components on `/bruin` paths. The `basename` in App.tsx is always empty string; `/bruin` and `/bruin/apply/:slug` are explicit routes.
 
 **Technical Implementations & Feature Specifications:**
 - **User & Profile Management**: Comprehensive profiles, university affiliation, skills, interests, and profile completion prompts.

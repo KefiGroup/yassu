@@ -7,7 +7,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'hello@yassu.ai';
 const APP_URL = process.env.APP_URL || 'https://yassu.ai';
 
-const BRANDED_SLUGS = new Set(['bruin']);
+const BRANDED_SLUGS = new Set<string>();
 
 export function getBrandedUrl(path: string, groupSlug?: string): string {
   if (groupSlug && BRANDED_SLUGS.has(groupSlug.toLowerCase())) {

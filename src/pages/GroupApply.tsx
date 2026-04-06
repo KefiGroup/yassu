@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, Upload, FileText, X, UserPlus, Mail } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 interface GroupPublicInfo {
   name: string;
@@ -173,55 +175,60 @@ export default function GroupApply() {
   if (submitted) {
     const isImage = groupInfo.submissionFileUrl && /\.(jpg|jpeg|png|webp)$/i.test(groupInfo.submissionFileUrl);
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-        <Card className="max-w-lg w-full">
-          <CardContent className="pt-8 pb-8 text-center space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: `hsl(${primaryHSL} / 0.15)` }}>
-              <CheckCircle className="h-8 w-8" style={{ color: `hsl(${primaryHSL})` }} />
-            </div>
-            <h2 className="text-2xl font-bold">Application Saved!</h2>
-            <p className="text-muted-foreground">
-              {groupInfo.submissionMessage || <>Thank you for applying to <strong>{groupInfo.name}</strong>. Log in to review your answers and submit your application when you're ready.</>}
-            </p>
-            {isNewUser && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                A Yassu account has been created for you. Check your email for login credentials, then log in to review and submit your application.
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center p-4 pt-24">
+          <Card className="max-w-lg w-full">
+            <CardContent className="pt-8 pb-8 text-center space-y-4">
+              <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: `hsl(${primaryHSL} / 0.15)` }}>
+                <CheckCircle className="h-8 w-8" style={{ color: `hsl(${primaryHSL})` }} />
               </div>
-            )}
-            {!isNewUser && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-                Your application has been saved as a draft. Log in to review and submit it.
-              </div>
-            )}
-            {groupInfo.submissionFileUrl && (
-              isImage ? (
-                <img src={groupInfo.submissionFileUrl} alt="Welcome" className="rounded-lg mx-auto max-h-64 object-contain" data-testid="img-submission-file" />
-              ) : (
-                <a href={groupInfo.submissionFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm underline" style={{ color: `hsl(${primaryHSL})` }} data-testid="link-submission-file">
-                  <FileText className="w-4 h-4" />
-                  View attached document
-                </a>
-              )
-            )}
-            <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              {groupInfo.redirectUrl && (
-                <Button onClick={() => window.location.href = groupInfo!.redirectUrl!} style={{ backgroundColor: `hsl(${primaryHSL})` }} className="text-white" data-testid="button-redirect">
-                  Continue to {groupInfo.name}
-                </Button>
+              <h2 className="text-2xl font-bold">Application Saved!</h2>
+              <p className="text-muted-foreground">
+                {groupInfo.submissionMessage || <>Thank you for applying to <strong>{groupInfo.name}</strong>. Log in to review your answers and submit your application when you're ready.</>}
+              </p>
+              {isNewUser && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                  A Yassu account has been created for you. Check your email for login credentials, then log in to review and submit your application.
+                </div>
               )}
-              <Button onClick={() => navigate('/auth')} variant={groupInfo.redirectUrl ? 'outline' : 'default'} style={!groupInfo.redirectUrl ? { backgroundColor: `hsl(${primaryHSL})` } : {}} className={!groupInfo.redirectUrl ? 'text-white' : ''} data-testid="button-go-login">
-                Go to Login
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              {!isNewUser && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                  Your application has been saved as a draft. Log in to review and submit it.
+                </div>
+              )}
+              {groupInfo.submissionFileUrl && (
+                isImage ? (
+                  <img src={groupInfo.submissionFileUrl} alt="Welcome" className="rounded-lg mx-auto max-h-64 object-contain" data-testid="img-submission-file" />
+                ) : (
+                  <a href={groupInfo.submissionFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm underline" style={{ color: `hsl(${primaryHSL})` }} data-testid="link-submission-file">
+                    <FileText className="w-4 h-4" />
+                    View attached document
+                  </a>
+                )
+              )}
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                {groupInfo.redirectUrl && (
+                  <Button onClick={() => window.location.href = groupInfo!.redirectUrl!} style={{ backgroundColor: `hsl(${primaryHSL})` }} className="text-white" data-testid="button-redirect">
+                    Continue to {groupInfo.name}
+                  </Button>
+                )}
+                <Button onClick={() => window.location.href = '/auth'} variant={groupInfo.redirectUrl ? 'outline' : 'default'} style={!groupInfo.redirectUrl ? { backgroundColor: `hsl(${primaryHSL})` } : {}} className={!groupInfo.redirectUrl ? 'text-white' : ''} data-testid="button-go-login">
+                  Go to Login
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="w-full py-8 px-4" style={{ background: `linear-gradient(135deg, hsl(${primaryHSL}), hsl(${primaryHSL} / 0.8))` }}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+      <Navbar />
+      <div className="w-full py-8 px-4 mt-20" style={{ background: `linear-gradient(135deg, hsl(${primaryHSL}), hsl(${primaryHSL} / 0.8))` }}>
         <div className="max-w-2xl mx-auto flex flex-col items-center text-center gap-3">
           {groupInfo.logoUrl && (
             <img src={groupInfo.logoUrl} alt={groupInfo.name} className="h-14 object-contain" style={{ width: 'auto', maxWidth: '240px' }} data-testid="img-group-logo" />
@@ -428,12 +435,8 @@ export default function GroupApply() {
           </CardContent>
         </Card>
 
-        <div className="text-center py-6">
-          <a href="https://yassu.ai" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid="link-powered-by">
-            Powered by <span className="font-semibold">Yassu</span>
-          </a>
-        </div>
       </div>
+      <Footer />
     </div>
   );
 }

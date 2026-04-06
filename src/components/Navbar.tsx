@@ -2,13 +2,13 @@ import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBranding } from "@/contexts/BrandingContext";
+import { YASSU_BRAND } from "@/lib/branding";
 import { LogOut } from "lucide-react";
 
 const Navbar = () => {
   const { user, signOut, loading } = useAuth();
-  const brand = useBranding();
-  const base = brand.basePath;
+  const brand = YASSU_BRAND;
+  const base = '';
 
   const handleHashClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
     const el = document.getElementById(hash);

@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { useBranding } from "@/contexts/BrandingContext";
+import { YASSU_BRAND } from "@/lib/branding";
 
 const Footer = () => {
-  const brand = useBranding();
-  const base = brand.basePath;
+  const brand = YASSU_BRAND;
+  const base = '';
 
   return (
     <footer className="py-12 border-t border-border">

@@ -119,6 +119,7 @@ function AppRoutes() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/bruin" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -129,6 +130,7 @@ function AppRoutes() {
           <Route path="/accept-connection" element={<AcceptConnection />} />
           <Route path="/accept-group-invite" element={<AcceptGroupInvite />} />
           <Route path="/apply/:slug" element={<GroupApply />} />
+          <Route path="/bruin/apply/:slug" element={<GroupApply />} />
           
           <Route path="/portal" element={<PortalLayout />}>
             <Route index element={<Dashboard />} />
@@ -172,7 +174,7 @@ function AppRoutes() {
   );
 }
 
-const basename = /^\/bruin(\/|$)/i.test(window.location.pathname) ? '/bruin' : '';
+const basename = '';
 
 const App = () => {
   if (MAINTENANCE_MODE) {
