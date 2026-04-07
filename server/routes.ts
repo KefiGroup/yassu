@@ -8540,7 +8540,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
 
       const applications = await storage.getGroupApplications(group.id);
-      res.json(applications.filter(a => a.status !== 'draft'));
+      res.json(applications);
     } catch (error) {
       console.error("Get group applications error:", error);
       res.status(500).json({ error: "Failed to fetch applications" });
