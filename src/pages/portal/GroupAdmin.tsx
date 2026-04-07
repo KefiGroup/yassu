@@ -848,12 +848,13 @@ export default function GroupAdmin() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium">{app.user.fullName || 'Unknown'}</p>
                               <Badge
-                                variant={app.status === 'approved' ? 'default' : app.status === 'rejected' ? 'destructive' : 'secondary'}
+                                variant={app.status === 'approved' ? 'default' : app.status === 'rejected' ? 'destructive' : app.status === 'draft' ? 'outline' : 'secondary'}
                               >
+                                {app.status === 'draft' && <Edit className="h-3 w-3 mr-1" />}
                                 {app.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
                                 {app.status === 'approved' && <CheckCircle className="h-3 w-3 mr-1" />}
                                 {app.status === 'rejected' && <XCircle className="h-3 w-3 mr-1" />}
-                                {app.status}
+                                {app.status === 'draft' ? 'Draft' : app.status}
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">{app.user.email}</p>
@@ -916,7 +917,7 @@ export default function GroupAdmin() {
                             </p>
                           </div>
                         </div>
-                        {app.status === 'pending' && (
+                        {(app.status === 'pending' || app.status === 'draft') && (
                           <div className="flex items-center gap-2 shrink-0">
                             <Button
                               size="sm"

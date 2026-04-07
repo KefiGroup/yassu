@@ -8767,7 +8767,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const allApps = await storage.getGroupApplications(group.id);
       const targetApp = allApps.find(a => a.id === req.params.applicationId);
       if (!targetApp) return res.status(404).json({ error: "Application not found in this group" });
-      if (targetApp.status !== 'pending') return res.status(400).json({ error: "Application has already been reviewed" });
+      if (targetApp.status !== 'pending' && targetApp.status !== 'draft') return res.status(400).json({ error: "Application has already been reviewed" });
 
       const updated = await storage.updateGroupApplication(req.params.applicationId, status, req.session.userId);
       if (!updated) return res.status(404).json({ error: "Application not found" });
