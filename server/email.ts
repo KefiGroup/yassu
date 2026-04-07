@@ -1947,3 +1947,89 @@ export async function sendGroupInviteEmail(
     html,
   });
 }
+
+export async function sendApplicationConfirmationEmail(email: string, fullName: string, groupName: string): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
+  <div style="background:#ffffff;border-radius:12px;padding:40px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="color:#1a1a2e;font-size:22px;margin:0 0 6px 0;">Application Received!</h1>
+      <p style="color:#6b7280;font-size:14px;margin:0;">Thank you for applying, ${fullName}.</p>
+    </div>
+    <div style="background:#f0f9ff;border-radius:8px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0;color:#1e40af;font-size:14px;font-weight:600;">📋 ${groupName}</p>
+      <p style="margin:8px 0 0 0;color:#374151;font-size:14px;">Your application has been submitted successfully and is now under review. You'll be notified once a decision is made.</p>
+    </div>
+    <div style="text-align:center;">
+      <a href="${APP_URL}/auth" style="display:inline-block;background:#4f46e5;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Log In to Yassu</a>
+    </div>
+  </div>
+  <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:24px;">© ${new Date().getFullYear()} Yassu. All rights reserved.</p>
+</div>
+</body>
+</html>
+  `;
+  await sendEmail({ to: email, subject: `Application Received — ${groupName}`, html });
+}
+
+export async function sendAdminApplicationNotificationEmail(adminEmail: string, adminName: string, applicantName: string, applicantEmail: string, groupName: string, groupSlug: string): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
+  <div style="background:#ffffff;border-radius:12px;padding:40px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="color:#1a1a2e;font-size:22px;margin:0 0 6px 0;">New Application</h1>
+      <p style="color:#6b7280;font-size:14px;margin:0;">A new application has been submitted to ${groupName}.</p>
+    </div>
+    <div style="background:#fef3c7;border-radius:8px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0;font-size:14px;color:#92400e;"><strong>Applicant:</strong> ${applicantName}</p>
+      <p style="margin:6px 0 0 0;font-size:14px;color:#92400e;"><strong>Email:</strong> ${applicantEmail}</p>
+    </div>
+    <p style="color:#374151;font-size:14px;line-height:1.6;">Hi ${adminName}, please review this application at your earliest convenience.</p>
+    <div style="text-align:center;margin-top:24px;">
+      <a href="${APP_URL}/portal/group-admin" style="display:inline-block;background:#4f46e5;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Review Applications</a>
+    </div>
+  </div>
+  <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:24px;">© ${new Date().getFullYear()} Yassu. All rights reserved.</p>
+</div>
+</body>
+</html>
+  `;
+  await sendEmail({ to: adminEmail, subject: `New Application: ${applicantName} — ${groupName}`, html });
+}
+
+export async function sendSuperAdminApplicationNotificationEmail(superAdminEmail: string, applicantName: string, applicantEmail: string, groupName: string): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
+  <div style="background:#ffffff;border-radius:12px;padding:40px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="color:#1a1a2e;font-size:22px;margin:0 0 6px 0;">New Group Application</h1>
+      <p style="color:#6b7280;font-size:14px;margin:0;">A new application was submitted on Yassu.</p>
+    </div>
+    <div style="background:#f0fdf4;border-radius:8px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0;font-size:14px;color:#166534;"><strong>Group:</strong> ${groupName}</p>
+      <p style="margin:6px 0 0 0;font-size:14px;color:#166534;"><strong>Applicant:</strong> ${applicantName}</p>
+      <p style="margin:6px 0 0 0;font-size:14px;color:#166534;"><strong>Email:</strong> ${applicantEmail}</p>
+    </div>
+    <div style="text-align:center;">
+      <a href="${APP_URL}/portal/admin" style="display:inline-block;background:#4f46e5;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Admin Dashboard</a>
+    </div>
+  </div>
+  <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:24px;">© ${new Date().getFullYear()} Yassu. All rights reserved.</p>
+</div>
+</body>
+</html>
+  `;
+  await sendEmail({ to: superAdminEmail, subject: `[Admin] New Application: ${applicantName} — ${groupName}`, html });
+}

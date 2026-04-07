@@ -8689,6 +8689,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       // Notify group admins/owners about the new application
       try {
         const applicant = await storage.getUser(req.session.userId);
+        const applicantName = applicant?.fullName || applicant?.email || 'A user';
+        const applicantEmail = applicant?.email || '';
         const members = await storage.getGroupMembers(group.id);
         const adminsAndOwners = members.filter(m => m.role === 'admin' || m.role === 'owner');
         for (const admin of adminsAndOwners) {
@@ -8696,15 +8698,40 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
             userId: admin.userId,
             type: 'group_application',
             title: 'New Application Submitted',
-            message: `${applicant?.fullName || applicant?.email || 'A user'} submitted an application to ${group.name}.`,
+            message: `${applicantName} submitted an application to ${group.name}.`,
             link: '/portal/group-admin',
           });
         }
+
+        // Send email notifications
+        const { sendApplicationConfirmationEmail, sendAdminApplicationNotificationEmail, sendSuperAdminApplicationNotificationEmail } = await import('./email');
+
+        if (applicantEmail) {
+          sendApplicationConfirmationEmail(applicantEmail, applicantName, group.name)
+            .catch(err => console.error(`[Submit] Failed to send confirmation email:`, err));
+        }
+
+        for (const admin of adminsAndOwners) {
+          const adminUser = await storage.getUser(admin.userId);
+          if (adminUser?.email) {
+            sendAdminApplicationNotificationEmail(adminUser.email, adminUser.fullName || adminUser.email, applicantName, applicantEmail, group.name, group.slug)
+              .catch(err => console.error(`[Submit] Failed to send admin notification:`, err));
+          }
+        }
+
+        const superAdmins = await db.execute(sql`SELECT id, email, full_name FROM users WHERE is_superadmin = true`);
+        const saRows = (superAdmins as any).rows || superAdmins;
+        for (const sa of saRows) {
+          if (sa.email) {
+            sendSuperAdminApplicationNotificationEmail(sa.email, applicantName, applicantEmail, group.name)
+              .catch(err => console.error(`[Submit] Failed to send super admin notification:`, err));
+          }
+        }
       } catch (notifErr) {
-        console.error("Failed to notify admins about application:", notifErr);
+        console.error("Failed to notify about application:", notifErr);
       }
 
-      // Notify the applicant that their application was received
+      // Notify the applicant in-app
       try {
         await storage.createNotification({
           userId: req.session.userId,
@@ -9067,6 +9094,9 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || undefined : undefined,
           major: typeof major === 'string' ? major.trim() || undefined : undefined,
         });
+        const { db: appDb } = await import('./db');
+        const { sql: appSql } = await import('drizzle-orm');
+        await appDb.execute(appSql`UPDATE group_applications SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL WHERE id = ${existingApp.id}`);
       } else {
         await storage.createGroupApplication({
           groupId: group.id,
@@ -9078,17 +9108,76 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || null : null,
           major: typeof major === 'string' ? major.trim() || null : null,
           teamEmails: normalizedPublicTeamEmails || null,
-          status: 'draft',
+          status: 'pending',
         });
+      }
+
+      // Send email notifications (non-blocking)
+      try {
+        const { sendApplicationConfirmationEmail, sendAdminApplicationNotificationEmail, sendSuperAdminApplicationNotificationEmail } = await import('./email');
+
+        // 1. Applicant confirmation email
+        sendApplicationConfirmationEmail(trimmedEmail, fullName, group.name)
+          .then(() => console.log(`[GroupApply] Confirmation email sent to: ${trimmedEmail}`))
+          .catch(err => console.error(`[GroupApply] Failed to send confirmation email to ${trimmedEmail}:`, err));
+
+        // 2. Group admin/owner notification emails
+        const members = await storage.getGroupMembers(group.id);
+        const adminsAndOwners = members.filter(m => m.role === 'admin' || m.role === 'owner');
+        for (const admin of adminsAndOwners) {
+          const adminUser = await storage.getUser(admin.userId);
+          if (adminUser?.email) {
+            sendAdminApplicationNotificationEmail(adminUser.email, adminUser.fullName || adminUser.email, fullName, trimmedEmail, group.name, group.slug)
+              .then(() => console.log(`[GroupApply] Admin notification sent to: ${adminUser.email}`))
+              .catch(err => console.error(`[GroupApply] Failed to send admin notification to ${adminUser.email}:`, err));
+          }
+        }
+
+        // 3. Super admin notification emails
+        const { db: notifDb } = await import('./db');
+        const { sql: notifSql } = await import('drizzle-orm');
+        const superAdmins = await notifDb.execute(notifSql`SELECT id, email, full_name FROM users WHERE is_superadmin = true`);
+        const superAdminRows = (superAdmins as any).rows || superAdmins;
+        for (const sa of superAdminRows) {
+          if (sa.email) {
+            sendSuperAdminApplicationNotificationEmail(sa.email, fullName, trimmedEmail, group.name)
+              .then(() => console.log(`[GroupApply] Super admin notification sent to: ${sa.email}`))
+              .catch(err => console.error(`[GroupApply] Failed to send super admin notification to ${sa.email}:`, err));
+          }
+        }
+      } catch (emailErr) {
+        console.error("[GroupApply] Error sending notification emails:", emailErr);
+      }
+
+      // In-app notifications
+      try {
+        await storage.createNotification({
+          userId: user.id,
+          type: 'group_application',
+          title: 'Application Received',
+          message: `Your application to ${group.name} has been received and is under review.`,
+          link: `/portal/applications/${group.slug}`,
+        });
+
+        const members2 = await storage.getGroupMembers(group.id);
+        const adminsAndOwners2 = members2.filter(m => m.role === 'admin' || m.role === 'owner');
+        for (const admin of adminsAndOwners2) {
+          await storage.createNotification({
+            userId: admin.userId,
+            type: 'group_application',
+            title: 'New Application Submitted',
+            message: `${fullName} submitted an application to ${group.name}.`,
+            link: '/portal/group-admin',
+          });
+        }
+      } catch (notifErr) {
+        console.error("[GroupApply] Failed to create notifications:", notifErr);
       }
 
       res.json({
         success: true,
         isNewUser,
-        isDraft: true,
-        message: isNewUser
-          ? 'Your application has been saved! Check your email for login credentials, then log in to review and submit.'
-          : 'Your application has been saved! Log in to review and submit.',
+        message: 'Your application has been submitted successfully!',
       });
     } catch (error) {
       console.error("Public group apply error:", error);
