@@ -1,0 +1,15 @@
+They want the application form to be a landing page and the BE branding would only be on the landing page.  The accounts created for the applicants to manage their application would be on the Yassu site.
+The application form should be the first step to create an account on Yassu - essentially, we can take the information from the application and apply it to the profile on Yassu.
+When an application is completed, we currently display a message to create an account in Yassu to complete the application. – this function is already done.  The messaging, however, should be clear that the 1000 Pitches submission can only be submitted and managed in the Yassu platform and  they’re able to edit their application until the submission deadline. 
+Hae will draft this message and send to group.
+We have to enable the ability to edit and then finalize for the user.
+We should also generate an email with the same message. – this function is already done.  The messaging should be the same as the one above.
+We should automatically generate an email to remind them to complete the Yassu account and submit their application if this process is not complete within 12 hours. – this function needs to be built.  The messaging should be the same as the one above with a reminder that their submission is not complete.
+??? - what happens to the application if a Yassu account is not created thus in essence the application is not officially submitted? – we need to track this and if there are applications that are not complete, we should discuss with BE team how to move forward.
+The application should ask for names and emails of their team members.  – we currently ask for emails of their team members, but we should ask for the following information: first name, last name, email address, role on the team
+An email notifying the team members should be sent and encourage them to create a Yassu account so they can appear on the application team page.  – this function needs to be built.  Hae will draft the message.
+The team members should be able to see the application.  – this function needs to be built.
+An account holder should be able to input as many applications as they want.  We currently only allow 1.  – this function needs to be built.
+All applications can be edited until a set deadline date (determined by BE).
+The editing can be done via their Yassu account.  – Already addressed above.
+BE currently wants to download the applications — should we look at building something for them that would keep them in Yassu?
