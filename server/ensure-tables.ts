@@ -154,6 +154,7 @@ export async function ensureTables() {
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS graduation_year TEXT`);
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS major TEXT`);
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS team_emails JSONB`);
+    await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS reminder_sent BOOLEAN DEFAULT false`);
 
     // Update Bruin application questions to latest version
     const updatedQuestions = JSON.stringify([

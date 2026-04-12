@@ -274,7 +274,9 @@ export async function sendAccountCreatedEmail(email: string, fullName: string, t
               <h2 style="margin: 0 0 20px; color: #1a1a1a; font-size: 24px; font-weight: 600;">Hi ${fullName},</h2>
               
               <p style="margin: 0 0 20px; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                An account has been created for you on <strong>Yassu</strong> — the platform where university founders connect, build teams, and launch startups.${groupSlug ? ' Log in to review and submit your application.' : ''}
+                ${groupSlug
+                  ? 'Your 1000 Pitches application is now saved in <strong>Yassu.ai</strong>, our platform partner for 1000 Pitches. Use the credentials below to log in, review and edit your application, and submit when you\'re ready.'
+                  : 'An account has been created for you on <strong>Yassu</strong> — the platform where university founders connect, build teams, and launch startups.'}
               </p>
               
               <div style="background-color: #f3f0ff; border-radius: 8px; padding: 24px; margin: 0 0 24px;">
@@ -1957,15 +1959,16 @@ export async function sendApplicationConfirmationEmail(email: string, fullName: 
 <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
   <div style="background:#ffffff;border-radius:12px;padding:40px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
     <div style="text-align:center;margin-bottom:28px;">
-      <h1 style="color:#1a1a2e;font-size:22px;margin:0 0 6px 0;">Application Received!</h1>
-      <p style="color:#6b7280;font-size:14px;margin:0;">Thank you for applying, ${fullName}.</p>
+      <h1 style="color:#1a1a2e;font-size:22px;margin:0 0 6px 0;">Your 1000 Pitches Application Saved!</h1>
     </div>
-    <div style="background:#f0f9ff;border-radius:8px;padding:20px;margin-bottom:24px;">
-      <p style="margin:0;color:#1e40af;font-size:14px;font-weight:600;">📋 ${groupName}</p>
-      <p style="margin:8px 0 0 0;color:#374151;font-size:14px;">Your application has been submitted successfully and is now under review. You'll be notified once a decision is made.</p>
-    </div>
+    <p style="margin:0 0 16px 0;color:#374151;font-size:14px;line-height:1.6;">
+      Thank you for applying for the ${groupName} 1000 Pitches. Your application is now saved in Yassu.ai, our platform partner for 1000 Pitches.
+    </p>
+    <p style="margin:0 0 24px 0;color:#374151;font-size:14px;line-height:1.6;">
+      Create your Yassu.ai account to submit your application. You can also review and edit your application before submitting.
+    </p>
     <div style="text-align:center;">
-      <a href="${APP_URL}/auth" style="display:inline-block;background:#4f46e5;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Log In to Yassu</a>
+      <a href="${APP_URL}/auth" style="display:inline-block;background:#4f46e5;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Go to Login to Create Your Account</a>
     </div>
   </div>
   <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:24px;">© ${new Date().getFullYear()} Yassu. All rights reserved.</p>
@@ -1973,7 +1976,63 @@ export async function sendApplicationConfirmationEmail(email: string, fullName: 
 </body>
 </html>
   `;
-  await sendEmail({ to: email, subject: `Application Received — ${groupName}`, html });
+  await sendEmail({ to: email, subject: `Your 1000 Pitches Application Saved!`, html });
+}
+
+export async function sendApplicationReminderEmail(email: string, fullName: string, groupName: string): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
+  <div style="background:#ffffff;border-radius:12px;padding:40px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h1 style="color:#1a1a2e;font-size:22px;margin:0 0 6px 0;">Complete Your 1000 Pitches Application</h1>
+    </div>
+    <p style="margin:0 0 16px 0;color:#374151;font-size:14px;line-height:1.6;">
+      Thank you for creating an application for ${groupName} 1000 Pitches. To complete and submit your application, please create your Yassu.ai account. You can also review and edit your application prior to submitting.
+    </p>
+    <div style="text-align:center;margin-top:24px;">
+      <a href="${APP_URL}/auth" style="display:inline-block;background:#4f46e5;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Go to Login to Create Your Account</a>
+    </div>
+  </div>
+  <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:24px;">© ${new Date().getFullYear()} Yassu. All rights reserved.</p>
+</div>
+</body>
+</html>
+  `;
+  await sendEmail({ to: email, subject: `Complete Your 1000 Pitches Application`, html });
+}
+
+export async function sendTeamMemberNotificationEmail(teamMemberEmail: string, teamMemberName: string, applicantName: string, projectTitle: string, groupName: string): Promise<void> {
+  const displayName = teamMemberName || teamMemberEmail;
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:32px 16px;">
+  <div style="background:#ffffff;border-radius:12px;padding:40px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <p style="margin:0 0 16px 0;color:#374151;font-size:14px;line-height:1.6;">
+      Hi ${displayName},
+    </p>
+    <p style="margin:0 0 16px 0;color:#374151;font-size:14px;line-height:1.6;">
+      ${applicantName} has submitted <strong>${projectTitle}</strong> for consideration for ${groupName}'s 1000 Pitches competition. You have been named as a team member. To join the ${projectTitle} team, please create an account in Yassu.ai.
+    </p>
+    <p style="margin:0 0 24px 0;color:#374151;font-size:14px;line-height:1.6;">
+      Yassu.ai is the platform partner for 1000 Pitches. Once you create your account, you'll be designated as a team member and you'll be able to view the application and appear as a team member for the project.
+    </p>
+    <div style="text-align:center;">
+      <a href="${APP_URL}/auth" style="display:inline-block;background:#4f46e5;color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Go to Login to Create Your Account</a>
+    </div>
+  </div>
+  <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:24px;">© ${new Date().getFullYear()} Yassu. All rights reserved.</p>
+</div>
+</body>
+</html>
+  `;
+  await sendEmail({ to: teamMemberEmail, subject: `You've been named as a team member for ${projectTitle} — 1000 Pitches`, html });
 }
 
 export async function sendAdminApplicationNotificationEmail(adminEmail: string, adminName: string, applicantName: string, applicantEmail: string, groupName: string, groupSlug: string): Promise<void> {

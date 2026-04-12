@@ -9145,6 +9145,17 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
               .catch(err => console.error(`[GroupApply] Failed to send super admin notification to ${sa.email}:`, err));
           }
         }
+
+        // 4. Team member notification emails
+        if (normalizedPublicTeamEmails && normalizedPublicTeamEmails.length > 0) {
+          const { sendTeamMemberNotificationEmail } = await import('./email');
+          const projTitle = projectTitle || 'a project';
+          for (const teamEmail of normalizedPublicTeamEmails) {
+            sendTeamMemberNotificationEmail(teamEmail, '', fullName, projTitle, group.name)
+              .then(() => console.log(`[GroupApply] Team member notification sent to: ${teamEmail}`))
+              .catch(err => console.error(`[GroupApply] Failed to send team member notification to ${teamEmail}:`, err));
+          }
+        }
       } catch (emailErr) {
         console.error("[GroupApply] Error sending notification emails:", emailErr);
       }

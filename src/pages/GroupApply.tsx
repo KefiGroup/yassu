@@ -183,20 +183,15 @@ export default function GroupApply() {
               <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: `hsl(${primaryHSL} / 0.15)` }}>
                 <CheckCircle className="h-8 w-8" style={{ color: `hsl(${primaryHSL})` }} />
               </div>
-              <h2 className="text-2xl font-bold">Application Saved!</h2>
+              <h2 className="text-2xl font-bold">Your 1000 Pitches Application Saved!</h2>
               <p className="text-muted-foreground">
-                {groupInfo.submissionMessage || <>Thank you for applying to <strong>{groupInfo.name}</strong>. Log in to review your answers and submit your application when you're ready.</>}
+                {groupInfo.submissionMessage || <>Thank you for applying for the <strong>{groupInfo.name}</strong> 1000 Pitches. Your application is now saved in Yassu.ai, our platform partner for 1000 Pitches.</>}
               </p>
-              {isNewUser && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                  A Yassu account has been created for you. Check your email for login credentials, then log in to review and submit your application.
-                </div>
-              )}
-              {!isNewUser && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-                  Your application has been saved as a draft. Log in to review and submit it.
-                </div>
-              )}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                {isNewUser
+                  ? 'Create your Yassu.ai account to submit your application. You can also review and edit your application before submitting.'
+                  : 'Log in to your Yassu.ai account to review, edit, and submit your application.'}
+              </div>
               {groupInfo.submissionFileUrl && (
                 isImage ? (
                   <img src={groupInfo.submissionFileUrl} alt="Welcome" className="rounded-lg mx-auto max-h-64 object-contain" data-testid="img-submission-file" />
@@ -214,7 +209,7 @@ export default function GroupApply() {
                   </Button>
                 )}
                 <Button onClick={() => window.location.href = '/auth'} variant={groupInfo.redirectUrl ? 'outline' : 'default'} style={!groupInfo.redirectUrl ? { backgroundColor: `hsl(${primaryHSL})` } : {}} className={!groupInfo.redirectUrl ? 'text-white' : ''} data-testid="button-go-login">
-                  Go to Login
+                  {isNewUser ? 'Go to Login to Create Your Account' : 'Go to Login'}
                 </Button>
               </div>
             </CardContent>
