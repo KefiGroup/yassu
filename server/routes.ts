@@ -8719,9 +8719,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           }
         }
 
-        const superAdmins = await db.execute(sql`SELECT id, email, full_name FROM users WHERE is_superadmin = true`);
-        const saRows = (superAdmins as any).rows || superAdmins;
-        for (const sa of saRows) {
+        const superAdminList = await storage.getAdmins();
+        for (const sa of superAdminList) {
           if (sa.email) {
             sendSuperAdminApplicationNotificationEmail(sa.email, applicantName, applicantEmail, group.name)
               .catch(err => console.error(`[Submit] Failed to send super admin notification:`, err));
@@ -9134,11 +9133,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         }
 
         // 3. Super admin notification emails
-        const { db: notifDb } = await import('./db');
-        const { sql: notifSql } = await import('drizzle-orm');
-        const superAdmins = await notifDb.execute(notifSql`SELECT id, email, full_name FROM users WHERE is_superadmin = true`);
-        const superAdminRows = (superAdmins as any).rows || superAdmins;
-        for (const sa of superAdminRows) {
+        const superAdminList = await storage.getAdmins();
+        for (const sa of superAdminList) {
           if (sa.email) {
             sendSuperAdminApplicationNotificationEmail(sa.email, fullName, trimmedEmail, group.name)
               .then(() => console.log(`[GroupApply] Super admin notification sent to: ${sa.email}`))
