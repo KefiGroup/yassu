@@ -8719,11 +8719,28 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           }
         }
 
+        // Super admin notification emails (skip if already notified as group admin)
+        const alreadyNotifiedEmails = new Set(
+          (await Promise.all(adminsAndOwners.map(a => storage.getUser(a.userId))))
+            .filter(u => u?.email)
+            .map(u => u!.email!.toLowerCase())
+        );
         const superAdminList = await storage.getAdmins();
         for (const sa of superAdminList) {
-          if (sa.email) {
+          if (sa.email && !alreadyNotifiedEmails.has(sa.email.toLowerCase())) {
             sendSuperAdminApplicationNotificationEmail(sa.email, applicantName, applicantEmail, group.name)
               .catch(err => console.error(`[Submit] Failed to send super admin notification:`, err));
+          }
+        }
+
+        // Team member notification emails
+        const teamEmails = application.teamEmails as string[] | null;
+        if (teamEmails && teamEmails.length > 0) {
+          const { sendTeamMemberNotificationEmail } = await import('./email');
+          const projTitle = application.projectTitle || 'a project';
+          for (const teamEmail of teamEmails) {
+            sendTeamMemberNotificationEmail(teamEmail, '', applicantName, projTitle, group.name)
+              .catch(err => console.error(`[Submit] Failed to send team member notification to ${teamEmail}:`, err));
           }
         }
       } catch (notifErr) {
@@ -9132,10 +9149,15 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           }
         }
 
-        // 3. Super admin notification emails
+        // 3. Super admin notification emails (skip if already notified as group admin)
+        const alreadyNotifiedEmails = new Set(
+          (await Promise.all(adminsAndOwners.map(a => storage.getUser(a.userId))))
+            .filter(u => u?.email)
+            .map(u => u!.email!.toLowerCase())
+        );
         const superAdminList = await storage.getAdmins();
         for (const sa of superAdminList) {
-          if (sa.email) {
+          if (sa.email && !alreadyNotifiedEmails.has(sa.email.toLowerCase())) {
             sendSuperAdminApplicationNotificationEmail(sa.email, fullName, trimmedEmail, group.name)
               .then(() => console.log(`[GroupApply] Super admin notification sent to: ${sa.email}`))
               .catch(err => console.error(`[GroupApply] Failed to send super admin notification to ${sa.email}:`, err));
