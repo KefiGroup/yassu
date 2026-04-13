@@ -8625,12 +8625,32 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       if (!Array.isArray(answers)) return res.status(400).json({ error: "Answers must be an array" });
 
       const normalizedTeamEmails = Array.isArray(teamEmails) ? teamEmails.map((e: string) => e.trim().toLowerCase()).filter(Boolean) : undefined;
+      const previousTeamEmails = new Set((application.teamEmails as string[] || []).map(e => e.toLowerCase()));
       const motivation = answers.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n');
       const updated = await storage.updateGroupApplicationAnswers(application.id, answers, motivation, projectTitle, normalizedTeamEmails, {
         universityName: typeof universityName === 'string' ? universityName.trim() || undefined : undefined,
         graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || undefined : undefined,
         major: typeof major === 'string' ? major.trim() || undefined : undefined,
       });
+
+      if (normalizedTeamEmails && normalizedTeamEmails.length > 0) {
+        const newTeamEmails = normalizedTeamEmails.filter(e => !previousTeamEmails.has(e));
+        if (newTeamEmails.length > 0) {
+          try {
+            const applicant = await storage.getUser(req.session.userId);
+            const applicantName = applicant?.fullName || applicant?.email || 'A user';
+            const projTitle = projectTitle || application.projectTitle || 'a project';
+            const { sendTeamMemberNotificationEmail } = await import('./email');
+            for (const teamEmail of newTeamEmails) {
+              sendTeamMemberNotificationEmail(teamEmail, '', applicantName, projTitle, group.name)
+                .then(() => console.log(`[AppEditor] Team member notification sent to: ${teamEmail}`))
+                .catch(err => console.error(`[AppEditor] Failed to send team member notification to ${teamEmail}:`, err));
+            }
+          } catch (emailErr) {
+            console.error("[AppEditor] Error sending team member emails:", emailErr);
+          }
+        }
+      }
 
       if (application.status === 'pending') {
         try {
