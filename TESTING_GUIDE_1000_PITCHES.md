@@ -3,9 +3,9 @@
 **Important:** Use fresh email addresses that have never been used on Yassu before. Gmail trick: if your email is `jane@gmail.com`, you can use `jane+test1@gmail.com`, `jane+test2@gmail.com`, etc. — they all arrive in your same inbox but Yassu treats each one as a separate user.
 
 **Base URL for all testing:**
-https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev
+https://yassu.ai
 
-(This is the live Replit preview. All links below use this base URL.)
+(All links below use this base URL. Both `/apply/bruin` and `/bruin/apply/bruin` work, but `/apply/bruin` is the cleaner URL to share.)
 
 ---
 
@@ -17,7 +17,7 @@ This tests the main flow a brand-new applicant would experience.
 
 1. Open this link in an **incognito/private browser window** (so you're not logged in):
 
-   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/bruin/apply/bruin
+   https://yassu.ai/apply/bruin
 
 2. You should see:
    - Yassu header/nav bar at the top
@@ -61,7 +61,7 @@ Check the following inboxes. All emails should arrive within 1–2 minutes (chec
 1. From the confirmation page, click **"Go to Login to Create Your Account"**
    — OR go to:
 
-   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/auth
+   https://yassu.ai/auth
 
 2. Your "Account Created" email contains a temporary password. Find it in your inbox.
 
@@ -93,11 +93,11 @@ This requires logging in as the group admin.
 
 1. Log in as **paulinet77@gmail.com** (group owner) at:
 
-   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/auth
+   https://yassu.ai/auth
 
 2. Navigate to the Group Admin panel:
 
-   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/portal/group-admin
+   https://yassu.ai/portal/group-admin
 
 3. Click the **"Applicants"** tab.
 
@@ -125,7 +125,7 @@ This tests what happens when a logged-in user starts an application but doesn't 
 
 1. Register a brand new account with a **different fresh email** at:
 
-   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/auth
+   https://yassu.ai/auth
 
 2. After logging in, navigate to the Bruin group and start an application.
 
@@ -158,7 +158,7 @@ You can't easily test this manually (you'd have to wait 12 hours), but you can c
 
 2. Open a new incognito window and go to:
 
-   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/auth
+   https://yassu.ai/auth
 
 3. **Register a new account** using one of those exact team member email addresses.
 
@@ -170,7 +170,7 @@ You can't easily test this manually (you'd have to wait 12 hours), but you can c
 
 1. Visit:
 
-   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/bruin
+   https://yassu.ai/bruin
 
 2. You should see the Bruin Entrepreneurs branded content but with the standard Yassu navigation bar and footer.
 
@@ -182,7 +182,7 @@ You can't easily test this manually (you'd have to wait 12 hours), but you can c
 
 | # | What to Test | Pass? |
 |---|---|---|
-| 1 | Public application form loads at `/bruin/apply/bruin` | |
+| 1 | Public application form loads at `/apply/bruin` | |
 | 2 | Application submits successfully, confirmation page appears | |
 | 3 | Applicant receives "Application Saved" email | |
 | 4 | Applicant receives "Account Created" email with temp password | |
