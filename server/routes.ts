@@ -8086,6 +8086,24 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     }
   });
 
+  app.get("/api/groups/available", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const allGroups = await storage.getGroups();
+      res.json(allGroups.map(g => ({
+        id: g.id,
+        name: g.name,
+        slug: g.slug,
+        description: g.description,
+        logoUrl: (g as any).logoUrl || null,
+        primaryColor: (g as any).primaryColor || null,
+      })));
+    } catch (error) {
+      console.error("Get available groups error:", error);
+      res.status(500).json({ error: "Failed to fetch available groups" });
+    }
+  });
+
   app.get("/api/groups/my-groups", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
     try {

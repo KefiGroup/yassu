@@ -72,6 +72,7 @@ const TeamDetail = lazy(() => import("./pages/portal/TeamDetail"));
 const Workflows = lazy(() => import("./pages/portal/Workflows"));
 const WorkflowRun = lazy(() => import("./pages/portal/WorkflowRun"));
 const Projects = lazy(() => import("./pages/portal/Projects"));
+const MyGroups = lazy(() => import("./pages/portal/MyGroups"));
 const Resources = lazy(() => import("./pages/portal/Resources"));
 const Messages = lazy(() => import("./pages/portal/Messages"));
 const Profile = lazy(() => import("./pages/portal/Profile"));
@@ -142,6 +143,7 @@ function AppRoutes() {
             <Route path="ideas/:id/smart-match" element={<SmartMatching />} />
             <Route path="my-ideas" element={<MyIdeas />} />
             <Route path="projects" element={<Projects />} />
+            <Route path="groups" element={<MyGroups />} />
             <Route path="teams" element={<Teams />} />
             <Route path="teams/:id" element={<TeamDetail />} />
             <Route path="workflows" element={<Workflows />} />

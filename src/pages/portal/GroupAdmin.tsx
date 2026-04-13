@@ -127,7 +127,8 @@ export default function GroupAdmin() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const groupParam = new URLSearchParams(window.location.search).get('group');
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(groupParam);
   const [inviteEmails, setInviteEmails] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
   const [ratingIdeaId, setRatingIdeaId] = useState<string | null>(null);

@@ -46,6 +46,7 @@ const mainNavItems = [
   { title: 'My Dashboard', url: '/portal', icon: LayoutDashboard },
   { title: 'My Projects', url: '/portal/projects', icon: FolderKanban },
   { title: 'My Teams', url: '/portal/teams', icon: Users },
+  { title: 'Groups', url: '/portal/groups', icon: UsersRound },
 ];
 
 const getMarketplaceNavItems = (brandId?: string) => [
@@ -135,27 +136,6 @@ export function PortalSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {brand.navLabels.apply && (
-          <SidebarGroup>
-            <SidebarGroupLabel>{brand.id === 'bruin' ? 'Bruin Entrepreneurs' : 'My Groups'}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(`/portal/applications/${brand.id}`)}
-                  >
-                    <NavLink to={`/portal/applications/${brand.id}`}>
-                      <ClipboardCheck className="h-4 w-4" />
-                      {!collapsed && <span>{brand.navLabels.apply}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
 
         <SidebarGroup>
           <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
