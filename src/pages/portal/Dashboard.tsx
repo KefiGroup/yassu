@@ -395,9 +395,11 @@ Looking forward to hearing from you!`;
         </motion.div>
       )}
 
-      {!loading && brand.navLabels.apply && (() => {
-        const draftApp = myGroupApplications.find(a => a.groupSlug === brand.id && a.status === 'draft');
-        const hasAnyApp = myGroupApplications.some(a => a.groupSlug === brand.id);
+      {!loading && (() => {
+        const applySlug = brand.navLabels.apply ? brand.id : (myGroupApplications.length > 0 ? myGroupApplications[0].groupSlug : null);
+        if (!applySlug) return null;
+        const applyLabel = brand.navLabels.apply || '1000 Pitches Application';
+        const hasAnyApp = myGroupApplications.some(a => a.groupSlug === applySlug);
         return (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -411,21 +413,19 @@ Looking forward to hearing from you!`;
                     <Rocket className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">{brand.navLabels.apply}</h3>
+                    <h3 className="font-semibold text-foreground">{applyLabel}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {draftApp
-                        ? 'You have a draft application saved. Complete and submit it to participate!'
-                        : hasAnyApp
+                      {hasAnyApp
                         ? 'Submit another startup idea to the competition.'
-                        : `Complete your ${brand.name} application to unlock pitch competitions and resources.`}
+                        : `Complete your application to unlock pitch competitions and resources.`}
                     </p>
                   </div>
                   <Button
-                    onClick={() => navigate(`/apply/${brand.id}`)}
+                    onClick={() => navigate(`/apply/${applySlug}`)}
                     className="bg-amber-600 hover:bg-amber-700 text-white"
-                    data-testid={`button-apply-${brand.id}`}
+                    data-testid={`button-apply-${applySlug}`}
                   >
-                    {draftApp ? 'Continue Application' : hasAnyApp ? 'New Application' : 'Apply Now'}
+                    {hasAnyApp ? 'New Application' : 'Apply Now'}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -470,7 +470,10 @@ Looking forward to hearing from you!`;
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate(`/apply/${brand.id}`)}
+                  onClick={() => {
+                    const slug = myGroupApplications.length > 0 ? myGroupApplications[0].groupSlug : 'bruin';
+                    navigate(`/apply/${slug}`);
+                  }}
                   data-testid="button-new-application-header"
                 >
                   <Plus className="w-4 h-4 mr-1" />
