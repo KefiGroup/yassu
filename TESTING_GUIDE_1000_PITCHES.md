@@ -1,17 +1,23 @@
 # Testing Guide: 1000 Pitches Application Workflow
 
-**Important:** Use fresh email addresses that have never been used on Yassu before. Gmail trick: if your email is `jane@gmail.com`, you can use `jane+test1@gmail.com`, `jane+test2@gmail.com`, etc. — they all arrive in your inbox but Yassu treats them as separate accounts.
+**Important:** Use fresh email addresses that have never been used on Yassu before. Gmail trick: if your email is `jane@gmail.com`, you can use `jane+test1@gmail.com`, `jane+test2@gmail.com`, etc. — they all arrive in your same inbox but Yassu treats each one as a separate user.
+
+**Base URL for all testing:**
+https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev
+
+(This is the live Replit preview. All links below use this base URL.)
 
 ---
 
-## Test 1: Submit a New Application (Public Form — No Account)
+## Test 1: Submit a New Application (Public Form — No Account Needed)
 
 This tests the main flow a brand-new applicant would experience.
 
 ### Steps
 
-1. Open the application form in an **incognito/private browser window** (so you're not logged in):
-   **https://www.yassu.ai/bruin/apply/bruin**
+1. Open this link in an **incognito/private browser window** (so you're not logged in):
+
+   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/bruin/apply/bruin
 
 2. You should see:
    - Yassu header/nav bar at the top
@@ -37,7 +43,7 @@ This tests the main flow a brand-new applicant would experience.
 
 ### What to Verify (Emails)
 
-Check the following inboxes. All emails should arrive within 1–2 minutes:
+Check the following inboxes. All emails should arrive within 1–2 minutes (check spam/junk too):
 
 | Inbox to Check | Email You Should Receive | Subject Line |
 |---|---|---|
@@ -46,14 +52,16 @@ Check the following inboxes. All emails should arrive within 1–2 minutes:
 | Each team member email you listed | Team member notification | "You've been named as a team member for [Project Title] — 1000 Pitches" |
 | paulinet77@gmail.com (group admin) | Admin notification | "New Application: [Name] — Bruin Entrepreneurs" |
 
-**Note:** The super admin (paulinet77@gmail.com) is also the group owner, so she receives ONE email (the admin notification), not two.
+**Note:** paulinet77@gmail.com is both the group owner and a super admin, so she receives only ONE notification email (not two duplicates).
 
 ---
 
 ## Test 2: Log In to Your New Account
 
 1. From the confirmation page, click **"Go to Login to Create Your Account"**
-   — OR go to: **https://www.yassu.ai/auth**
+   — OR go to:
+
+   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/auth
 
 2. Your "Account Created" email contains a temporary password. Find it in your inbox.
 
@@ -69,25 +77,27 @@ Check the following inboxes. All emails should arrive within 1–2 minutes:
 
 ## Test 3: Edit Your Application (Logged In)
 
-1. While logged in, navigate to your application (click on it from the dashboard, or go to the group page).
+1. While logged in, navigate to your application (click on it from the dashboard).
 
 2. You should be able to edit your answers, project title, university info, and team member emails.
 
 3. Make a change and save.
 
-4. Verify the changes are saved by refreshing the page.
+4. Verify the changes stick by refreshing the page.
 
 ---
 
 ## Test 4: Admin Reviews Applications
 
-This requires logging in as a group admin or super admin.
+This requires logging in as the group admin.
 
 1. Log in as **paulinet77@gmail.com** (group owner) at:
-   **https://www.yassu.ai/auth**
+
+   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/auth
 
 2. Navigate to the Group Admin panel:
-   **https://www.yassu.ai/portal/group-admin**
+
+   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/portal/group-admin
 
 3. Click the **"Applicants"** tab.
 
@@ -105,37 +115,39 @@ This requires logging in as a group admin or super admin.
 
 6. **Export CSV**:
    - Click the **"Export CSV"** button in the applicants tab header
-   - A CSV file should download containing all applications with all fields (including each custom question as a separate column)
+   - A CSV file should download containing all applications with every field (including each custom question as its own column)
 
 ---
 
 ## Test 5: Draft Application (Logged-In User Flow)
 
-This tests what happens when a logged-in user starts an application but doesn't finish.
+This tests what happens when a logged-in user starts an application but doesn't finish right away.
 
-1. Log in with a **different fresh email** account (create one first at https://www.yassu.ai/auth by registering).
+1. Register a brand new account with a **different fresh email** at:
 
-2. Navigate to the Bruin group and start an application.
+   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/auth
 
-3. Fill in some fields but **save as draft** (don't submit).
+2. After logging in, navigate to the Bruin group and start an application.
+
+3. Fill in some fields but **save as draft** (don't submit yet).
 
 4. Log out, log back in — your draft should still be there.
 
 5. Complete the draft and submit it.
 
-6. Verify all the same emails are sent (confirmation, admin notification, team member notifications if you added any).
+6. Verify all the same emails are sent (confirmation to you, admin notification to paulinet77, team member notifications if you added any).
 
 ---
 
-## Test 6: 12-Hour Reminder (Cannot Fully Test Manually)
+## Test 6: 12-Hour Reminder (Automated — Cannot Test Manually)
 
-This is an automated background job. Here's what it does:
+This is a background job that runs automatically. Here's what it does:
 
-- If someone submits a **public application** that creates a draft (saves but doesn't complete account creation), and **12 hours pass** without them logging in to submit, the system sends a reminder email.
-- The reminder is sent only **once** (tracked by a `reminder_sent` flag).
+- If an application stays in **draft** status for more than **12 hours**, the system automatically sends a reminder email to the applicant.
+- The reminder is sent only **once** per application.
 - The system checks every 15 minutes.
 
-**To confirm it's running:** Check the server logs for:
+You can't easily test this manually (you'd have to wait 12 hours), but you can confirm the job is running by checking the server logs for this message:
 > `[Background Jobs] Starting application reminder job (checking every 15 minutes)`
 
 ---
@@ -144,9 +156,11 @@ This is an automated background job. Here's what it does:
 
 1. In Test 1, you listed team member emails (e.g., `yourname+teammate1@gmail.com`).
 
-2. Now go to **https://www.yassu.ai/auth** in a new incognito window.
+2. Open a new incognito window and go to:
 
-3. **Register a new account** using one of those team member emails.
+   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/auth
+
+3. **Register a new account** using one of those exact team member email addresses.
 
 4. After creating the account, that team member should be automatically attached to the Bruin Entrepreneurs group.
 
@@ -154,39 +168,42 @@ This is an automated background job. Here's what it does:
 
 ## Test 8: Bruin Landing Page
 
-1. Visit: **https://www.yassu.ai/bruin**
+1. Visit:
+
+   https://00c91f72-81d8-40a9-97aa-a9584a4bda57-00-2l1we8w1f35jc.riker.replit.dev/bruin
 
 2. You should see the Bruin Entrepreneurs branded content but with the standard Yassu navigation bar and footer.
 
-3. There should be a visible link/path to the application form.
+3. The "1000 Pitches" link in the nav bar should take you to the application form.
 
 ---
 
 ## Quick Checklist
 
-| # | Test | Pass? |
+| # | What to Test | Pass? |
 |---|---|---|
-| 1 | Public application form loads correctly at `/bruin/apply/bruin` | |
-| 2 | Application submits successfully, confirmation page shows | |
+| 1 | Public application form loads at `/bruin/apply/bruin` | |
+| 2 | Application submits successfully, confirmation page appears | |
 | 3 | Applicant receives "Application Saved" email | |
 | 4 | Applicant receives "Account Created" email with temp password | |
 | 5 | Team members receive notification emails | |
-| 6 | Group admin (paulinet77) receives ONE admin notification email | |
+| 6 | Group admin (paulinet77) receives ONE admin notification email (no duplicates) | |
 | 7 | Can log in with temp password from email | |
 | 8 | Dashboard shows application with "Pending" status | |
-| 9 | Can edit application while logged in | |
-| 10 | Admin can view all applications in Group Admin panel | |
-| 11 | Admin can see university, major, grad year, project title, team emails | |
+| 9 | Can edit application answers while logged in | |
+| 10 | Admin can see all applications in Group Admin > Applicants tab | |
+| 11 | Admin can see university, major, grad year, project title, team emails for each app | |
 | 12 | Admin can approve/reject applications | |
 | 13 | CSV export downloads with all fields and custom question columns | |
-| 14 | Bruin landing page (`/bruin`) shows correct branding | |
+| 14 | Bruin landing page (`/bruin`) shows correct branding with Yassu nav/footer | |
 | 15 | No duplicate emails sent to the same person | |
 
 ---
 
 ## Troubleshooting
 
-- **Emails not arriving?** Check your spam/junk folder. Emails come from Yassu via Resend.
-- **Can't log in?** Make sure you're using the exact email you applied with (case doesn't matter) and the temporary password from the "Account Created" email.
-- **Application not showing for admin?** Make sure you're logged in as paulinet77@gmail.com and on the Group Admin page, Applicants tab.
-- **Page not loading?** Try a hard refresh (Ctrl+Shift+R / Cmd+Shift+R).
+- **Emails not arriving?** Check your spam/junk folder. Emails come from Yassu via Resend. Gmail sometimes delays them a minute or two.
+- **Can't log in?** Make sure you're using the exact email you applied with and the temporary password from the "Account Created" email. Passwords are case-sensitive.
+- **Application not showing for admin?** Make sure you're logged in as paulinet77@gmail.com and on the Group Admin page > Applicants tab.
+- **Page not loading?** Try a hard refresh (Ctrl+Shift+R on Windows, Cmd+Shift+R on Mac).
+- **Getting a blank page?** The server may need a moment to start up. Wait 10 seconds and refresh.
