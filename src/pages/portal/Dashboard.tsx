@@ -396,11 +396,8 @@ Looking forward to hearing from you!`;
       )}
 
       {!loading && brand.navLabels.apply && (() => {
-        const hasSubmittedApp = myGroupApplications.some(
-          a => a.groupSlug === brand.id && (a.status === 'pending' || a.status === 'approved')
-        );
-        if (hasSubmittedApp) return null;
         const draftApp = myGroupApplications.find(a => a.groupSlug === brand.id && a.status === 'draft');
+        const hasAnyApp = myGroupApplications.some(a => a.groupSlug === brand.id);
         return (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -418,15 +415,17 @@ Looking forward to hearing from you!`;
                     <p className="text-sm text-muted-foreground">
                       {draftApp
                         ? 'You have a draft application saved. Complete and submit it to participate!'
+                        : hasAnyApp
+                        ? 'Submit another startup idea to the competition.'
                         : `Complete your ${brand.name} application to unlock pitch competitions and resources.`}
                     </p>
                   </div>
                   <Button
-                    onClick={() => navigate(`/portal/applications/${brand.id}`)}
+                    onClick={() => navigate(`/apply/${brand.id}`)}
                     className="bg-amber-600 hover:bg-amber-700 text-white"
                     data-testid={`button-apply-${brand.id}`}
                   >
-                    {draftApp ? 'Continue Application' : 'Apply Now'}
+                    {draftApp ? 'Continue Application' : hasAnyApp ? 'New Application' : 'Apply Now'}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -460,11 +459,24 @@ Looking forward to hearing from you!`;
         >
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5 text-primary" />
-                My Applications
-              </CardTitle>
-              <CardDescription>Your group application status</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <ClipboardCheck className="w-5 h-5 text-primary" />
+                    My Applications
+                  </CardTitle>
+                  <CardDescription>Your group application status</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/apply/${brand.id}`)}
+                  data-testid="button-new-application-header"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  New Application
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
