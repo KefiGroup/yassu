@@ -8571,15 +8571,100 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const group = await storage.getGroupBySlug(req.params.slug);
       if (!group) return res.status(404).json({ error: "Group not found" });
 
-      const { motivation, asDraft } = req.body;
+      const { motivation, asDraft, answers, projectTitle, teamEmails: rawTeamEmails } = req.body;
+
+      const user = await storage.getUser(req.session.userId);
+      const profile = await storage.getProfile(req.session.userId);
+      const applicantName = user?.fullName || user?.email || 'A user';
+      const applicantEmail = user?.email || '';
+
+      const normalizedTeamEmails = Array.isArray(rawTeamEmails) ? rawTeamEmails.map((e: string) => e.trim().toLowerCase()).filter(Boolean) : undefined;
+      const motivationText = Array.isArray(answers)
+        ? answers.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n')
+        : (motivation || '');
 
       const application = await storage.createGroupApplication({
         groupId: group.id,
         userId: req.session.userId,
-        motivation: motivation || null,
+        motivation: motivationText || null,
+        answers: answers || [],
+        projectTitle: projectTitle || null,
+        universityName: profile?.otherUniversity || null,
+        graduationYear: profile?.graduationYear ? String(profile.graduationYear) : null,
+        major: profile?.major || null,
+        teamEmails: normalizedTeamEmails || null,
         status: asDraft ? 'draft' : 'pending',
         reviewedBy: null,
       });
+
+      if (!asDraft) {
+        try {
+          const { sendApplicationConfirmationEmail, sendAdminApplicationNotificationEmail, sendSuperAdminApplicationNotificationEmail, sendTeamMemberNotificationEmail } = await import('./email');
+
+          if (applicantEmail) {
+            sendApplicationConfirmationEmail(applicantEmail, applicantName, group.name)
+              .catch(err => console.error(`[AuthApply] Failed to send confirmation email:`, err));
+          }
+
+          const members = await storage.getGroupMembers(group.id);
+          const adminsAndOwners = members.filter(m => m.role === 'admin' || m.role === 'owner');
+          for (const admin of adminsAndOwners) {
+            const adminUser = await storage.getUser(admin.userId);
+            if (adminUser?.email) {
+              sendAdminApplicationNotificationEmail(adminUser.email, adminUser.fullName || adminUser.email, applicantName, applicantEmail, group.name, group.slug)
+                .catch(err => console.error(`[AuthApply] Failed to send admin notification:`, err));
+            }
+          }
+
+          const alreadyNotifiedEmails = new Set(
+            (await Promise.all(adminsAndOwners.map(a => storage.getUser(a.userId))))
+              .filter(u => u?.email)
+              .map(u => u!.email!.toLowerCase())
+          );
+          const superAdminList = await storage.getAdmins();
+          for (const sa of superAdminList) {
+            if (sa.email && !alreadyNotifiedEmails.has(sa.email.toLowerCase())) {
+              sendSuperAdminApplicationNotificationEmail(sa.email, applicantName, applicantEmail, group.name)
+                .catch(err => console.error(`[AuthApply] Failed to send super admin notification:`, err));
+            }
+          }
+
+          if (normalizedTeamEmails && normalizedTeamEmails.length > 0) {
+            const projTitle = projectTitle || 'a project';
+            for (const teamEmail of normalizedTeamEmails) {
+              sendTeamMemberNotificationEmail(teamEmail, '', applicantName, projTitle, group.name)
+                .catch(err => console.error(`[AuthApply] Failed to send team member notification to ${teamEmail}:`, err));
+            }
+          }
+        } catch (emailErr) {
+          console.error("[AuthApply] Error sending notification emails:", emailErr);
+        }
+
+        try {
+          await storage.createNotification({
+            userId: req.session.userId,
+            type: 'group_application',
+            title: 'Application Submitted',
+            message: `Your application to ${group.name} has been submitted and is under review.`,
+            link: `/portal/groups`,
+          });
+
+          const members2 = await storage.getGroupMembers(group.id);
+          const adminsAndOwners2 = members2.filter(m => m.role === 'admin' || m.role === 'owner');
+          for (const admin of adminsAndOwners2) {
+            await storage.createNotification({
+              userId: admin.userId,
+              type: 'group_application',
+              title: 'New Application Submitted',
+              message: `${applicantName} submitted an application to ${group.name}.`,
+              link: '/portal/group-admin',
+            });
+          }
+        } catch (notifErr) {
+          console.error("[AuthApply] Error creating notifications:", notifErr);
+        }
+      }
+
       res.json(application);
     } catch (error) {
       console.error("Apply to group error:", error);

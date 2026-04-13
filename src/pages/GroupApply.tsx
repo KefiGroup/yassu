@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CheckCircle, Upload, FileText, X, UserPlus, Mail } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -41,6 +42,9 @@ export default function GroupApply() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, profile, loading: authLoading } = useAuth();
+  const isLoggedIn = !!user && !authLoading;
+
   const [groupInfo, setGroupInfo] = useState<GroupPublicInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -117,9 +121,12 @@ export default function GroupApply() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-      toast({ title: 'Please fill in all required fields', variant: 'destructive' });
-      return;
+
+    if (!isLoggedIn) {
+      if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+        toast({ title: 'Please fill in all required fields', variant: 'destructive' });
+        return;
+      }
     }
 
     const questions = groupInfo?.applicationQuestions || [];
@@ -132,15 +139,29 @@ export default function GroupApply() {
 
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/groups/${slug}/public-apply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, universityName, graduationYear, major, answers, projectTitle, teamEmails }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to submit');
-      setSubmitted(true);
-      setIsNewUser(data.isNewUser);
+
+      if (isLoggedIn) {
+        const res = await fetch(`/api/groups/${slug}/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ answers, projectTitle, teamEmails }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to submit');
+        toast({ title: 'Application submitted!', description: 'Your application has been submitted successfully.' });
+        navigate('/portal/dashboard');
+      } else {
+        const res = await fetch(`/api/groups/${slug}/public-apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, email, universityName, graduationYear, major, answers, projectTitle, teamEmails }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to submit');
+        setSubmitted(true);
+        setIsNewUser(data.isNewUser);
+      }
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
@@ -151,7 +172,7 @@ export default function GroupApply() {
   const primaryHSL = groupInfo?.primaryColor || '250 60% 65%';
   const accentHSL = groupInfo?.accentColor || '15 80% 75%';
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -269,48 +290,57 @@ export default function GroupApply() {
           <div className="max-w-2xl mx-auto">
             <Card>
               <CardHeader>
-                <CardTitle>Application</CardTitle>
-                <CardDescription>Fill out the form below to apply. All fields marked with * are required.</CardDescription>
+                <CardTitle>{isLoggedIn ? 'New Application' : 'Application'}</CardTitle>
+                <CardDescription>
+                  {isLoggedIn
+                    ? `Submitting as ${profile?.fullName || user?.email}. Fill out the fields below.`
+                    : 'Fill out the form below to apply. All fields marked with * are required.'}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input id="firstName" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name" required data-testid="input-first-name" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input id="lastName" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" required data-testid="input-last-name" />
-                </div>
-              </div>
+
+              {!isLoggedIn && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name *</Label>
+                      <Input id="firstName" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name" required data-testid="input-first-name" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name *</Label>
+                      <Input id="lastName" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" required data-testid="input-last-name" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@university.edu" required data-testid="input-email" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="universityName">University Name *</Label>
+                    <Input id="universityName" value={universityName} onChange={e => setUniversityName(e.target.value)} placeholder="e.g. UCLA" required data-testid="input-university-name" />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="graduationYear">Year of Graduation *</Label>
+                      <Input id="graduationYear" value={graduationYear} onChange={e => setGraduationYear(e.target.value)} placeholder="e.g. 2026" required data-testid="input-graduation-year" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="major">Major *</Label>
+                      <Input id="major" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Computer Science" required data-testid="input-major" />
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6" />
+                </>
+              )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@university.edu" required data-testid="input-email" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="universityName">University Name *</Label>
-                <Input id="universityName" value={universityName} onChange={e => setUniversityName(e.target.value)} placeholder="e.g. UCLA" required data-testid="input-university-name" />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="graduationYear">Year of Graduation *</Label>
-                  <Input id="graduationYear" value={graduationYear} onChange={e => setGraduationYear(e.target.value)} placeholder="e.g. 2026" required data-testid="input-graduation-year" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="major">Major *</Label>
-                  <Input id="major" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Computer Science" required data-testid="input-major" />
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <div className="space-y-2">
-                  <Label htmlFor="projectTitle">Project Title</Label>
-                  <Input id="projectTitle" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} placeholder="Enter your project or startup name" data-testid="input-project-title" />
-                </div>
+                <Label htmlFor="projectTitle">Project Title</Label>
+                <Input id="projectTitle" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} placeholder="Enter your project or startup name" data-testid="input-project-title" />
               </div>
 
               {(groupInfo.applicationQuestions || []).map((q, i) => (
