@@ -6,3 +6,9 @@ id = "pBmrqfQjHtkap2b8b8FYQ"
 uri = "file://TESTING_GUIDE_1000_PITCHES.md"
 type = "text"
 title = "1000 Pitches Testing Guide (Corrected)"
+
+[[outputs]]
+id = "OTLmEwpq0QplnR24cgnad"
+uri = "file://docs/Bruin-Entrepreneurs-Yassu-Training-Guide.md"
+type = "text"
+title = "Bruin Entrepreneurs x Yassu.ai - Training Guide"
