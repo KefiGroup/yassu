@@ -74,12 +74,8 @@ export default function MyGroups() {
   });
 
   const memberGroupIds = new Set(memberships?.map(m => m.id) || []);
-  const activeApplicationGroupIds = new Set(
-    applications?.filter(a => a.status === 'pending' || a.status === 'approved' || a.status === 'draft')
-      .map(a => a.groupId) || []
-  );
   const groupsToApply = availableGroups?.filter(
-    g => !memberGroupIds.has(g.id) && !activeApplicationGroupIds.has(g.id)
+    g => !memberGroupIds.has(g.id)
   ) || [];
 
   const isLoading = membershipsLoading || applicationsLoading || availableLoading;
@@ -200,30 +196,33 @@ export default function MyGroups() {
           <section>
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
-              Discover Groups
+              Apply to a Group
             </h2>
             <div className="grid gap-3">
-              {groupsToApply.map(g => (
-                <Card key={g.id} data-testid={`card-discover-${g.slug}`}>
-                  <CardContent className="flex items-center justify-between py-4 px-5">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium">{g.name}</p>
-                      {g.description && (
-                        <p className="text-sm text-muted-foreground truncate max-w-md mt-0.5">
-                          {g.description.replace(/<[^>]*>/g, '').slice(0, 120)}
-                          {g.description.replace(/<[^>]*>/g, '').length > 120 ? '...' : ''}
-                        </p>
-                      )}
-                    </div>
-                    <NavLink to={`/apply/${g.slug}`}>
-                      <Button size="sm" data-testid={`button-apply-${g.slug}`}>
-                        Apply
-                        <ArrowRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    </NavLink>
-                  </CardContent>
-                </Card>
-              ))}
+              {groupsToApply.map(g => {
+                const hasExistingApps = applications?.some(a => a.groupId === g.id);
+                return (
+                  <Card key={g.id} data-testid={`card-discover-${g.slug}`}>
+                    <CardContent className="flex items-center justify-between py-4 px-5">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium">{g.name}</p>
+                        {g.description && (
+                          <p className="text-sm text-muted-foreground truncate max-w-md mt-0.5">
+                            {g.description.replace(/<[^>]*>/g, '').slice(0, 120)}
+                            {g.description.replace(/<[^>]*>/g, '').length > 120 ? '...' : ''}
+                          </p>
+                        )}
+                      </div>
+                      <NavLink to={`/apply/${g.slug}`}>
+                        <Button size="sm" data-testid={`button-apply-${g.slug}`}>
+                          {hasExistingApps ? 'New Application' : 'Apply'}
+                          <ArrowRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </NavLink>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </section>
         </>

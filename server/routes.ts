@@ -8571,27 +8571,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const group = await storage.getGroupBySlug(req.params.slug);
       if (!group) return res.status(404).json({ error: "Group not found" });
 
-      const existingApp = await storage.getUserApplicationForGroup(req.session.userId, group.id);
-      if (existingApp && (existingApp.status === 'pending' || existingApp.status === 'approved')) {
-        return res.status(400).json({ error: "You already have an application for this group" });
-      }
-
       const { motivation, asDraft } = req.body;
-
-      if (existingApp && existingApp.status === 'draft') {
-        if (asDraft) {
-          return res.json(existingApp);
-        }
-        const { db } = await import('./db');
-        const { sql } = await import('drizzle-orm');
-        await db.execute(sql`UPDATE group_applications SET motivation = ${motivation || ''}, status = 'pending', reviewed_by = NULL, reviewed_at = NULL WHERE id = ${existingApp.id}`);
-        const updated = await storage.getUserApplicationForGroup(req.session.userId, group.id);
-        return res.json(updated);
-      }
-
-      if (existingApp) {
-        return res.json(existingApp);
-      }
 
       const application = await storage.createGroupApplication({
         groupId: group.id,
@@ -9115,36 +9095,19 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         isNewUser = true;
       }
 
-      const existingApp = await storage.getUserApplicationForGroup(user.id, group.id);
-      if (existingApp && (existingApp.status === 'pending' || existingApp.status === 'approved')) {
-        return res.status(400).json({ error: "You already have an application for this group" });
-      }
-
       const normalizedPublicTeamEmails = Array.isArray(rawTeamEmails) ? rawTeamEmails.map((e: string) => e.trim().toLowerCase()).filter(Boolean) : undefined;
-      if (existingApp && existingApp.status === 'draft') {
-        const motivation = answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '';
-        await storage.updateGroupApplicationAnswers(existingApp.id, answers || [], motivation, projectTitle || undefined, normalizedPublicTeamEmails, {
-          universityName: typeof universityName === 'string' ? universityName.trim() || undefined : undefined,
-          graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || undefined : undefined,
-          major: typeof major === 'string' ? major.trim() || undefined : undefined,
-        });
-        const { db: appDb } = await import('./db');
-        const { sql: appSql } = await import('drizzle-orm');
-        await appDb.execute(appSql`UPDATE group_applications SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL WHERE id = ${existingApp.id}`);
-      } else {
-        await storage.createGroupApplication({
-          groupId: group.id,
-          userId: user.id,
-          motivation: answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '',
-          answers: answers || [],
-          projectTitle: projectTitle || null,
-          universityName: typeof universityName === 'string' ? universityName.trim() || null : null,
-          graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || null : null,
-          major: typeof major === 'string' ? major.trim() || null : null,
-          teamEmails: normalizedPublicTeamEmails || null,
-          status: 'pending',
-        });
-      }
+      await storage.createGroupApplication({
+        groupId: group.id,
+        userId: user.id,
+        motivation: answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '',
+        answers: answers || [],
+        projectTitle: projectTitle || null,
+        universityName: typeof universityName === 'string' ? universityName.trim() || null : null,
+        graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || null : null,
+        major: typeof major === 'string' ? major.trim() || null : null,
+        teamEmails: normalizedPublicTeamEmails || null,
+        status: 'pending',
+      });
 
       // Send email notifications (non-blocking)
       try {
