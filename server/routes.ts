@@ -9088,9 +9088,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         await storage.addUserRole(user.id, "student");
 
         const { sendAccountCreatedEmail } = await import('./email');
-        sendAccountCreatedEmail(trimmedEmail, fullName, temporaryPassword, group.slug)
-          .then(() => console.log(`[GroupApply] Account created email sent to: ${trimmedEmail}`))
-          .catch(err => console.error(`[GroupApply] Failed to send account email to ${trimmedEmail}:`, err));
+        await sendAccountCreatedEmail(trimmedEmail, fullName, temporaryPassword, group.slug);
+        console.log(`[GroupApply] Account created email sent to: ${trimmedEmail}`);
 
         isNewUser = true;
       }
@@ -9109,11 +9108,11 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         status: 'pending',
       });
 
-      // Send email notifications (non-blocking)
+      // Send remaining email notifications (non-blocking, after account email is already delivered)
       try {
         const { sendApplicationConfirmationEmail, sendAdminApplicationNotificationEmail, sendSuperAdminApplicationNotificationEmail } = await import('./email');
 
-        // 1. Applicant confirmation email
+        // 1. Applicant confirmation email (sent after account email for new users)
         sendApplicationConfirmationEmail(trimmedEmail, fullName, group.name)
           .then(() => console.log(`[GroupApply] Confirmation email sent to: ${trimmedEmail}`))
           .catch(err => console.error(`[GroupApply] Failed to send confirmation email to ${trimmedEmail}:`, err));
