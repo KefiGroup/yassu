@@ -141,10 +141,20 @@ export default function MyGroups() {
       <Separator />
 
       <section>
-        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-          <ClipboardCheck className="h-5 w-5 text-primary" />
-          My Applications
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <ClipboardCheck className="h-5 w-5 text-primary" />
+            My Applications
+          </h2>
+          {applications && applications.length > 0 && (
+            <NavLink to={`/apply/${applications[0].groupSlug}`}>
+              <Button size="sm" variant="outline" data-testid="button-new-application-groups">
+                <Plus className="h-4 w-4 mr-1" />
+                New Application
+              </Button>
+            </NavLink>
+          )}
+        </div>
         {isLoading ? (
           <div className="grid gap-3">
             {[1].map(i => (
