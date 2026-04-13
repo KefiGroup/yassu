@@ -212,6 +212,27 @@ export default function GroupApply() {
                   {isNewUser ? 'Go to Login to Create Your Account' : 'Go to Login'}
                 </Button>
               </div>
+              <Button
+                variant="ghost"
+                className="text-sm"
+                data-testid="button-submit-another"
+                onClick={() => {
+                  setSubmitted(false);
+                  setFirstName('');
+                  setLastName('');
+                  setEmail('');
+                  setUniversityName('');
+                  setGraduationYear('');
+                  setMajor('');
+                  setProjectTitle('');
+                  setTeamEmails([]);
+                  setTeamEmailInput('');
+                  setFileNames({});
+                  setAnswers((groupInfo?.applicationQuestions || []).map((q: any) => ({ question: q.label, answer: '' })));
+                }}
+              >
+                Submit Another Application
+              </Button>
             </CardContent>
           </Card>
         </div>
