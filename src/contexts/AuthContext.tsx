@@ -7,6 +7,7 @@ interface User {
   email: string;
   fullName: string | null;
   linkedinId?: string | null;
+  mustChangePassword?: boolean;
 }
 
 interface Profile {

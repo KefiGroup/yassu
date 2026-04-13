@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InactivityWarning } from "@/components/InactivityWarning";
+import { ForcePasswordChangeWrapper } from "@/components/ForcePasswordChangeWrapper";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -195,6 +196,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <InactivityWarning />
+            <ForcePasswordChangeWrapper />
             <BrowserRouter basename={basename}>
               <BrandingProvider>
                 <AppRoutes />

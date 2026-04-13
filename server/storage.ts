@@ -263,7 +263,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserPassword(userId: number, hashedPassword: string): Promise<void> {
     await db.update(schema.users)
-      .set({ password: hashedPassword })
+      .set({ password: hashedPassword, mustChangePassword: false })
       .where(eq(schema.users.id, userId));
   }
 

@@ -136,6 +136,7 @@ declare module "express-session" {
     rememberMe?: boolean;
     lastActivity?: number;
     brand?: string | null;
+    mustChangePassword?: boolean;
   }
 }
 
@@ -275,6 +276,41 @@ export function registerRoutes(app: Express): void {
       console.error('[auto-classify] Error during startup classification:', err);
     }
   })();
+
+  const PASSWORD_CHANGE_ALLOWED_PATHS = new Set([
+    '/api/auth/me',
+    '/api/auth/change-password',
+    '/api/auth/logout',
+    '/api/auth/ping',
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+  ]);
+
+  app.use('/api', async (req: Request, res: Response, next) => {
+    if (!req.session.userId) return next();
+
+    const pathWithoutQuery = req.path;
+    if (PASSWORD_CHANGE_ALLOWED_PATHS.has(`/api${pathWithoutQuery}`)) return next();
+    if (pathWithoutQuery.startsWith('/auth/')) return next();
+    if (pathWithoutQuery.startsWith('/groups/') && pathWithoutQuery.endsWith('/public-apply')) return next();
+
+    if (req.session.mustChangePassword === undefined) {
+      try {
+        const userCheck = await pool.query('SELECT must_change_password FROM users WHERE id = $1', [req.session.userId]);
+        req.session.mustChangePassword = userCheck.rows.length > 0 && userCheck.rows[0].must_change_password === true;
+      } catch (err) {
+        console.error('[PasswordGuard] Error checking must_change_password:', err);
+        return next();
+      }
+    }
+
+    if (req.session.mustChangePassword) {
+      return res.status(403).json({ error: 'Password change required', code: 'MUST_CHANGE_PASSWORD' });
+    }
+    next();
+  });
 
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
@@ -438,7 +474,7 @@ export function registerRoutes(app: Express): void {
             }
             console.log(`[Login] Success (fallback) for user ${user.id} (${user.email}), session: ${req.session.id}`);
             res.json({ 
-              user: { id: user.id, email: user.email, fullName: user.fullName },
+              user: { id: user.id, email: user.email, fullName: user.fullName, mustChangePassword: user.mustChangePassword || false },
               sessionTimeout: rememberMe ? null : 60 * 60 * 1000
             });
           });
@@ -463,7 +499,7 @@ export function registerRoutes(app: Express): void {
           }
           console.log(`[Login] Success for user ${user.id} (${user.email}), session: ${req.session.id}, rememberMe: ${rememberMe}`);
           res.json({ 
-            user: { id: user.id, email: user.email, fullName: user.fullName },
+            user: { id: user.id, email: user.email, fullName: user.fullName, mustChangePassword: user.mustChangePassword || false },
             sessionTimeout: rememberMe ? null : 60 * 60 * 1000
           });
         });
@@ -583,8 +619,8 @@ export function registerRoutes(app: Express): void {
         return res.status(400).json({ error: "Current and new password are required" });
       }
 
-      if (newPassword.length < 6) {
-        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
       }
 
       const user = await storage.getUser(req.session.userId);
@@ -599,6 +635,8 @@ export function registerRoutes(app: Express): void {
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       await storage.updateUserPassword(user.id, hashedPassword);
+
+      req.session.mustChangePassword = false;
 
       res.json({ success: true, message: "Password changed successfully" });
     } catch (error) {
@@ -618,7 +656,7 @@ export function registerRoutes(app: Express): void {
       // Optimized: Single query instead of 3 separate queries
       const result = await pool.query(`
         SELECT 
-          u.id, u.email, u.full_name as "fullName",
+          u.id, u.email, u.full_name as "fullName", u.must_change_password as "mustChangePassword",
           p.university_id as "universityId", p.other_university as "otherUniversity", p.major, p.graduation_year as "graduationYear", 
           p.linkedin_url as "linkedinUrl", p.bio, p.skills, p.interests, p.availability, p.avatar_url as "avatarUrl",
           p.headline, p.looking_for as "lookingFor", p.portfolio_url as "portfolioUrl", p.github_url as "githubUrl", 
@@ -648,7 +686,7 @@ export function registerRoutes(app: Express): void {
       const sessionTimeout = rememberMe ? null : 60 * 60 * 1000; // null for remember me, 1 hour otherwise
       
       res.json({
-        user: { id: row.id, email: row.email, fullName: row.fullName },
+        user: { id: row.id, email: row.email, fullName: row.fullName, mustChangePassword: row.mustChangePassword || false },
         profile: {
           fullName: row.fullName,
           universityId: row.universityId,
@@ -4224,7 +4262,7 @@ Return valid JSON:
       const crypto = await import('crypto');
       const temporaryPassword = crypto.randomBytes(6).toString('base64url');
       const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
-      const user = await storage.createUser({ email: email.trim().toLowerCase(), password: hashedPassword, fullName: fullName.trim() });
+      const user = await storage.createUser({ email: email.trim().toLowerCase(), password: hashedPassword, fullName: fullName.trim(), mustChangePassword: true });
 
       await storage.createProfile(user.id, {
         email: user.email,
@@ -9180,7 +9218,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         const crypto = await import('crypto');
         const temporaryPassword = crypto.randomBytes(6).toString('base64url');
         const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
-        user = await storage.createUser({ email: trimmedEmail, password: hashedPassword, fullName });
+        user = await storage.createUser({ email: trimmedEmail, password: hashedPassword, fullName, mustChangePassword: true });
 
         await storage.createProfile(user.id, {
           email: trimmedEmail,
