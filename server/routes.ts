@@ -9199,13 +9199,12 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       }
 
       if (Array.isArray(rawTeamEmails)) {
-        const emailRegex2 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (rawTeamEmails.length > 10) {
-          return res.status(400).json({ error: "You can invite up to 10 team members" });
+          return res.status(400).json({ error: "Team information is too long" });
         }
         for (const te of rawTeamEmails) {
-          if (typeof te !== 'string' || !emailRegex2.test(te.trim())) {
-            return res.status(400).json({ error: "Invalid team member email address" });
+          if (typeof te !== 'string') {
+            return res.status(400).json({ error: "Invalid team information" });
           }
         }
       }
