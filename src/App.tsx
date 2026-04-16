@@ -123,8 +123,11 @@ function AppRoutes() {
           <Route path="/" element={<Index />} />
           <Route path="/bruin" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/bruin/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/bruin/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/bruin/reset-password" element={<ResetPassword />} />
           <Route path="/advisors" element={<Advisors />} />
           <Route path="/ambassadors" element={<AmbassadorsPage />} />
           <Route path="/terms" element={<TermsOfService />} />
