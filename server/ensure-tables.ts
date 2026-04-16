@@ -156,17 +156,8 @@ export async function ensureTables() {
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS team_emails JSONB`);
     await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS reminder_sent BOOLEAN DEFAULT false`);
 
-    // Update Bruin application questions to latest version
-    const updatedQuestions = JSON.stringify([
-      { label: "What are you building?", type: "textarea", required: true },
-      { label: "Who are your customers, and what makes your venture highly differentiated? (2-3 sentences)", type: "textarea", required: true },
-      { label: "Why is now the best opportunity? (2 sentences)", type: "textarea", required: true },
-      { label: "Why are you & your team best suited to build this?", type: "textarea", required: true },
-      { label: "What progress have you made so far?", type: "textarea", required: true },
-      { label: "Pitch Deck or Product Demo? If you're not there yet, it's okay!", type: "textarea", required: false },
-    ]);
-    await db.execute(sql`UPDATE groups SET application_questions = ${updatedQuestions}::jsonb, description = ${`"1000 Pitches" is UCLA's largest annual pitch competition. It is hosted by Bruin Entrepreneurs, UCLA's premier entrepreneurship community, empowering student founders through "Startup Lab" accelerator, pitch competitions, and investor network. Join us for the opportunity to present on the popular Bruin Plaza Stage on April 20th, where each finalist could earn up to $1500 cash in a "shark-tank" fashion – convince the judges of your value, and negotiate a cash prize. From our application pool, 15 top founding teams will become finalists. Pitch us your startup idea via concise answers!`} WHERE slug = 'bruin'`);
-    console.log('[ensureTables] ✓ Bruin group application questions and description updated');
+    // NOTE: Bruin group description and application_questions are managed by admins
+    // through the Group Admin UI. Do NOT overwrite them on startup.
 
     console.log('[ensureTables] ✓ group tables verified/created');
 
