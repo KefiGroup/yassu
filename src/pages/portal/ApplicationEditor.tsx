@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Send, CheckCircle2, Clock, XCircle, Upload, FileText, X, ArrowLeft, UserPlus, Mail } from 'lucide-react';
 
@@ -15,7 +18,7 @@ interface GroupInfo {
   description: string;
   logoUrl: string | null;
   primaryColor: string | null;
-  applicationQuestions: { label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[];
+  applicationQuestions: { label: string; type: 'text' | 'textarea' | 'file' | 'radio' | 'checkbox' | 'dropdown' | 'number' | 'date' | 'url'; required: boolean; options?: string[] }[];
 }
 
 interface Application {
@@ -403,6 +406,98 @@ export default function ApplicationEditor() {
                     }}
                     placeholder={isReadOnly ? '' : 'Your answer...'}
                     rows={4}
+                    disabled={isReadOnly}
+                    data-testid={`input-question-${i}`}
+                  />
+                ) : q.type === 'radio' ? (
+                  <RadioGroup
+                    value={answers[i]?.answer || ''}
+                    onValueChange={val => {
+                      setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: val } : a));
+                      setHasChanges(true);
+                    }}
+                    disabled={isReadOnly}
+                    data-testid={`input-question-${i}`}
+                  >
+                    {(q.options || []).map((opt, optIdx) => (
+                      <div key={optIdx} className="flex items-center space-x-2">
+                        <RadioGroupItem value={opt} id={`eq${i}-opt${optIdx}`} />
+                        <Label htmlFor={`eq${i}-opt${optIdx}`} className="font-normal cursor-pointer">{opt}</Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                ) : q.type === 'checkbox' ? (
+                  <div className="space-y-2" data-testid={`input-question-${i}`}>
+                    {(q.options || []).map((opt, optIdx) => {
+                      const selected = (answers[i]?.answer || '').split('|||').filter(Boolean);
+                      const isChecked = selected.includes(opt);
+                      return (
+                        <div key={optIdx} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`eq${i}-chk${optIdx}`}
+                            checked={isChecked}
+                            disabled={isReadOnly}
+                            onCheckedChange={(checked) => {
+                              const newSelected = checked ? [...selected, opt] : selected.filter(s => s !== opt);
+                              setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: newSelected.join('|||') } : a));
+                              setHasChanges(true);
+                            }}
+                          />
+                          <Label htmlFor={`eq${i}-chk${optIdx}`} className="font-normal cursor-pointer">{opt}</Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : q.type === 'dropdown' ? (
+                  <Select
+                    value={answers[i]?.answer || ''}
+                    onValueChange={val => {
+                      setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: val } : a));
+                      setHasChanges(true);
+                    }}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger data-testid={`input-question-${i}`}>
+                      <SelectValue placeholder="Select an option..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(q.options || []).map((opt, optIdx) => (
+                        <SelectItem key={optIdx} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : q.type === 'number' ? (
+                  <Input
+                    type="number"
+                    value={answers[i]?.answer || ''}
+                    onChange={e => {
+                      setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a));
+                      setHasChanges(true);
+                    }}
+                    placeholder={isReadOnly ? '' : 'Enter a number...'}
+                    disabled={isReadOnly}
+                    data-testid={`input-question-${i}`}
+                  />
+                ) : q.type === 'date' ? (
+                  <Input
+                    type="date"
+                    value={answers[i]?.answer || ''}
+                    onChange={e => {
+                      setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a));
+                      setHasChanges(true);
+                    }}
+                    disabled={isReadOnly}
+                    data-testid={`input-question-${i}`}
+                  />
+                ) : q.type === 'url' ? (
+                  <Input
+                    type="url"
+                    value={answers[i]?.answer || ''}
+                    onChange={e => {
+                      setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a));
+                      setHasChanges(true);
+                    }}
+                    placeholder={isReadOnly ? '' : 'https://...'}
                     disabled={isReadOnly}
                     data-testid={`input-question-${i}`}
                   />

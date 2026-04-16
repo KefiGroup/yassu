@@ -460,7 +460,7 @@ export default function GroupAdmin() {
       const answerMap: Record<string, string> = {};
       if (app.answers) {
         for (const a of app.answers) {
-          answerMap[a.question] = a.answer || '';
+          answerMap[a.question] = (a.answer || '').replace(/\|\|\|/g, '; ');
         }
       }
       return [
@@ -900,6 +900,12 @@ export default function GroupAdmin() {
                                           {fileMatch[1] || 'Download file'}
                                           <ExternalLink className="h-3 w-3" />
                                         </a>
+                                      ) : a.answer?.includes('|||') ? (
+                                        <div className="flex flex-wrap gap-1">
+                                          {a.answer.split('|||').filter(Boolean).map((val, vIdx) => (
+                                            <Badge key={vIdx} variant="secondary" className="text-xs">{val}</Badge>
+                                          ))}
+                                        </div>
                                       ) : (
                                         <p className="whitespace-pre-wrap">{a.answer}</p>
                                       )}
@@ -1304,7 +1310,7 @@ export default function GroupAdmin() {
 
 function ApplicationQuestionsEditor({ slug }: { slug: string }) {
   const { toast } = useToast();
-  const [questions, setQuestions] = useState<{ label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[]>([]);
+  const [questions, setQuestions] = useState<{ label: string; type: string; required: boolean; options?: string[] }[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -1322,10 +1328,15 @@ function ApplicationQuestionsEditor({ slug }: { slug: string }) {
   const save = async (updated: typeof questions) => {
     try {
       setSaving(true);
+      const sanitized = updated.map(q => ({
+        ...q,
+        label: q.label.trim(),
+        options: q.options ? q.options.map(o => o.trim()).filter(Boolean) : undefined,
+      }));
       await apiRequest(`/groups/${slug}/application-questions`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationQuestions: updated }),
+        body: JSON.stringify({ applicationQuestions: sanitized }),
       });
       toast({ title: 'Questions saved' });
     } catch {
@@ -1334,8 +1345,28 @@ function ApplicationQuestionsEditor({ slug }: { slug: string }) {
   };
 
   const addQuestion = () => {
-    const updated = [...questions, { label: '', type: 'textarea' as const, required: true }];
+    const updated = [...questions, { label: '', type: 'textarea' as const, required: true, options: [] as string[] }];
     setQuestions(updated);
+  };
+
+  const needsOptions = (type: string) => type === 'radio' || type === 'checkbox' || type === 'dropdown';
+
+  const addOption = (idx: number) => {
+    const q = questions[idx];
+    const opts = [...(q.options || []), ''];
+    updateQuestion(idx, 'options', opts);
+  };
+
+  const updateOption = (qIdx: number, optIdx: number, value: string) => {
+    const q = questions[qIdx];
+    const opts = (q.options || []).map((o, i) => i === optIdx ? value : o);
+    updateQuestion(qIdx, 'options', opts);
+  };
+
+  const removeOption = (qIdx: number, optIdx: number) => {
+    const q = questions[qIdx];
+    const opts = (q.options || []).filter((_, i) => i !== optIdx);
+    updateQuestion(qIdx, 'options', opts);
   };
 
   const removeQuestion = (idx: number) => {
@@ -1370,14 +1401,54 @@ function ApplicationQuestionsEditor({ slug }: { slug: string }) {
               </label>
               <select
                 value={q.type}
-                onChange={e => updateQuestion(i, 'type', e.target.value)}
+                onChange={e => {
+                  const newType = e.target.value;
+                  const updated = questions.map((qq, idx) => {
+                    if (idx !== i) return qq;
+                    const patch: Record<string, any> = { type: newType };
+                    if (needsOptions(newType) && (!qq.options || qq.options.length === 0)) {
+                      patch.options = ['Option 1', 'Option 2'];
+                    }
+                    return { ...qq, ...patch };
+                  });
+                  setQuestions(updated);
+                }}
                 className="border rounded px-2 py-0.5 text-xs bg-background"
               >
                 <option value="text">Short text</option>
                 <option value="textarea">Long text</option>
                 <option value="file">File upload</option>
+                <option value="radio">Multiple choice</option>
+                <option value="checkbox">Checkboxes (select all that apply)</option>
+                <option value="dropdown">Dropdown</option>
+                <option value="number">Number</option>
+                <option value="date">Date</option>
+                <option value="url">URL / Link</option>
               </select>
             </div>
+            {needsOptions(q.type) && (
+              <div className="mt-2 space-y-1.5 pl-2 border-l-2 border-muted">
+                <p className="text-xs text-muted-foreground font-medium">Options:</p>
+                {(q.options || []).map((opt, optIdx) => (
+                  <div key={optIdx} className="flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground w-4">{optIdx + 1}.</span>
+                    <Input
+                      value={opt}
+                      onChange={e => updateOption(i, optIdx, e.target.value)}
+                      placeholder={`Option ${optIdx + 1}`}
+                      className="text-xs h-7 flex-1"
+                      data-testid={`input-option-${i}-${optIdx}`}
+                    />
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeOption(i, optIdx)}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => addOption(i)} data-testid={`button-add-option-${i}`}>
+                  + Add option
+                </Button>
+              </div>
+            )}
           </div>
           <Button size="sm" variant="ghost" onClick={() => removeQuestion(i)} className="shrink-0">
             <X className="w-4 h-4" />

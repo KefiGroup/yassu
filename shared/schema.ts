@@ -620,7 +620,7 @@ export const groups = pgTable("groups", {
   accentColor: text("accent_color"),
   logoUrl: text("logo_url"),
   universityId: uuid("university_id").references(() => universities.id),
-  applicationQuestions: jsonb("application_questions").$type<{ label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[]>(),
+  applicationQuestions: jsonb("application_questions").$type<{ label: string; type: 'text' | 'textarea' | 'file' | 'radio' | 'checkbox' | 'dropdown' | 'number' | 'date' | 'url'; required: boolean; options?: string[] }[]>(),
   redirectUrl: text("redirect_url"),
   submissionMessage: text("submission_message"),
   submissionFileUrl: text("submission_file_url"),

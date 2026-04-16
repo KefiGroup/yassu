@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CheckCircle, Upload, FileText, X, UserPlus, Mail } from 'lucide-react';
@@ -19,7 +22,7 @@ interface GroupPublicInfo {
   logoUrl: string | null;
   primaryColor: string | null;
   accentColor: string | null;
-  applicationQuestions: { label: string; type: 'text' | 'textarea' | 'file'; required: boolean }[];
+  applicationQuestions: { label: string; type: 'text' | 'textarea' | 'file' | 'radio' | 'checkbox' | 'dropdown' | 'number' | 'date' | 'url'; required: boolean; options?: string[] }[];
   redirectUrl: string | null;
   submissionMessage: string | null;
   submissionFileUrl: string | null;
@@ -401,6 +404,79 @@ export default function GroupApply() {
                       onChange={e => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a))}
                       placeholder="Your answer..."
                       rows={4}
+                      required={q.required}
+                      data-testid={`input-question-${i}`}
+                    />
+                  ) : q.type === 'radio' ? (
+                    <RadioGroup
+                      value={answers[i]?.answer || ''}
+                      onValueChange={val => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: val } : a))}
+                      data-testid={`input-question-${i}`}
+                    >
+                      {(q.options || []).map((opt, optIdx) => (
+                        <div key={optIdx} className="flex items-center space-x-2">
+                          <RadioGroupItem value={opt} id={`q${i}-opt${optIdx}`} />
+                          <Label htmlFor={`q${i}-opt${optIdx}`} className="font-normal cursor-pointer">{opt}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  ) : q.type === 'checkbox' ? (
+                    <div className="space-y-2" data-testid={`input-question-${i}`}>
+                      {(q.options || []).map((opt, optIdx) => {
+                        const selected = (answers[i]?.answer || '').split('|||').filter(Boolean);
+                        const isChecked = selected.includes(opt);
+                        return (
+                          <div key={optIdx} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`q${i}-chk${optIdx}`}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => {
+                                const newSelected = checked ? [...selected, opt] : selected.filter(s => s !== opt);
+                                setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: newSelected.join('|||') } : a));
+                              }}
+                            />
+                            <Label htmlFor={`q${i}-chk${optIdx}`} className="font-normal cursor-pointer">{opt}</Label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : q.type === 'dropdown' ? (
+                    <Select
+                      value={answers[i]?.answer || ''}
+                      onValueChange={val => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: val } : a))}
+                    >
+                      <SelectTrigger data-testid={`input-question-${i}`}>
+                        <SelectValue placeholder="Select an option..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(q.options || []).map((opt, optIdx) => (
+                          <SelectItem key={optIdx} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : q.type === 'number' ? (
+                    <Input
+                      type="number"
+                      value={answers[i]?.answer || ''}
+                      onChange={e => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a))}
+                      placeholder="Enter a number..."
+                      required={q.required}
+                      data-testid={`input-question-${i}`}
+                    />
+                  ) : q.type === 'date' ? (
+                    <Input
+                      type="date"
+                      value={answers[i]?.answer || ''}
+                      onChange={e => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a))}
+                      required={q.required}
+                      data-testid={`input-question-${i}`}
+                    />
+                  ) : q.type === 'url' ? (
+                    <Input
+                      type="url"
+                      value={answers[i]?.answer || ''}
+                      onChange={e => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a))}
+                      placeholder="https://..."
                       required={q.required}
                       data-testid={`input-question-${i}`}
                     />
