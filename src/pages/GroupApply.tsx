@@ -63,8 +63,7 @@ export default function GroupApply() {
   const [graduationYear, setGraduationYear] = useState('');
   const [major, setMajor] = useState('');
   const [projectTitle, setProjectTitle] = useState('');
-  const [teamEmails, setTeamEmails] = useState<string[]>([]);
-  const [teamEmailInput, setTeamEmailInput] = useState('');
+  const [teamInfo, setTeamInfo] = useState('');
   const [answers, setAnswers] = useState<{ question: string; answer: string }[]>([]);
 
   const uploadFile = async (file: File, questionIdx: number) => {
@@ -148,7 +147,7 @@ export default function GroupApply() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ answers, projectTitle, teamEmails }),
+          body: JSON.stringify({ answers, projectTitle, teamEmails: teamInfo.trim() ? [teamInfo.trim()] : [] }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to submit');
@@ -158,7 +157,7 @@ export default function GroupApply() {
         const res = await fetch(`/api/groups/${slug}/public-apply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ firstName, lastName, email, universityName, graduationYear, major, answers, projectTitle, teamEmails }),
+          body: JSON.stringify({ firstName, lastName, email, universityName, graduationYear, major, answers, projectTitle, teamEmails: teamInfo.trim() ? [teamInfo.trim()] : [] }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to submit');
@@ -249,8 +248,7 @@ export default function GroupApply() {
                   setGraduationYear('');
                   setMajor('');
                   setProjectTitle('');
-                  setTeamEmails([]);
-                  setTeamEmailInput('');
+                  setTeamInfo('');
                   setFileNames({});
                   setAnswers((groupInfo?.applicationQuestions || []).map((q: any) => ({ question: q.label, answer: '' })));
                 }}
@@ -493,64 +491,18 @@ export default function GroupApply() {
               ))}
 
               <div className="space-y-3">
-                <Label className="flex items-center gap-2">
+                <Label htmlFor="team-info" className="flex items-center gap-2">
                   <UserPlus className="w-4 h-4" />
-                  Invite Team Members
+                  If you have teammates, list their names, roles and emails.
                 </Label>
-                <p className="text-sm text-muted-foreground">
-                  Add email addresses of team members. They'll be automatically added to the group when they create an account.
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    value={teamEmailInput}
-                    onChange={e => setTeamEmailInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        const trimmed = teamEmailInput.trim().toLowerCase();
-                        if (trimmed && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && !teamEmails.includes(trimmed)) {
-                          setTeamEmails(prev => [...prev, trimmed]);
-                          setTeamEmailInput('');
-                        }
-                      }
-                    }}
-                    placeholder="teammate@university.edu"
-                    data-testid="input-team-email"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      const trimmed = teamEmailInput.trim().toLowerCase();
-                      if (trimmed && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && !teamEmails.includes(trimmed)) {
-                        setTeamEmails(prev => [...prev, trimmed]);
-                        setTeamEmailInput('');
-                      }
-                    }}
-                    data-testid="button-add-team-email"
-                  >
-                    Add
-                  </Button>
-                </div>
-                {teamEmails.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {teamEmails.map((em, idx) => (
-                      <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1 px-2">
-                        <Mail className="w-3 h-3" />
-                        {em}
-                        <button
-                          type="button"
-                          onClick={() => setTeamEmails(prev => prev.filter((_, i) => i !== idx))}
-                          className="ml-1 hover:text-destructive"
-                          data-testid={`button-remove-team-email-${idx}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                <Textarea
+                  id="team-info"
+                  value={teamInfo}
+                  onChange={e => setTeamInfo(e.target.value)}
+                  rows={4}
+                  placeholder="e.g. Jane Smith — CTO — jane@ucla.edu"
+                  data-testid="input-team-info"
+                />
               </div>
 
               <Button

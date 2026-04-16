@@ -8669,7 +8669,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
           if (normalizedTeamEmails && normalizedTeamEmails.length > 0) {
             const projTitle = projectTitle || 'a project';
-            for (const teamEmail of normalizedTeamEmails) {
+            const validTeamEmails = normalizedTeamEmails.filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+            for (const teamEmail of validTeamEmails) {
               sendTeamMemberNotificationEmail(teamEmail, '', applicantName, projTitle, group.name)
                 .catch(err => console.error(`[AuthApply] Failed to send team member notification to ${teamEmail}:`, err));
             }
@@ -8757,7 +8758,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       });
 
       if (normalizedTeamEmails && normalizedTeamEmails.length > 0) {
-        const newTeamEmails = normalizedTeamEmails.filter(e => !previousTeamEmails.has(e));
+        const newTeamEmails = normalizedTeamEmails.filter(e => !previousTeamEmails.has(e) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
         if (newTeamEmails.length > 0) {
           try {
             const applicant = await storage.getUser(req.session.userId);
@@ -8879,7 +8880,8 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         if (teamEmails && teamEmails.length > 0) {
           const { sendTeamMemberNotificationEmail } = await import('./email');
           const projTitle = application.projectTitle || 'a project';
-          for (const teamEmail of teamEmails) {
+          const validTeamEmails = teamEmails.filter(e => typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+          for (const teamEmail of validTeamEmails) {
             sendTeamMemberNotificationEmail(teamEmail, '', applicantName, projTitle, group.name)
               .catch(err => console.error(`[Submit] Failed to send team member notification to ${teamEmail}:`, err));
           }
@@ -9290,8 +9292,9 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         // 4. Team member notification emails
         if (normalizedPublicTeamEmails && normalizedPublicTeamEmails.length > 0) {
           const { sendTeamMemberNotificationEmail } = await import('./email');
+          const validPublicTeamEmails = normalizedPublicTeamEmails.filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
           const projTitle = projectTitle || 'a project';
-          for (const teamEmail of normalizedPublicTeamEmails) {
+          for (const teamEmail of validPublicTeamEmails) {
             sendTeamMemberNotificationEmail(teamEmail, '', fullName, projTitle, group.name)
               .then(() => console.log(`[GroupApply] Team member notification sent to: ${teamEmail}`))
               .catch(err => console.error(`[GroupApply] Failed to send team member notification to ${teamEmail}:`, err));
