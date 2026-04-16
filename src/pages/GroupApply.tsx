@@ -279,8 +279,7 @@ export default function GroupApply() {
             <h1 className="text-2xl font-bold">{groupInfo.name}</h1>
             {groupInfo.description && (
               <div
-                className="text-sm leading-relaxed opacity-90 prose prose-sm prose-invert max-w-none min-w-0 text-left"
-                style={{ wordBreak: 'normal', overflowWrap: 'break-word', hyphens: 'none' }}
+                className="group-description text-sm leading-relaxed opacity-90 max-w-none text-left whitespace-pre-line"
                 dangerouslySetInnerHTML={{ __html: groupInfo.description }}
               />
             )}
