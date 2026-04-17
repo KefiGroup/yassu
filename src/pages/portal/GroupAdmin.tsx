@@ -565,7 +565,7 @@ export default function GroupAdmin() {
                 </Badge>
               </div>
               {group.description ? (
-                <div className="group-description text-sm text-muted-foreground mt-0.5 max-w-none line-clamp-3" dangerouslySetInnerHTML={{ __html: group.description }} />
+                <div className="group-description text-sm text-muted-foreground mt-0.5 max-w-none line-clamp-3" dangerouslySetInnerHTML={{ __html: group.description.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ') }} />
               ) : (
                 <p className="text-sm text-muted-foreground mt-0.5">No description</p>
               )}
@@ -821,7 +821,7 @@ export default function GroupAdmin() {
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Description</p>
                         {group.description ? (
-                          <div className="group-description text-muted-foreground text-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.description }} />
+                          <div className="group-description text-muted-foreground text-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.description.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ') }} />
                         ) : (
                           <p className="text-muted-foreground">No description set</p>
                         )}
