@@ -624,6 +624,8 @@ export const groups = pgTable("groups", {
   redirectUrl: text("redirect_url"),
   submissionMessage: text("submission_message"),
   submissionFileUrl: text("submission_file_url"),
+  autoApprove: boolean("auto_approve").default(false).notNull(),
+  applicationDeadline: timestamp("application_deadline"),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

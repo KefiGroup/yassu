@@ -212,6 +212,7 @@ export interface IStorage {
   getUserApplicationForGroup(userId: number, groupId: string): Promise<schema.GroupApplication | undefined>;
   createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication>;
   updateGroupApplication(id: string, status: "approved" | "rejected", reviewedBy: number): Promise<schema.GroupApplication | undefined>;
+  deleteGroupApplication(id: string): Promise<void>;
   updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[], extra?: { universityName?: string; graduationYear?: string; major?: string }): Promise<schema.GroupApplication | undefined>;
   getApplicationsByTeamEmail(email: string): Promise<schema.GroupApplication[]>;
   
@@ -2181,6 +2182,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(schema.groupApplications.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteGroupApplication(id: string): Promise<void> {
+    await db.delete(schema.groupApplications).where(eq(schema.groupApplications.id, id));
   }
 
   async updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[], extra?: { universityName?: string; graduationYear?: string; major?: string }): Promise<schema.GroupApplication | undefined> {

@@ -26,6 +26,7 @@ interface GroupPublicInfo {
   redirectUrl: string | null;
   submissionMessage: string | null;
   submissionFileUrl: string | null;
+  applicationDeadline?: string | null;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -206,14 +207,14 @@ export default function GroupApply() {
               <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: `hsl(${primaryHSL} / 0.15)` }}>
                 <CheckCircle className="h-8 w-8" style={{ color: `hsl(${primaryHSL})` }} />
               </div>
-              <h2 className="text-2xl font-bold">Your 1000 Pitches Application Saved!</h2>
+              <h2 className="text-2xl font-bold">Your {groupInfo.name} Application Saved!</h2>
               <p className="text-muted-foreground">
-                {groupInfo.submissionMessage || <>Thank you for applying for the <strong>{groupInfo.name}</strong> 1000 Pitches. Your application is now saved in Yassu.ai, our platform partner for 1000 Pitches.</>}
+                {groupInfo.submissionMessage || <>Thank you for applying to <strong>{groupInfo.name}</strong>. Your application is now saved in Yassu.ai.</>}
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
                 {isNewUser
-                  ? 'Create your Yassu.ai account to submit your application. You can also review and edit your application before submitting.'
-                  : 'Log in to your Yassu.ai account to review, edit, and submit your application.'}
+                  ? 'Please check your email for your Yassu.ai login credentials. You can use them to sign in, review, edit, or update your application at any time before the deadline.'
+                  : 'Your application has been received. You can sign in to your Yassu.ai account anytime to review or update your application before the deadline.'}
               </div>
               {groupInfo.submissionFileUrl && (
                 isImage ? (
@@ -225,16 +226,13 @@ export default function GroupApply() {
                   </a>
                 )
               )}
-              <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                {groupInfo.redirectUrl && (
+              {groupInfo.redirectUrl && (
+                <div className="flex justify-center">
                   <Button onClick={() => window.location.href = groupInfo!.redirectUrl!} style={{ backgroundColor: `hsl(${primaryHSL})` }} className="text-white" data-testid="button-redirect">
                     Continue to {groupInfo.name}
                   </Button>
-                )}
-                <Button onClick={() => window.location.href = '/auth'} variant={groupInfo.redirectUrl ? 'outline' : 'default'} style={!groupInfo.redirectUrl ? { backgroundColor: `hsl(${primaryHSL})` } : {}} className={!groupInfo.redirectUrl ? 'text-white' : ''} data-testid="button-go-login">
-                  {isNewUser ? 'Go to Login to Create Your Account' : 'Go to Login'}
-                </Button>
-              </div>
+                </div>
+              )}
               <Button
                 variant="ghost"
                 className="text-sm"
@@ -288,6 +286,16 @@ export default function GroupApply() {
 
         <main className="flex-1 p-4 lg:p-10 lg:overflow-y-auto">
           <div className="max-w-2xl mx-auto">
+            {groupInfo.applicationDeadline && new Date(groupInfo.applicationDeadline) < new Date() && (
+              <Card className="mb-4 border-amber-300 bg-amber-50">
+                <CardContent className="pt-6">
+                  <p className="text-amber-900 font-semibold">Applications are closed</p>
+                  <p className="text-amber-800 text-sm mt-1">
+                    The application deadline ({new Date(groupInfo.applicationDeadline).toLocaleString()}) has passed. New applications can no longer be submitted.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader>
                 <CardTitle>{isLoggedIn ? 'New Application' : 'Application'}</CardTitle>

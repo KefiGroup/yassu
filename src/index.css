@@ -115,6 +115,21 @@
   to { box-shadow: 0 0 40px -10px hsl(var(--primary) / 0.8); }
 }
 
+/* Group description: force long words/URLs to wrap inside narrow sidebars */
+.group-description,
+.group-description * {
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  white-space: normal;
+  max-width: 100%;
+}
+.group-description p {
+  margin: 0 0 0.5em 0;
+}
+.group-description a {
+  text-decoration: underline;
+}
+
 /* MDXEditor styling fixes */
 .mdxeditor {
   --accentBase: hsl(var(--primary));

@@ -31,6 +31,8 @@ interface GroupDetails {
   redirectUrl: string | null;
   submissionMessage: string | null;
   submissionFileUrl: string | null;
+  autoApprove?: boolean;
+  applicationDeadline?: string | null;
 }
 
 interface GroupMember {
@@ -135,7 +137,7 @@ export default function GroupAdmin() {
   const [ratingScore, setRatingScore] = useState<number>(5);
   const [ratingFeedback, setRatingFeedback] = useState('');
   const [isEditingOverview, setIsEditingOverview] = useState(false);
-  const [editForm, setEditForm] = useState<{ name: string; description: string; primaryColor: string; accentColor: string }>({ name: '', description: '', primaryColor: '', accentColor: '' });
+  const [editForm, setEditForm] = useState<{ name: string; description: string; primaryColor: string; accentColor: string; autoApprove: boolean; applicationDeadline: string }>({ name: '', description: '', primaryColor: '', accentColor: '', autoApprove: false, applicationDeadline: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -262,6 +264,20 @@ export default function GroupAdmin() {
     },
   });
 
+  const deleteApplicationMutation = useMutation({
+    mutationFn: async (applicationId: string) => {
+      return apiRequest(`/groups/${activeSlug}/applications/${applicationId}`, { method: 'DELETE' });
+    },
+    onSuccess: () => {
+      toast({ title: 'Application deleted' });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'applications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'details'] });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to delete application.', variant: 'destructive' });
+    },
+  });
+
   const rateMutation = useMutation({
     mutationFn: async ({ ideaId, score, feedback }: { ideaId: string; score: number; feedback?: string }) => {
       return apiRequest(`/groups/${activeSlug}/ideas/${ideaId}/rate`, {
@@ -346,11 +362,13 @@ export default function GroupAdmin() {
   };
 
   const updateGroupMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; primaryColor: string; accentColor: string }) => {
+    mutationFn: async (data: { name: string; description: string; primaryColor: string; accentColor: string; autoApprove?: boolean; applicationDeadline?: string | null }) => {
+      const payload: any = { ...data };
+      if (payload.applicationDeadline === '') payload.applicationDeadline = null;
       return apiRequest(`/groups/${activeSlug}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
     },
     onSuccess: () => {
@@ -683,7 +701,14 @@ export default function GroupAdmin() {
                 {myRole !== 'judge' && (
                   <Button size="sm" variant={isEditingOverview ? 'default' : 'outline'} onClick={() => {
                     if (isEditingOverview) { setIsEditingOverview(false); } else {
-                      setEditForm({ name: group.name || '', description: group.description || '', primaryColor: group.primaryColor || '', accentColor: group.accentColor || '' });
+                      setEditForm({
+                        name: group.name || '',
+                        description: group.description || '',
+                        primaryColor: group.primaryColor || '',
+                        accentColor: group.accentColor || '',
+                        autoApprove: !!group.autoApprove,
+                        applicationDeadline: group.applicationDeadline ? new Date(group.applicationDeadline).toISOString().slice(0, 16) : '',
+                      });
                       setIsEditingOverview(true);
                     }
                   }} data-testid="button-toggle-edit-overview">
@@ -753,8 +778,35 @@ export default function GroupAdmin() {
                           />
                         </Suspense>
                       </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">Application Deadline (optional)</label>
+                        <Input
+                          type="datetime-local"
+                          value={editForm.applicationDeadline}
+                          onChange={e => setEditForm({ ...editForm, applicationDeadline: e.target.value })}
+                          data-testid="input-edit-overview-deadline"
+                        />
+                        <p className="text-[11px] text-muted-foreground">After this date and time, no new applications can be submitted and existing applications become read-only.</p>
+                      </div>
+                      <div className="flex items-start gap-2 pt-1">
+                        <input
+                          id="auto-approve-toggle"
+                          type="checkbox"
+                          className="mt-1"
+                          checked={editForm.autoApprove}
+                          onChange={e => setEditForm({ ...editForm, autoApprove: e.target.checked })}
+                          data-testid="input-edit-overview-auto-approve"
+                        />
+                        <div>
+                          <label htmlFor="auto-approve-toggle" className="text-sm font-medium cursor-pointer">Auto-approve all applications</label>
+                          <p className="text-[11px] text-muted-foreground">When enabled, new applicants are automatically approved and added as group members.</p>
+                        </div>
+                      </div>
                       <div className="flex gap-2 pt-1">
-                        <Button size="sm" disabled={updateGroupMutation.isPending} onClick={() => updateGroupMutation.mutate(editForm)} data-testid="button-save-overview">
+                        <Button size="sm" disabled={updateGroupMutation.isPending} onClick={() => updateGroupMutation.mutate({
+                          ...editForm,
+                          applicationDeadline: editForm.applicationDeadline ? new Date(editForm.applicationDeadline).toISOString() : null,
+                        })} data-testid="button-save-overview">
                           {updateGroupMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Save Changes
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setIsEditingOverview(false)}>Cancel</Button>
@@ -773,6 +825,20 @@ export default function GroupAdmin() {
                         ) : (
                           <p className="text-muted-foreground">No description set</p>
                         )}
+                      </div>
+                      <div className="flex flex-wrap gap-x-6 gap-y-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Application Deadline</p>
+                          <p className="font-medium" data-testid="text-deadline">
+                            {group.applicationDeadline
+                              ? new Date(group.applicationDeadline).toLocaleString()
+                              : 'No deadline'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Auto-approve</p>
+                          <p className="font-medium" data-testid="text-auto-approve">{group.autoApprove ? 'Enabled' : 'Disabled'}</p>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -924,29 +990,46 @@ export default function GroupAdmin() {
                             </p>
                           </div>
                         </div>
-                        {(app.status === 'pending' || app.status === 'draft') && (
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                              size="sm"
-                              onClick={() => applicationMutation.mutate({ applicationId: app.id, status: 'approved' })}
-                              disabled={applicationMutation.isPending}
-                              data-testid={`button-approve-${app.id}`}
-                            >
-                              <ThumbsUp className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => applicationMutation.mutate({ applicationId: app.id, status: 'rejected' })}
-                              disabled={applicationMutation.isPending}
-                              data-testid={`button-reject-${app.id}`}
-                            >
-                              <ThumbsDown className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {(app.status === 'pending' || app.status === 'draft') && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => applicationMutation.mutate({ applicationId: app.id, status: 'approved' })}
+                                disabled={applicationMutation.isPending}
+                                data-testid={`button-approve-${app.id}`}
+                              >
+                                <ThumbsUp className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => applicationMutation.mutate({ applicationId: app.id, status: 'rejected' })}
+                                disabled={applicationMutation.isPending}
+                                data-testid={`button-reject-${app.id}`}
+                              >
+                                <ThumbsDown className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => {
+                              if (confirm(`Permanently delete the application from ${app.user?.fullName || app.user?.email || 'this applicant'}? This cannot be undone.`)) {
+                                deleteApplicationMutation.mutate(app.id);
+                              }
+                            }}
+                            disabled={deleteApplicationMutation.isPending}
+                            data-testid={`button-delete-application-${app.id}`}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

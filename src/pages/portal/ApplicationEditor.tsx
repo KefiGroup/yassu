@@ -19,6 +19,7 @@ interface GroupInfo {
   logoUrl: string | null;
   primaryColor: string | null;
   applicationQuestions: { label: string; type: 'text' | 'textarea' | 'file' | 'radio' | 'checkbox' | 'dropdown' | 'number' | 'date' | 'url'; required: boolean; options?: string[] }[];
+  applicationDeadline?: string | null;
 }
 
 interface Application {
@@ -181,6 +182,10 @@ export default function ApplicationEditor() {
   };
 
   const handleSubmit = async () => {
+    if (group?.applicationDeadline && new Date(group.applicationDeadline) < new Date()) {
+      toast({ title: 'Applications are closed', description: 'The deadline has passed.', variant: 'destructive' });
+      return;
+    }
     const questions = group?.applicationQuestions || [];
     for (let i = 0; i < questions.length; i++) {
       if (questions[i].required && !answers[i]?.answer?.trim()) {
@@ -241,7 +246,8 @@ export default function ApplicationEditor() {
   const isPending = application?.status === 'pending';
   const isApproved = application?.status === 'approved';
   const isRejected = application?.status === 'rejected';
-  const isReadOnly = !isDraft && !isPending;
+  const deadlinePassed = !!(group?.applicationDeadline && new Date(group.applicationDeadline) < new Date());
+  const isReadOnly = isRejected || deadlinePassed;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -258,10 +264,11 @@ export default function ApplicationEditor() {
             <div>
               <CardTitle className="text-xl">{group.name} Application</CardTitle>
               <CardDescription>
-                {isDraft && 'Review your answers and submit when ready.'}
-                {isPending && 'Your application is under review. You can still edit your answers.'}
-                {isApproved && 'Your application has been approved!'}
+                {isDraft && !deadlinePassed && 'Review your answers and submit when ready.'}
+                {isPending && !deadlinePassed && 'Your application is under review. You can still edit your answers until the deadline.'}
+                {isApproved && !deadlinePassed && 'Your application has been approved! You can still update your answers until the deadline.'}
                 {isRejected && 'Your application was not accepted.'}
+                {deadlinePassed && !isRejected && `The application deadline (${new Date(group!.applicationDeadline!).toLocaleString()}) has passed. Your application is now read-only.`}
                 {!application && 'Fill out the form to apply.'}
               </CardDescription>
             </div>

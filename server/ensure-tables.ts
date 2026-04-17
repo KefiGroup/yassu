@@ -164,6 +164,8 @@ export async function ensureTables() {
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS redirect_url TEXT`);
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS submission_message TEXT`);
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS submission_file_url TEXT`);
+    await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS auto_approve BOOLEAN NOT NULL DEFAULT false`);
+    await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS application_deadline TIMESTAMP`);
 
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS email_logs (

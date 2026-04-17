@@ -8341,11 +8341,17 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         }
       }
 
-      const allowedFields = ['name', 'description', 'primaryColor', 'accentColor', 'universityId', 'redirectUrl', 'submissionMessage', 'submissionFileUrl'];
+      const allowedFields = ['name', 'description', 'primaryColor', 'accentColor', 'universityId', 'redirectUrl', 'submissionMessage', 'submissionFileUrl', 'autoApprove', 'applicationDeadline'];
       const updates: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
-          updates[field] = req.body[field];
+          if (field === 'applicationDeadline') {
+            updates[field] = req.body[field] ? new Date(req.body[field]) : null;
+          } else if (field === 'autoApprove') {
+            updates[field] = !!req.body[field];
+          } else {
+            updates[field] = req.body[field];
+          }
         }
       }
       if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No valid fields to update" });
@@ -8611,6 +8617,10 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const { motivation, asDraft, answers, projectTitle, teamEmails: rawTeamEmails } = req.body;
 
+      if (!asDraft && (group as any).applicationDeadline && new Date((group as any).applicationDeadline) < new Date()) {
+        return res.status(400).json({ error: "Applications are closed for this group." });
+      }
+
       const user = await storage.getUser(req.session.userId);
       const profile = await storage.getProfile(req.session.userId);
       const applicantName = user?.fullName || user?.email || 'A user';
@@ -8631,18 +8641,22 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         graduationYear: profile?.graduationYear ? String(profile.graduationYear) : null,
         major: profile?.major || null,
         teamEmails: normalizedTeamEmails || null,
-        status: asDraft ? 'draft' : 'pending',
+        status: asDraft ? 'draft' : ((group as any).autoApprove ? 'approved' : 'pending'),
         reviewedBy: null,
       });
 
+      if (!asDraft && (group as any).autoApprove) {
+        try {
+          await storage.addGroupMember(group.id, req.session.userId, 'member');
+        } catch (e) { /* member already exists */ }
+      }
+
       if (!asDraft) {
         try {
-          const { sendApplicationConfirmationEmail, sendAdminApplicationNotificationEmail, sendSuperAdminApplicationNotificationEmail, sendTeamMemberNotificationEmail } = await import('./email');
+          const { sendAdminApplicationNotificationEmail, sendSuperAdminApplicationNotificationEmail, sendTeamMemberNotificationEmail } = await import('./email');
 
-          if (applicantEmail) {
-            sendApplicationConfirmationEmail(applicantEmail, applicantName, group.name)
-              .catch(err => console.error(`[AuthApply] Failed to send confirmation email:`, err));
-          }
+          // First confirmation email intentionally omitted — temp-password account email
+          // (for new users) and in-app notifications cover the applicant.
 
           const members = await storage.getGroupMembers(group.id);
           const adminsAndOwners = members.filter(m => m.role === 'admin' || m.role === 'owner');
@@ -8727,6 +8741,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
           logoUrl: (group as any).logoUrl || null,
           primaryColor: (group as any).primaryColor || null,
           applicationQuestions: (group as any).applicationQuestions || [],
+          applicationDeadline: (group as any).applicationDeadline || null,
         },
       });
     } catch (error) {
@@ -8743,7 +8758,12 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const application = await storage.getUserApplicationForGroup(req.session.userId, group.id);
       if (!application) return res.status(404).json({ error: "No application found" });
-      if (application.status !== 'draft' && application.status !== 'pending') return res.status(400).json({ error: "Only draft or pending applications can be edited" });
+      if (application.status === 'rejected') {
+        return res.status(400).json({ error: "Rejected applications cannot be edited" });
+      }
+      if ((group as any).applicationDeadline && new Date((group as any).applicationDeadline) < new Date()) {
+        return res.status(400).json({ error: "The application deadline has passed; this application can no longer be edited." });
+      }
 
       const { answers, projectTitle, universityName, graduationYear, major, teamEmails } = req.body;
       if (!Array.isArray(answers)) return res.status(400).json({ error: "Answers must be an array" });
@@ -8926,19 +8946,40 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       const allApps = await storage.getGroupApplications(group.id);
       const targetApp = allApps.find(a => a.id === req.params.applicationId);
       if (!targetApp) return res.status(404).json({ error: "Application not found in this group" });
-      if (targetApp.status !== 'pending' && targetApp.status !== 'draft') return res.status(400).json({ error: "Application has already been reviewed" });
 
       const updated = await storage.updateGroupApplication(req.params.applicationId, status, req.session.userId);
       if (!updated) return res.status(404).json({ error: "Application not found" });
 
       if (status === 'approved') {
-        await storage.addGroupMember(group.id, updated.userId, 'member');
+        try { await storage.addGroupMember(group.id, updated.userId, 'member'); } catch (e) { /* exists */ }
       }
 
       res.json(updated);
     } catch (error) {
       console.error("Update application error:", error);
       res.status(500).json({ error: "Failed to update application" });
+    }
+  });
+
+  app.delete("/api/groups/:slug/applications/:applicationId", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const allApps = await storage.getGroupApplications(group.id);
+      const targetApp = allApps.find(a => a.id === req.params.applicationId);
+      if (!targetApp) return res.status(404).json({ error: "Application not found in this group" });
+
+      await storage.deleteGroupApplication(req.params.applicationId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete application error:", error);
+      res.status(500).json({ error: "Failed to delete application" });
     }
   });
 
@@ -9148,6 +9189,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         redirectUrl: group.redirectUrl || null,
         submissionMessage: group.submissionMessage || null,
         submissionFileUrl: group.submissionFileUrl || null,
+        applicationDeadline: (group as any).applicationDeadline || null,
       });
     } catch (error) {
       console.error("Get public group info error:", error);
@@ -9160,6 +9202,10 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     try {
       const group = await storage.getGroupBySlug(req.params.slug);
       if (!group) return res.status(404).json({ error: "Group not found" });
+
+      if ((group as any).applicationDeadline && new Date((group as any).applicationDeadline) < new Date()) {
+        return res.status(400).json({ error: "Applications are closed for this group." });
+      }
 
       const { firstName, lastName, email, universityName, graduationYear, major, answers, projectTitle, teamEmails: rawTeamEmails } = req.body;
       if (!firstName || !lastName || !email) {
@@ -9239,7 +9285,7 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
       }
 
       const normalizedPublicTeamEmails = Array.isArray(rawTeamEmails) ? rawTeamEmails.map((e: string) => e.trim().toLowerCase()).filter(Boolean) : undefined;
-      await storage.createGroupApplication({
+      const newApplication = await storage.createGroupApplication({
         groupId: group.id,
         userId: user.id,
         motivation: answers?.map((a: { question: string; answer: string }) => `${a.question}: ${a.answer}`).join('\n\n') || '',
@@ -9249,17 +9295,23 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         graduationYear: typeof graduationYear === 'string' ? graduationYear.trim() || null : null,
         major: typeof major === 'string' ? major.trim() || null : null,
         teamEmails: normalizedPublicTeamEmails || null,
-        status: 'pending',
+        status: (group as any).autoApprove ? 'approved' : 'pending',
       });
+
+      // Auto-add applicant as group member if auto-approved
+      if ((group as any).autoApprove && newApplication) {
+        try {
+          await storage.addGroupMember(group.id, user.id, 'member');
+        } catch (e) { /* member already exists */ }
+      }
 
       // Send remaining email notifications (non-blocking, after account email is already delivered)
       try {
-        const { sendApplicationConfirmationEmail, sendAdminApplicationNotificationEmail, sendSuperAdminApplicationNotificationEmail } = await import('./email');
+        const { sendAdminApplicationNotificationEmail, sendSuperAdminApplicationNotificationEmail } = await import('./email');
 
-        // 1. Applicant confirmation email (sent after account email for new users)
-        sendApplicationConfirmationEmail(trimmedEmail, fullName, group.name)
-          .then(() => console.log(`[GroupApply] Confirmation email sent to: ${trimmedEmail}`))
-          .catch(err => console.error(`[GroupApply] Failed to send confirmation email to ${trimmedEmail}:`, err));
+        // NOTE: First "Application Saved / Create Account" confirmation email is intentionally
+        // omitted for group-originated applications — the temp-password account email
+        // already serves as the user's first communication.
 
         // 2. Group admin/owner notification emails
         const members = await storage.getGroupMembers(group.id);
