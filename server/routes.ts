@@ -8599,10 +8599,22 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
 
       const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
       const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
-      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+      const members = await storage.getGroupMembers(group.id);
+      const isJudge = members.some(m => m.userId === req.session.userId && m.role === 'judge');
+      const rubricEnabled = (group as any).rubricEnabled === true;
+      // Admins/superadmins always; judges only when the group uses the rubric on applications
+      if (!isAdmin && !isSuperAdmin && !(isJudge && rubricEnabled)) {
+        return res.status(403).json({ error: "Group admin access required" });
+      }
 
       const applications = await storage.getGroupApplications(group.id);
-      res.json(applications);
+      const aggregates = rubricEnabled ? await storage.getApplicationRatingsAggregate(group.id) : {};
+      const enriched = applications.map(a => ({
+        ...a,
+        avgScore: aggregates[a.id]?.avgScore ?? null,
+        ratingCount: aggregates[a.id]?.ratingCount ?? 0,
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Get group applications error:", error);
       res.status(500).json({ error: "Failed to fetch applications" });
@@ -9080,44 +9092,97 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         return res.status(400).json({ error: "This idea does not belong to this group" });
       }
 
-      const { score, feedback, scoreProblem, scoreSolution, scoreAudience, scoreInnovation, scoreClarity } = req.body;
-      const isRubric = (group as any).rubricEnabled === true || (group as any).rubric_enabled === true;
-
-      let finalScore: number;
-      let sp: number | null = null, ss: number | null = null, sa: number | null = null, si: number | null = null, sc: number | null = null;
-
-      if (isRubric) {
-        const subs = [scoreProblem, scoreSolution, scoreAudience, scoreInnovation, scoreClarity];
-        for (const v of subs) {
-          if (typeof v !== 'number' || !Number.isFinite(v) || v < 1 || v > 5) {
-            return res.status(400).json({ error: "Each rubric score must be a number between 1 and 5" });
-          }
-        }
-        sp = scoreProblem; ss = scoreSolution; sa = scoreAudience; si = scoreInnovation; sc = scoreClarity;
-        finalScore = sp! + ss! + sa! + si! + sc!; // 5..25
-      } else {
-        if (typeof score !== 'number' || score < 1 || score > 10) {
-          return res.status(400).json({ error: "Score must be between 1 and 10" });
-        }
-        finalScore = score;
+      const { score, feedback } = req.body;
+      if (typeof score !== 'number' || score < 1 || score > 10) {
+        return res.status(400).json({ error: "Score must be between 1 and 10" });
       }
 
       const rating = await storage.upsertGroupIdeaRating({
         groupId: group.id,
         ideaId: req.params.ideaId,
         ratedBy: req.session.userId,
-        score: finalScore,
+        score,
         feedback,
-        scoreProblem: sp,
-        scoreSolution: ss,
-        scoreAudience: sa,
-        scoreInnovation: si,
-        scoreClarity: sc,
       });
       res.json(rating);
     } catch (error) {
       console.error("Rate idea error:", error);
       res.status(500).json({ error: "Failed to rate idea" });
+    }
+  });
+
+  app.get("/api/groups/:slug/applications/:applicationId/ratings", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const rubricEnabled = (group as any).rubricEnabled === true || (group as any).rubric_enabled === true;
+      if (!rubricEnabled) return res.status(400).json({ error: "This group does not use the application rubric" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      const members = await storage.getGroupMembers(group.id);
+      const isJudge = members.some(m => m.userId === req.session.userId && m.role === 'judge');
+      if (!isAdmin && !isSuperAdmin && !isJudge) return res.status(403).json({ error: "Rating access required" });
+
+      // Confirm the application belongs to this group AND is not soft-deleted
+      const groupApps = await storage.getGroupApplications(group.id);
+      if (!groupApps.some(a => a.id === req.params.applicationId)) {
+        return res.status(404).json({ error: "Application not found in this group" });
+      }
+
+      const ratings = await storage.getApplicationRatings(req.params.applicationId, group.id);
+      res.json(ratings);
+    } catch (error) {
+      console.error("Get application ratings error:", error);
+      res.status(500).json({ error: "Failed to fetch application ratings" });
+    }
+  });
+
+  app.post("/api/groups/:slug/applications/:applicationId/rate", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const rubricEnabled = (group as any).rubricEnabled === true || (group as any).rubric_enabled === true;
+      if (!rubricEnabled) return res.status(400).json({ error: "This group does not use the application rubric" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      const members = await storage.getGroupMembers(group.id);
+      const isJudge = members.some(m => m.userId === req.session.userId && m.role === 'judge');
+      if (!isAdmin && !isSuperAdmin && !isJudge) return res.status(403).json({ error: "Rating access required" });
+
+      // Verify the application belongs to this group (and is not deleted)
+      const groupApps = await storage.getGroupApplications(group.id);
+      const target = groupApps.find(a => a.id === req.params.applicationId);
+      if (!target) return res.status(404).json({ error: "Application not found in this group" });
+
+      const { feedback, scoreProblem, scoreSolution, scoreAudience, scoreInnovation, scoreClarity } = req.body || {};
+      const subs = [scoreProblem, scoreSolution, scoreAudience, scoreInnovation, scoreClarity];
+      for (const v of subs) {
+        if (typeof v !== 'number' || !Number.isFinite(v) || v < 1 || v > 5) {
+          return res.status(400).json({ error: "Each rubric score must be a number between 1 and 5" });
+        }
+      }
+
+      const rating = await storage.upsertGroupApplicationRating({
+        groupId: group.id,
+        applicationId: req.params.applicationId,
+        ratedBy: req.session.userId,
+        feedback: typeof feedback === 'string' ? feedback : undefined,
+        scoreProblem,
+        scoreSolution,
+        scoreAudience,
+        scoreInnovation,
+        scoreClarity,
+      });
+      res.json(rating);
+    } catch (error) {
+      console.error("Rate application error:", error);
+      res.status(500).json({ error: "Failed to rate application" });
     }
   });
 

@@ -223,6 +223,11 @@ export interface IStorage {
   getIdeaRatings(ideaId: string, groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null })[]>;
   upsertGroupIdeaRating(data: { groupId: string; ideaId: string; ratedBy: number; score: number; feedback?: string; scoreProblem?: number | null; scoreSolution?: number | null; scoreAudience?: number | null; scoreInnovation?: number | null; scoreClarity?: number | null }): Promise<schema.GroupIdeaRating>;
   getGroupIdeasWithRatings(groupId: string): Promise<(schema.Idea & { creatorName: string | null; avgScore: number | null; ratingCount: number })[]>;
+
+  // Group Application Ratings (rubric)
+  getApplicationRatings(applicationId: string, groupId: string): Promise<(schema.GroupApplicationRating & { raterName: string | null })[]>;
+  getApplicationRatingsAggregate(groupId: string): Promise<Record<string, { avgScore: number | null; ratingCount: number }>>;
+  upsertGroupApplicationRating(data: { groupId: string; applicationId: string; ratedBy: number; feedback?: string; scoreProblem: number; scoreSolution: number; scoreAudience: number; scoreInnovation: number; scoreClarity: number }): Promise<schema.GroupApplicationRating>;
   
   // Pitch Decks
   getPitchDeck(ideaId: string): Promise<typeof schema.pitchDecks.$inferSelect | undefined>;
@@ -2327,6 +2332,61 @@ export class DatabaseStorage implements IStorage {
     }));
 
     return results;
+  }
+
+  async getApplicationRatings(applicationId: string, groupId: string): Promise<(schema.GroupApplicationRating & { raterName: string | null })[]> {
+    const results = await db
+      .select({
+        rating: schema.groupApplicationRatings,
+        raterName: schema.users.fullName,
+      })
+      .from(schema.groupApplicationRatings)
+      .innerJoin(schema.users, eq(schema.groupApplicationRatings.ratedBy, schema.users.id))
+      .where(and(
+        eq(schema.groupApplicationRatings.applicationId, applicationId),
+        eq(schema.groupApplicationRatings.groupId, groupId),
+      ))
+      .orderBy(desc(schema.groupApplicationRatings.updatedAt));
+
+    return results.map(r => ({ ...r.rating, raterName: r.raterName }));
+  }
+
+  async getApplicationRatingsAggregate(groupId: string): Promise<Record<string, { avgScore: number | null; ratingCount: number }>> {
+    const rows = await db
+      .select({
+        applicationId: schema.groupApplicationRatings.applicationId,
+        score: schema.groupApplicationRatings.score,
+      })
+      .from(schema.groupApplicationRatings)
+      .where(eq(schema.groupApplicationRatings.groupId, groupId));
+
+    const buckets: Record<string, number[]> = {};
+    for (const r of rows) {
+      if (!buckets[r.applicationId]) buckets[r.applicationId] = [];
+      buckets[r.applicationId].push(r.score);
+    }
+
+    const out: Record<string, { avgScore: number | null; ratingCount: number }> = {};
+    for (const [appId, scores] of Object.entries(buckets)) {
+      const avg = scores.reduce((s, n) => s + n, 0) / scores.length;
+      out[appId] = { avgScore: Math.round(avg * 10) / 10, ratingCount: scores.length };
+    }
+    return out;
+  }
+
+  async upsertGroupApplicationRating(data: { groupId: string; applicationId: string; ratedBy: number; feedback?: string; scoreProblem: number; scoreSolution: number; scoreAudience: number; scoreInnovation: number; scoreClarity: number }): Promise<schema.GroupApplicationRating> {
+    const total = data.scoreProblem + data.scoreSolution + data.scoreAudience + data.scoreInnovation + data.scoreClarity;
+    const result = await db.execute(sql`
+      INSERT INTO group_application_ratings (group_id, application_id, rated_by, score, feedback, score_problem, score_solution, score_audience, score_innovation, score_clarity)
+      VALUES (${data.groupId}, ${data.applicationId}, ${data.ratedBy}, ${total}, ${data.feedback || null}, ${data.scoreProblem}, ${data.scoreSolution}, ${data.scoreAudience}, ${data.scoreInnovation}, ${data.scoreClarity})
+      ON CONFLICT (application_id, rated_by) DO UPDATE
+      SET score = ${total}, feedback = ${data.feedback || null},
+          score_problem = ${data.scoreProblem}, score_solution = ${data.scoreSolution}, score_audience = ${data.scoreAudience},
+          score_innovation = ${data.scoreInnovation}, score_clarity = ${data.scoreClarity},
+          updated_at = NOW()
+      RETURNING *
+    `);
+    return result.rows[0] as any as schema.GroupApplicationRating;
   }
 
 }

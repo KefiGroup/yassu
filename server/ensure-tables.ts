@@ -177,6 +177,28 @@ export async function ensureTables() {
     await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_innovation INTEGER`);
     await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_clarity INTEGER`);
 
+    // Rubric ratings for group applications (the Bruin use case judges applications, not ideas)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS group_application_ratings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+        application_id UUID NOT NULL REFERENCES group_applications(id) ON DELETE CASCADE,
+        rated_by INTEGER NOT NULL REFERENCES users(id),
+        score INTEGER NOT NULL,
+        feedback TEXT,
+        score_problem INTEGER NOT NULL,
+        score_solution INTEGER NOT NULL,
+        score_audience INTEGER NOT NULL,
+        score_innovation INTEGER NOT NULL,
+        score_clarity INTEGER NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        UNIQUE(application_id, rated_by)
+      )
+    `);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_group_application_ratings_app ON group_application_ratings(application_id)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_group_application_ratings_group ON group_application_ratings(group_id)`);
+
     // Enable the rubric for the Bruin group (one-time, idempotent)
     await db.execute(sql`UPDATE groups SET rubric_enabled = true WHERE slug = 'bruin' AND rubric_enabled = false`);
 

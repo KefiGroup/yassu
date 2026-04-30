@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, uuid, varchar, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, uuid, varchar, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -684,11 +684,30 @@ export const groupIdeaRatings = pgTable("group_idea_ratings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const groupApplicationRatings = pgTable("group_application_ratings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
+  applicationId: uuid("application_id").references(() => groupApplications.id, { onDelete: "cascade" }).notNull(),
+  ratedBy: integer("rated_by").references(() => users.id).notNull(),
+  score: integer("score").notNull(),
+  feedback: text("feedback"),
+  scoreProblem: integer("score_problem").notNull(),
+  scoreSolution: integer("score_solution").notNull(),
+  scoreAudience: integer("score_audience").notNull(),
+  scoreInnovation: integer("score_innovation").notNull(),
+  scoreClarity: integer("score_clarity").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueRater: uniqueIndex("idx_group_application_ratings_unique").on(table.applicationId, table.ratedBy),
+}));
+
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
 export const insertGroupMemberSchema = createInsertSchema(groupMembers).omit({ id: true, joinedAt: true });
 export const insertGroupInviteSchema = createInsertSchema(groupInvites).omit({ id: true, createdAt: true });
 export const insertGroupApplicationSchema = createInsertSchema(groupApplications).omit({ id: true, createdAt: true, reviewedAt: true });
 export const insertGroupIdeaRatingSchema = createInsertSchema(groupIdeaRatings).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertGroupApplicationRatingSchema = createInsertSchema(groupApplicationRatings).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type Group = typeof groups.$inferSelect;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
@@ -700,6 +719,8 @@ export type GroupApplication = typeof groupApplications.$inferSelect;
 export type InsertGroupApplication = z.infer<typeof insertGroupApplicationSchema>;
 export type GroupIdeaRating = typeof groupIdeaRatings.$inferSelect;
 export type InsertGroupIdeaRating = z.infer<typeof insertGroupIdeaRatingSchema>;
+export type GroupApplicationRating = typeof groupApplicationRatings.$inferSelect;
+export type InsertGroupApplicationRating = z.infer<typeof insertGroupApplicationRatingSchema>;
 
 export const PREDEFINED_INDUSTRIES = [
   { name: "Technology & Software", slug: "technology-software" },

@@ -92,6 +92,8 @@ interface GroupApplication {
     university: string | null;
     skills: string[] | null;
   } | null;
+  avgScore?: number | null;
+  ratingCount?: number;
 }
 
 interface IdeaRating {
@@ -236,7 +238,7 @@ export default function GroupAdmin() {
   const { data: applications, isLoading: applicationsLoading } = useQuery<GroupApplication[]>({
     queryKey: ['/api/groups', activeSlug, 'applications'],
     queryFn: () => apiRequest(`/groups/${activeSlug}/applications`),
-    enabled: !!activeSlug && !roleIsJudge,
+    enabled: !!activeSlug && (!roleIsJudge || !!group?.rubricEnabled),
   });
 
   const { data: deletedApplications } = useQuery<(GroupApplication & { deletedAt?: string | null })[]>({
@@ -359,6 +361,43 @@ export default function GroupAdmin() {
   });
 
   const [showDeletedApps, setShowDeletedApps] = useState(false);
+
+  // Application rubric rating state (Bruin and any future rubric-enabled groups)
+  const [ratingApplicationId, setRatingApplicationId] = useState<string | null>(null);
+  const [appRubricScores, setAppRubricScores] = useState<Record<RubricKey, number | null>>({ problem: null, solution: null, audience: null, innovation: null, clarity: null });
+  const [appRatingFeedback, setAppRatingFeedback] = useState('');
+
+  const { data: applicationRatings } = useQuery<(IdeaRating & { applicationId: string })[]>({
+    queryKey: ['/api/groups', activeSlug, 'applications', ratingApplicationId, 'ratings'],
+    queryFn: () => apiRequest(`/groups/${activeSlug}/applications/${ratingApplicationId}/ratings`),
+    enabled: !!activeSlug && !!ratingApplicationId,
+  });
+
+  const rateApplicationMutation = useMutation({
+    mutationFn: async (payload: { applicationId: string; feedback?: string; scoreProblem: number; scoreSolution: number; scoreAudience: number; scoreInnovation: number; scoreClarity: number }) => {
+      const { applicationId, ...body } = payload;
+      return apiRequest(`/groups/${activeSlug}/applications/${applicationId}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Rating saved' });
+      const closingId = ratingApplicationId;
+      setRatingApplicationId(null);
+      setAppRatingFeedback('');
+      setAppRubricScores({ problem: null, solution: null, audience: null, innovation: null, clarity: null });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'applications'] });
+      if (closingId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'applications', closingId, 'ratings'] });
+      }
+    },
+    onError: (err: any) => {
+      const msg = err?.message || 'Failed to submit rating.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    },
+  });
 
   const rateMutation = useMutation({
     mutationFn: async (payload: { ideaId: string; score?: number; feedback?: string; scoreProblem?: number; scoreSolution?: number; scoreAudience?: number; scoreInnovation?: number; scoreClarity?: number }) => {
@@ -620,7 +659,7 @@ export default function GroupAdmin() {
   });
 
   const isJudge = myRole === 'judge';
-  const defaultTab = isJudge ? 'ideas' : 'overview';
+  const defaultTab = isJudge ? (group?.rubricEnabled ? 'applicants' : 'ideas') : 'overview';
   const groupLoginUrl = group ? `yassu.ai/${group.slug}/auth` : '';
   const brandPrimary = group?.primaryColor || undefined;
 
@@ -682,11 +721,18 @@ export default function GroupAdmin() {
           </div>
         </div>
 
-        <Tabs defaultValue={defaultTab} className="space-y-6">
+        <Tabs key={defaultTab} defaultValue={defaultTab} className="space-y-6">
           {isJudge ? (
-            <TabsList className="grid w-full grid-cols-1 max-w-[200px]" data-testid="group-admin-tabs">
-              <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
-            </TabsList>
+            group?.rubricEnabled ? (
+              <TabsList className="grid w-full grid-cols-2 max-w-[400px]" data-testid="group-admin-tabs">
+                <TabsTrigger value="applicants" data-testid="tab-applicants">Applications</TabsTrigger>
+                <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
+              </TabsList>
+            ) : (
+              <TabsList className="grid w-full grid-cols-1 max-w-[200px]" data-testid="group-admin-tabs">
+                <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
+              </TabsList>
+            )
           ) : (
             <TabsList className="grid w-full grid-cols-5" data-testid="group-admin-tabs">
               <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
@@ -966,15 +1012,15 @@ export default function GroupAdmin() {
             </Card>
           </TabsContent>}
 
-          {!isJudge && <TabsContent value="applicants" className="space-y-4">
+          {(!isJudge || group?.rubricEnabled) && <TabsContent value="applicants" className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Badge variant="secondary">{applications?.length || 0} total</Badge>
-                {pendingApplications.length > 0 && (
+                {!isJudge && pendingApplications.length > 0 && (
                   <Badge variant="destructive">{pendingApplications.length} pending</Badge>
                 )}
               </div>
-              {applications && applications.length > 0 && (
+              {!isJudge && applications && applications.length > 0 && (
                 <Button size="sm" variant="outline" onClick={exportApplicationsCSV} data-testid="button-export-csv">
                   <Download className="w-4 h-4 mr-1" />
                   Export CSV
@@ -1077,7 +1123,32 @@ export default function GroupAdmin() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          {(app.status === 'pending' || app.status === 'draft') && (
+                          {group?.rubricEnabled && app.avgScore !== null && app.avgScore !== undefined && (
+                            <div className="text-center mr-1" data-testid={`text-app-avg-${app.id}`}>
+                              <p className="text-xl font-bold text-primary leading-tight">{app.avgScore}<span className="text-sm font-medium text-muted-foreground">/25</span></p>
+                              <p className="text-[10px] text-muted-foreground">{app.ratingCount} rating{app.ratingCount !== 1 ? 's' : ''}</p>
+                            </div>
+                          )}
+                          {group?.rubricEnabled && (
+                            <Button
+                              size="sm"
+                              variant={ratingApplicationId === app.id ? 'default' : 'outline'}
+                              onClick={() => {
+                                if (ratingApplicationId === app.id) {
+                                  setRatingApplicationId(null);
+                                } else {
+                                  setRatingApplicationId(app.id);
+                                  setAppRatingFeedback('');
+                                  setAppRubricScores({ problem: null, solution: null, audience: null, innovation: null, clarity: null });
+                                }
+                              }}
+                              data-testid={`button-rate-application-${app.id}`}
+                            >
+                              <Star className="h-4 w-4 mr-1" />
+                              Rate
+                            </Button>
+                          )}
+                          {!isJudge && (app.status === 'pending' || app.status === 'draft') && (
                             <>
                               <Button
                                 size="sm"
@@ -1100,24 +1171,144 @@ export default function GroupAdmin() {
                               </Button>
                             </>
                           )}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            title="Delete application"
-                            aria-label="Delete application"
-                            onClick={() => {
-                              if (confirm(`Delete the application from ${app.user?.fullName || app.user?.email || 'this applicant'}? You can restore it from "Recently deleted" at the bottom of this tab.`)) {
-                                deleteApplicationMutation.mutate(app.id);
-                              }
-                            }}
-                            disabled={deleteApplicationMutation.isPending}
-                            data-testid={`button-delete-application-${app.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {!isJudge && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              title="Delete application"
+                              aria-label="Delete application"
+                              onClick={() => {
+                                if (confirm(`Delete the application from ${app.user?.fullName || app.user?.email || 'this applicant'}? You can restore it from "Recently deleted" at the bottom of this tab.`)) {
+                                  deleteApplicationMutation.mutate(app.id);
+                                }
+                              }}
+                              disabled={deleteApplicationMutation.isPending}
+                              data-testid={`button-delete-application-${app.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
+
+                      {group?.rubricEnabled && ratingApplicationId === app.id && (
+                        <div className="mt-4 pt-4 border-t space-y-3" data-testid={`panel-rate-application-${app.id}`}>
+                          <div className="space-y-3">
+                            {RUBRIC_CRITERIA.map(criterion => {
+                              const current = appRubricScores[criterion.key];
+                              return (
+                                <div key={criterion.key} className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                  <div className="flex items-center gap-1 min-w-[200px]">
+                                    <label className="text-sm font-medium">{criterion.label}</label>
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className="text-muted-foreground hover:text-foreground"
+                                          aria-label={`What ${criterion.label} scores mean`}
+                                          data-testid={`info-app-rubric-${criterion.key}-${app.id}`}
+                                        >
+                                          <Info className="h-3.5 w-3.5" />
+                                        </button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-80 text-xs space-y-2">
+                                        <p className="font-semibold text-sm">{criterion.label}</p>
+                                        {criterion.bands.map(b => (
+                                          <div key={b.range}>
+                                            <span className="font-medium">{b.range}:</span>{' '}
+                                            <span className="text-muted-foreground">{b.text}</span>
+                                          </div>
+                                        ))}
+                                      </PopoverContent>
+                                    </Popover>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map(n => (
+                                      <button
+                                        key={n}
+                                        type="button"
+                                        className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                                          current === n
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-muted hover:bg-muted-foreground/10'
+                                        }`}
+                                        onClick={() => setAppRubricScores(s => ({ ...s, [criterion.key]: n }))}
+                                        data-testid={`app-rubric-${criterion.key}-${n}-${app.id}`}
+                                      >
+                                        {n}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="text-sm font-medium">
+                            Total:{' '}
+                            <span data-testid={`text-app-rubric-total-${app.id}`}>
+                              {Object.values(appRubricScores).reduce((sum, v) => sum + (v ?? 0), 0)}
+                            </span>{' '}
+                            / 25
+                          </div>
+                          <Textarea
+                            placeholder="Overall feedback for the team (optional)..."
+                            value={appRatingFeedback}
+                            onChange={e => setAppRatingFeedback(e.target.value)}
+                            className="min-h-[60px]"
+                            data-testid={`input-app-rating-feedback-${app.id}`}
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const allSet = RUBRIC_CRITERIA.every(c => appRubricScores[c.key] !== null);
+                                if (!allSet) {
+                                  toast({ title: 'Score every criterion (1–5) before submitting.', variant: 'destructive' });
+                                  return;
+                                }
+                                rateApplicationMutation.mutate({
+                                  applicationId: app.id,
+                                  feedback: appRatingFeedback || undefined,
+                                  scoreProblem: appRubricScores.problem!,
+                                  scoreSolution: appRubricScores.solution!,
+                                  scoreAudience: appRubricScores.audience!,
+                                  scoreInnovation: appRubricScores.innovation!,
+                                  scoreClarity: appRubricScores.clarity!,
+                                });
+                              }}
+                              disabled={rateApplicationMutation.isPending}
+                              data-testid={`button-submit-app-rating-${app.id}`}
+                            >
+                              {rateApplicationMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                              Submit Rating
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setRatingApplicationId(null)}>
+                              Cancel
+                            </Button>
+                          </div>
+
+                          {applicationRatings && applicationRatings.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <p className="text-sm font-medium text-muted-foreground">Previous Ratings</p>
+                              {applicationRatings.map(r => (
+                                <div key={r.id} className="flex items-start gap-2 p-2 rounded bg-muted text-sm">
+                                  <Badge variant="outline" className="shrink-0">{r.score}/25</Badge>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-xs">{r.raterName || 'Unknown'}</p>
+                                    {r.scoreProblem !== null && (
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        Problem {r.scoreProblem} · Solution {r.scoreSolution} · Audience {r.scoreAudience} · Innovation {r.scoreInnovation} · Clarity {r.scoreClarity}
+                                      </p>
+                                    )}
+                                    {r.feedback && <p className="text-muted-foreground mt-0.5">{r.feedback}</p>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -1129,7 +1320,7 @@ export default function GroupAdmin() {
               </div>
             )}
 
-            {deletedApplications && deletedApplications.length > 0 && (
+            {!isJudge && deletedApplications && deletedApplications.length > 0 && (
               <div className="mt-8 border-t pt-4" data-testid="section-deleted-applications">
                 <button
                   type="button"
@@ -1327,146 +1518,46 @@ export default function GroupAdmin() {
 
                       {ratingIdeaId === idea.id && (
                         <div className="mt-4 pt-4 border-t space-y-3">
-                          {group?.rubricEnabled ? (
-                            <>
-                              <div className="space-y-3">
-                                {RUBRIC_CRITERIA.map(criterion => {
-                                  const current = rubricScores[criterion.key];
-                                  return (
-                                    <div key={criterion.key} className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                                      <div className="flex items-center gap-1 min-w-[200px]">
-                                        <label className="text-sm font-medium">{criterion.label}</label>
-                                        <Popover>
-                                          <PopoverTrigger asChild>
-                                            <button
-                                              type="button"
-                                              className="text-muted-foreground hover:text-foreground"
-                                              aria-label={`What ${criterion.label} scores mean`}
-                                              data-testid={`info-rubric-${criterion.key}`}
-                                            >
-                                              <Info className="h-3.5 w-3.5" />
-                                            </button>
-                                          </PopoverTrigger>
-                                          <PopoverContent className="w-80 text-xs space-y-2">
-                                            <p className="font-semibold text-sm">{criterion.label}</p>
-                                            {criterion.bands.map(b => (
-                                              <div key={b.range}>
-                                                <span className="font-medium">{b.range}:</span>{' '}
-                                                <span className="text-muted-foreground">{b.text}</span>
-                                              </div>
-                                            ))}
-                                          </PopoverContent>
-                                        </Popover>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        {[1, 2, 3, 4, 5].map(n => (
-                                          <button
-                                            key={n}
-                                            type="button"
-                                            className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
-                                              current === n
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-muted hover:bg-muted-foreground/10'
-                                            }`}
-                                            onClick={() => setRubricScores(s => ({ ...s, [criterion.key]: n }))}
-                                            data-testid={`rubric-${criterion.key}-${n}`}
-                                          >
-                                            {n}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                              <div className="text-sm font-medium">
-                                Total:{' '}
-                                <span data-testid="text-rubric-total">
-                                  {Object.values(rubricScores).reduce((sum, v) => sum + (v ?? 0), 0)}
-                                </span>{' '}
-                                / 25
-                              </div>
-                              <Textarea
-                                placeholder="Overall feedback for the team (optional)..."
-                                value={ratingFeedback}
-                                onChange={e => setRatingFeedback(e.target.value)}
-                                className="min-h-[60px]"
-                                data-testid="input-rating-feedback"
-                              />
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    const allSet = RUBRIC_CRITERIA.every(c => rubricScores[c.key] !== null);
-                                    if (!allSet) {
-                                      toast({ title: 'Score every criterion (1–5) before submitting.', variant: 'destructive' });
-                                      return;
-                                    }
-                                    rateMutation.mutate({
-                                      ideaId: idea.id,
-                                      feedback: ratingFeedback || undefined,
-                                      scoreProblem: rubricScores.problem!,
-                                      scoreSolution: rubricScores.solution!,
-                                      scoreAudience: rubricScores.audience!,
-                                      scoreInnovation: rubricScores.innovation!,
-                                      scoreClarity: rubricScores.clarity!,
-                                    });
-                                  }}
-                                  disabled={rateMutation.isPending}
-                                  data-testid="button-submit-rating"
+                          <div className="flex items-center gap-4">
+                            <label className="text-sm font-medium whitespace-nowrap">Score (1-10):</label>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                                <button
+                                  key={n}
+                                  className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                                    n <= ratingScore
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'bg-muted hover:bg-muted-foreground/10'
+                                  }`}
+                                  onClick={() => setRatingScore(n)}
+                                  data-testid={`score-${n}`}
                                 >
-                                  {rateMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                                  Submit Rating
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => setRatingIdeaId(null)}>
-                                  Cancel
-                                </Button>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium whitespace-nowrap">Score (1-10):</label>
-                                <div className="flex items-center gap-1">
-                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                                    <button
-                                      key={n}
-                                      className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
-                                        n <= ratingScore
-                                          ? 'bg-primary text-primary-foreground'
-                                          : 'bg-muted hover:bg-muted-foreground/10'
-                                      }`}
-                                      onClick={() => setRatingScore(n)}
-                                      data-testid={`score-${n}`}
-                                    >
-                                      {n}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                              <Textarea
-                                placeholder="Optional feedback for this idea..."
-                                value={ratingFeedback}
-                                onChange={e => setRatingFeedback(e.target.value)}
-                                className="min-h-[60px]"
-                                data-testid="input-rating-feedback"
-                              />
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => rateMutation.mutate({ ideaId: idea.id, score: ratingScore, feedback: ratingFeedback || undefined })}
-                                  disabled={rateMutation.isPending}
-                                  data-testid="button-submit-rating"
-                                >
-                                  {rateMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                                  Submit Rating
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => setRatingIdeaId(null)}>
-                                  Cancel
-                                </Button>
-                              </div>
-                            </>
-                          )}
+                                  {n}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <Textarea
+                            placeholder="Optional feedback for this idea..."
+                            value={ratingFeedback}
+                            onChange={e => setRatingFeedback(e.target.value)}
+                            className="min-h-[60px]"
+                            data-testid="input-rating-feedback"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => rateMutation.mutate({ ideaId: idea.id, score: ratingScore, feedback: ratingFeedback || undefined })}
+                              disabled={rateMutation.isPending}
+                              data-testid="button-submit-rating"
+                            >
+                              {rateMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                              Submit Rating
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setRatingIdeaId(null)}>
+                              Cancel
+                            </Button>
+                          </div>
 
                           {ideaRatings && ideaRatings.length > 0 && (
                             <div className="mt-3 space-y-2">
