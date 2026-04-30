@@ -117,6 +117,7 @@ export interface IStorage {
   grantAdminRole(userId: number): Promise<void>;
   revokeAdminRole(userId: number): Promise<void>;
   getAllUsers(): Promise<(User & { profile?: Profile; roles: string[] })[]>;
+  getUserDetails(userId: number): Promise<any | undefined>;
   getAllIdeas(): Promise<Idea[]>;
   getAllTeamMembers(): Promise<any[]>;
   deleteUser(userId: number): Promise<void>;
@@ -1451,14 +1452,95 @@ export class DatabaseStorage implements IStorage {
       const [profile] = await db.select().from(schema.profiles).where(eq(schema.profiles.userId, user.id));
       const roles = await db.select().from(schema.userRoles).where(eq(schema.userRoles.userId, user.id));
       
+      const { password: _pw, ...safeUser } = user as any;
       return {
-        ...user,
+        ...safeUser,
         profile,
         roles: roles.map(r => r.role)
       };
     }));
     
     return usersWithData;
+  }
+
+  async getUserDetails(userId: number): Promise<any | undefined> {
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
+    if (!user) return undefined;
+
+    const [profile] = await db.select().from(schema.profiles).where(eq(schema.profiles.userId, userId));
+
+    let university: { id: string; name: string; shortName: string | null } | null = null;
+    if (profile?.universityId) {
+      const [u] = await db.select({ id: schema.universities.id, name: schema.universities.name, shortName: schema.universities.shortName })
+        .from(schema.universities).where(eq(schema.universities.id, profile.universityId));
+      if (u) university = u;
+    }
+
+    let club: { id: string; name: string } | null = null;
+    if (profile?.clubId) {
+      const [c] = await db.select({ id: schema.clubs.id, name: schema.clubs.name })
+        .from(schema.clubs).where(eq(schema.clubs.id, profile.clubId));
+      if (c) club = c;
+    }
+
+    const roleRows = await db.select().from(schema.userRoles).where(eq(schema.userRoles.userId, userId));
+    const roles = roleRows.map(r => r.role);
+
+    const badgeRows = await db.select().from(schema.profileBadges).where(eq(schema.profileBadges.userId, userId));
+
+    const userIdeas = await db.select({
+      id: schema.ideas.id,
+      title: schema.ideas.title,
+      stage: schema.ideas.stage,
+      isPublic: schema.ideas.isPublic,
+      createdAt: schema.ideas.createdAt,
+    }).from(schema.ideas).where(eq(schema.ideas.createdBy, userId)).orderBy(desc(schema.ideas.createdAt));
+
+    const teamRows = await db.select({
+      teamId: schema.teamMembers.teamId,
+      role: schema.teamMembers.role,
+      joinedAt: schema.teamMembers.joinedAt,
+      teamName: schema.teams.name,
+    })
+      .from(schema.teamMembers)
+      .leftJoin(schema.teams, eq(schema.teamMembers.teamId, schema.teams.id))
+      .where(eq(schema.teamMembers.userId, userId));
+
+    const groupRows = await db.select({
+      groupId: schema.groupMembers.groupId,
+      role: schema.groupMembers.role,
+      joinedAt: schema.groupMembers.joinedAt,
+      groupName: schema.groups.name,
+      groupSlug: schema.groups.slug,
+    })
+      .from(schema.groupMembers)
+      .leftJoin(schema.groups, eq(schema.groupMembers.groupId, schema.groups.id))
+      .where(eq(schema.groupMembers.userId, userId));
+
+    const connectionsCountRows = await db.select({ id: schema.connections.id })
+      .from(schema.connections)
+      .where(and(
+        or(eq(schema.connections.requesterId, userId), eq(schema.connections.recipientId, userId)),
+        eq(schema.connections.status, "accepted"),
+      ));
+
+    const { password: _pw, ...safeUser } = user as any;
+
+    return {
+      ...safeUser,
+      profile: profile || null,
+      university,
+      club,
+      roles,
+      badges: badgeRows,
+      ideas: userIdeas,
+      ideasCount: userIdeas.length,
+      teams: teamRows,
+      teamsCount: teamRows.length,
+      groups: groupRows,
+      groupsCount: groupRows.length,
+      connectionsCount: connectionsCountRows.length,
+    };
   }
 
   async getAllIdeas(): Promise<Idea[]> {

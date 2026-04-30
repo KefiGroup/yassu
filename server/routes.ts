@@ -4204,6 +4204,36 @@ Return valid JSON:
     }
   });
 
+  // Get full user details (admin only)
+  app.get("/api/admin/users/:id", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userRoles = await storage.getUserRoles(req.session.userId);
+      const isAdmin = userRoles.some(r => r.role === 'admin');
+      if (!isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const userId = Number(req.params.id);
+      if (!Number.isInteger(userId) || userId <= 0) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const details = await storage.getUserDetails(userId);
+      if (!details) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(details);
+    } catch (error) {
+      console.error("Get user details error:", error);
+      res.status(500).json({ error: "Failed to get user details" });
+    }
+  });
+
   // Delete user (admin only)
   app.delete("/api/admin/users/:id", async (req: Request, res: Response) => {
     if (!req.session.userId) {

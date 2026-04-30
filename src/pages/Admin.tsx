@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import { Loader2, Search, Shield, Award, Users, ShieldCheck, ShieldX, Lightbulb, Lock, Globe, UserCog, Eye, ArrowLeft, Trash2, Megaphone, Plus, Calendar, Edit, AlertCircle, Info, Bell, Wrench, MessageSquare, CheckCircle, XCircle, Clock, Rocket, Send, Star, ImageIcon, RefreshCw, Mail, Archive, Reply, BarChart3, Gavel, UserPlus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -276,6 +278,9 @@ export default function Admin() {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [createUserForm, setCreateUserForm] = useState({ email: '', fullName: '' });
   const [createUserLoading, setCreateUserLoading] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [userDetails, setUserDetails] = useState<any | null>(null);
+  const [userDetailsLoading, setUserDetailsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('analytics');
   const [searchQuery, setSearchQuery] = useState('');
@@ -764,6 +769,26 @@ export default function Admin() {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const openUserDetails = async (userId: number) => {
+    setSelectedUserId(userId);
+    setUserDetails(null);
+    setUserDetailsLoading(true);
+    try {
+      const data = await apiRequest<any>(`/admin/users/${userId}`);
+      setUserDetails(data);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to load user details', variant: 'destructive' });
+      setSelectedUserId(null);
+    } finally {
+      setUserDetailsLoading(false);
+    }
+  };
+
+  const closeUserDetails = () => {
+    setSelectedUserId(null);
+    setUserDetails(null);
   };
 
   const resetAnnouncementForm = () => {
@@ -2421,7 +2446,12 @@ export default function Admin() {
                           return (u.fullName || u.profile?.fullName || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
                         })
                         .map((u: any) => (
-                          <tr key={u.id} className="border-t hover:bg-muted/30" data-testid={`user-row-${u.id}`}>
+                          <tr
+                            key={u.id}
+                            className="border-t hover:bg-muted/30 cursor-pointer"
+                            onClick={() => openUserDetails(u.id)}
+                            data-testid={`user-row-${u.id}`}
+                          >
                             <td className="p-3">
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-8 w-8">
@@ -2447,29 +2477,40 @@ export default function Admin() {
                             <td className="p-3 text-muted-foreground text-xs">
                               {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}
                             </td>
-                            <td className="p-3 text-right">
-                              {!(u.roles || []).includes('admin') && (
+                            <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-2">
                                 <Button
                                   size="sm"
-                                  variant="destructive"
-                                  disabled={actionLoading === `delete-user-${u.id}`}
-                                  onClick={async () => {
-                                    if (!confirm(`Delete user "${u.fullName || u.profile?.fullName || u.email}"? This cannot be undone.`)) return;
-                                    try {
-                                      setActionLoading(`delete-user-${u.id}`);
-                                      await apiRequest(`/admin/users/${u.id}`, { method: 'DELETE' });
-                                      setAllUsers(prev => prev.filter(x => x.id !== u.id));
-                                      toast({ title: 'User deleted' });
-                                    } catch (err: any) {
-                                      toast({ title: 'Error', description: err.message || 'Failed to delete user', variant: 'destructive' });
-                                    } finally { setActionLoading(null); }
-                                  }}
-                                  data-testid={`button-delete-user-${u.id}`}
+                                  variant="outline"
+                                  onClick={() => openUserDetails(u.id)}
+                                  data-testid={`button-view-user-${u.id}`}
                                 >
-                                  {actionLoading === `delete-user-${u.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3 mr-1" />}
-                                  Delete
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  View
                                 </Button>
-                              )}
+                                {!(u.roles || []).includes('admin') && (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    disabled={actionLoading === `delete-user-${u.id}`}
+                                    onClick={async () => {
+                                      if (!confirm(`Delete user "${u.fullName || u.profile?.fullName || u.email}"? This cannot be undone.`)) return;
+                                      try {
+                                        setActionLoading(`delete-user-${u.id}`);
+                                        await apiRequest(`/admin/users/${u.id}`, { method: 'DELETE' });
+                                        setAllUsers(prev => prev.filter(x => x.id !== u.id));
+                                        toast({ title: 'User deleted' });
+                                      } catch (err: any) {
+                                        toast({ title: 'Error', description: err.message || 'Failed to delete user', variant: 'destructive' });
+                                      } finally { setActionLoading(null); }
+                                    }}
+                                    data-testid={`button-delete-user-${u.id}`}
+                                  >
+                                    {actionLoading === `delete-user-${u.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3 mr-1" />}
+                                    Delete
+                                  </Button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -3150,7 +3191,268 @@ export default function Admin() {
         </div>
         </div>
       </div>
+
+      <UserDetailsDialog
+        userId={selectedUserId}
+        details={userDetails}
+        loading={userDetailsLoading}
+        onClose={closeUserDetails}
+      />
     </div>
+  );
+}
+
+function UserDetailsDialog({
+  userId,
+  details,
+  loading,
+  onClose,
+}: {
+  userId: number | null;
+  details: any | null;
+  loading: boolean;
+  onClose: () => void;
+}) {
+  const open = userId !== null;
+  const profile = details?.profile;
+  const displayName = details?.fullName || profile?.fullName || details?.email || 'User';
+  const initials = (displayName || '?').split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase();
+
+  const lookingForArr: string[] = (() => {
+    if (!profile?.lookingFor) return [];
+    try {
+      const parsed = JSON.parse(profile.lookingFor);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto" data-testid="dialog-user-details">
+        <DialogHeader>
+          <DialogTitle>User Details</DialogTitle>
+          <DialogDescription>Full profile and activity for this user.</DialogDescription>
+        </DialogHeader>
+
+        {loading || !details ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-start gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={profile?.avatarUrl || undefined} />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-xl font-semibold" data-testid="text-user-name">{displayName}</h3>
+                  {(details.roles || []).map((r: string) => (
+                    <Badge key={r} variant={r === 'admin' ? 'default' : 'secondary'} className="text-xs">
+                      {r === 'admin' && <Shield className="w-3 h-3 mr-1" />}
+                      {r}
+                    </Badge>
+                  ))}
+                  {profile?.yassuRole && (
+                    <Badge variant="outline" className="text-xs">{profile.yassuRole}</Badge>
+                  )}
+                </div>
+                {profile?.headline && <p className="text-sm text-muted-foreground mt-1">{profile.headline}</p>}
+                <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{details.email}</span>
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Joined {new Date(details.createdAt).toLocaleDateString()}</span>
+                  <span>ID: {details.id}</span>
+                  {details.mustChangePassword && (
+                    <Badge variant="outline" className="text-xs"><AlertCircle className="w-3 h-3 mr-1" />Must change password</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-4 gap-3">
+              <div className="border rounded-lg p-3 text-center">
+                <div className="text-xl font-semibold" data-testid="stat-ideas-count">{details.ideasCount ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Ideas</div>
+              </div>
+              <div className="border rounded-lg p-3 text-center">
+                <div className="text-xl font-semibold" data-testid="stat-teams-count">{details.teamsCount ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Teams</div>
+              </div>
+              <div className="border rounded-lg p-3 text-center">
+                <div className="text-xl font-semibold" data-testid="stat-groups-count">{details.groupsCount ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Groups</div>
+              </div>
+              <div className="border rounded-lg p-3 text-center">
+                <div className="text-xl font-semibold" data-testid="stat-connections-count">{details.connectionsCount ?? 0}</div>
+                <div className="text-xs text-muted-foreground">Connections</div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Profile information */}
+            <div>
+              <h4 className="font-semibold mb-2 flex items-center gap-2"><UserCog className="w-4 h-4" />Profile</h4>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div>
+                  <dt className="text-muted-foreground text-xs">University</dt>
+                  <dd>{details.university?.name || profile?.otherUniversity || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">Major</dt>
+                  <dd>{profile?.major || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">Graduation Year</dt>
+                  <dd>{profile?.graduationYear || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">Club</dt>
+                  <dd>{details.club?.name || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">Availability</dt>
+                  <dd>{profile?.availability || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">Verification</dt>
+                  <dd>{profile?.verificationStatus || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">Onboarding</dt>
+                  <dd>{profile?.onboardingCompleted ? 'Complete' : 'Incomplete'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground text-xs">Profile Public</dt>
+                  <dd>{profile?.profilePublic ? 'Yes' : 'No'}</dd>
+                </div>
+              </dl>
+
+              {profile?.bio && (
+                <div className="mt-3">
+                  <div className="text-muted-foreground text-xs mb-1">Bio</div>
+                  <p className="text-sm whitespace-pre-wrap">{profile.bio}</p>
+                </div>
+              )}
+
+              {(profile?.skills?.length > 0 || profile?.interests?.length > 0 || lookingForArr.length > 0) && (
+                <div className="mt-3 space-y-2">
+                  {profile?.skills?.length > 0 && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Skills</div>
+                      <div className="flex flex-wrap gap-1">
+                        {profile.skills.map((s: string) => <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>)}
+                      </div>
+                    </div>
+                  )}
+                  {profile?.interests?.length > 0 && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Interests</div>
+                      <div className="flex flex-wrap gap-1">
+                        {profile.interests.map((s: string) => <Badge key={s} variant="outline" className="text-xs">{s}</Badge>)}
+                      </div>
+                    </div>
+                  )}
+                  {lookingForArr.length > 0 && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Looking For</div>
+                      <div className="flex flex-wrap gap-1">
+                        {lookingForArr.map((s: string) => <Badge key={s} variant="outline" className="text-xs">{s}</Badge>)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(profile?.linkedinUrl || profile?.githubUrl || profile?.portfolioUrl) && (
+                <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                  {profile.linkedinUrl && <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">LinkedIn</a>}
+                  {profile.githubUrl && <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub</a>}
+                  {profile.portfolioUrl && <a href={profile.portfolioUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Portfolio</a>}
+                </div>
+              )}
+            </div>
+
+            {/* Badges */}
+            {details.badges?.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2"><Award className="w-4 h-4" />Badges</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {details.badges.map((b: any) => (
+                      <Badge key={b.id} variant="secondary">{b.badgeType}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Ideas */}
+            {details.ideas?.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2"><Lightbulb className="w-4 h-4" />Ideas ({details.ideas.length})</h4>
+                  <ul className="space-y-1 text-sm">
+                    {details.ideas.map((i: any) => (
+                      <li key={i.id} className="flex items-center justify-between border-b last:border-0 py-1">
+                        <Link to={`/portal/ideas/${i.id}`} className="hover:underline truncate flex-1 mr-2">{i.title}</Link>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {i.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                          <Badge variant="outline" className="text-xs">{i.stage}</Badge>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {/* Teams */}
+            {details.teams?.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4" />Teams ({details.teams.length})</h4>
+                  <ul className="space-y-1 text-sm">
+                    {details.teams.map((t: any) => (
+                      <li key={t.teamId} className="flex items-center justify-between border-b last:border-0 py-1">
+                        <span>{t.teamName || '(unnamed team)'}</span>
+                        <Badge variant="outline" className="text-xs">{t.role}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {/* Groups */}
+            {details.groups?.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4" />Groups ({details.groups.length})</h4>
+                  <ul className="space-y-1 text-sm">
+                    {details.groups.map((g: any) => (
+                      <li key={g.groupId} className="flex items-center justify-between border-b last:border-0 py-1">
+                        <span>{g.groupName || g.groupSlug}</span>
+                        <Badge variant="outline" className="text-xs">{g.role}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
