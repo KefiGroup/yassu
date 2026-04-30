@@ -12,3 +12,9 @@ id = "OTLmEwpq0QplnR24cgnad"
 uri = "file://docs/Bruin-Entrepreneurs-Yassu-Training-Guide.md"
 type = "text"
 title = "Bruin Entrepreneurs x Yassu.ai - Training Guide"
+
+[[outputs]]
+id = "yG6YPABYmNORiBgH3z-S7"
+uri = "file://screenshots/rubric-preview.jpg"
+type = "image"
+title = "Rubric panel — Bruin Group Admin · Ideas tab"
