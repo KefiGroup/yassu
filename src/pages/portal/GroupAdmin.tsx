@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink, Download } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink, Download, Info } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -33,6 +34,7 @@ interface GroupDetails {
   submissionFileUrl: string | null;
   autoApprove?: boolean;
   applicationDeadline?: string | null;
+  rubricEnabled?: boolean;
 }
 
 interface GroupMember {
@@ -98,7 +100,62 @@ interface IdeaRating {
   feedback: string | null;
   raterName: string | null;
   createdAt: string;
+  scoreProblem: number | null;
+  scoreSolution: number | null;
+  scoreAudience: number | null;
+  scoreInnovation: number | null;
+  scoreClarity: number | null;
 }
+
+type RubricKey = 'problem' | 'solution' | 'audience' | 'innovation' | 'clarity';
+
+const RUBRIC_CRITERIA: { key: RubricKey; label: string; bands: { range: string; text: string }[] }[] = [
+  {
+    key: 'problem',
+    label: 'Problem & need',
+    bands: [
+      { range: '1–2', text: 'Problem is unclear, vague, or feels assumed; little evidence anyone actually has it.' },
+      { range: '3–4', text: 'Real problem is identified with some explanation of who is affected and why it matters.' },
+      { range: '5', text: 'Sharp, specific, validated problem with clear evidence of pain and urgency.' },
+    ],
+  },
+  {
+    key: 'solution',
+    label: 'Idea / solution',
+    bands: [
+      { range: '1–2', text: 'Solution is fuzzy, generic, or doesn\'t obviously address the problem.' },
+      { range: '3–4', text: 'Solution is understandable and reasonably tied to the problem; some details on how it works.' },
+      { range: '5', text: 'Compelling, well-defined solution that clearly solves the problem and is plausibly buildable.' },
+    ],
+  },
+  {
+    key: 'audience',
+    label: 'Target audience & impact',
+    bands: [
+      { range: '1–2', text: 'Audience is unclear, "everyone," or impact is hand-wavy.' },
+      { range: '3–4', text: 'Specific audience is named with a believable account of the impact on them.' },
+      { range: '5', text: 'Sharply defined customer with strong, tangible impact and a sense of meaningful scale.' },
+    ],
+  },
+  {
+    key: 'innovation',
+    label: 'Innovation & originality',
+    bands: [
+      { range: '1–2', text: 'Idea has been done many times with no meaningful twist; no real differentiation.' },
+      { range: '3–4', text: 'Idea has a recognizable angle, niche, or twist relative to existing options.' },
+      { range: '5', text: 'Genuinely fresh approach or strong differentiation that\'s hard to copy.' },
+    ],
+  },
+  {
+    key: 'clarity',
+    label: 'Clarity & communication',
+    bands: [
+      { range: '1–2', text: 'Hard to follow; jargon-heavy or disorganized; key points missing.' },
+      { range: '3–4', text: 'Clear and well-structured; the core story comes through.' },
+      { range: '5', text: 'Crisp, confident, and persuasive; every section earns its place.' },
+    ],
+  },
+];
 
 interface AdminGroup {
   id: string;
@@ -136,6 +193,7 @@ export default function GroupAdmin() {
   const [ratingIdeaId, setRatingIdeaId] = useState<string | null>(null);
   const [ratingScore, setRatingScore] = useState<number>(5);
   const [ratingFeedback, setRatingFeedback] = useState('');
+  const [rubricScores, setRubricScores] = useState<Record<RubricKey, number | null>>({ problem: null, solution: null, audience: null, innovation: null, clarity: null });
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [editForm, setEditForm] = useState<{ name: string; description: string; primaryColor: string; accentColor: string; autoApprove: boolean; applicationDeadline: string }>({ name: '', description: '', primaryColor: '', accentColor: '', autoApprove: false, applicationDeadline: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -279,25 +337,29 @@ export default function GroupAdmin() {
   });
 
   const rateMutation = useMutation({
-    mutationFn: async ({ ideaId, score, feedback }: { ideaId: string; score: number; feedback?: string }) => {
+    mutationFn: async (payload: { ideaId: string; score?: number; feedback?: string; scoreProblem?: number; scoreSolution?: number; scoreAudience?: number; scoreInnovation?: number; scoreClarity?: number }) => {
+      const { ideaId, ...body } = payload;
       return apiRequest(`/groups/${activeSlug}/ideas/${ideaId}/rate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ score, feedback }),
+        body: JSON.stringify(body),
       });
     },
     onSuccess: () => {
       toast({ title: 'Rating saved' });
+      const closingIdeaId = ratingIdeaId;
       setRatingIdeaId(null);
       setRatingScore(5);
       setRatingFeedback('');
+      setRubricScores({ problem: null, solution: null, audience: null, innovation: null, clarity: null });
       queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'ideas-with-ratings'] });
-      if (ratingIdeaId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'ideas', ratingIdeaId, 'ratings'] });
+      if (closingIdeaId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'ideas', closingIdeaId, 'ratings'] });
       }
     },
-    onError: () => {
-      toast({ title: 'Error', description: 'Failed to submit rating.', variant: 'destructive' });
+    onError: (err: any) => {
+      const msg = err?.message || 'Failed to submit rating.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     },
   });
 
@@ -1175,6 +1237,7 @@ export default function GroupAdmin() {
                                 setRatingIdeaId(idea.id);
                                 setRatingScore(5);
                                 setRatingFeedback('');
+                                setRubricScores({ problem: null, solution: null, audience: null, innovation: null, clarity: null });
                               }
                             }}
                             data-testid={`button-rate-${idea.id}`}
@@ -1187,59 +1250,168 @@ export default function GroupAdmin() {
 
                       {ratingIdeaId === idea.id && (
                         <div className="mt-4 pt-4 border-t space-y-3">
-                          <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium whitespace-nowrap">Score (1-10):</label>
-                            <div className="flex items-center gap-1">
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                                <button
-                                  key={n}
-                                  className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
-                                    n <= ratingScore
-                                      ? 'bg-primary text-primary-foreground'
-                                      : 'bg-muted hover:bg-muted-foreground/10'
-                                  }`}
-                                  onClick={() => setRatingScore(n)}
-                                  data-testid={`score-${n}`}
+                          {group?.rubricEnabled ? (
+                            <>
+                              <div className="space-y-3">
+                                {RUBRIC_CRITERIA.map(criterion => {
+                                  const current = rubricScores[criterion.key];
+                                  return (
+                                    <div key={criterion.key} className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                      <div className="flex items-center gap-1 min-w-[200px]">
+                                        <label className="text-sm font-medium">{criterion.label}</label>
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <button
+                                              type="button"
+                                              className="text-muted-foreground hover:text-foreground"
+                                              aria-label={`What ${criterion.label} scores mean`}
+                                              data-testid={`info-rubric-${criterion.key}`}
+                                            >
+                                              <Info className="h-3.5 w-3.5" />
+                                            </button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-80 text-xs space-y-2">
+                                            <p className="font-semibold text-sm">{criterion.label}</p>
+                                            {criterion.bands.map(b => (
+                                              <div key={b.range}>
+                                                <span className="font-medium">{b.range}:</span>{' '}
+                                                <span className="text-muted-foreground">{b.text}</span>
+                                              </div>
+                                            ))}
+                                          </PopoverContent>
+                                        </Popover>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        {[1, 2, 3, 4, 5].map(n => (
+                                          <button
+                                            key={n}
+                                            type="button"
+                                            className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                                              current === n
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted hover:bg-muted-foreground/10'
+                                            }`}
+                                            onClick={() => setRubricScores(s => ({ ...s, [criterion.key]: n }))}
+                                            data-testid={`rubric-${criterion.key}-${n}`}
+                                          >
+                                            {n}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="text-sm font-medium">
+                                Total:{' '}
+                                <span data-testid="text-rubric-total">
+                                  {Object.values(rubricScores).reduce((sum, v) => sum + (v ?? 0), 0)}
+                                </span>{' '}
+                                / 25
+                              </div>
+                              <Textarea
+                                placeholder="Overall feedback for the team (optional)..."
+                                value={ratingFeedback}
+                                onChange={e => setRatingFeedback(e.target.value)}
+                                className="min-h-[60px]"
+                                data-testid="input-rating-feedback"
+                              />
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    const allSet = RUBRIC_CRITERIA.every(c => rubricScores[c.key] !== null);
+                                    if (!allSet) {
+                                      toast({ title: 'Score every criterion (1–5) before submitting.', variant: 'destructive' });
+                                      return;
+                                    }
+                                    rateMutation.mutate({
+                                      ideaId: idea.id,
+                                      feedback: ratingFeedback || undefined,
+                                      scoreProblem: rubricScores.problem!,
+                                      scoreSolution: rubricScores.solution!,
+                                      scoreAudience: rubricScores.audience!,
+                                      scoreInnovation: rubricScores.innovation!,
+                                      scoreClarity: rubricScores.clarity!,
+                                    });
+                                  }}
+                                  disabled={rateMutation.isPending}
+                                  data-testid="button-submit-rating"
                                 >
-                                  {n}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <Textarea
-                            placeholder="Optional feedback for this idea..."
-                            value={ratingFeedback}
-                            onChange={e => setRatingFeedback(e.target.value)}
-                            className="min-h-[60px]"
-                            data-testid="input-rating-feedback"
-                          />
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => rateMutation.mutate({ ideaId: idea.id, score: ratingScore, feedback: ratingFeedback || undefined })}
-                              disabled={rateMutation.isPending}
-                              data-testid="button-submit-rating"
-                            >
-                              {rateMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                              Submit Rating
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setRatingIdeaId(null)}>
-                              Cancel
-                            </Button>
-                          </div>
+                                  {rateMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                                  Submit Rating
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => setRatingIdeaId(null)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-4">
+                                <label className="text-sm font-medium whitespace-nowrap">Score (1-10):</label>
+                                <div className="flex items-center gap-1">
+                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                                    <button
+                                      key={n}
+                                      className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                                        n <= ratingScore
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'bg-muted hover:bg-muted-foreground/10'
+                                      }`}
+                                      onClick={() => setRatingScore(n)}
+                                      data-testid={`score-${n}`}
+                                    >
+                                      {n}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <Textarea
+                                placeholder="Optional feedback for this idea..."
+                                value={ratingFeedback}
+                                onChange={e => setRatingFeedback(e.target.value)}
+                                className="min-h-[60px]"
+                                data-testid="input-rating-feedback"
+                              />
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => rateMutation.mutate({ ideaId: idea.id, score: ratingScore, feedback: ratingFeedback || undefined })}
+                                  disabled={rateMutation.isPending}
+                                  data-testid="button-submit-rating"
+                                >
+                                  {rateMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                                  Submit Rating
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => setRatingIdeaId(null)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </>
+                          )}
 
                           {ideaRatings && ideaRatings.length > 0 && (
                             <div className="mt-3 space-y-2">
                               <p className="text-sm font-medium text-muted-foreground">Previous Ratings</p>
-                              {ideaRatings.map(r => (
-                                <div key={r.id} className="flex items-start gap-2 p-2 rounded bg-muted text-sm">
-                                  <Badge variant="outline" className="shrink-0">{r.score}/10</Badge>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-xs">{r.raterName || 'Unknown'}</p>
-                                    {r.feedback && <p className="text-muted-foreground mt-0.5">{r.feedback}</p>}
+                              {ideaRatings.map(r => {
+                                const isRubric = r.scoreProblem !== null && r.scoreSolution !== null && r.scoreAudience !== null && r.scoreInnovation !== null && r.scoreClarity !== null;
+                                const totalLabel = isRubric ? `${r.score}/25` : `${r.score}/10`;
+                                return (
+                                  <div key={r.id} className="flex items-start gap-2 p-2 rounded bg-muted text-sm">
+                                    <Badge variant="outline" className="shrink-0">{totalLabel}</Badge>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-xs">{r.raterName || 'Unknown'}{!isRubric && group?.rubricEnabled ? ' (legacy)' : ''}</p>
+                                      {isRubric && (
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                          Problem {r.scoreProblem} · Solution {r.scoreSolution} · Audience {r.scoreAudience} · Innovation {r.scoreInnovation} · Clarity {r.scoreClarity}
+                                        </p>
+                                      )}
+                                      {r.feedback && <p className="text-muted-foreground mt-0.5">{r.feedback}</p>}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>

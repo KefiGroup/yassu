@@ -219,7 +219,7 @@ export interface IStorage {
   // Group Idea Ratings
   getGroupIdeaRatings(groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null; ideaTitle: string })[]>;
   getIdeaRatings(ideaId: string, groupId: string): Promise<(schema.GroupIdeaRating & { raterName: string | null })[]>;
-  upsertGroupIdeaRating(data: { groupId: string; ideaId: string; ratedBy: number; score: number; feedback?: string }): Promise<schema.GroupIdeaRating>;
+  upsertGroupIdeaRating(data: { groupId: string; ideaId: string; ratedBy: number; score: number; feedback?: string; scoreProblem?: number | null; scoreSolution?: number | null; scoreAudience?: number | null; scoreInnovation?: number | null; scoreClarity?: number | null }): Promise<schema.GroupIdeaRating>;
   getGroupIdeasWithRatings(groupId: string): Promise<(schema.Idea & { creatorName: string | null; avgScore: number | null; ratingCount: number })[]>;
   
   // Pitch Decks
@@ -2246,12 +2246,20 @@ export class DatabaseStorage implements IStorage {
     return results.map(r => ({ ...r.rating, raterName: r.raterName }));
   }
 
-  async upsertGroupIdeaRating(data: { groupId: string; ideaId: string; ratedBy: number; score: number; feedback?: string }): Promise<schema.GroupIdeaRating> {
+  async upsertGroupIdeaRating(data: { groupId: string; ideaId: string; ratedBy: number; score: number; feedback?: string; scoreProblem?: number | null; scoreSolution?: number | null; scoreAudience?: number | null; scoreInnovation?: number | null; scoreClarity?: number | null }): Promise<schema.GroupIdeaRating> {
+    const sp = data.scoreProblem ?? null;
+    const ss = data.scoreSolution ?? null;
+    const sa = data.scoreAudience ?? null;
+    const si = data.scoreInnovation ?? null;
+    const sc = data.scoreClarity ?? null;
     const result = await db.execute(sql`
-      INSERT INTO group_idea_ratings (group_id, idea_id, rated_by, score, feedback)
-      VALUES (${data.groupId}, ${data.ideaId}, ${data.ratedBy}, ${data.score}, ${data.feedback || null})
+      INSERT INTO group_idea_ratings (group_id, idea_id, rated_by, score, feedback, score_problem, score_solution, score_audience, score_innovation, score_clarity)
+      VALUES (${data.groupId}, ${data.ideaId}, ${data.ratedBy}, ${data.score}, ${data.feedback || null}, ${sp}, ${ss}, ${sa}, ${si}, ${sc})
       ON CONFLICT (group_id, idea_id, rated_by) DO UPDATE
-      SET score = ${data.score}, feedback = ${data.feedback || null}, updated_at = NOW()
+      SET score = ${data.score}, feedback = ${data.feedback || null},
+          score_problem = ${sp}, score_solution = ${ss}, score_audience = ${sa},
+          score_innovation = ${si}, score_clarity = ${sc},
+          updated_at = NOW()
       RETURNING *
     `);
     return result.rows[0] as any as schema.GroupIdeaRating;

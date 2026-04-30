@@ -9040,17 +9040,39 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
         return res.status(400).json({ error: "This idea does not belong to this group" });
       }
 
-      const { score, feedback } = req.body;
-      if (typeof score !== 'number' || score < 1 || score > 10) {
-        return res.status(400).json({ error: "Score must be between 1 and 10" });
+      const { score, feedback, scoreProblem, scoreSolution, scoreAudience, scoreInnovation, scoreClarity } = req.body;
+      const isRubric = (group as any).rubricEnabled === true || (group as any).rubric_enabled === true;
+
+      let finalScore: number;
+      let sp: number | null = null, ss: number | null = null, sa: number | null = null, si: number | null = null, sc: number | null = null;
+
+      if (isRubric) {
+        const subs = [scoreProblem, scoreSolution, scoreAudience, scoreInnovation, scoreClarity];
+        for (const v of subs) {
+          if (typeof v !== 'number' || !Number.isFinite(v) || v < 1 || v > 5) {
+            return res.status(400).json({ error: "Each rubric score must be a number between 1 and 5" });
+          }
+        }
+        sp = scoreProblem; ss = scoreSolution; sa = scoreAudience; si = scoreInnovation; sc = scoreClarity;
+        finalScore = sp! + ss! + sa! + si! + sc!; // 5..25
+      } else {
+        if (typeof score !== 'number' || score < 1 || score > 10) {
+          return res.status(400).json({ error: "Score must be between 1 and 10" });
+        }
+        finalScore = score;
       }
 
       const rating = await storage.upsertGroupIdeaRating({
         groupId: group.id,
         ideaId: req.params.ideaId,
         ratedBy: req.session.userId,
-        score,
+        score: finalScore,
         feedback,
+        scoreProblem: sp,
+        scoreSolution: ss,
+        scoreAudience: sa,
+        scoreInnovation: si,
+        scoreClarity: sc,
       });
       res.json(rating);
     } catch (error) {

@@ -166,6 +166,16 @@ export async function ensureTables() {
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS submission_file_url TEXT`);
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS auto_approve BOOLEAN NOT NULL DEFAULT false`);
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS application_deadline TIMESTAMP`);
+    await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS rubric_enabled BOOLEAN NOT NULL DEFAULT false`);
+
+    await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_problem INTEGER`);
+    await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_solution INTEGER`);
+    await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_audience INTEGER`);
+    await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_innovation INTEGER`);
+    await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_clarity INTEGER`);
+
+    // Enable the rubric for the Bruin group (one-time, idempotent)
+    await db.execute(sql`UPDATE groups SET rubric_enabled = true WHERE slug = 'bruin' AND rubric_enabled = false`);
 
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS email_logs (

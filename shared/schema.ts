@@ -626,6 +626,7 @@ export const groups = pgTable("groups", {
   submissionFileUrl: text("submission_file_url"),
   autoApprove: boolean("auto_approve").default(false).notNull(),
   applicationDeadline: timestamp("application_deadline"),
+  rubricEnabled: boolean("rubric_enabled").default(false).notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -673,6 +674,11 @@ export const groupIdeaRatings = pgTable("group_idea_ratings", {
   ratedBy: integer("rated_by").references(() => users.id).notNull(),
   score: integer("score").notNull(),
   feedback: text("feedback"),
+  scoreProblem: integer("score_problem"),
+  scoreSolution: integer("score_solution"),
+  scoreAudience: integer("score_audience"),
+  scoreInnovation: integer("score_innovation"),
+  scoreClarity: integer("score_clarity"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
