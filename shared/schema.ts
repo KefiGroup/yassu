@@ -664,6 +664,7 @@ export const groupApplications = pgTable("group_applications", {
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   reminderSent: boolean("reminder_sent").default(false),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

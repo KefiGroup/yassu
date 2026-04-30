@@ -168,6 +168,9 @@ export async function ensureTables() {
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS application_deadline TIMESTAMP`);
     await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS rubric_enabled BOOLEAN NOT NULL DEFAULT false`);
 
+    await db.execute(sql`ALTER TABLE group_applications ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_group_applications_deleted_at ON group_applications(deleted_at)`);
+
     await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_problem INTEGER`);
     await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_solution INTEGER`);
     await db.execute(sql`ALTER TABLE group_idea_ratings ADD COLUMN IF NOT EXISTS score_audience INTEGER`);

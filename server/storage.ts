@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { db } from "./db";
-import { eq, desc, and, or, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, or, sql, inArray, isNull } from "drizzle-orm";
 import * as schema from "../shared/schema";
 import type { 
   User, Profile, Idea, Team, Project, University, 
@@ -213,6 +213,8 @@ export interface IStorage {
   createGroupApplication(data: schema.InsertGroupApplication): Promise<schema.GroupApplication>;
   updateGroupApplication(id: string, status: "approved" | "rejected", reviewedBy: number): Promise<schema.GroupApplication | undefined>;
   deleteGroupApplication(id: string): Promise<void>;
+  restoreGroupApplication(id: string): Promise<void>;
+  getDeletedGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]>;
   updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[], extra?: { universityName?: string; graduationYear?: string; major?: string }): Promise<schema.GroupApplication | undefined>;
   getApplicationsByTeamEmail(email: string): Promise<schema.GroupApplication[]>;
   
@@ -2098,6 +2100,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]> {
+    return this.getGroupApplicationsInternal(groupId, false);
+  }
+
+  async getDeletedGroupApplications(groupId: string): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]> {
+    return this.getGroupApplicationsInternal(groupId, true);
+  }
+
+  private async getGroupApplicationsInternal(groupId: string, deleted: boolean): Promise<(schema.GroupApplication & { user: User; profile: Profile | null })[]> {
+    const deletedFilter = deleted
+      ? sql`${schema.groupApplications.deletedAt} IS NOT NULL`
+      : sql`${schema.groupApplications.deletedAt} IS NULL`;
+
     const results = await db
       .select({
         id: schema.groupApplications.id,
@@ -2114,6 +2128,7 @@ export class DatabaseStorage implements IStorage {
         reviewedBy: schema.groupApplications.reviewedBy,
         reviewedAt: schema.groupApplications.reviewedAt,
         reminderSent: schema.groupApplications.reminderSent,
+        deletedAt: schema.groupApplications.deletedAt,
         createdAt: schema.groupApplications.createdAt,
         user: schema.users,
         profile: schema.profiles,
@@ -2121,8 +2136,8 @@ export class DatabaseStorage implements IStorage {
       .from(schema.groupApplications)
       .innerJoin(schema.users, eq(schema.groupApplications.userId, schema.users.id))
       .leftJoin(schema.profiles, eq(schema.users.id, schema.profiles.userId))
-      .where(eq(schema.groupApplications.groupId, groupId))
-      .orderBy(desc(schema.groupApplications.createdAt));
+      .where(and(eq(schema.groupApplications.groupId, groupId), deletedFilter))
+      .orderBy(deleted ? desc(schema.groupApplications.deletedAt) : desc(schema.groupApplications.createdAt));
 
     return results.map(r => ({
       id: r.id,
@@ -2139,6 +2154,7 @@ export class DatabaseStorage implements IStorage {
       reviewedBy: r.reviewedBy,
       reviewedAt: r.reviewedAt,
       reminderSent: r.reminderSent,
+      deletedAt: r.deletedAt,
       createdAt: r.createdAt,
       user: r.user,
       profile: r.profile,
@@ -2154,7 +2170,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(schema.groupApplications)
       .innerJoin(schema.groups, eq(schema.groupApplications.groupId, schema.groups.id))
-      .where(eq(schema.groupApplications.userId, userId))
+      .where(and(eq(schema.groupApplications.userId, userId), isNull(schema.groupApplications.deletedAt)))
       .orderBy(desc(schema.groupApplications.createdAt));
 
     return results.map(r => ({ ...r.application, groupName: r.groupName, groupSlug: r.groupSlug }));
@@ -2164,7 +2180,11 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db
       .select()
       .from(schema.groupApplications)
-      .where(and(eq(schema.groupApplications.userId, userId), eq(schema.groupApplications.groupId, groupId)))
+      .where(and(
+        eq(schema.groupApplications.userId, userId),
+        eq(schema.groupApplications.groupId, groupId),
+        isNull(schema.groupApplications.deletedAt),
+      ))
       .orderBy(desc(schema.groupApplications.createdAt))
       .limit(1);
     return result;
@@ -2185,7 +2205,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteGroupApplication(id: string): Promise<void> {
-    await db.delete(schema.groupApplications).where(eq(schema.groupApplications.id, id));
+    await db
+      .update(schema.groupApplications)
+      .set({ deletedAt: new Date() })
+      .where(eq(schema.groupApplications.id, id));
+  }
+
+  async restoreGroupApplication(id: string): Promise<void> {
+    await db
+      .update(schema.groupApplications)
+      .set({ deletedAt: null })
+      .where(eq(schema.groupApplications.id, id));
   }
 
   async updateGroupApplicationAnswers(id: string, answers: { question: string; answer: string }[], motivation: string, projectTitle?: string, teamEmails?: string[], extra?: { universityName?: string; graduationYear?: string; major?: string }): Promise<schema.GroupApplication | undefined> {
@@ -2209,6 +2239,7 @@ export class DatabaseStorage implements IStorage {
       .from(schema.groupApplications)
       .where(and(
         sql`${schema.groupApplications.teamEmails}::jsonb @> ${JSON.stringify([email.toLowerCase()])}::jsonb`,
+        isNull(schema.groupApplications.deletedAt),
         or(
           eq(schema.groupApplications.status, 'pending'),
           eq(schema.groupApplications.status, 'approved')

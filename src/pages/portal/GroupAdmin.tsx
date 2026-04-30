@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink, Download, Info } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink, Download, Info, Trash2, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -239,6 +239,12 @@ export default function GroupAdmin() {
     enabled: !!activeSlug && !roleIsJudge,
   });
 
+  const { data: deletedApplications } = useQuery<(GroupApplication & { deletedAt?: string | null })[]>({
+    queryKey: ['/api/groups', activeSlug, 'applications', 'deleted'],
+    queryFn: () => apiRequest(`/groups/${activeSlug}/applications/deleted`),
+    enabled: !!activeSlug && !roleIsJudge,
+  });
+
   const { data: ideaRatings } = useQuery<IdeaRating[]>({
     queryKey: ['/api/groups', activeSlug, 'ideas', ratingIdeaId, 'ratings'],
     queryFn: () => apiRequest(`/groups/${activeSlug}/ideas/${ratingIdeaId}/ratings`),
@@ -327,14 +333,32 @@ export default function GroupAdmin() {
       return apiRequest(`/groups/${activeSlug}/applications/${applicationId}`, { method: 'DELETE' });
     },
     onSuccess: () => {
-      toast({ title: 'Application deleted' });
+      toast({ title: 'Application deleted', description: 'Moved to Recently deleted. You can restore it from the bottom of the Applications tab.' });
       queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'applications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'applications', 'deleted'] });
       queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'details'] });
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to delete application.', variant: 'destructive' });
     },
   });
+
+  const restoreApplicationMutation = useMutation({
+    mutationFn: async (applicationId: string) => {
+      return apiRequest(`/groups/${activeSlug}/applications/${applicationId}/restore`, { method: 'POST' });
+    },
+    onSuccess: () => {
+      toast({ title: 'Application restored' });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'applications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'applications', 'deleted'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeSlug, 'details'] });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to restore application.', variant: 'destructive' });
+    },
+  });
+
+  const [showDeletedApps, setShowDeletedApps] = useState(false);
 
   const rateMutation = useMutation({
     mutationFn: async (payload: { ideaId: string; score?: number; feedback?: string; scoreProblem?: number; scoreSolution?: number; scoreAudience?: number; scoreInnovation?: number; scoreClarity?: number }) => {
@@ -1077,19 +1101,20 @@ export default function GroupAdmin() {
                             </>
                           )}
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="ghost"
-                            className="text-destructive hover:text-destructive"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            title="Delete application"
+                            aria-label="Delete application"
                             onClick={() => {
-                              if (confirm(`Permanently delete the application from ${app.user?.fullName || app.user?.email || 'this applicant'}? This cannot be undone.`)) {
+                              if (confirm(`Delete the application from ${app.user?.fullName || app.user?.email || 'this applicant'}? You can restore it from "Recently deleted" at the bottom of this tab.`)) {
                                 deleteApplicationMutation.mutate(app.id);
                               }
                             }}
                             disabled={deleteApplicationMutation.isPending}
                             data-testid={`button-delete-application-${app.id}`}
                           >
-                            <X className="h-4 w-4 mr-1" />
-                            Delete
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -1101,6 +1126,58 @@ export default function GroupAdmin() {
               <div className="text-center py-12">
                 <UserPlus className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-muted-foreground">No applications received yet</p>
+              </div>
+            )}
+
+            {deletedApplications && deletedApplications.length > 0 && (
+              <div className="mt-8 border-t pt-4" data-testid="section-deleted-applications">
+                <button
+                  type="button"
+                  onClick={() => setShowDeletedApps(v => !v)}
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                  data-testid="button-toggle-deleted-applications"
+                >
+                  {showDeletedApps ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  Recently deleted
+                  <Badge variant="secondary" className="ml-1">{deletedApplications.length}</Badge>
+                </button>
+
+                {showDeletedApps && (
+                  <div className="mt-3 space-y-2">
+                    {deletedApplications.map(app => (
+                      <Card key={app.id} className="bg-muted/30" data-testid={`card-deleted-application-${app.id}`}>
+                        <CardContent className="flex items-start justify-between gap-4 py-3">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={app.profile?.avatarUrl || undefined} />
+                              <AvatarFallback>{(app.user?.fullName || app.user?.email || '?')[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate" data-testid={`text-deleted-name-${app.id}`}>
+                                {app.user?.fullName || app.user?.email || 'Unknown'}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {app.projectTitle ? `${app.projectTitle} · ` : ''}
+                                Status: {app.status}
+                                {app.deletedAt ? ` · Deleted ${new Date(app.deletedAt).toLocaleDateString()}` : ''}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => restoreApplicationMutation.mutate(app.id)}
+                            disabled={restoreApplicationMutation.isPending}
+                            data-testid={`button-restore-application-${app.id}`}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-1" />
+                            Restore
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>}

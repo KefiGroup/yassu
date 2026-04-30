@@ -103,6 +103,7 @@ export async function processApplicationReminders(): Promise<void> {
       JOIN groups g ON ga.group_id = g.id
       WHERE ga.status = 'draft'
         AND ga.created_at < ${twelveHoursAgo}
+        AND ga.deleted_at IS NULL
         AND (ga.reminder_sent = false OR ga.reminder_sent IS NULL)
     `);
 

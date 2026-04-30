@@ -8983,6 +8983,46 @@ Remember: Be helpful and provide value. If you're genuinely unsure, say so brief
     }
   });
 
+  app.get("/api/groups/:slug/applications/deleted", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const deleted = await storage.getDeletedGroupApplications(group.id);
+      res.json(deleted);
+    } catch (error) {
+      console.error("List deleted applications error:", error);
+      res.status(500).json({ error: "Failed to list deleted applications" });
+    }
+  });
+
+  app.post("/api/groups/:slug/applications/:applicationId/restore", async (req: Request, res: Response) => {
+    if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const group = await storage.getGroupBySlug(req.params.slug);
+      if (!group) return res.status(404).json({ error: "Group not found" });
+
+      const isAdmin = await storage.isGroupAdmin(group.id, req.session.userId);
+      const isSuperAdmin = await storage.isSuperadmin(req.session.userId);
+      if (!isAdmin && !isSuperAdmin) return res.status(403).json({ error: "Group admin access required" });
+
+      const deleted = await storage.getDeletedGroupApplications(group.id);
+      const targetApp = deleted.find(a => a.id === req.params.applicationId);
+      if (!targetApp) return res.status(404).json({ error: "Deleted application not found in this group" });
+
+      await storage.restoreGroupApplication(req.params.applicationId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Restore application error:", error);
+      res.status(500).json({ error: "Failed to restore application" });
+    }
+  });
+
   app.get("/api/groups/:slug/ideas-with-ratings", async (req: Request, res: Response) => {
     if (!req.session.userId) return res.status(401).json({ error: "Not authenticated" });
     try {
