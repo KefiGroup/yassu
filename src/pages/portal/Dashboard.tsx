@@ -1183,7 +1183,7 @@ Looking forward to hearing from you!`;
 
       {/* Review Profile Dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-        <DialogContent className="sm:max-w-lg" data-testid="dialog-review-request">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" data-testid="dialog-review-request">
           <DialogHeader>
             <DialogTitle>Review Join Request</DialogTitle>
             <DialogDescription>
@@ -1292,7 +1292,7 @@ Looking forward to hearing from you!`;
 
       {/* Action Message Dialog */}
       <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
-        <DialogContent className="sm:max-w-md" data-testid="dialog-action-message">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" data-testid="dialog-action-message">
           <DialogHeader>
             <DialogTitle>
               {actionType === 'accepted' && 'Accept Request'}

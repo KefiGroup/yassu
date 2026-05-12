@@ -585,7 +585,7 @@ export default function Messages() {
               New Message
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Start a Conversation</DialogTitle>
             </DialogHeader>
@@ -665,7 +665,7 @@ export default function Messages() {
 
         {/* Connection confirmation dialog */}
         <Dialog open={showConnectionConfirm} onOpenChange={setShowConnectionConfirm}>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Send Connection Request</DialogTitle>
             </DialogHeader>

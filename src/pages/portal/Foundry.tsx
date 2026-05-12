@@ -470,7 +470,7 @@ export default function Foundry() {
                 Create Event
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create New Event</DialogTitle>
                 <DialogDescription>
@@ -1043,7 +1043,7 @@ export default function Foundry() {
 
       {selectedEvent && (
         <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Badge className={`${eventTypeColors[selectedEvent.eventType]} text-white`}>
@@ -1092,7 +1092,7 @@ export default function Foundry() {
 
       {/* Edit Event Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
             <DialogDescription>Update event details. Optionally notify attendees of changes.</DialogDescription>
@@ -1208,7 +1208,7 @@ export default function Foundry() {
 
       {/* Cancel Event Dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-destructive">Cancel Event</DialogTitle>
             <DialogDescription>

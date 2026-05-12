@@ -127,7 +127,7 @@ export function ShareInviteModal({ open, onOpenChange, context = 'general', idea
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" data-testid="share-invite-modal">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" data-testid="share-invite-modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5 text-primary" />

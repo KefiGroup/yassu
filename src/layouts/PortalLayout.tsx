@@ -90,7 +90,7 @@ export function PortalLayout() {
       <KefiChat />
 
       <Dialog open={showIncompleteDialog} onOpenChange={setShowIncompleteDialog}>
-        <DialogContent className="sm:max-w-md" data-testid="dialog-incomplete-profile">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto" data-testid="dialog-incomplete-profile">
           <DialogHeader>
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <User className="h-6 w-6 text-primary" />

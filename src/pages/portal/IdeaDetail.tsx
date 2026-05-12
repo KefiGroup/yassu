@@ -3079,7 +3079,7 @@ export default function IdeaDetail() {
 
       {/* Profile Detail Dialog */}
       <Dialog open={!!selectedMember} onOpenChange={(open) => !open && setSelectedMember(null)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Collaborator Profile</DialogTitle>
           </DialogHeader>
@@ -3182,7 +3182,7 @@ export default function IdeaDetail() {
 
       {/* MVP Link Input Dialog */}
       <Dialog open={showMvpLinkInput} onOpenChange={setShowMvpLinkInput}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Link2 className="w-5 h-5" />

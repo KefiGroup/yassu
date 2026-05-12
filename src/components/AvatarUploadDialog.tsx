@@ -118,7 +118,7 @@ export function AvatarUploadDialog({ open, onOpenChange, onSave, currentAvatarUr
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Upload Profile Photo</DialogTitle>
         </DialogHeader>
