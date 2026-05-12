@@ -11,7 +11,7 @@ import Footer from '@/components/Footer';
 export default function AcceptGroupInvite() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [groupName, setGroupName] = useState('');
   const [groupSlug, setGroupSlug] = useState('');
@@ -26,7 +26,12 @@ export default function AcceptGroupInvite() {
       return;
     }
 
-    if (!user) return;
+    if (authLoading) return;
+
+    if (!user) {
+      navigate(`/auth?invite=${encodeURIComponent(token)}`, { replace: true });
+      return;
+    }
 
     async function acceptInvite() {
       try {
@@ -45,19 +50,17 @@ export default function AcceptGroupInvite() {
     }
 
     acceptInvite();
-  }, [token, user]);
+  }, [token, user, authLoading, navigate]);
 
-  if (!user) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
         <Navbar />
         <div className="flex-1 flex items-center justify-center p-4 pt-24">
           <Card className="max-w-md w-full">
             <CardContent className="pt-6 text-center space-y-4">
-              <p className="text-lg font-medium">Please sign in to accept this invitation</p>
-              <Button onClick={() => navigate('/auth')} data-testid="button-sign-in">
-                Sign In
-              </Button>
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+              <p className="text-muted-foreground">Preparing your invitation...</p>
             </CardContent>
           </Card>
         </div>
