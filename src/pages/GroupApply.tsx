@@ -114,13 +114,13 @@ export default function GroupApply() {
         setAnswers((data.applicationQuestions || []).map((q: any) => ({ question: q.label, answer: '' })));
         document.title = `Apply to ${data.name} | Yassu`;
       } catch {
-        toast({ title: 'Group not found', variant: 'destructive' });
+        // Error state is rendered inline below; no toast needed.
       } finally {
         setLoading(false);
       }
     }
     if (slug) fetchGroup();
-  }, [slug, toast]);
+  }, [slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,13 +185,37 @@ export default function GroupApply() {
 
   if (!groupInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <Card className="max-w-md w-full mx-4">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground">Group not found.</p>
-            <Button className="mt-4" onClick={() => navigate('/')}>Go Home</Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center p-4 pt-24">
+          <Card className="max-w-md w-full" data-testid="card-group-not-found">
+            <CardHeader className="text-center">
+              <CardTitle>Group not found</CardTitle>
+              <CardDescription>
+                {slug ? (
+                  <>
+                    We couldn't find a group with the link{' '}
+                    <span className="font-mono text-foreground break-all" data-testid="text-attempted-slug">
+                      {typeof window !== 'undefined' ? window.location.pathname : `/apply/${slug}`}
+                    </span>
+                    . Double-check the URL — it may have a typo, or the group may no longer be accepting applications.
+                  </>
+                ) : (
+                  <>This application link is missing a group identifier.</>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row gap-2 justify-center pb-6">
+              <Button variant="outline" onClick={() => navigate(-1)} data-testid="button-go-back">
+                Go Back
+              </Button>
+              <Button onClick={() => navigate('/')} data-testid="button-go-home">
+                Go Home
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
       </div>
     );
   }
