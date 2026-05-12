@@ -217,7 +217,7 @@ export default function AmbassadorsPage() {
                         className="w-full" 
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate('/signup');
+                          navigate('/auth');
                         }}
                         data-testid={`button-connect-ambassador-${ambassador.id}`}
                       >

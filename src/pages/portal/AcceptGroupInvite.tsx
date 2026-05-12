@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function AcceptGroupInvite() {
   const [searchParams] = useSearchParams();
@@ -47,22 +49,28 @@ export default function AcceptGroupInvite() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center space-y-4">
-            <p className="text-lg font-medium">Please sign in to accept this invitation</p>
-            <Button onClick={() => navigate('/auth')} data-testid="button-sign-in">
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center p-4 pt-24">
+          <Card className="max-w-md w-full">
+            <CardContent className="pt-6 text-center space-y-4">
+              <p className="text-lg font-medium">Please sign in to accept this invitation</p>
+              <Button onClick={() => navigate('/auth')} data-testid="button-sign-in">
+                Sign In
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <Card className="max-w-md w-full">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center p-4 pt-24">
+        <Card className="max-w-md w-full">
         <CardContent className="pt-6 text-center space-y-4">
           {status === 'loading' && (
             <>
@@ -95,8 +103,10 @@ export default function AcceptGroupInvite() {
               </Button>
             </>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
+      <Footer />
     </div>
   );
 }

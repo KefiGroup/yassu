@@ -153,7 +153,7 @@ export default function GroupApply() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to submit');
         toast({ title: 'Application submitted!', description: 'Your application has been submitted successfully.' });
-        navigate('/portal/dashboard');
+        navigate('/portal');
       } else {
         const res = await fetch(`/api/groups/${slug}/public-apply`, {
           method: 'POST',

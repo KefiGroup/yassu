@@ -174,7 +174,16 @@ export default function Teams() {
             Find teammates and discover talent in the community
           </p>
         </div>
-        <Button onClick={() => navigate('/portal/teams/new')} data-testid="button-create-team">
+        <Button
+          onClick={() => {
+            toast({
+              title: 'Create a team from one of your ideas',
+              description: 'Open an idea and use "Create Team" to start a team for it.',
+            });
+            navigate('/portal/my-ideas');
+          }}
+          data-testid="button-create-team"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Create Team
         </Button>
@@ -314,7 +323,16 @@ export default function Teams() {
               <p className="text-muted-foreground mb-6">
                 Be the first to create a team!
               </p>
-              <Button onClick={() => navigate('/portal/teams/new')} data-testid="button-create-team-empty">
+              <Button
+                onClick={() => {
+                  toast({
+                    title: 'Create a team from one of your ideas',
+                    description: 'Open an idea and use "Create Team" to start a team for it.',
+                  });
+                  navigate('/portal/my-ideas');
+                }}
+                data-testid="button-create-team-empty"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Team
               </Button>
@@ -440,7 +458,16 @@ export default function Teams() {
               <p className="text-muted-foreground mb-6">
                 Create a team or join one to get started!
               </p>
-              <Button onClick={() => navigate('/portal/teams/new')} data-testid="button-create-team-my-empty">
+              <Button
+                onClick={() => {
+                  toast({
+                    title: 'Create a team from one of your ideas',
+                    description: 'Open an idea and use "Create Team" to start a team for it.',
+                  });
+                  navigate('/portal/my-ideas');
+                }}
+                data-testid="button-create-team-my-empty"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Team
               </Button>

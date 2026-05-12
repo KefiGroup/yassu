@@ -214,7 +214,7 @@ export default function Advisors() {
                         className="w-full" 
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate('/signup');
+                          navigate('/auth');
                         }}
                         data-testid={`button-connect-advisor-${advisor.id}`}
                       >
