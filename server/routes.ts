@@ -428,8 +428,24 @@ export function registerRoutes(app: Express): void {
     try {
       const { email, password, rememberMe, brand } = req.body;
       console.log(`[Login] Attempt for email: ${email}, rememberMe: ${rememberMe}, brand: ${brand}`);
-      
-      const user = await storage.getUserByEmail(email);
+
+      let user;
+      let lastErr: any;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          user = await storage.getUserByEmail(email);
+          lastErr = null;
+          break;
+        } catch (err: any) {
+          lastErr = err;
+          const msg = String(err?.cause?.message || err?.message || '');
+          const transient = /timeout exceeded when trying to connect|Connection terminated|ECONNRESET|ECONNREFUSED|read ECONN/i.test(msg);
+          if (!transient || attempt === 3) break;
+          console.warn(`[Login] Transient DB error on attempt ${attempt} for ${email}: ${msg}. Retrying...`);
+          await new Promise(r => setTimeout(r, 200 * attempt));
+        }
+      }
+      if (lastErr) throw lastErr;
       if (!user) {
         console.log(`[Login] User not found for email: ${email}`);
         return res.status(401).json({ error: "Invalid credentials" });

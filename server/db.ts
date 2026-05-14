@@ -20,6 +20,18 @@ export function getPool(): pg.Pool {
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
+    });
+
+    _pool.on('error', (err) => {
+      console.error('[DB Pool] Idle client error (connection will be evicted):', err.message);
+    });
+
+    _pool.on('connect', (client) => {
+      client.on('error', (err) => {
+        console.error('[DB Pool] Client error:', err.message);
+      });
     });
   }
   return _pool;
