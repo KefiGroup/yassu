@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink, Download, Info, Trash2, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Mail, Upload, Shield, ShieldCheck, UserMinus, Send, Clock, CheckCircle, XCircle, Crown, Star, UserPlus, Gavel, ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Camera, Edit, RotateCw, X, Link2, Copy, FileText, ExternalLink, Download, Info, Trash2, RotateCcw, ChevronDown, ChevronRight, Trophy, Medal, Award } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -632,6 +632,15 @@ export default function GroupAdmin() {
 
   const pendingApplications = applications?.filter(a => a.status === 'pending') || [];
 
+  const ratedApplications = (applications || [])
+    .filter(a => a.avgScore !== null && a.avgScore !== undefined && (a.ratingCount ?? 0) > 0)
+    .sort((a, b) => {
+      const scoreDiff = (b.avgScore ?? 0) - (a.avgScore ?? 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (b.ratingCount ?? 0) - (a.ratingCount ?? 0);
+    });
+  const unratedApplicationCount = (applications || []).length - ratedApplications.length;
+
   if (groupsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -724,8 +733,9 @@ export default function GroupAdmin() {
         <Tabs key={defaultTab} defaultValue={defaultTab} className="space-y-6">
           {isJudge ? (
             group?.rubricEnabled ? (
-              <TabsList className="grid w-full grid-cols-2 max-w-[400px]" data-testid="group-admin-tabs">
+              <TabsList className="grid w-full grid-cols-3 max-w-[540px]" data-testid="group-admin-tabs">
                 <TabsTrigger value="applicants" data-testid="tab-applicants">Applications</TabsTrigger>
+                <TabsTrigger value="leaderboard" data-testid="tab-leaderboard">Leaderboard</TabsTrigger>
                 <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
               </TabsList>
             ) : (
@@ -734,7 +744,7 @@ export default function GroupAdmin() {
               </TabsList>
             )
           ) : (
-            <TabsList className="grid w-full grid-cols-5" data-testid="group-admin-tabs">
+            <TabsList className={`grid w-full ${group?.rubricEnabled ? 'grid-cols-6' : 'grid-cols-5'}`} data-testid="group-admin-tabs">
               <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
               <TabsTrigger value="applicants" data-testid="tab-applicants" className="relative">
                 Applicants
@@ -744,6 +754,9 @@ export default function GroupAdmin() {
                   </span>
                 )}
               </TabsTrigger>
+              {group?.rubricEnabled && (
+                <TabsTrigger value="leaderboard" data-testid="tab-leaderboard">Leaderboard</TabsTrigger>
+              )}
               <TabsTrigger value="members" data-testid="tab-members">Members</TabsTrigger>
               <TabsTrigger value="ideas" data-testid="tab-ideas">Ideas & Ratings</TabsTrigger>
               <TabsTrigger value="invites" data-testid="tab-invites">Invites</TabsTrigger>
@@ -1372,6 +1385,122 @@ export default function GroupAdmin() {
               </div>
             )}
           </TabsContent>}
+
+          {group?.rubricEnabled && (
+            <TabsContent value="leaderboard" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div>
+                      <CardTitle className="flex items-center gap-2" data-testid="text-leaderboard-title">
+                        <Trophy className="h-5 w-5 text-amber-500" />
+                        Applications Leaderboard
+                      </CardTitle>
+                      <CardDescription>
+                        Applications ranked by average judge score (out of 25). Ties broken by number of ratings.
+                      </CardDescription>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-2xl font-bold leading-tight" data-testid="text-leaderboard-rated-count">
+                        {ratedApplications.length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">rated</p>
+                      {unratedApplicationCount > 0 && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5" data-testid="text-leaderboard-unrated-count">
+                          {unratedApplicationCount} not yet rated
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {applicationsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : ratedApplications.length === 0 ? (
+                    <div className="text-center py-12" data-testid="text-leaderboard-empty">
+                      <Trophy className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-sm font-medium">No rated applications yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Once judges start rating applications, the leaderboard will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {ratedApplications.map((app, idx) => {
+                        const rank = idx + 1;
+                        const isFirst = rank === 1;
+                        const isSecond = rank === 2;
+                        const isThird = rank === 3;
+                        const isTop3 = isFirst || isSecond || isThird;
+                        const rankIcon = isFirst ? (
+                          <Trophy className="h-5 w-5 text-amber-500" />
+                        ) : isSecond ? (
+                          <Medal className="h-5 w-5 text-slate-400" />
+                        ) : isThird ? (
+                          <Award className="h-5 w-5 text-amber-700" />
+                        ) : null;
+                        const rowAccent = isFirst
+                          ? 'border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/10'
+                          : isSecond
+                          ? 'border-l-4 border-l-slate-400 bg-slate-50/40 dark:bg-slate-900/20'
+                          : isThird
+                          ? 'border-l-4 border-l-amber-700/60 bg-orange-50/30 dark:bg-orange-950/10'
+                          : '';
+                        const statusVariant: 'default' | 'secondary' | 'destructive' | 'outline' =
+                          app.status === 'approved' ? 'default'
+                          : app.status === 'rejected' ? 'destructive'
+                          : 'secondary';
+                        return (
+                          <div
+                            key={app.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border ${rowAccent} hover:bg-muted/40 transition-colors`}
+                            data-testid={`row-leaderboard-${app.id}`}
+                          >
+                            <div className="flex items-center justify-center w-10 shrink-0">
+                              {rankIcon || (
+                                <span className="text-lg font-bold text-muted-foreground tabular-nums" data-testid={`text-rank-${app.id}`}>
+                                  {rank}
+                                </span>
+                              )}
+                            </div>
+                            <Avatar className="h-9 w-9 shrink-0">
+                              <AvatarImage src={app.profile?.avatarUrl || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {(app.user?.fullName || app.user?.email || '?').slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className={`truncate ${isTop3 ? 'font-semibold' : 'font-medium'} text-sm`} data-testid={`text-project-${app.id}`}>
+                                {app.projectTitle || 'Untitled Project'}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {app.user?.fullName || app.user?.email}
+                                {app.universityName ? ` · ${app.universityName}` : app.profile?.university ? ` · ${app.profile.university}` : ''}
+                              </p>
+                            </div>
+                            <Badge variant={statusVariant} className="capitalize shrink-0 hidden sm:inline-flex" data-testid={`badge-status-${app.id}`}>
+                              {app.status}
+                            </Badge>
+                            <div className="text-right shrink-0 w-20">
+                              <p className="text-lg font-bold text-primary leading-tight tabular-nums" data-testid={`text-score-${app.id}`}>
+                                {app.avgScore}
+                                <span className="text-xs font-medium text-muted-foreground">/25</span>
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {app.ratingCount} rating{app.ratingCount !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {!isJudge && <TabsContent value="members" className="space-y-4">
             <div className="flex items-center gap-3">
