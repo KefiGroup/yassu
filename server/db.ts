@@ -15,13 +15,16 @@ export function getPool(): pg.Pool {
         "DATABASE_URL must be set. Did you forget to provision a database?",
       );
     }
-    _pool = new Pool({ 
+    _pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
+      // Recycle idle connections quickly so Neon's auto-suspend doesn't kill them
+      // out from under us. Must be shorter than Neon's idle suspend window.
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 8000,
       keepAlive: true,
-      keepAliveInitialDelayMillis: 10000,
+      keepAliveInitialDelayMillis: 5000,
+      allowExitOnIdle: false,
     });
 
     _pool.on('error', (err) => {
