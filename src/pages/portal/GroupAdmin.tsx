@@ -364,6 +364,7 @@ export default function GroupAdmin() {
 
   // Application rubric rating state (Bruin and any future rubric-enabled groups)
   const [ratingApplicationId, setRatingApplicationId] = useState<string | null>(null);
+  const [expandedLeaderboardId, setExpandedLeaderboardId] = useState<string | null>(null);
   const [appRubricScores, setAppRubricScores] = useState<Record<RubricKey, number | null>>({ problem: null, solution: null, audience: null, innovation: null, clarity: null });
   const [appRatingFeedback, setAppRatingFeedback] = useState('');
 
@@ -1434,6 +1435,7 @@ export default function GroupAdmin() {
                         const isSecond = rank === 2;
                         const isThird = rank === 3;
                         const isTop3 = isFirst || isSecond || isThird;
+                        const isExpanded = expandedLeaderboardId === app.id;
                         const rankIcon = isFirst ? (
                           <Trophy className="h-5 w-5 text-amber-500" />
                         ) : isSecond ? (
@@ -1455,43 +1457,61 @@ export default function GroupAdmin() {
                         return (
                           <div
                             key={app.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg border ${rowAccent} hover:bg-muted/40 transition-colors`}
+                            className={`rounded-lg border ${rowAccent} transition-colors`}
                             data-testid={`row-leaderboard-${app.id}`}
                           >
-                            <div className="flex items-center justify-center w-10 shrink-0">
-                              {rankIcon || (
-                                <span className="text-lg font-bold text-muted-foreground tabular-nums" data-testid={`text-rank-${app.id}`}>
-                                  {rank}
-                                </span>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedLeaderboardId(isExpanded ? null : app.id)}
+                              className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/40 transition-colors rounded-lg"
+                              data-testid={`button-expand-leaderboard-${app.id}`}
+                              aria-expanded={isExpanded}
+                            >
+                              <div className="flex items-center justify-center w-10 shrink-0">
+                                {rankIcon || (
+                                  <span className="text-lg font-bold text-muted-foreground tabular-nums" data-testid={`text-rank-${app.id}`}>
+                                    {rank}
+                                  </span>
+                                )}
+                              </div>
+                              <Avatar className="h-9 w-9 shrink-0">
+                                <AvatarImage src={app.profile?.avatarUrl || undefined} />
+                                <AvatarFallback className="text-xs">
+                                  {(app.user?.fullName || app.user?.email || '?').slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className={`truncate ${isTop3 ? 'font-semibold' : 'font-medium'} text-sm`} data-testid={`text-project-${app.id}`}>
+                                  {app.projectTitle || 'Untitled Project'}
+                                </p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {app.user?.fullName || app.user?.email}
+                                  {app.universityName ? ` · ${app.universityName}` : app.profile?.university ? ` · ${app.profile.university}` : ''}
+                                </p>
+                              </div>
+                              <Badge variant={statusVariant} className="capitalize shrink-0 hidden sm:inline-flex" data-testid={`badge-status-${app.id}`}>
+                                {app.status}
+                              </Badge>
+                              <div className="text-right shrink-0 w-20">
+                                <p className="text-lg font-bold text-primary leading-tight tabular-nums" data-testid={`text-score-${app.id}`}>
+                                  {app.avgScore}
+                                  <span className="text-xs font-medium text-muted-foreground">/25</span>
+                                </p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {app.ratingCount} rating{app.ratingCount !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                               )}
-                            </div>
-                            <Avatar className="h-9 w-9 shrink-0">
-                              <AvatarImage src={app.profile?.avatarUrl || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {(app.user?.fullName || app.user?.email || '?').slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className={`truncate ${isTop3 ? 'font-semibold' : 'font-medium'} text-sm`} data-testid={`text-project-${app.id}`}>
-                                {app.projectTitle || 'Untitled Project'}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {app.user?.fullName || app.user?.email}
-                                {app.universityName ? ` · ${app.universityName}` : app.profile?.university ? ` · ${app.profile.university}` : ''}
-                              </p>
-                            </div>
-                            <Badge variant={statusVariant} className="capitalize shrink-0 hidden sm:inline-flex" data-testid={`badge-status-${app.id}`}>
-                              {app.status}
-                            </Badge>
-                            <div className="text-right shrink-0 w-20">
-                              <p className="text-lg font-bold text-primary leading-tight tabular-nums" data-testid={`text-score-${app.id}`}>
-                                {app.avgScore}
-                                <span className="text-xs font-medium text-muted-foreground">/25</span>
-                              </p>
-                              <p className="text-[10px] text-muted-foreground">
-                                {app.ratingCount} rating{app.ratingCount !== 1 ? 's' : ''}
-                              </p>
-                            </div>
+                            </button>
+                            {isExpanded && activeSlug && (
+                              <div className="px-3 pb-3 pt-1 border-t" data-testid={`panel-leaderboard-ratings-${app.id}`}>
+                                <LeaderboardRatingsList slug={activeSlug} applicationId={app.id} />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -1856,6 +1876,46 @@ export default function GroupAdmin() {
         </Tabs>
         </>
       ) : null}
+    </div>
+  );
+}
+
+function LeaderboardRatingsList({ slug, applicationId }: { slug: string; applicationId: string }) {
+  const { data: ratings, isLoading } = useQuery<IdeaRating[]>({
+    queryKey: ['/api/groups', slug, 'applications', applicationId, 'ratings'],
+    queryFn: () => apiRequest(`/groups/${slug}/applications/${applicationId}/ratings`),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Loading judges...
+      </div>
+    );
+  }
+
+  if (!ratings || ratings.length === 0) {
+    return <p className="text-xs text-muted-foreground py-2">No individual ratings found.</p>;
+  }
+
+  return (
+    <div className="space-y-2 mt-2">
+      <p className="text-xs font-medium text-muted-foreground">Rated by {ratings.length} judge{ratings.length !== 1 ? 's' : ''}</p>
+      {ratings.map(r => (
+        <div key={r.id} className="flex items-start gap-2 p-2 rounded bg-muted/60 text-sm" data-testid={`leaderboard-rating-${r.id}`}>
+          <Badge variant="outline" className="shrink-0 tabular-nums">{r.score}/25</Badge>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-xs" data-testid={`leaderboard-rater-${r.id}`}>{r.raterName || 'Unknown judge'}</p>
+            {r.scoreProblem !== null && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Problem {r.scoreProblem} · Solution {r.scoreSolution} · Audience {r.scoreAudience} · Innovation {r.scoreInnovation} · Clarity {r.scoreClarity}
+              </p>
+            )}
+            {r.feedback && <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{r.feedback}</p>}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
